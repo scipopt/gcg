@@ -36,17 +36,49 @@
 
 #include "scip/scip.h"
 #include "def.h"
+#include "mastercutdata.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates event handler for xyz event */
+struct GCG_StoredCut
+{
+   GCG_MASTERCUTDATA*      mastercutdata;          /**< mastercutdata */
+   GCG_VARHISTORY*         knownvarhistory;        /**< pointer to the history of priced variables */
+};
+
+typedef struct GCG_StoredCut GCG_STOREDCUT;
+
 GCG_EXPORT
 SCIP_RETCODE SCIPincludeEventHdlrSepaCuts(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+SCIP_RETCODE GCGremoveNewInactiveRows(
+   SCIP* scip,
+   int* startidx
+   );
+
+GCG_STOREDCUT*** GCGgetActiveCuts(
+   SCIP* scip
+);
+
+int* GCGgetNActiveCuts(
+   SCIP* scip
+);
+
+SCIP_RETCODE GCGshrinkActiveCuts(
+   SCIP* scip,
+   int* newnrows
+);
+
+SCIP_RETCODE GCGaddCutTActiveCuts(
+   SCIP* scip,
+   GCG_STOREDCUT* storedcut,
+   int sepaidx
+);
 #ifdef __cplusplus
 }
 #endif

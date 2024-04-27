@@ -54,33 +54,18 @@
 
 /* TODO: fill in the necessary event handler data */
 
-
-
-struct GCG_StoredCut
-{
-   GCG_MASTERCUTDATA*      mastercutdata;          /**< mastercutdata */
-   GCG_VARHISTORY*         knownvarhistory;        /**< pointer to the history of priced variables */
-   long long int*          sourcenode;             /**< nodes at which the row could be stored */
-   int                     nsourcenodes;           /**< number of nodes at which the row could be stored */
-   int                     sourcenodessize;
-};
-
-typedef struct GCG_StoredCut GCG_STOREDCUT;
-
-
 /** event handler data */
 struct SCIP_EventhdlrData
 {
    GCG_MASTERCUTDATA***       generatedcuts;          /**< arrays of newly generated separator cuts for each separator */
-   GCG_STOREDCUT***           allcuts;                /**< arrays of all cuts which are in/could be re-added to the LP for each separator */
-   SCIP_HASHMAP*              rowxallidx;             /**< maps a row to its index in the inactive array */
+   GCG_STOREDCUT***           activecuts;             /**< arrays of active cuts */
    SCIP_HASHMAP*              rowxgeneratedidx;       /**< maps a row to its index in the generated array */
-   SCIP_HASHMAP*              sepaxidx;
-   int*                       nallcuts;               /**< number of inactive cuts */
+   SCIP_HASHMAP*              sepaxidx;               /**< maps a separator to its index in separator array */
+   int*                       nactivecuts;            /**< number of active cuts */
    int*                       ngeneratecuts;          /**< number of newly generated cuts */
-   int*                       allcutssize;            /**< size of memory allocated for inactive cuts */
+   int*                       activecutssize;         /**< size of memory allocated for active cuts */
    int*                       generatecutssize;       /**< size of memory allocated for generated cuts */
-   int                        nsepas;
+   int                        nsepas;                 /**< number of separators */
 };
 /*
  * Local methods
@@ -103,11 +88,6 @@ SCIP_RETCODE createStoredCut(
    (*storedcut)->mastercutdata = mastercutdata;
    (*storedcut)->knownvarhistory = NULL;
    SCIP_CALL( GCGvarhistoryCopyReference(scip, &((*storedcut)->knownvarhistory), GCGgetCurrentVarhistoryReference(scip)) );
-   (*storedcut)->sourcenodessize = SCIPcalcMemGrowSize(scip, 1);
-   SCIP_CALL(SCIPallocBlockMemoryArray(scip, &((*storedcut)->sourcenode), (*storedcut)->sourcenodessize) );
-   (*storedcut)->sourcenode[0] = SCIPnodeGetNumber(SCIPgetFocusNode(scip));
-   (*storedcut)->nsourcenodes = 1;
-
    return SCIP_OKAY;
 }
 
@@ -122,7 +102,6 @@ SCIP_RETCODE freeStoredCut(
    assert(*storedcut != NULL);
 
    SCIP_CALL( GCGvarhistoryFreeReference(scip, &((*storedcut)->knownvarhistory)) );
-   SCIPfreeBlockMemoryArray(scip, &((*storedcut)->sourcenode), (*storedcut)->nsourcenodes);
    GCGmastercutFree(scip, &((*storedcut)->mastercutdata));
    SCIPfreeBlockMemory(scip, storedcut);
 
@@ -158,7 +137,8 @@ SCIP_RETCODE ensureGeneratedSize(
    return SCIP_OKAY;
 }
 
-SCIP_RETCODE ensureAllSize(
+
+SCIP_RETCODE ensureActiveSize(
    SCIP* scip,
    SCIP_EVENTHDLRDATA* eventhdlrdata,
    int sepaidx,
@@ -167,45 +147,23 @@ SCIP_RETCODE ensureAllSize(
 {
    assert(scip != NULL);
    assert(eventhdlrdata != NULL);
-   assert(eventhdlrdata->allcuts != NULL);
-   assert(eventhdlrdata->allcuts[sepaidx] != NULL);
-   assert(eventhdlrdata->nallcuts[sepaidx] <= eventhdlrdata->allcutssize[sepaidx]);
-   assert(eventhdlrdata->nallcuts[sepaidx] >= 0);
+   assert(eventhdlrdata->activecuts != NULL);
+   assert(eventhdlrdata->activecuts[sepaidx] != NULL);
+   assert(eventhdlrdata->nactivecuts[sepaidx] <= eventhdlrdata->activecutssize[sepaidx]);
+   assert(eventhdlrdata->nactivecuts[sepaidx] >= 0);
 
-   if( eventhdlrdata->allcutssize[sepaidx] < size )
+   if( eventhdlrdata->activecutssize[sepaidx] < size )
    {
       int newmaxcuts = SCIPcalcMemGrowSize(scip, size);
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(eventhdlrdata->allcuts[sepaidx]), eventhdlrdata->allcutssize[sepaidx], newmaxcuts) );
-      eventhdlrdata->allcutssize[sepaidx] = newmaxcuts;
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(eventhdlrdata->activecuts[sepaidx]), eventhdlrdata->activecutssize[sepaidx], newmaxcuts) );
+      eventhdlrdata->activecutssize[sepaidx] = newmaxcuts;
    }
 
-   assert(eventhdlrdata->allcutssize[sepaidx] >= size);
+   assert(eventhdlrdata->activecutssize[sepaidx] >= size);
 
    return SCIP_OKAY;
 }
 
-SCIP_RETCODE ensureSourceNodesSize(
-   SCIP* scip,
-   GCG_STOREDCUT* storedcut,
-   int size
-   )
-{
-   assert(scip != NULL);
-   assert(GCGisMaster(scip));
-   assert(storedcut->sourcenode != NULL);
-   assert(storedcut->nsourcenodes >= 0);
-   assert(storedcut->nsourcenodes <= storedcut->sourcenodessize);
-
-   if( storedcut->sourcenodessize < size )
-   {
-      int newmaxcuts = SCIPcalcMemGrowSize(scip, size);
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(storedcut->sourcenode), storedcut->sourcenodessize, newmaxcuts) );
-      storedcut->sourcenodessize = newmaxcuts;
-   }
-
-   assert(storedcut->sourcenodessize >= size);
-   return SCIP_OKAY;
-}
 
 SCIP_RETCODE addCutToGeneratedCutsSepa(
    SCIP* scip,
@@ -277,6 +235,7 @@ SCIP_RETCODE addCutToGeneratedCuts(
    return SCIP_OKAY;
 }
 
+
 SCIP_RETCODE clearGeneratedCuts(
    SCIP* scip
    )
@@ -307,7 +266,7 @@ SCIP_RETCODE clearGeneratedCuts(
             assert(row != NULL);
 
             /* if cut was never in LP: we need to free mastercutdata */
-            if( !SCIPhashmapExists(eventhdlrdata->rowxallidx, row) )
+            if( !SCIProwIsInLP(row) )
                SCIP_CALL( GCGmastercutFree(scip, &(eventhdlrdata->generatedcuts[i][j])) );
          }
       }
@@ -318,6 +277,116 @@ SCIP_RETCODE clearGeneratedCuts(
    SCIPhashmapRemoveAll(eventhdlrdata->rowxgeneratedidx);
 
    return SCIP_OKAY;
+}
+
+SCIP_RETCODE GCGremoveNewInactiveRows(
+   SCIP* scip,
+   int* startidx
+   )
+{
+   SCIP_EVENTHDLR* eventhdlr;
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+   SCIP_ROW* row;
+   int i;
+   int j;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+
+   eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
+   assert(eventhdlr != NULL);
+
+   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
+   assert(eventhdlrdata != NULL);
+
+   for( i = 0; i < eventhdlrdata->nsepas; i++ )
+   {
+      for( j = eventhdlrdata->nactivecuts[i] - 1; j >= startidx[i]; --j )
+      {
+         SCIP_CALL( GCGmastercutGetRow(eventhdlrdata->activecuts[i][j]->mastercutdata, &row) );
+         /* rows still in LP remain relevant */
+         if( SCIProwIsInLP(row) )
+            continue;
+
+         /* cut was created and removed at focus node: can be permanently removed */
+         SCIPdebugMessage("remove new inactive rows: remove row %s and free data\n", SCIProwGetName(row));
+         SCIP_CALL( freeStoredCut(scip, &(eventhdlrdata->activecuts[i][j])) );
+         assert(eventhdlrdata->activecuts[i][j] == NULL);
+         (eventhdlrdata->nactivecuts[i])--;
+         eventhdlrdata->activecuts[i][j] = eventhdlrdata->activecuts[i][eventhdlrdata->nactivecuts[i]];
+      }
+   }
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE GCGshrinkActiveCuts(
+   SCIP* scip,
+   int* newnrows
+   )
+{
+   SCIP_EVENTHDLR* eventhdlr;
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+   int i;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+
+   eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
+   assert(eventhdlr != NULL);
+
+   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
+   assert(eventhdlrdata != NULL);
+   assert(eventhdlrdata->nsepas > 0);
+
+   for( i = 0; i < eventhdlrdata->nsepas; i++ )
+   {
+      assert(eventhdlrdata->nactivecuts[i] >= newnrows[i]);
+      if( eventhdlrdata->nactivecuts[i] == newnrows[i] )
+      {
+         continue;
+      }
+      eventhdlrdata->nactivecuts[i] = newnrows[i];
+   }
+
+   return SCIP_OKAY;
+}
+
+GCG_STOREDCUT*** GCGgetActiveCuts(
+   SCIP* scip
+   )
+{
+   SCIP_EVENTHDLR* eventhdlr;
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+
+   eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
+   assert(eventhdlr != NULL);
+
+   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
+   assert(eventhdlrdata != NULL);
+
+   return eventhdlrdata->activecuts;
+}
+
+int* GCGgetNActiveCuts(
+   SCIP* scip
+)
+{
+   SCIP_EVENTHDLR* eventhdlr;
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+
+   eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
+   assert(eventhdlr != NULL);
+
+   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
+   assert(eventhdlrdata != NULL);
+
+   return eventhdlrdata->nactivecuts;
 }
 /*
  * Callback methods of event handler
@@ -338,34 +407,32 @@ SCIP_DECL_EVENTFREE(eventFreeMastercutUpdate)
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
 
-   SCIPdebugMessage("EVENT FREE\n");
-   SCIPdebugMessage("free hashmaps\n");
-   SCIPhashmapFree(&(eventhdlrdata->rowxallidx));
+   SCIPdebugMessage("event free: free hashmaps\n");
    SCIPhashmapFree(&(eventhdlrdata->rowxgeneratedidx));
    SCIPhashmapFree(&(eventhdlrdata->sepaxidx));
 
    /* free all the arrays */
    if( eventhdlrdata->nsepas > 0)
    {
-      SCIPdebugMessage("free mem for (n)activecuts, (n)allcuts, (n)generatedcuts\n");
+      SCIPdebugMessage("event free: free mem for (n)activecuts and (n)generatedcuts\n");
       for( i = eventhdlrdata->nsepas - 1; i >= 0 ; i-- )
       {
-         SCIPdebugMessage("free mem (%i) for sepa %i\n", eventhdlrdata->allcutssize[i], i);
-         SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->allcuts[i]), eventhdlrdata->allcutssize[i]);
+         SCIPdebugMessage("event free: free mem (%i) for sepa %i\n", eventhdlrdata->activecutssize[i], i);
+         SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->activecuts[i]), eventhdlrdata->activecutssize[i]);
          SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->generatedcuts[i]), eventhdlrdata->generatecutssize[i]);
       }
-      SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->allcuts), eventhdlrdata->nsepas);
+      SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->activecuts), eventhdlrdata->nsepas);
       SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->generatedcuts), eventhdlrdata->nsepas);
-      SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->nallcuts), eventhdlrdata->nsepas);
+      SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->nactivecuts), eventhdlrdata->nsepas);
       SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->ngeneratecuts), eventhdlrdata->nsepas);
       SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->generatecutssize), eventhdlrdata->nsepas);
-      SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->allcutssize), eventhdlrdata->nsepas);
+      SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->activecutssize), eventhdlrdata->nsepas);
    }
    else
    {
-      SCIPdebugMessage("No sepas registered: arrays remained NULL --> nothing to free\n");
+      SCIPdebugMessage("event free: no sepas registered: arrays remained NULL --> nothing to free\n");
    }
-   SCIPdebugMessage("free event handler data\n");
+   SCIPdebugMessage("event free: free event handler data\n");
    SCIPfreeBlockMemory(scip, &eventhdlrdata);
 
    return SCIP_OKAY;
@@ -387,7 +454,6 @@ SCIP_DECL_EVENTINIT(eventInitMastercutUpdate)
 
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
-   SCIPdebugMessage("EVENT INIT\n");
 
    /* initialize event handler data:
     * - each separator gets own array of active/all/generated cuts */
@@ -395,41 +461,41 @@ SCIP_DECL_EVENTINIT(eventInitMastercutUpdate)
    sepas = GCGrelaxGetSeparators(scip);
    if( nsepas > 0 )
    {
-      SCIPdebugMessage("alloc mem for (n)activecuts, (n)allcuts, (n)generatedcuts\n");
+      SCIPdebugMessage("event init: alloc mem for (n)activecuts and (n)generatedcuts\n");
       initialsize = SCIPcalcMemGrowSize(scip, STARTMAXCUTS);
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(eventhdlrdata->allcuts), nsepas) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(eventhdlrdata->activecuts), nsepas) );
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(eventhdlrdata->generatedcuts), nsepas) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(eventhdlrdata->nallcuts), nsepas) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(eventhdlrdata->nactivecuts), nsepas) );
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(eventhdlrdata->ngeneratecuts), nsepas) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(eventhdlrdata->allcutssize), nsepas) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(eventhdlrdata->activecutssize), nsepas) );
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(eventhdlrdata->generatecutssize), nsepas) );
 
       for( i = 0; i < nsepas; i++ )
       {
-         SCIPdebugMessage("alloc block mem (%i) for sepa %i\n", initialsize, i);
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(eventhdlrdata->allcuts[i]), initialsize) );
+         SCIPdebugMessage("event init: alloc block mem (%i) for sepa %i\n", initialsize, i);
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(eventhdlrdata->activecuts[i]), initialsize) );
          SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(eventhdlrdata->generatedcuts[i]), initialsize) );
-         eventhdlrdata->nallcuts[i] = 0;
+         eventhdlrdata->nactivecuts[i] = 0;
          eventhdlrdata->ngeneratecuts[i] = 0;
          eventhdlrdata->generatecutssize[i] = initialsize;
-         eventhdlrdata->allcutssize[i] = initialsize;
+         eventhdlrdata->activecutssize[i] = initialsize;
          SCIP_CALL( SCIPhashmapInsertInt(eventhdlrdata->sepaxidx, sepas[i]->separator, i) );
       }
    }
    else
    {
-      SCIPdebugMessage("Detected no registered Separators --> no need to alloc mem for arrays: set to NULL\n");
-      eventhdlrdata->allcuts = NULL;
+      SCIPdebugMessage("event init: detected no registered separators --> no need to alloc mem for arrays: set to NULL\n");
+      eventhdlrdata->activecuts = NULL;
       eventhdlrdata->generatedcuts = NULL;
-      eventhdlrdata->nallcuts = NULL;
+      eventhdlrdata->nactivecuts = NULL;
       eventhdlrdata->ngeneratecuts = NULL;
       eventhdlrdata->generatecutssize = NULL;
-      eventhdlrdata->allcutssize = NULL;
+      eventhdlrdata->activecutssize = NULL;
    }
-   SCIPdebugMessage("Set nsepas to %i", nsepas);
+   SCIPdebugMessage("event init: set nsepas to %i\n", nsepas);
    eventhdlrdata->nsepas = nsepas;
    /* notify SCIP that event handler wants to react on the event types row added to LP and row deleted from LP */
-   SCIP_CALL( SCIPcatchEvent(scip, SCIP_EVENTTYPE_ROWDELETEDLP | SCIP_EVENTTYPE_ROWADDEDLP | SCIP_EVENTTYPE_NODEDELETE, eventhdlr, NULL, NULL) );
+   SCIP_CALL( SCIPcatchEvent(scip, SCIP_EVENTTYPE_ROWADDEDLP, eventhdlr, NULL, NULL) );
    return SCIP_OKAY;
 }
 
@@ -450,16 +516,15 @@ SCIP_DECL_EVENTEXITSOL(eventExitSolMastercutUpdate)
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
 
-   SCIPdebugMessage("EVENT EXITSOL\n");
    /* notify SCIP that your event handler wants to drop the event type lp solved and solution found */
-   SCIP_CALL( SCIPdropEvent(scip, SCIP_EVENTTYPE_ROWDELETEDLP | SCIP_EVENTTYPE_ROWADDEDLP | SCIP_EVENTTYPE_NODEDELETE, eventhdlr, NULL, -1) );
+   SCIP_CALL( SCIPdropEvent(scip, SCIP_EVENTTYPE_ROWADDEDLP, eventhdlr, NULL, -1) );
 
    /* free all the remaining cuts from arrays */
    if( eventhdlrdata->nsepas > 0)
    {
       for( i = eventhdlrdata->nsepas - 1; i >= 0 ; i-- )
       {
-         SCIPdebugMessage("free remaining mastercuts in  generatedcuts (%i) for sepa %i\n", i,
+         SCIPdebugMessage("event exitsol: free remaining mastercuts in generatedcuts (%i) for sepa %i\n", i,
                           eventhdlrdata->ngeneratecuts[i]);
 
          for( j = 0; j < eventhdlrdata->ngeneratecuts[i]; j++ )
@@ -469,22 +534,21 @@ SCIP_DECL_EVENTEXITSOL(eventExitSolMastercutUpdate)
             assert(eventhdlrdata->generatedcuts[i][j] == NULL);
          }
          eventhdlrdata->ngeneratecuts[i] = 0;
-         SCIPdebugMessage("free remaining storedcuts (%i) for sepa %i\n", i, eventhdlrdata->nallcuts[i]);
-         for( j = 0; j < eventhdlrdata->nallcuts[i]; j++ )
+         SCIPdebugMessage("event exitsol: free remaining storedcuts (%i) for sepa %i\n", i, eventhdlrdata->nactivecuts[i]);
+         for( j = 0; j < eventhdlrdata->nactivecuts[i]; j++ )
          {
-            assert(eventhdlrdata->allcuts[i][j] != NULL);
-            SCIP_CALL( freeStoredCut(scip, &eventhdlrdata->allcuts[i][j]) );
-            assert(eventhdlrdata->allcuts[i][j] == NULL);
+            assert(eventhdlrdata->activecuts[i][j] != NULL);
+            SCIP_CALL( freeStoredCut(scip, &eventhdlrdata->activecuts[i][j]) );
+            assert(eventhdlrdata->activecuts[i][j] == NULL);
          }
-         eventhdlrdata->nallcuts[i] = 0;
+         eventhdlrdata->nactivecuts[i] = 0;
       }
    }
    else
    {
-      SCIPdebugMessage("No sepas were registered: array remained NULL --> nothing to free\n");
+      SCIPdebugMessage("event exitsol: no sepas were registered --> array remained NULL\n");
    }
-   SCIPdebugMessage("clear hashmaps\n");
-   SCIPhashmapRemoveAll(eventhdlrdata->rowxallidx);
+   SCIPdebugMessage("event exitsol: clear hashmaps\n");
    SCIPhashmapRemoveAll(eventhdlrdata->rowxgeneratedidx);
    SCIPhashmapRemoveAll(eventhdlrdata->sepaxidx);
 
@@ -503,321 +567,77 @@ SCIP_DECL_EVENTEXEC(eventExecRowAdded)
    SCIP_SEPA* sepa;
    int sepaidx;
    int generatedidx;
-   int allidx;
 
    assert(scip != NULL);
    assert(GCGisMaster(scip));
    assert(eventhdlr != NULL);
+   assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
    assert(event != NULL);
    assert(SCIPeventGetType(event) == SCIP_EVENTTYPE_ROWADDEDLP);
 
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert( eventhdlrdata != NULL );
 
-   row = SCIPeventGetRow(event);
-   sepa = SCIProwGetOriginSepa(row);
-
-   /* if row was not generated by separator: nothing to do */
-   if( sepa == NULL )
-   {
-      SCIPdebugMessage("row added event: cut was not generated by separator\n");
-      return SCIP_OKAY;
-   }
-
-   sepaidx = SCIPhashmapGetImageInt(eventhdlrdata->sepaxidx, sepa);
-   //assert(sepaidx != INT_MAX);
-   SCIPdebugMessage("row added event: cut was generated by sepa (%s, %i)\n", SCIPsepaGetName(sepa), sepaidx);
-   /* row is newly generated cut */
+   /* row is added when LP is already constructed --> row is newly generated cut */
    if( SCIPisLPConstructed(scip) )
    {
+      row = SCIPeventGetRow(event);
+      sepa = SCIProwGetOriginSepa(row);
+
+      /* if row was not generated by separator: nothing to do */
+      if( sepa == NULL )
+      {
+         SCIPdebugMessage("row added event: cut was not generated by separator\n");
+         return SCIP_OKAY;
+      }
+
+      sepaidx = SCIPhashmapGetImageInt(eventhdlrdata->sepaxidx, sepa);
+      //assert(sepaidx != INT_MAX);
+      SCIPdebugMessage("row added event: row %s was generated by sepa (%s, %i)\n", SCIProwGetName(row),
+                       SCIPsepaGetName(sepa), sepaidx);
       if( SCIPhashmapExists(eventhdlrdata->rowxgeneratedidx, row) )
       {
-         SCIPdebugMessage("row added event: row is newly generated\n");
-         /* get mastercutdata for row */
+         /* create corresponding storedcut of new row and add it to active cuts */
+         SCIPdebugMessage("row added event: row %s is added to active cuts at %i\n", SCIProwGetName(row),
+                          eventhdlrdata->nactivecuts[sepaidx]);
          generatedidx = SCIPhashmapGetImageInt(eventhdlrdata->rowxgeneratedidx, row);
          mastercutdata = eventhdlrdata->generatedcuts[sepaidx][generatedidx];
-
-         /* add corresponding storedcut to allcuts */
-         SCIP_CALL( ensureAllSize(scip, eventhdlrdata, sepaidx, eventhdlrdata->nallcuts[sepaidx] + 1) );
+         SCIP_CALL( GCGmastercutGetRow(mastercutdata, &mastercutrow) );
+         assert(mastercutrow == row);
+         SCIP_CALL( ensureActiveSize(scip, eventhdlrdata, sepaidx, eventhdlrdata->nactivecuts[sepaidx] + 1) );
          SCIP_CALL( createStoredCut(scip, &storedcut, mastercutdata) );
-         eventhdlrdata->allcuts[sepaidx][eventhdlrdata->nallcuts[sepaidx]] = storedcut;
-         SCIP_CALL( SCIPhashmapSetImageInt(eventhdlrdata->rowxallidx, row, eventhdlrdata->nallcuts[sepaidx]) );
-         (eventhdlrdata->nallcuts[sepaidx])++;
-      }
-   }
-   /* row is a re-activated cut */
-   else if( SCIPhashmapExists(eventhdlrdata->rowxallidx, row) )
-   {
-      /* get mastercutdata for row */
-      allidx =  SCIPhashmapGetImageInt(eventhdlrdata->rowxallidx, row);
-      storedcut = eventhdlrdata->allcuts[sepaidx][allidx];
-      assert(storedcut != NULL);
-      assert(storedcut->mastercutdata != NULL);
-      SCIP_CALL(GCGmastercutGetRow(storedcut->mastercutdata, &mastercutrow));
-      assert(row == mastercutrow);
-
-      /* row is global:  */
-      if( !SCIProwIsLocal(row) )
-      {
-         /* add current focusnode to rows sourcenodes + no need to update as row did not miss any vars */
-         SCIPdebugMessage("add row event: row re-added and  global --> add focusnode to sources\n");
-         SCIP_CALL( ensureSourceNodesSize(scip, storedcut, storedcut->nsourcenodes + 1) );
-         storedcut->sourcenode[storedcut->nsourcenodes] = SCIPnodeGetNumber(SCIPgetFocusNode(scip));
-         (storedcut->nsourcenodes)++;
-      }
-      else
-      {
-         SCIPdebugMessage("add row event: row re-added and local --> update with missed variables\n");
-         // @todo: update row with missed variables
+         eventhdlrdata->activecuts[sepaidx][eventhdlrdata->nactivecuts[sepaidx]] = storedcut;
+         (eventhdlrdata->nactivecuts[sepaidx])++;
       }
    }
 
    return SCIP_OKAY;
 }
 
-SCIP_RETCODE removeStoredCut(
+SCIP_RETCODE GCGaddCutTActiveCuts(
    SCIP* scip,
-   SCIP_EVENTHDLRDATA* eventhdlrdata,
-   SCIP_ROW* row,
-   int sepaidx,
-   int allidx
+   GCG_STOREDCUT* storedcut,
+   int sepaidx
    )
 {
-   GCG_STOREDCUT* storedcut;
-   SCIP_ROW* mastercutrow;
-
-   storedcut = eventhdlrdata->allcuts[sepaidx][allidx];
-
-   /* all data related to this row can be removed */
-   freeStoredCut(scip, &storedcut);
-
-   /* remove pointer from allcuts array */
-   SCIPdebugMessage("remove row %s allcuts\n", SCIProwGetName(row));
-   (eventhdlrdata->nallcuts[sepaidx])--;
-   eventhdlrdata->allcuts[sepaidx][allidx] = eventhdlrdata->allcuts[sepaidx][eventhdlrdata->nallcuts[sepaidx]];
-
-   /* adapt index of moved entry in hashmap */
-   if( allidx < eventhdlrdata->nallcuts[sepaidx] )
-   {
-      storedcut = eventhdlrdata->allcuts[sepaidx][allidx];
-      SCIP_CALL( GCGmastercutGetRow(storedcut->mastercutdata, &mastercutrow) );
-      SCIPdebugMessage("update allcuts hashmap: row %s has new index %i\n", SCIProwGetName(mastercutrow), allidx);
-      SCIP_CALL( SCIPhashmapSetImageInt(eventhdlrdata->rowxallidx, mastercutrow, allidx) );
-   }
-
-   /* remove entry from hashmap and free indextuple of removed entry */
-   SCIPhashmapRemove(eventhdlrdata->rowxallidx, row);
-   return SCIP_OKAY;
-}
-
-/** main execution method of event handler */
-static
-SCIP_DECL_EVENTEXEC(eventExecRowDeleted)
-{
+   SCIP_EVENTHDLR* eventhdlr;
    SCIP_EVENTHDLRDATA* eventhdlrdata;
-   GCG_STOREDCUT* storedcut;
-   SCIP_ROW* mastercutrow;
-   SCIP_ROW* row;
-   SCIP_SEPA* sepa;
-   int allidx;
-   int sepaidx;
 
    assert(scip != NULL);
    assert(GCGisMaster(scip));
+
+   eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
    assert(eventhdlr != NULL);
-   assert(event != NULL);
-   assert(SCIPeventGetType(event) == SCIP_EVENTTYPE_ROWDELETEDLP);
 
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
-   assert( eventhdlrdata != NULL );
+   assert(eventhdlrdata != NULL);
 
-   row = SCIPeventGetRow(event);
-   sepa = SCIProwGetOriginSepa(row);
-
-   /* if row was not generated by separator: nothing to do */
-   if( sepa == NULL )
-   {
-      SCIPdebugMessage("delete row event: cut was not generated by separator: nothing to delete\n");
-      return SCIP_OKAY;
-   }
-
-   SCIPdebugMessage("delete row event: cut was generated by sepa\n");
-   if( SCIPhashmapExists(eventhdlrdata->rowxallidx, row) )
-   {
-      /* retrieve corresponding mastercut data */
-      sepaidx = SCIPhashmapGetImageInt(eventhdlrdata->sepaxidx, sepa);
-      assert(sepaidx != INT_MAX);
-
-      allidx = SCIPhashmapGetImageInt(eventhdlrdata->rowxallidx, row);
-      storedcut = eventhdlrdata->allcuts[sepaidx][allidx];
-      SCIP_CALL( GCGmastercutGetRow(storedcut->mastercutdata, &mastercutrow) );
-      assert(mastercutrow == row);
-
-      /* LP is already constructed: row is removed during solving --> row may never be used again */
-      if( SCIPisLPConstructed(scip) ) //
-      {
-         SCIP_CALL(GCGmastercutGetRow(storedcut->mastercutdata, &mastercutrow) );
-         assert(mastercutrow == row);
-
-         /* row is currently only associated with one node */
-         if( storedcut->nsourcenodes == 1 )
-         {
-            /* if row was created at current focusnode: row cannot be re-added later on */
-            if( storedcut->sourcenode[0] == SCIPnodeGetNumber(SCIPgetFocusNode(scip)) )
-            {
-               SCIPdebugMessage("delete row event: row was created at current node and is therefore removed forever\n");
-               SCIP_CALL( removeStoredCut(scip, eventhdlrdata, row, sepaidx, allidx) );
-               return SCIP_OKAY;
-            }
-         }
-         else if( storedcut->nsourcenodes > 1 )
-         {
-            assert(!SCIProwIsLocal(row));
-            SCIPdebugMessage("delete row event: row is global and still stored in other nodes\n");
-            /* if row was created at current focusnode: remove current node from source nodes */
-            if( storedcut->sourcenode[storedcut->nsourcenodes - 1] == SCIPnodeGetNumber(SCIPgetFocusNode(scip)) )
-            {
-
-               SCIPdebugMessage("delete row event: removed current focusnode from sourcenodes\n");
-               (storedcut->nsourcenodes)--;
-            }
-            /* else: row was removed while transforming focusnode to subtree node */
-         }
-      }
-      /* row is deleted during the LP construction */
-      else
-      {
-         SCIPdebugMessage("delete row event: row is deleted during LP construction\n");
-      }
-      /* forward history of cut */
-      SCIPdebugMessage("delete row event: update varhistory\n");
-      SCIP_CALL( GCGvarhistoryJumpToLatest(scip, &(storedcut->knownvarhistory)) );
-   }
-   return SCIP_OKAY;
-}
-
-
-static
-SCIP_DECL_EVENTEXEC(eventExecNodeDeleted)
-{
-   SCIP_EVENTHDLRDATA* eventhdlrdata;
-   GCG_STOREDCUT* storedcut;
-   SCIP_NODE* node;
-   SCIP_SEPA* sepa;
-   SCIP_ROW** rows;
-   long long int nodenumber;
-   int sepaidx;
-   int nrows;
-   int idx;
-   int i;
-   int j;
-   assert(scip != NULL);
-   assert(GCGisMaster(scip));
-   assert(eventhdlr != NULL);
-   assert(event != NULL);
-   assert(SCIPeventGetType(event) == SCIP_EVENTTYPE_NODEDELETE);
-
-   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
-   assert( eventhdlrdata != NULL );
-
-   node = SCIPeventGetNode(event);
-   assert(node != NULL);
-
-   switch ( SCIPnodeGetType(node) )
-   {
-      case SCIP_NODETYPE_FORK:
-         rows = node->data.fork->addedrows;
-         nrows = node->data.fork->naddedrows;
-         break;
-      case SCIP_NODETYPE_PSEUDOFORK:
-         rows = node->data.pseudofork->addedrows;
-         nrows = node->data.pseudofork->naddedrows;
-         break;
-      case SCIP_NODETYPE_SUBROOT:
-         rows = node->data.subroot->rows;
-         nrows = node->data.subroot->nrows;
-         break;
-      default:
-         SCIPdebugMessage("node deletion event: node had no rows stored\n");
-         return SCIP_OKAY;
-   }
-
-   for( i = 0; i < nrows; i++ )
-   {
-      sepa = SCIProwGetOriginSepa(rows[i]);
-      if( sepa == NULL )
-         continue;
-
-      sepaidx = SCIPhashmapGetImageInt(eventhdlrdata->sepaxidx, sepa);
-      SCIPdebugMessage("delete node event: row %s was generated by sepa %i\n", SCIProwGetName(rows[i]), sepaidx);
-      if( SCIPhashmapExists(eventhdlrdata->rowxallidx, rows[i]) )
-      {
-         idx = SCIPhashmapGetImageInt(eventhdlrdata->rowxallidx, rows[i]);
-
-         if( SCIPnodeGetType(node) != SCIP_NODETYPE_SUBROOT && SCIProwIsLocal(rows[i]) )
-         {
-            SCIPdebugMessage("delete node event: row is a local row stored at a (pseudo)fork: removed forever\n");
-            SCIP_CALL( removeStoredCut(scip, eventhdlrdata, rows[i], sepaidx, idx) );
-            continue;
-         }
-         else
-         {
-            storedcut = eventhdlrdata->allcuts[sepaidx][idx];
-            nodenumber = SCIPnodeGetNumber(node);
-
-            /* only node where this global cut is still stored */
-            if( storedcut->nsourcenodes == 1 && storedcut->sourcenode[0] == nodenumber )
-            {
-               SCIPdebugMessage("delete node event: last node row was stored at --> remove forever\n");
-               SCIP_CALL( removeStoredCut(scip, eventhdlrdata, rows[i], sepaidx, idx) );
-               continue;
-            }
-
-            for( j = storedcut->nsourcenodes - 1; j >= 0 ; --j )
-            {
-               /* remove the node as row will no longer be stored at node */
-               if( storedcut->sourcenode[j] == nodenumber )
-               {
-                  SCIPdebugMessage("delete node event: row remains, but node is removed from sources\n");
-                  (storedcut->nsourcenodes)--;
-                  storedcut->sourcenode[j] = storedcut->sourcenode[storedcut->nsourcenodes];
-                  break;
-               }
-            }
-         }
-      }
-   }
+   SCIP_CALL( ensureActiveSize(scip, eventhdlrdata, sepaidx, eventhdlrdata->nactivecuts[sepaidx] + 1) );
+   eventhdlrdata->activecuts[sepaidx][eventhdlrdata->nactivecuts[sepaidx]] = storedcut;
+   (eventhdlrdata->nactivecuts[sepaidx])++;
 
    return SCIP_OKAY;
 }
-
-/** main execution method of event handler */
-static
-SCIP_DECL_EVENTEXEC(eventExecMastercutUpdate)
-{
-   assert(scip != NULL);
-   assert(eventhdlr != NULL);
-   assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
-   SCIPdebugMessage("event Exec\n");
-   switch (SCIPeventGetType(event))
-   {
-      case SCIP_EVENTTYPE_ROWADDEDLP:
-         SCIP_CALL( eventExecRowAdded(scip, eventhdlr, event, eventdata) );
-         break;
-      case SCIP_EVENTTYPE_ROWDELETEDLP:
-         SCIP_CALL( eventExecRowDeleted(scip, eventhdlr, event, eventdata) );
-         break;
-      case SCIP_EVENTTYPE_NODEDELETE:
-         SCIP_CALL( eventExecNodeDeleted(scip, eventhdlr, event, eventdata) );
-         break;
-      default:
-         SCIPerrorMessage("unrecognized eventtype in mastercutupdate event handler\n");
-         return SCIP_ERROR;
-   }
-
-   return SCIP_OKAY;
-}
-
 
 
 /** creates event handler for xyz event */
@@ -829,12 +649,10 @@ SCIP_RETCODE SCIPincludeEventHdlrSepaCuts(
    SCIP_EVENTHDLR* eventhdlr;
 
    /* create event handler data */
-   SCIPdebugMessage("Include Sepa Cut Event Handler\n");
-   SCIPdebugMessage("Alloc Block Memory for eventhandler data\n");
+   SCIPdebugMessage("include: alloc mem for eventhandler data\n");
    SCIP_CALL( SCIPallocBlockMemory(scip, &eventhdlrdata) );
    assert(eventhdlrdata != NULL);
-   SCIPdebugMessage("Create Hashmaps and set nsepas to 0\n");
-   SCIP_CALL( SCIPhashmapCreate(&(eventhdlrdata->rowxallidx), SCIPblkmem(scip), STARTMAXCUTS) );
+   SCIPdebugMessage("include: create hashmaps and set nsepas to 0\n");
    SCIP_CALL( SCIPhashmapCreate(&(eventhdlrdata->rowxgeneratedidx), SCIPblkmem(scip), STARTMAXCUTS) );
    SCIP_CALL( SCIPhashmapCreate(&(eventhdlrdata->sepaxidx), SCIPblkmem(scip), 10) );
    eventhdlrdata->nsepas = 0;
@@ -843,7 +661,7 @@ SCIP_RETCODE SCIPincludeEventHdlrSepaCuts(
     */
    eventhdlr = NULL;
    SCIP_CALL( SCIPincludeEventhdlrBasic(scip, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC,
-         eventExecMastercutUpdate, eventhdlrdata) );
+         eventExecRowAdded, eventhdlrdata) );
    assert(eventhdlr != NULL);
 
    /* set non fundamental callbacks via setter functions */
