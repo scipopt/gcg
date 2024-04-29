@@ -47,6 +47,7 @@ struct GCG_StoredCut
 {
    GCG_MASTERCUTDATA*      mastercutdata;          /**< mastercutdata */
    GCG_VARHISTORY*         knownvarhistory;        /**< pointer to the history of priced variables */
+   int                     nuses;
 };
 
 typedef struct GCG_StoredCut GCG_STOREDCUT;
@@ -78,6 +79,31 @@ SCIP_RETCODE GCGaddCutTActiveCuts(
    SCIP* scip,
    GCG_STOREDCUT* storedcut,
    int sepaidx
+);
+
+SCIP_RETCODE GCGreleaseStoredCut(
+   SCIP* scip,
+   GCG_STOREDCUT** storedcut
+);
+
+SCIP_RETCODE GCGcaptureStoredCut(
+   GCG_STOREDCUT* storedcut
+);
+
+SCIP_RETCODE GCGaddCutToGeneratedCutsSepa(
+   SCIP* scip,
+   GCG_MASTERCUTDATA* mastercutdata,
+   int sepaidx
+);
+
+SCIP_RETCODE GCGclearGeneratedCuts(
+   SCIP* scip
+);
+
+SCIP_RETCODE GCGmapNodeToConsdata(
+   SCIP* scip,
+   SCIP_NODE* node,
+   SCIP_CONSDATA* consdata
 );
 #ifdef __cplusplus
 }

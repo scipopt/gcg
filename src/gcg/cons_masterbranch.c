@@ -164,13 +164,78 @@ struct SCIP_ConshdlrData
 
    /* separation handler */
    int                   nsepas;
-   //SCIP_EVENTHDLRDATA* eventhdlrdata;
+   SCIP_HASHMAP*         mapnodetocons;
 
 };
 
 /*
  * Local methods
  */
+SCIP_RETCODE GCGdeleteNode(
+   SCIP* scip,
+   SCIP_NODE* node
+   )
+{
+   SCIP_CONSDATA* consdata;
+   SCIP_CONSHDLR* conshdlr;
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   int i;
+   int j;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+
+   /* get constraint handler */
+   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   assert(conshdlr != NULL);
+
+   /* get constraint handler data */
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   /* get constraint data */
+   if( SCIPhashmapExists(conshdlrdata->mapnodetocons, node) )
+   {
+      consdata = (SCIP_CONSDATA*) SCIPhashmapGetImage(conshdlrdata->mapnodetocons, node);
+      assert(consdata != NULL);
+      assert(consdata->node == node);
+#ifndef MASTERSEP_DEBUG
+      SCIPinfoMessage(scip, NULL, "---------> current stage: %i\n", SCIPgetStage(scip));
+      SCIPinfoMessage(scip, NULL, "delete node: node %lli  nsepas = %i\n", SCIPnodeGetNumber(consdata->node), conshdlrdata->nsepas);
+#endif
+      if( conshdlrdata->nsepas > 0 && consdata->addedcutsinitialized )
+      {
+#ifndef MASTERSEP_DEBUG
+         SCIPinfoMessage(scip, NULL, "delete node: node stored cuts %i\n", consdata->nodestoredcuts);
+#endif
+         if( consdata->nodestoredcuts )
+         {
+            for( i = 0; i < conshdlrdata->nsepas; i++ )
+            {
+#ifndef MASTERSEP_DEBUG
+               SCIPinfoMessage(scip, NULL, "delete node: release and free addedcuts[%i] with naddedcuts %i\n", i, consdata->naddedcuts[i]);
+#endif
+               for( j = 0; j < consdata->naddedcuts[i]; j++ )
+               {
+                  SCIP_CALL( GCGreleaseStoredCut(scip, &(consdata->addedcuts[i][j])) );
+               }
+               SCIPfreeBlockMemoryArray(scip, &(consdata->addedcuts[i]), consdata->naddedcuts[i]);
+            }
+#ifndef MASTERSEP_DEBUG
+            SCIPinfoMessage(scip, NULL, "delete node: free addedcuts with naddedcuts \n");
+#endif
+            SCIPfreeBlockMemoryArray(scip, &(consdata->addedcuts), conshdlrdata->nsepas);
+            SCIPfreeBlockMemoryArray(scip, &(consdata->naddedcuts), conshdlrdata->nsepas);
+         }
+
+      }
+      consdata->nodestoredcuts = FALSE;
+      consdata->addedcutsinitialized = FALSE;
+   }
+
+   return SCIP_OKAY;
+}
+
 /** remove the cuts generated at this node from active cuts */
 static
 SCIP_RETCODE removeStoredCutsFromActiveCuts(
@@ -248,17 +313,20 @@ static
 SCIP_RETCODE initializeAddedCuts(
    SCIP* scip,                     /**< SCIP data structure */
    SCIP_CONSDATA* consdata,        /**< constraint data of current constraint */
-   int nsepas                      /**< number of registered separators */
+   SCIP_CONSHDLRDATA* conshdlrdata
    )
 {
    GCG_STOREDCUT*** activecuts;
    int* nactivecuts;
    int i;
+   int j;
+   SCIP_Bool addedtomap;
    assert(scip != NULL);
    assert(consdata != NULL);
    assert(!consdata->addedcutsinitialized);
 
-   if( nsepas > 0 )
+   addedtomap = FALSE;
+   if( conshdlrdata->nsepas > 0 )
    {
       /* cleanup (remove AND free) the rows generated at node which have already been removed from the LP */
 #ifndef MASTERSEP_DEBUG
@@ -273,11 +341,11 @@ SCIP_RETCODE initializeAddedCuts(
           || SCIPnodeGetType(consdata->node) == SCIP_NODETYPE_SUBROOT )
       {
 #ifndef MASTERSEP_DEBUG
-         SCIPinfoMessage(scip, NULL, "init added cuts: alloc mem (%i) for (n)addedcuts for node %lli\n", nsepas,
+         SCIPinfoMessage(scip, NULL, "init added cuts: alloc mem (%i) for (n)addedcuts for node %lli\n", conshdlrdata->nsepas,
                          SCIPnodeGetNumber(consdata->node));
 #endif
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(consdata->addedcuts), nsepas) );
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(consdata->naddedcuts), nsepas) );
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(consdata->addedcuts), conshdlrdata->nsepas) );
+         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(consdata->naddedcuts), conshdlrdata->nsepas) );
          consdata->nodestoredcuts = TRUE;
       }
       else
@@ -294,7 +362,7 @@ SCIP_RETCODE initializeAddedCuts(
       nactivecuts = GCGgetNActiveCuts(scip);
       activecuts = GCGgetActiveCuts(scip);
 
-      for( i = 0; i < nsepas; i++ )
+      for( i = 0; i < conshdlrdata->nsepas; i++ )
       {
          consdata->naddedcuts[i] = 0;
          consdata->addedcuts[i] = NULL;
@@ -312,8 +380,20 @@ SCIP_RETCODE initializeAddedCuts(
          SCIPinfoMessage(scip, NULL, "init consdata: store %i cuts for sepa %i for (pseudo)fork/subroot\n",
                          consdata->naddedcuts[i], i);
 #endif
+         /* maps node to its constraint(data) */
+         if( !addedtomap )
+         {
+            SCIPhashmapInsert(conshdlrdata->mapnodetocons, consdata->node, consdata);
+            SCIP_CALL( GCGmapNodeToConsdata(scip, consdata->node, consdata) );
+            addedtomap = TRUE;
+         }
+
          SCIP_CALL( SCIPduplicateBlockMemoryArray(scip, &(consdata->addedcuts[i]),
                                                   &(activecuts[i][consdata->firstnewcut[i]]), consdata->naddedcuts[i]) );
+         for( j = 0; j < consdata->naddedcuts[i]; j++ )
+         {
+            SCIP_CALL( GCGcaptureStoredCut(consdata->addedcuts[i][j]) );
+         }
       }
    }
    consdata->addedcutsinitialized = TRUE;
@@ -531,7 +611,7 @@ SCIP_RETCODE initializeConsdata(
         * - node is focusnode (spef. not probing node)*/
        if( !parentdata->addedcutsinitialized && SCIPnodeGetType(consdata->node) == SCIP_NODETYPE_FOCUSNODE )
        {
-          SCIP_CALL( initializeAddedCuts(scip, parentdata, conshdlrdata->nsepas) );
+          SCIP_CALL( initializeAddedCuts(scip, parentdata, conshdlrdata) );
        }
    }
 
@@ -1735,6 +1815,7 @@ SCIP_DECL_CONSFREE(consFreeMasterbranch)
 
    /* free constraint handler storage */
    assert(conshdlrdata->stack == NULL);
+   SCIPhashmapFree(&(conshdlrdata->mapnodetocons));
    SCIPfreeMemory(scip, &conshdlrdata);
 
    return SCIP_OKAY;
@@ -1858,8 +1939,9 @@ SCIP_DECL_CONSEXIT(consExitMasterbranch)
       else
          break;
    }
+   SCIPinfoMessage(scip, NULL, "CONSEXIT - CLEARMAP\n");
    SCIPfreeBlockMemoryArrayNull(scip, &(conshdlrdata->linkingvaridxs), conshdlrdata->maxlinkingvaridxs);
-
+   SCIPhashmapRemoveAll(conshdlrdata->mapnodetocons);
    return SCIP_OKAY;
 }
 
@@ -1895,8 +1977,6 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    }
 
    assert(consdata->node != NULL);
-   SCIPinfoMessage(scip, NULL, "Activation of node %lli of type %i\n", SCIPnodeGetNumber(consdata->node),
-                   SCIPnodeGetType(consdata->node));
 
    /* get original problem */
    origscip = GCGmasterGetOrigprob(scip);
@@ -1967,13 +2047,16 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
       GCGvarhistoryJumpToLatest(scip, &parentconsdata->knownvarhistory);
       parentcons = parentconsdata->parentcons;
    }
-
+   SCIPinfoMessage(scip, NULL, "Activation of node %lli of type %i with cons %s\n", SCIPnodeGetNumber(consdata->node),
+                   SCIPnodeGetType(consdata->node), consdata->name);
    if( consdata->addedcutsinitialized )
    {
       assert(SCIPnodeGetType(consdata->node) != SCIP_NODETYPE_FOCUSNODE);
       assert(consdata->nactivated >= 1);
       SCIP_CALL( addStoredCutsToActiveCuts(scip, consdata, conshdlrdata->nsepas) );
    }
+
+   SCIP_CALL( GCGclearGeneratedCuts(scip) );
 
    return SCIP_OKAY;
 }
@@ -2032,12 +2115,12 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    }
 
    GCGvarhistoryJumpToLatest(scip, &consdata->knownvarhistory);
-   SCIPinfoMessage(scip, NULL, "Deactivation of node %lli of type %i\n", SCIPnodeGetNumber(consdata->node),
-                   SCIPnodeGetType(consdata->node));
+   SCIPinfoMessage(scip, NULL, "Deactivation of node %lli of type %i with cons %s\n", SCIPnodeGetNumber(consdata->node),
+                   SCIPnodeGetType(consdata->node), consdata->name);
    /* node is deactivated without any of its children being activated: store added cuts*/
    if( !consdata->addedcutsinitialized )
    {
-      SCIP_CALL( initializeAddedCuts(scip, consdata, conshdlrdata->nsepas) );
+      SCIP_CALL( initializeAddedCuts(scip, consdata, conshdlrdata) );
    }
 
    SCIP_CALL( removeStoredCutsFromActiveCuts(scip, consdata, conshdlrdata->nsepas) );
@@ -2057,6 +2140,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    int nchildconss;
    int nsepas;
    int i;
+   int j;
 
    assert(scip != NULL);
    assert(conshdlr != NULL);
@@ -2189,12 +2273,14 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
    if( (*consdata)->name != NULL )
    {
+      SCIPinfoMessage(scip, NULL, "Delete cons %s\n", (*consdata)->name);
       SCIPfreeBlockMemoryArray(scip, &(*consdata)->name, strlen((*consdata)->name)+1);
    }
 
    nsepas = GCGrelaxGetNSeparators(scip);
 #ifndef MASTERSEP_DEBUG
-   SCIPinfoMessage(scip, NULL, "delete master: node %lli nsepas = %i\n", SCIPnodeGetNumber((*consdata)->node), nsepas);
+   SCIPinfoMessage(scip, NULL, "---------> current stage: %i\n", SCIPgetStage(scip));
+   SCIPinfoMessage(scip, NULL, "delete master: node %lli  nsepas = %i\n", SCIPnodeGetNumber((*consdata)->node), nsepas);
 #endif
    if( nsepas > 0 && (*consdata)->addedcutsinitialized )
    {
@@ -2206,8 +2292,12 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
          for( i = 0; i < nsepas; i++ )
          {
 #ifndef MASTERSEP_DEBUG
-            SCIPinfoMessage(scip, NULL, "delete master: free addedcuts[%i] with naddedcuts %i\n", i, (*consdata)->naddedcuts[i]);
+            SCIPinfoMessage(scip, NULL, "delete master: release and free addedcuts[%i] with naddedcuts %i\n", i, (*consdata)->naddedcuts[i]);
 #endif
+            for( j = 0; j < (*consdata)->naddedcuts[i]; j++ )
+            {
+               SCIP_CALL( GCGreleaseStoredCut(scip, &((*consdata)->addedcuts[i][j])) );
+            }
             SCIPfreeBlockMemoryArray(scip, &((*consdata)->addedcuts[i]), (*consdata)->naddedcuts[i]);
          }
 #ifndef MASTERSEP_DEBUG
@@ -2571,6 +2661,7 @@ SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
    conshdlrdata->nstack = 0;
    conshdlrdata->nsepas = 0;
    conshdlrdata->maxstacksize = 25;
+   SCIP_CALL( SCIPhashmapCreate(&(conshdlrdata->mapnodetocons), SCIPblkmem(scip), 25) );
 
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlrBasic(scip, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,

@@ -32,7 +32,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-
+#define NDEBUG
 #include "def.h"
 #include "mastercutdata.h"
 #include "gcg.h"
@@ -241,8 +241,9 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
 {
 #ifndef NDEBUG
    SCIP_Bool* seenblocks;
-   SCIP* originalproblem;
+
 #endif
+   SCIP* originalproblem;
    int i;
    int j;
 
@@ -251,9 +252,8 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
    assert(*mastercutdata == NULL);
    assert(row != NULL);
    assert(pricingmodifications != NULL || npricingmodifications == 0);
-
-#ifndef NDEBUG
    originalproblem = GCGgetOriginalprob(scip);
+#ifndef NDEBUG
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &seenblocks, GCGgetNPricingprobs(originalproblem)) );
    for( i = 0; i < GCGgetNPricingprobs(originalproblem); i++ )
       seenblocks[i] = FALSE;
@@ -278,6 +278,7 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
 
    (*mastercutdata)->type = GCG_MASTERCUTTYPE_ROW;
    (*mastercutdata)->cut.row = row;
+   SCIP_CALL( SCIPcaptureRow(scip, (*mastercutdata)->cut.row) );
    (*mastercutdata)->pricingmodifications = pricingmodifications;
    (*mastercutdata)->npricingmodifications = npricingmodifications;
 
@@ -329,6 +330,48 @@ SCIP_RETCODE GCGmastercutFree(
 
    SCIPfreeBlockMemoryArray(masterscip, &(*mastercutdata)->pricingmodifications, (*mastercutdata)->npricingmodifications);
    SCIPfreeBlockMemory(masterscip, mastercutdata);
+
+   *mastercutdata = NULL;
+
+   return SCIP_OKAY;
+}
+
+/* */
+SCIP_RETCODE GCGmastercutFreeMaster(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_MASTERCUTDATA**    mastercutdata        /**< pointer to the mastercut data */
+)
+{
+   SCIP* origscip;
+   int i;
+
+   assert(scip != NULL);
+   assert(mastercutdata != NULL);
+   assert(*mastercutdata != NULL);
+
+   origscip = GCGgetOriginalprob(scip);
+
+   switch( (*mastercutdata)->type )
+   {
+      case GCG_MASTERCUTTYPE_CONS:
+         assert((*mastercutdata)->cut.cons != NULL);
+         SCIP_CALL( SCIPreleaseCons(scip, &(*mastercutdata)->cut.cons) );
+         break;
+      case GCG_MASTERCUTTYPE_ROW:
+         assert((*mastercutdata)->cut.row != NULL);
+         SCIP_CALL( SCIPreleaseRow(scip, &(*mastercutdata)->cut.row) );
+         break;
+      default:
+         SCIP_CALL( SCIP_ERROR );
+   }
+
+   for( i = 0; i < (*mastercutdata)->npricingmodifications; i++ )
+   {
+      SCIP_CALL( GCGpricingmodificationFree(origscip, &(*mastercutdata)->pricingmodifications[i]) );
+   }
+
+   SCIPfreeBlockMemoryArray(scip, &(*mastercutdata)->pricingmodifications, (*mastercutdata)->npricingmodifications);
+   SCIPfreeBlockMemory(scip, mastercutdata);
 
    *mastercutdata = NULL;
 
@@ -448,7 +491,7 @@ SCIP_RETCODE GCGmastercutGetRow(
 {
    assert(mastercutdata != NULL);
    assert(row != NULL);
-   assert(*row == NULL);
+   //assert(*row == NULL);
 
    if( mastercutdata->type != GCG_MASTERCUTTYPE_ROW )
       return SCIP_ERROR;

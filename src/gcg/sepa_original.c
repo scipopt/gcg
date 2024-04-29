@@ -38,10 +38,13 @@
 #include <string.h>
 
 #include "scip/scip.h"
+#include "scip/struct_lp.h"
 #include "sepa_original.h"
 #include "gcg.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
+#include "event_sepacuts.h"
+#include "mastercutdata.h"
 
 
 #define SEPA_NAME         "original"
@@ -70,6 +73,7 @@ struct SCIP_SepaData
    SCIP_Bool             enable;             /**< parameter returns if master separator is enabled */
    int                   separationsetting;  /**< parameter returns which parameter setting is used for separation */
    SCIP_HASHMAP*         origcutidxmap;      /**< origcuts mappend to index */
+   int                   sepaidx;
 };
 
 
@@ -110,9 +114,32 @@ SCIP_RETCODE ensureSizeCuts(
  */
 
 #define sepaCopyOriginal NULL
-#define sepaInitOriginal NULL
+//#define sepaInitOriginal NULL
 #define sepaInitsolOriginal NULL
 #define sepaExecsolOriginal NULL
+
+static
+SCIP_DECL_SEPAINIT(sepaInitOriginal)
+{
+   SCIP* origscip;
+   SCIP_SEPADATA* sepadata;
+   assert(scip != NULL);
+   assert(sepa != NULL);
+   assert(GCGisMaster(scip));
+
+   origscip = GCGmasterGetOrigprob(scip);
+   assert(origscip != NULL);
+
+   sepadata = SCIPsepaGetData(sepa);
+   assert(sepadata != NULL);
+
+   SCIPdebugMessage("initialize gcg sepaorig \n");
+   /* creates the subsetrow gcg separator and includes in the relaxator data of the original problem */
+   sepadata->sepaidx = GCGrelaxIncludeSeparator(origscip, sepa, NULL,
+                                                NULL, NULL);
+
+   return SCIP_OKAY;
+}
 
 /** destructor of separator to free user data (called when SCIP is exiting) */
 static
@@ -288,6 +315,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
    {
       SCIP_ROW* origcut;
       SCIP_COL** cols;
+      GCG_MASTERCUTDATA* mastercutdata;
       int ncols;
       SCIP_Real* vals;
       SCIP_Real shift;
@@ -332,6 +360,10 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
       SCIP_CALL( SCIPhashmapInsertInt(sepadata->origcutidxmap, origcut, sepadata->ncuts) );
       SCIP_CALL( SCIPcaptureRow(origscip, origcut) );
       sepadata->ncuts++;
+      mastercutdata = NULL;
+      SCIP_CALL( GCGmastercutCreateFromRow(scip, &mastercutdata, mastercut, NULL, 0) );
+      SCIP_CALL( GCGaddCutToGeneratedCutsSepa(scip, mastercutdata, sepadata->sepaidx) );
+
 
 #ifdef SCIP_DEBUG
       SCIPdebugMessage("Cut %d (efficacious %d):\n", i, SCIPisCutEfficacious(scip, NULL, mastercut));
@@ -376,6 +408,7 @@ SCIP_RETCODE SCIPincludeSepaOriginal(
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(sepadata->mastercuts), sepadata->maxcuts) ); /*lint !e506*/
    SCIP_CALL( SCIPhashmapCreate(&sepadata->origcutidxmap, SCIPblkmem(scip), sepadata->maxcuts) );
    sepadata->ncuts = 0;
+   sepadata->sepaidx = 0;
 
    /* include separator */
    SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST, SEPA_USESSUBSCIP, SEPA_DELAY,

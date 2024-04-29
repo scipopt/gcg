@@ -220,6 +220,11 @@ const char* GCGmastercutGetName(
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
    );
 
+SCIP_RETCODE GCGmastercutFreeMaster(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_MASTERCUTDATA**    mastercutdata        /**< pointer to the mastercut data */
+);
+
 /**@} */
 #ifdef __cplusplus
 }

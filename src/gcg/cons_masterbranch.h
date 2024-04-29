@@ -203,6 +203,11 @@ void GCGconsMasterbranchCheckConsistency(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
+SCIP_RETCODE GCGdeleteNode(
+   SCIP* scip,
+   SCIP_NODE* node
+);
+
 #ifdef __cplusplus
 }
 #endif
