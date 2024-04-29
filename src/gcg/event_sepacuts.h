@@ -34,7 +34,8 @@
 #define __SCIP_EVENT_SEPACUTS_H__
 
 
-#include "scip/scip.h"
+#include <scip/scip.h>
+
 #include "def.h"
 #include "mastercutdata.h"
 
@@ -43,14 +44,14 @@ extern "C" {
 #endif
 
 /** creates event handler for xyz event */
-struct GCG_StoredCut
+struct GCG_MasterSepaCut
 {
    GCG_MASTERCUTDATA*      mastercutdata;          /**< mastercutdata */
    GCG_VARHISTORY*         knownvarhistory;        /**< pointer to the history of priced variables */
-   int                     nuses;
+   int                     nuses;                  /**< number of times this cut is referenced */
 };
 
-typedef struct GCG_StoredCut GCG_STOREDCUT;
+typedef struct GCG_MasterSepaCut GCG_MASTERSEPACUT;
 
 GCG_EXPORT
 SCIP_RETCODE SCIPincludeEventHdlrSepaCuts(
@@ -58,53 +59,48 @@ SCIP_RETCODE SCIPincludeEventHdlrSepaCuts(
    );
 
 SCIP_RETCODE GCGremoveNewInactiveRows(
-   SCIP* scip,
-   int* startidx
+   SCIP* masterscip,    /**< SCIP data structure */
+   int* startidx        /**< indicate the first new cut from each separator */
    );
 
-GCG_STOREDCUT*** GCGgetActiveCuts(
-   SCIP* scip
+GCG_MASTERSEPACUT*** GCGgetActiveCuts(
+   SCIP* masterscip     /**< SCIP data structure */
 );
 
 int* GCGgetNActiveCuts(
-   SCIP* scip
+   SCIP* masterscip     /**< SCIP data structure */
 );
 
 SCIP_RETCODE GCGshrinkActiveCuts(
-   SCIP* scip,
-   int* newnrows
+   SCIP* masterscip,    /**< SCIP data structure */
+   int* newnrows        /**< indices to which activecuts should be shrunk to */
 );
 
-SCIP_RETCODE GCGaddCutTActiveCuts(
-   SCIP* scip,
-   GCG_STOREDCUT* storedcut,
-   int sepaidx
+SCIP_RETCODE GCGaddCutActiveCuts(
+   SCIP* masterscip,                   /**< SCIP data structure */
+   GCG_MASTERSEPACUT* mastersepacut,   /**< master sepa cut */
+   int sepaidx                         /**< index of the separator which generated the cut */
 );
 
-SCIP_RETCODE GCGreleaseStoredCut(
-   SCIP* scip,
-   GCG_STOREDCUT** storedcut
+SCIP_RETCODE GCGreleaseMasterSepaCut(
+   SCIP* masterscip,                    /**< SCIP data structure */
+   GCG_MASTERSEPACUT** mastersepacut    /**< pointer to master sepa cut */
 );
 
-SCIP_RETCODE GCGcaptureStoredCut(
-   GCG_STOREDCUT* storedcut
+SCIP_RETCODE GCGcaptureMasterSepaCut(
+   GCG_MASTERSEPACUT* mastersepacut   /**< MASTERSEPACUT data structure */
 );
 
 SCIP_RETCODE GCGaddCutToGeneratedCutsSepa(
-   SCIP* scip,
-   GCG_MASTERCUTDATA* mastercutdata,
-   int sepaidx
+   SCIP* masterscip,                   /**< SCIP data structure */
+   GCG_MASTERCUTDATA* mastercutdata,   /**< mastercut data */
+   int sepaidx                         /**< index of the separator which generated the cut */
 );
 
 SCIP_RETCODE GCGclearGeneratedCuts(
-   SCIP* scip
+   SCIP* masterscip     /**< SCIP data structure */
 );
 
-SCIP_RETCODE GCGmapNodeToConsdata(
-   SCIP* scip,
-   SCIP_NODE* node,
-   SCIP_CONSDATA* consdata
-);
 #ifdef __cplusplus
 }
 #endif
