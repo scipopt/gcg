@@ -44,8 +44,10 @@
 #include "struct_branchgcg.h"
 #include "struct_mastercutdata.h"
 #include "struct_vardata.h"
+#include "struct_sepagcg.h"
 #include "type_branchgcg.h"
 #include "type_mastercutdata.h"
+#include "type_sepagcg.h"
 #include <cassert>
 #include <cstring>
 #include <lpi/type_lpi.h>
@@ -92,6 +94,7 @@
 #include "event_display.h"
 #include "pub_colpool.h"
 #include "misc_varhistory.h"
+#include "event_sepacuts.h"
 
 #ifdef SCIP_STATISTIC
 #include "scip/struct_scip.h"
@@ -1405,6 +1408,101 @@ SCIP_RETCODE ObjPricerGcg::addVariableToOriginalSepaCutsFromGCGCol(
    return SCIP_OKAY;
 }
 
+/** add variable with computed coefficients to the original separator cuts */
+SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCutsFromGCGCol(
+   SCIP_VAR*             newvar,             /**< The new variable to add */
+   GCG_COL*              gcgcol              /**< GCG column data structure */
+)
+{
+   GCG_MASTERSEPACUT*** activecuts;
+   SCIP_Real** sepamastercutcoeffs;
+   SCIP_ROW* row;
+   int* nactivecuts;
+   int i;
+   int j;
+
+   assert(scip_ != NULL);
+   assert(newvar != NULL);
+
+   /* compute new variable coefficient for each cut */
+   SCIP_CALL( computeColSepaMastercutCoeffs(gcgcol) );
+   sepamastercutcoeffs = GCGcolGetSepaMastercutCoeffs(gcgcol);
+   activecuts = GCGgetActiveCuts(scip_);
+   nactivecuts = GCGgetNActiveCuts(scip_);
+
+   /* add the variable to the active cuts using the previously computed coefficients */
+   for( i = 0; i < GCGcolGetNSepas(gcgcol); i++ )
+   {
+      for( j = 0; j < nactivecuts[i]; j++ )
+      {
+         SCIP_CALL( GCGmastercutGetRow(activecuts[i][j]->mastercutdata, &row) );
+         /* skip cuts which are not active */
+         if( !SCIProwIsInLP(row) )
+            continue;
+
+         if( !SCIPisZero(scip_, sepamastercutcoeffs[i][j]) )
+            SCIP_CALL( SCIPaddVarToRow(scip_, row, newvar, sepamastercutcoeffs[i][j]) );
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+/** add variable with computed coefficients to the sepa master cuts */
+SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
+   SCIP_VAR*             newvar,             /**< The new variable to add */
+   int                   prob,               /**< number of the pricing problem the solution belongs to */
+   SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
+   SCIP_Real*            solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
+   int                   nsolvars            /**< number of variables in array solvars */
+)
+{
+   GCG_MASTERSEPACUT*** activecuts;
+   SCIP_ROW* row;
+   GCG_SEPA** sepas;
+   SCIP_Real** sepamastercutcoeffs;
+   SCIP_Real coeff;
+   int* nactivecuts;
+   int nsepas;
+   int i;
+   int j;
+
+   assert(scip_ != NULL);
+   assert(newvar != NULL);
+   assert(solvars != NULL || nsolvars == 0);
+   assert(solvals != NULL || nsolvars == 0);
+
+   /* get sepa master cuts and separators */
+   activecuts = GCGgetActiveCuts(scip_);
+   nactivecuts = GCGgetNActiveCuts(scip_);
+   nsepas = GCGrelaxGetNSeparators(scip_);
+   sepas = GCGrelaxGetSeparators(scip_);
+
+   for( i = 0; i < nsepas; i++ )
+   {
+      for( j = 0; j < nactivecuts[i]; j++ )
+      {
+         SCIP_CALL( GCGmastercutGetRow(activecuts[i][j]->mastercutdata, &row) );
+         if( !SCIProwIsInLP(row) )
+            continue;
+
+         coeff = 0.0;
+         if( sepas[i]->gcgsepagetvarcoefficient != NULL )
+         {
+            SCIP_CALL( sepas[i]->gcgsepagetvarcoefficient(scip_, sepas[i], activecuts[i][j]->mastercutdata, solvars,
+                                                          solvals, nsolvars, &coeff) );
+         }
+
+         if( !SCIPisZero(scip_, coeff) )
+         {
+            SCIP_CALL( SCIPaddVarToRow(scip_ , row, newvar, coeff) );
+         }
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
 /** compute original separator cut coefficients of column in the master problem */
 SCIP_RETCODE ObjPricerGcg::computeColOriginalSepaCuts(
    GCG_COL*              gcgcol              /**< GCG column data structure */
@@ -1461,6 +1559,7 @@ SCIP_RETCODE ObjPricerGcg::computeColOriginalSepaCuts(
 
    SCIP_CALL( SCIPallocBufferArray(origprob, &neworiginalsepamastercuts, noriginalsepamastercuts - noldoriginalsepamastercuts) );
 
+
    nneworiginalsepamastercuts = 0;
 
    /* compute coef of the variable in the cuts and add it to the cuts */
@@ -1503,6 +1602,121 @@ SCIP_RETCODE ObjPricerGcg::computeColOriginalSepaCuts(
    GCGcolUpdateOriginalSepaMastercuts(gcgcol, neworiginalsepamastercuts, nneworiginalsepamastercuts);
 
    SCIPfreeBufferArray(origprob, &neworiginalsepamastercuts);
+
+   return SCIP_OKAY;
+}
+
+/** compute separator master cut coefficients of column in the master problem */
+SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
+   GCG_COL*              gcgcol              /**< GCG column data structure */
+)
+{
+   int i;
+   int j;
+   int nsepas;
+   int nsolvars;
+   int cursize;
+   int lastsize;
+   int* nactivecuts;
+   GCG_MASTERSEPACUT*** activecuts;
+   GCG_SEPA** sepas;
+   SCIP_VAR** solvars = NULL;
+   SCIP_Real* solvals = NULL;
+   SCIP_Real* coeffs = NULL;
+
+   assert(scip_ != NULL);
+   assert(gcgcol != NULL);
+
+   solvars = GCGcolGetVars(gcgcol);
+   solvals = GCGcolGetVals(gcgcol);
+   nsolvars = GCGcolGetNVars(gcgcol);
+   nsepas = GCGrelaxGetNSeparators(scip_);
+   sepas = GCGrelaxGetSeparators(scip_);
+   activecuts = GCGgetActiveCuts(scip_);
+   nactivecuts = GCGgetNActiveCuts(scip_);
+   cursize = 0;
+   lastsize = 0;
+
+   /* first time the coefficients for this column are computed
+    * --> all the mastercuts were already generated when the column was created */
+   if( nsepas != GCGcolGetNSepas(gcgcol) )
+   {
+      SCIP_CALL( GCGcolInitSepaMastercutCoeffs(gcgcol, nsepas) );
+
+      for( i = 0; i < GCGcolGetNSepas(gcgcol); i++ )
+      {
+         if( nactivecuts[i] == 0 )
+            continue;
+
+         /* ensure enough memory is allocated for the coefficients for each separator */
+         cursize = SCIPcalcMemGrowSize(origprob, nactivecuts[i]);
+         if( cursize > lastsize )
+         {
+            SCIPinfoMessage(scip_, NULL, "Alloc %i memory for coeffs at %p - i\n", cursize, coeffs);
+            SCIP_CALL( SCIPreallocBlockMemoryArray(origprob, &coeffs, lastsize, cursize) );
+            lastsize = cursize;
+         }
+
+         /* all the coefficients can be computed via the coefficient variables */
+         if( sepas[i]->gcgsepagetcolcoefficient != NULL )
+         {
+            SCIP_CALL( sepas[i]->gcgsepagetcolcoefficient(scip_, sepas[i], gcgcol, &coeffs, nactivecuts[i]) );
+         }
+         /* coefficients need to be computed individually in a different manner */
+         else
+         {
+            for( j = 0; j < nactivecuts[i]; j++ )
+            {
+               coeffs[j] = 0.0;
+               if( sepas[i]->gcgsepagetvarcoefficient != NULL )
+               {
+                  SCIP_CALL( sepas[i]->gcgsepagetvarcoefficient(scip_, sepas[i], activecuts[i][j]->mastercutdata, solvars, solvals, nsolvars, &coeffs[j]) );
+               }
+            }
+         }
+
+         /* transfer the computed coefficients to the gcgcol */
+         SCIP_CALL( GCGcolAppendSepaMastercutCoeffs(gcgcol, coeffs, nactivecuts[i], i) );
+      }
+
+   }
+   /* we need to compute the coefficients of the sepa master cuts which were created after the column already existed */
+   else
+   {
+      /* get the number of coefficients which have already been stored */
+      int* ncurrentsepamastercutcoeffs;
+      ncurrentsepamastercutcoeffs = GCGcolGetNSepaMastercutCoeffs(gcgcol);
+      for( i = 0; i < GCGcolGetNSepas(gcgcol); i++ )
+      {
+         assert(ncurrentsepamastercutcoeffs[i] <= nactivecuts[i]);
+         if( nactivecuts[i] - ncurrentsepamastercutcoeffs[i] == 0 )
+            continue;
+
+         cursize = SCIPcalcMemGrowSize(origprob, nactivecuts[i] - ncurrentsepamastercutcoeffs[i]);
+         if( cursize > lastsize )
+         {
+            SCIPinfoMessage(origprob, NULL, "Alloc %i memory for coeffs at %p - u\n", cursize, coeffs);
+            SCIP_CALL( SCIPreallocBlockMemoryArray(origprob, &coeffs, lastsize, cursize) );
+            lastsize = cursize;
+         }
+
+         /* determine the coefficients for the new sepa mastercuts */
+         for( j = ncurrentsepamastercutcoeffs[i]; j < nactivecuts[i]; j++ )
+         {
+            coeffs[j] = 0.0;
+            if( sepas[i]->gcgsepagetvarcoefficient != NULL )
+            {
+               SCIP_CALL( sepas[i]->gcgsepagetvarcoefficient(scip_, sepas[i], activecuts[i][j]->mastercutdata, solvars, solvals, nsolvars, &coeffs[j]) );
+            }
+         }
+
+         /* transfer the computed coefficients to the gcgcol */
+         SCIP_CALL( GCGcolAppendSepaMastercutCoeffs(gcgcol, coeffs, nactivecuts[i] - ncurrentsepamastercutcoeffs[i], i) );
+      }
+   }
+
+   if( lastsize > 0)
+      SCIPfreeBlockMemoryArray(origprob, &coeffs, lastsize);
 
    return SCIP_OKAY;
 }
@@ -2318,6 +2532,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    SCIP_CALL( addVariableToPricedvars(newvar) );
    SCIP_CALL( addVariableToMasterconstraints(newvar, prob, solvars, solvals, nsolvars) );
    SCIP_CALL( addVariableToOriginalSepaCuts(newvar, prob, solvars, solvals, nsolvars) );
+   SCIP_CALL( addVariableToSepaMasterCuts(newvar, prob, solvars, solvals, nsolvars) );
    SCIP_CALL( addVariableToMastercuts(newvar) );
 
    /* add variable to convexity constraint */
@@ -2479,6 +2694,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
    SCIP_CALL( addVariableToPricedvars(newvar) );
    SCIP_CALL( addVariableToMasterconstraintsFromGCGCol(newvar, gcgcol) );
    SCIP_CALL( addVariableToOriginalSepaCutsFromGCGCol(newvar, gcgcol) );
+   SCIP_CALL( addVariableToSepaMasterCutsFromGCGCol(newvar, gcgcol) );
    SCIP_CALL( addVariableToMastercuts(newvar) );
 
    /* add variable to convexity constraint */
@@ -2853,6 +3069,11 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    GCG_BRANCHDATA** branchdata;
    GCG_MASTERCUTDATA** branchmastercutdata;
    int nbranchmastercuts;
+   /* master sepa cuts */
+   GCG_MASTERSEPACUT*** activecuts;
+   GCG_SEPA** sepas;
+   int* nactivecuts;
+   int nsepas;
 
 #ifdef SCIP_STATISTIC
    SCIP_Real** olddualvalues;
@@ -2972,6 +3193,23 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       SCIP_CALL( GCGmastercutApplyPricingModifications(scip_, pricetype->getType(), branchmastercutdata[i]) );
    }
 
+   /* master sepa cuts
+    * - clear generated cuts as sepa store has been cleared
+    * - modify pricing problems */
+   SCIP_CALL( GCGclearGeneratedCuts(scip_) );
+   activecuts = GCGgetActiveCuts(scip_);
+   nactivecuts = GCGgetNActiveCuts(scip_);
+   nsepas = GCGrelaxGetNSeparators(scip_);
+   for( i = 0; i < nsepas; i++ )
+   {
+      for( j = 0; j < nactivecuts[i]; j++ )
+      {
+         if( GCGmastercutIsActive(activecuts[i][j]->mastercutdata) )
+         {
+            SCIP_CALL( GCGmastercutApplyPricingModificationsIndex(scip_, pricetype->getType(), activecuts[i][j]->mastercutdata, j) );
+         }
+      }
+   }
    /* stabilization loop */
    do
    {
@@ -3409,6 +3647,17 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       SCIP_CALL( GCGmastercutUndoPricingModifications(scip_, branchmastercutdata[i]) );
    }
 
+   for( i = 0; i < nsepas; i++ )
+   {
+      for( j = 0; j < nactivecuts[i]; j++ )
+      {
+         if( GCGmastercutIsActive(activecuts[i][j]->mastercutdata) )
+         {
+            SCIP_CALL( GCGmastercutUndoPricingModifications(scip_, activecuts[i][j]->mastercutdata) );
+         }
+      }
+   }
+
    return SCIP_OKAY;
 }
 
@@ -3506,6 +3755,7 @@ SCIP_RETCODE GCGcomputeColMastercoefs(
 
    pricer->computeColMastercoefs(gcgcol);
    pricer->computeColOriginalSepaCuts(gcgcol);
+   pricer->computeColSepaMastercutCoeffs(gcgcol);
 
    return SCIP_OKAY;
 
@@ -3664,6 +3914,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
 /** destructor of variable pricer to free user data (called when SCIP is exiting) */
 SCIP_DECL_PRICERFREE(ObjPricerGcg::scip_free)
 {
+   SCIPinfoMessage(scip_, NULL, "free pricer\n");
    assert(scip == scip_);
    SCIP_CALL( solversFree() );
 

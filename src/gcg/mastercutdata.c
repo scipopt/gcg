@@ -55,6 +55,18 @@
  * @{
  */
 
+static
+SCIP_RETCODE setCoeffVarSetIndex(
+   GCG_PRICINGMODIFICATION* pricingmodification,
+   int index
+   )
+{
+   assert(pricingmodification != NULL);
+   assert(GCGvarIsInferredPricing(pricingmodification->coefvar));
+   pricingmodification->coefvar->vardata->data.inferredpricingvardata.index = index;
+   return SCIP_OKAY;
+}
+
 /** free a pricing modification */
 static
 SCIP_RETCODE GCGpricingmodificationFree(
@@ -635,6 +647,35 @@ SCIP_RETCODE GCGpricingmodificationApply(
    for( i=0; i < pricingmodification->nadditionalconss; i++)
    {
       SCIP_CALL( SCIPaddCons(pricingscip, pricingmodification->additionalconss[i]) );
+   }
+
+   return SCIP_OKAY;
+}
+
+/** apply all pricing modifications */
+SCIP_RETCODE GCGmastercutApplyPricingModificationsIndex(
+   SCIP*                  masterscip,         /**< master scip */
+   GCG_PRICETYPE          pricetype,          /**< pricing type */
+   GCG_MASTERCUTDATA*     mastercutdata,       /**< mastercut data */
+   int                    index                /**< index of the mastercutdata in active cuts*/
+)
+{
+   int i;
+   SCIP* origscip;
+   SCIP* pricingprob;
+
+   assert(masterscip != NULL);
+   assert(mastercutdata != NULL);
+
+   origscip = GCGmasterGetOrigprob(masterscip);
+   assert(origscip != NULL);
+
+   for( i = 0; i < mastercutdata->npricingmodifications; i++ )
+   {
+      SCIP_CALL( setCoeffVarSetIndex(mastercutdata->pricingmodifications[i], index) );
+      pricingprob = GCGgetPricingprob(origscip, mastercutdata->pricingmodifications[i]->blocknr);
+      assert(pricingprob != NULL);
+      SCIP_CALL( GCGpricingmodificationApply(pricingprob, pricetype, mastercutdata->pricingmodifications[i]) );
    }
 
    return SCIP_OKAY;

@@ -544,6 +544,10 @@ SCIP_RETCODE GCGcreateInferredPricingVar(
    int                   prob                /**< number of pricing problem that created this variable */
    );
 
+int GCGinferredVarGetIndex(
+   SCIP_VAR* var
+   );
+
 /* adds the vardata to the auxiliary variable */
 GCG_EXPORT
 SCIP_RETCODE GCGaddDataAuxiliaryVar(

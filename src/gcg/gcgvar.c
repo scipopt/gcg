@@ -1611,6 +1611,18 @@ SCIP_RETCODE GCGcreateInferredPricingVar(
    return SCIP_OKAY;
 }
 
+int GCGinferredVarGetIndex(
+   SCIP_VAR* var
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsInferredPricing(var));
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+   return vardata->data.inferredpricingvardata.index;
+}
+
 /* adds the vardata to the auxiliary variable */
 SCIP_RETCODE GCGaddDataAuxiliaryVar(
    SCIP*                 scip,               /**< SCIP data structure */

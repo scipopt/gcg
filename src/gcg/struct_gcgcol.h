@@ -49,28 +49,32 @@ extern "C" {
 /** Column data structure */
 struct GCG_Col
 {
-   SCIP*                pricingprob;        /**< SCIP data structure (pricing problem)*/
-   int                  probnr;             /**< number of corresponding pricing problem */
-   SCIP_VAR**           vars;               /**< (sorted) array of variables of corresponding pricing problem */
-   SCIP_Real*           vals;               /**< array of solution values (belonging to vars) */
-   int                  nvars;              /**< number of variables */
-   int                  maxvars;            /**< capacity of vars */
-   SCIP_Bool            isray;              /**< is the column a ray? */
-   SCIP_Real            redcost;            /**< last known reduced cost */
-   int                  age;                /**< age of column (number of iterations since it was created;
-                                                 each time reduced cost are calculated counts as an interation) */
-   int                  pos;                /**< position in column pool (or -1) */
-   SCIP_Real*           mastercoefs;        /**< array of master coefficients */
-   int                  nmastercoefs;       /**< number of master coefficients */
-   int                  maxmastercoefs;     /**< capacity of mastercoefs */
-   SCIP_Real*           originalsepamastercuts;/**< array of original seperator cut coefficients in the master problem */
-   int                  noriginalsepamastercuts;/**< number of original seperator cut coefficients in the master problem */
-   int                  maxoriginalsepamastercuts;/**< capacity of originalsepamastercuts */
-   SCIP_Real            norm;               /**< norm of the coefficients in the master */
-   int*                 linkvars;           /**< array of indices of variables in var-array which are linking variables */
-   int                  nlinkvars;          /**< number of variables in var-array which are linking variables */
-   int                  maxlinkvars;        /**< capacity of linkvars */
-   SCIP_Bool            initcoefs;          /**< returns if mastercoefs and linkvars have been computed */
+   SCIP*                pricingprob;                /**< SCIP data structure (pricing problem)*/
+   int                  probnr;                     /**< number of corresponding pricing problem */
+   SCIP_VAR**           vars;                       /**< (sorted) array of variables of corresponding pricing problem */
+   SCIP_Real*           vals;                       /**< array of solution values (belonging to vars) */
+   int                  nvars;                      /**< number of variables */
+   int                  maxvars;                    /**< capacity of vars */
+   SCIP_Bool            isray;                      /**< is the column a ray? */
+   SCIP_Real            redcost;                    /**< last known reduced cost */
+   int                  age;                        /**< age of column (number of iterations since it was created;
+                                                    each time reduced cost are calculated counts as an interation) */
+   int                  pos;                        /**< position in column pool (or -1) */
+   SCIP_Real*           mastercoefs;                /**< array of master coefficients */
+   int                  nmastercoefs;               /**< number of master coefficients */
+   int                  maxmastercoefs;             /**< capacity of mastercoefs */
+   SCIP_Real*           originalsepamastercuts;     /**< array of original seperator cut coefficients in the master problem */
+   int                  noriginalsepamastercuts;    /**< number of original seperator cut coefficients in the master problem */
+   int                  maxoriginalsepamastercuts;  /**< capacity of originalsepamastercuts */
+   SCIP_Real**          sepamastercutcoeffs;        /**< arrays of master sepa cut coefficients for each sepa */
+   int*                 nsepamastercutcoeffs;       /**< number of master sepa cut coefficients for each sepa */
+   int*                 sepamastercutscoeffssize;   /**< size of array of master sepa cut coefficients for each sepa */
+   int                  nsepas;
+   SCIP_Real            norm;                       /**< norm of the coefficients in the master */
+   int*                 linkvars;                   /**< array of indices of variables in var-array which are linking variables */
+   int                  nlinkvars;                  /**< number of variables in var-array which are linking variables */
+   int                  maxlinkvars;                /**< capacity of linkvars */
+   SCIP_Bool            initcoefs;                  /**< returns if mastercoefs and linkvars have been computed */
 };
 
 #ifdef __cplusplus

@@ -63,8 +63,8 @@ struct GCG_PricingModification
 /** type of master cut */
 enum GCG_MasterCutType
 {
-   GCG_MASTERCUTTYPE_CONS,                   /**< master cut is represented by a constraint */
-   GCG_MASTERCUTTYPE_ROW                     /**< master cut is represented by a row */
+   GCG_MASTERCUTTYPE_CONS = 0,                   /**< master cut is represented by a constraint */
+   GCG_MASTERCUTTYPE_ROW  = 1                   /**< master cut is represented by a row */
 };
 typedef enum GCG_MasterCutType GCG_MASTERCUTTYPE;
 
@@ -79,7 +79,7 @@ typedef union GCG_MasterCutCut GCG_MASTERCUTCUT;
 /** data for master cuts */
 struct GCG_MasterCutData
 {
-   GCG_MASTERCUTTYPE     type;               /**< type of the master cut */
+   unsigned int          type;               /**< type of the master cut */
    GCG_MASTERCUTCUT      cut;                /**< constraint or row in the master problem that represents the master cut */
    GCG_PRICINGMODIFICATION** pricingmodifications; /**< array of pricing modifications for the master cut */
    int                   npricingmodifications; /**< number of pricing modifications for the master cut */

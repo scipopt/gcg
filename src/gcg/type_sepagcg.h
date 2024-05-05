@@ -61,7 +61,7 @@ typedef struct GCG_Sepa GCG_SEPA;             /**< separator for master problem*
  *    gcgcol          : the column representing a new master variable which should be included in cut
  *    coef            : stores the computed coefficient
  */
-#define GCG_DECL_SEPAGETCOLCOEFFICIENT(x) SCIP_RETCODE x (SCIP* scip, GCG_SEPA* sepa, GCG_MASTERCUTDATA* cut, GCG_COL* gcgcol, SCIP_Real* coef)
+#define GCG_DECL_SEPAGETCOLCOEFFICIENTS(x) SCIP_RETCODE x (SCIP* scip, GCG_SEPA* sepa, GCG_COL* gcgcol, SCIP_Real** coef, int ncoeffs)
 
 /** method for computing the column coefficient for a cut
  *

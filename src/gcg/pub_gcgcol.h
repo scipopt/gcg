@@ -279,6 +279,40 @@ SCIP_Real GCGcolComputeOrth(
    GCG_COL*             gcgcol2             /**< second gcg column */
    );
 
+/** update original separator cut coefficients information of column */
+SCIP_RETCODE GCGcolAppendSepaMastercutCoeffs(
+   GCG_COL*             gcgcol,                 /**< gcg column structure */
+   SCIP_Real*           sepamastercoeffs,       /**< pointer to new array of master cut coefficients */
+   int                  nsepamastercoeffs,      /**< new number of master cut coefficients */
+   int                  sepaidx
+);
+
+/** get the number of separators the columns stored sepa master coefficients for */
+int GCGcolGetNSepas(
+   GCG_COL*             gcgcol
+);
+
+/** get the numbers of stored sepa master cut coefficients for each separator */
+int* GCGcolGetNSepaMastercutCoeffs(
+   GCG_COL*             gcgcol
+   );
+
+/** get the stored sepa master cut coefficients for each separator */
+int* GCGcolGetSepaMastercutCoeffsSize(
+   GCG_COL*            gcgcol
+   );
+
+/** get the current size of sepa master coefficients for each sepa */
+SCIP_Real** GCGcolGetSepaMastercutCoeffs(
+   GCG_COL*             gcgcol
+   );
+
+/** allocates memory for each separator to store its coefficients */
+SCIP_RETCODE GCGcolInitSepaMastercutCoeffs(
+   GCG_COL*             gcgcol,
+   int                  nsepas
+   );
+
 /**@} */
 
 #ifdef __cplusplus

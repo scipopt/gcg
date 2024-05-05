@@ -48,7 +48,7 @@ extern "C" {
 struct GCG_Sepa
 {
    SCIP_SEPA*                             separator;                     /**< SCIP separator */
-   GCG_DECL_SEPAGETCOLCOEFFICIENT         ((*gcgsepagetcolcoefficient)); /**< compute coefficient using gcg column*/
+   GCG_DECL_SEPAGETCOLCOEFFICIENTS        ((*gcgsepagetcolcoefficient)); /**< compute coefficient using gcg column*/
    GCG_DECL_SEPAGETVARCOEFFICIENT         ((*gcgsepagetvarcoefficient)); /**< compute coefficient using variable values */
    GCG_DECL_SEPASETOBJECTIVE              ((*gcgsepasetobjective));      /**< adapt pricing objectives to consider cut */
 };

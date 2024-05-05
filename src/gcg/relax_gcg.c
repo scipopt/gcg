@@ -3915,7 +3915,7 @@ int GCGrelaxIncludeSeparator(
    SCIP*                            scip,                          /**< SCIP data structure */
    SCIP_SEPA*                       separator,                     /**< SCIP separator structure*/
    GCG_DECL_SEPAGETVARCOEFFICIENT   ((*gcgsepagetvarcoefficient)),
-   GCG_DECL_SEPAGETCOLCOEFFICIENT   ((*gcgsepagetcolcoefficient)), /**< get column coefficient for mastercut */
+   GCG_DECL_SEPAGETCOLCOEFFICIENTS  ((*gcgsepagetcolcoefficient)), /**< get column coefficient for mastercut */
    GCG_DECL_SEPASETOBJECTIVE        ((*gcgsepasetobjective))       /**< adapt pricing objective to consider cut */
    )
 {
