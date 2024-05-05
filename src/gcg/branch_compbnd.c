@@ -36,11 +36,6 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include <scip/pub_lp.h>
-#include <scip/pub_misc_linear.h>
-#include <scip/scip_mem.h>
-#include <scip/scip_numerics.h>
-#include <scip/scip_var.h>
 #define SCIP_DEBUG
 #include <scip/pub_message.h>
 #include <scip/pub_var.h>
@@ -55,6 +50,11 @@
 #include <scip/type_var.h>
 #include <string.h>
 #include <scip/struct_var.h>
+#include <scip/pub_lp.h>
+#include <scip/pub_misc_linear.h>
+#include <scip/scip_mem.h>
+#include <scip/scip_numerics.h>
+#include <scip/scip_var.h>
 
 #include "branch_compbnd.h"
 #include "cons_integralorig.h"
@@ -394,7 +394,7 @@ SCIP_Bool hasGeneratorEntry(
 
    for( i = 0; i < norigvars; ++i )
    {
-      if( SCIPvarCompare(origvars[i], origvar) == 0 /* && GCGvarGetBlock(origvars[i]) == blocknr */ )
+      if( SCIPvarCompare(origvars[i], origvar) == 0 )
       {
          return TRUE;
       }
@@ -706,7 +706,7 @@ SCIP_RETCODE createBranchingCons(
                * floor(bound) + 1 <= (floor(bound) + 1 - l_j) * y_j + x_j */
             SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
             SCIP_Real bound = SCIPfloor(pricingscip, branchdata->B[i].bound);
-            SCIP_Real lowerbound = SCIPvarGetLbLocal(pricing_var);
+            SCIP_Real lowerbound = SCIPvarGetLbGlobal(pricing_var);
             assert(SCIPisPositive(pricingscip, bound + 1.0 - lowerbound));
             SCIP_CALL( SCIPcreateConsLinear(pricingscip, &additionalcons[i+1], consname, 0, NULL, NULL, bound + 1.0, SCIPinfinity(pricingscip),
                TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE) );
@@ -720,7 +720,7 @@ SCIP_RETCODE createBranchingCons(
                * -floor(bound) <= (u_j - floor(bound)) * y_j - x_j */
             SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
             SCIP_Real bound = SCIPfloor(pricingscip, branchdata->B[i].bound);
-            SCIP_Real upperbound = SCIPvarGetUbLocal(pricing_var);
+            SCIP_Real upperbound = SCIPvarGetUbGlobal(pricing_var);
             assert(SCIPisPositive(pricingscip, upperbound - bound));
             SCIP_CALL( SCIPcreateConsLinear(pricingscip, &additionalcons[i+1], consname, 0, NULL, NULL, -bound, SCIPinfinity(pricingscip),
                TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE) );
@@ -758,7 +758,7 @@ SCIP_RETCODE createBranchingCons(
                * (u_j - floor(bound)) * y_j + x_j <= u_j */
             SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
             SCIP_Real bound = SCIPfloor(pricingscip, branchdata->B[i].bound);
-            SCIP_Real upperbound = SCIPvarGetUbLocal(pricing_var);
+            SCIP_Real upperbound = SCIPvarGetUbGlobal(pricing_var);
             assert(SCIPisPositive(pricingscip, upperbound - bound));
             SCIP_CALL( SCIPcreateConsLinear(pricingscip, &additionalcons[i+branchdata->Bsize], consname, 0, NULL, NULL, -SCIPinfinity(pricingscip), upperbound,
                TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE) );
@@ -772,7 +772,7 @@ SCIP_RETCODE createBranchingCons(
                * (floor(bound) + 1 - l_j) * y_j - x_j <= -l_j */
             SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
             SCIP_Real bound = SCIPfloor(pricingscip, branchdata->B[i].bound);
-            SCIP_Real lowerbound = SCIPvarGetLbLocal(pricing_var);
+            SCIP_Real lowerbound = SCIPvarGetLbGlobal(pricing_var);
             assert(SCIPisPositive(pricingscip, bound + 1.0 - lowerbound));
             SCIP_CALL( SCIPcreateConsLinear(pricingscip, &additionalcons[i+branchdata->Bsize], consname, 0, NULL, NULL, -SCIPinfinity(pricingscip), -lowerbound,
                TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE) );
@@ -1031,7 +1031,7 @@ SCIP_RETCODE initIndexSet(
    return SCIP_OKAY;
 }
 
-/** get the lower bound of a original variable from the component bound sequence, or the local lb */
+/** get the lower bound of a original variable from the component bound sequence, or the lb */
 static
 SCIP_Real getLowerBound(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -1047,7 +1047,7 @@ SCIP_Real getLowerBound(
    assert(scip != NULL);
    assert(origvar != NULL);
 
-   lb = SCIPvarGetLbLocal(origvar);
+   lb = SCIPvarGetLbGlobal(origvar);
 
    for( i = 0; i < Bsize; ++i )
    {
@@ -1064,7 +1064,7 @@ SCIP_Real getLowerBound(
    return lb;
 }
 
-/** get the upper bound of a original variable from the component bound sequence, or the local ub */
+/** get the upper bound of a original variable from the component bound sequence, or the ub */
 static
 SCIP_Real getUpperBound(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -1080,7 +1080,7 @@ SCIP_Real getUpperBound(
    assert(scip != NULL);
    assert(origvar != NULL);
 
-   ub = SCIPvarGetUbLocal(origvar);
+   ub = SCIPvarGetUbGlobal(origvar);
 
    for( i = 0; i < Bsize; ++i )
    {
@@ -1484,8 +1484,6 @@ SCIP_RETCODE createInitialSetX(
    {
       if( !GCGisMasterVarInBlock(mastervars[i], blocknr) )
          continue;
-
-      // TODO-Til: Only Integer-type variables? Only variables with a fractional value?
 
       if( *Bsize > 0 && !isMasterVarInB(masterscip, mastervars[i], *B, *Bsize, blocknr, FALSE) )
             continue;

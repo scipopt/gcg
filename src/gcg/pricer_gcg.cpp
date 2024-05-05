@@ -328,7 +328,6 @@ SCIP_DECL_EVENTEXEC(eventExecVardeleted)
    var = SCIPeventGetVar(event);
    assert(var != NULL);
 
-   SCIPwarningMessage(scip, "remove master variable %s from pricerdata and corresponding original variables\n", SCIPvarGetName(var));
    SCIPdebugMessage("remove master variable %s from pricerdata and corresponding original variables\n", SCIPvarGetName(var));
 
    assert(GCGvarIsMaster(var));
@@ -3286,14 +3285,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
                   dualconvoffset += GCGconsGetRhs(scip_, convcons) * pricetype->consGetDual(scip_, convcons);
             }
             SCIPdebugMessage("  offset caused by convexity constraints: %g\n", dualconvoffset);
-
-            // TODO-til: remove
-            if(!SCIPisDualfeasEQ(scip_, dualobj, stabdualval + dualconvoffset))
-            {
-               //SCIPwriteOrigProblem(scip_, "origprob", "lp", FALSE);
-               //SCIPwriteLP(scip_, "origprob");
-               SCIPwriteMIP(scip_, "origprob", FALSE, FALSE, TRUE);
-            }
 
             assert(SCIPisDualfeasEQ(scip_, dualobj, stabdualval + dualconvoffset));
          }
