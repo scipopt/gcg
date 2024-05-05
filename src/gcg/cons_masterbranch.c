@@ -37,6 +37,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 //#define SCIP_DEBUG
+#define MASTERSEP_DEBUG
 #include <assert.h>
 #include <string.h>
 #include <scip/def.h>
@@ -1982,8 +1983,10 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
       GCGvarhistoryJumpToLatest(scip, &parentconsdata->knownvarhistory);
       parentcons = parentconsdata->parentcons;
    }
+#ifndef MASTERSEP_DEBUG
    SCIPinfoMessage(scip, NULL, "Activation of node %lli of type %i with cons %s\n", SCIPnodeGetNumber(consdata->node),
                    SCIPnodeGetType(consdata->node), consdata->name);
+#endif
    if( consdata->addedcutsinit )
    {
       assert(SCIPnodeGetType(consdata->node) != SCIP_NODETYPE_FOCUSNODE);
@@ -2050,8 +2053,10 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    }
 
    GCGvarhistoryJumpToLatest(scip, &consdata->knownvarhistory);
+#ifndef MASTERSEP_DEBUG
    SCIPinfoMessage(scip, NULL, "Deactivation of node %lli of type %i with cons %s\n", SCIPnodeGetNumber(consdata->node),
                    SCIPnodeGetType(consdata->node), consdata->name);
+#endif
    /* node is deactivated without any of its children being activated: store added cuts*/
    if( !consdata->addedcutsinit )
    {
@@ -2208,7 +2213,9 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
    if( (*consdata)->name != NULL )
    {
+#ifndef MASTERSEP_DEBUG
       SCIPinfoMessage(scip, NULL, "Delete cons %s\n", (*consdata)->name);
+#endif
       SCIPfreeBlockMemoryArray(scip, &(*consdata)->name, strlen((*consdata)->name)+1);
    }
 

@@ -1425,7 +1425,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCutsFromGCGCol(
    assert(newvar != NULL);
 
    /* compute new variable coefficient for each cut */
-   SCIP_CALL( computeColSepaMastercutCoeffs(gcgcol) );
+   //SCIP_CALL( computeColSepaMastercutCoeffs(gcgcol) );
    sepamastercutcoeffs = GCGcolGetSepaMastercutCoeffs(gcgcol);
    activecuts = GCGgetActiveCuts(scip_);
    nactivecuts = GCGgetNActiveCuts(scip_);
@@ -3755,7 +3755,7 @@ SCIP_RETCODE GCGcomputeColMastercoefs(
 
    pricer->computeColMastercoefs(gcgcol);
    pricer->computeColOriginalSepaCuts(gcgcol);
-   pricer->computeColSepaMastercutCoeffs(gcgcol);
+   //pricer->computeColSepaMastercutCoeffs(gcgcol);
 
    return SCIP_OKAY;
 
