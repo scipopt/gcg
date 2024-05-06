@@ -1671,7 +1671,7 @@ SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
          }
 
          // transfer the computed coefficients to the gcgcol
-         //SCIP_CALL( GCGcolAppendSepaMastercutCoeffs(gcgcol, coeffs, nactivecuts[i], i) );
+         SCIP_CALL( GCGcolAppendSepaMastercutCoeffs(gcgcol, coeffs, nactivecuts[i], i) );
          SCIPfreeBufferArrayNull(origprob, &coeffs);
       }
 
@@ -1703,7 +1703,7 @@ SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
          }
 
          // transfer the computed coefficients to the gcgcol
-         //SCIP_CALL( GCGcolAppendSepaMastercutCoeffs(gcgcol, coeffs, nactivecuts[i] - ncurrentsepamastercutcoeffs[i], i) );
+         SCIP_CALL( GCGcolAppendSepaMastercutCoeffs(gcgcol, coeffs, nactivecuts[i] - ncurrentsepamastercutcoeffs[i], i) );
          SCIPfreeBufferArrayNull(origprob, &coeffs);
       }
    }
