@@ -1431,19 +1431,19 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCutsFromGCGCol(
    nactivecuts = GCGgetNActiveCuts(scip_);
 
    /* add the variable to the active cuts using the previously computed coefficients */
-   for( i = 0; i < GCGcolGetNSepas(gcgcol); i++ )
+   /*for( i = 0; i < GCGcolGetNSepas(gcgcol); i++ )
    {
       for( j = 0; j < nactivecuts[i]; j++ )
       {
          SCIP_CALL( GCGmastercutGetRow(activecuts[i][j]->mastercutdata, &row) );
-         /* skip cuts which are not active */
+         // skip cuts which are not active
          if( !SCIProwIsInLP(row) )
             continue;
 
          if( !SCIPisZero(scip_, sepamastercutcoeffs[i][j]) )
             SCIP_CALL( SCIPaddVarToRow(scip_, row, newvar, sepamastercutcoeffs[i][j]) );
       }
-   }
+   }*/
 
    return SCIP_OKAY;
 }
@@ -1478,7 +1478,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
    nsepas = GCGrelaxGetNSeparators(scip_);
    sepas = GCGrelaxGetSeparators(scip_);
 
-   for( i = 0; i < nsepas; i++ )
+   /*for( i = 0; i < nsepas; i++ )
    {
       for( j = 0; j < nactivecuts[i]; j++ )
       {
@@ -1498,7 +1498,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
             SCIP_CALL( SCIPaddVarToRow(scip_ , row, newvar, coeff) );
          }
       }
-   }
+   }*/
 
    return SCIP_OKAY;
 }
@@ -1707,7 +1707,6 @@ SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
          SCIPfreeBufferArrayNull(origprob, &coeffs);
       }*/
    }
-
 
    return SCIP_OKAY;
 }
