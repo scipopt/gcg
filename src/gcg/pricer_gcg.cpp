@@ -1643,12 +1643,12 @@ SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
    {
       SCIP_CALL( GCGcolInitSepaMastercutCoeffs(gcgcol, nsepas) );
 
-      for( i = 0; i < GCGcolGetNSepas(gcgcol); i++ )
+      /*for( i = 0; i < GCGcolGetNSepas(gcgcol); i++ )
       {
          if( nactivecuts[i] == 0 )
             continue;
 
-         /* ensure enough memory is allocated for the coefficients for each separator */
+         // ensure enough memory is allocated for the coefficients for each separator
          cursize = SCIPcalcMemGrowSize(origprob, nactivecuts[i]);
          if( cursize > lastsize )
          {
@@ -1657,12 +1657,12 @@ SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
             lastsize = cursize;
          }
 
-         /* all the coefficients can be computed via the coefficient variables */
+         // all the coefficients can be computed via the coefficient variables
          if( sepas[i]->gcgsepagetcolcoefficient != NULL )
          {
             SCIP_CALL( sepas[i]->gcgsepagetcolcoefficient(scip_, sepas[i], gcgcol, &coeffs, nactivecuts[i]) );
          }
-         /* coefficients need to be computed individually in a different manner */
+         // coefficients need to be computed individually in a different manner
          else
          {
             for( j = 0; j < nactivecuts[i]; j++ )
@@ -1675,18 +1675,18 @@ SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
             }
          }
 
-         /* transfer the computed coefficients to the gcgcol */
+         // transfer the computed coefficients to the gcgcol
          SCIP_CALL( GCGcolAppendSepaMastercutCoeffs(gcgcol, coeffs, nactivecuts[i], i) );
-      }
+      }*/
 
    }
    /* we need to compute the coefficients of the sepa master cuts which were created after the column already existed */
    else
    {
-      /* get the number of coefficients which have already been stored */
+      // get the number of coefficients which have already been stored
       int* ncurrentsepamastercutcoeffs;
       ncurrentsepamastercutcoeffs = GCGcolGetNSepaMastercutCoeffs(gcgcol);
-      for( i = 0; i < GCGcolGetNSepas(gcgcol); i++ )
+      /*for( i = 0; i < GCGcolGetNSepas(gcgcol); i++ )
       {
          assert(ncurrentsepamastercutcoeffs[i] <= nactivecuts[i]);
          if( nactivecuts[i] - ncurrentsepamastercutcoeffs[i] == 0 )
@@ -1700,7 +1700,7 @@ SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
             lastsize = cursize;
          }
 
-         /* determine the coefficients for the new sepa mastercuts */
+         // determine the coefficients for the new sepa mastercuts
          for( j = ncurrentsepamastercutcoeffs[i]; j < nactivecuts[i]; j++ )
          {
             coeffs[j] = 0.0;
@@ -1710,9 +1710,9 @@ SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
             }
          }
 
-         /* transfer the computed coefficients to the gcgcol */
+         // transfer the computed coefficients to the gcgcol
          SCIP_CALL( GCGcolAppendSepaMastercutCoeffs(gcgcol, coeffs, nactivecuts[i] - ncurrentsepamastercutcoeffs[i], i) );
-      }
+      }*/
    }
 
    if( lastsize > 0)
