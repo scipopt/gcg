@@ -34,7 +34,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 #include "pub_gcgcol.h"
 
 #include "gcg.h"
@@ -659,7 +659,6 @@ SCIP_RETCODE GCGcolAppendSepaMastercutCoeffs(
       gcgcol->sepamastercutcoeffs[sepaidx][gcgcol->nsepamastercutcoeffs[sepaidx]] = sepamastercoeffs[i];
       ++(gcgcol->nsepamastercutcoeffs[sepaidx]);
    }
-   SCIPdebugMessage("\n");
    assert(gcgcol->nsepamastercutcoeffs[sepaidx] == oldncoeffs + nsepamastercoeffs);
 
    return SCIP_OKAY;
