@@ -120,9 +120,7 @@ SCIP_RETCODE GCGpricingmodificationCreate(
    SCIP_VAR**             additionalvars,      /**< array of additional variables with no objective coefficient in the pricing programs inferred from the master cut */
    int                    nadditionalvars,     /**< number of additional variables in the pricing programs */
    SCIP_CONS**            additionalconss,     /**< array of additional constraints in the pricing programs inferred from the master cut */
-   int                    nadditionalconss,     /**< number of additional constraints in the pricing programs */
-   GCG_DECL_MASTERCUTAPPLYFARKASMODIFICATION ((*applyfarkasmodification)), /**< method to apply the Farkas modification */
-   GCG_DECL_MASTERCUTAPPLYREDCOSTMODIFICATION ((*applyredcostmodification)) /**< method to apply the reduced cost modification */
+   int                    nadditionalconss     /**< number of additional constraints in the pricing programs */
    )
 {
    SCIP* originalproblem;
@@ -163,8 +161,6 @@ SCIP_RETCODE GCGpricingmodificationCreate(
    (*pricingmodification)->nadditionalvars = nadditionalvars;
    (*pricingmodification)->additionalconss = additionalconss;
    (*pricingmodification)->nadditionalconss = nadditionalconss;
-   (*pricingmodification)->applyfarkasmodification = applyfarkasmodification;
-   (*pricingmodification)->applyredcostmodification = applyredcostmodification;
 
    return SCIP_OKAY;
 }
@@ -560,7 +556,6 @@ int GCGmastercutGetNPricingModifications(
 /** apply a pricing modification */
 SCIP_RETCODE GCGpricingmodificationApply(
    SCIP*                  pricingscip,        /**< pricing scip */
-   GCG_PRICETYPE          pricetype,          /**< pricing type */
    GCG_PRICINGMODIFICATION* pricingmodification /**< pricing modification */
    )
 {
@@ -568,17 +563,6 @@ SCIP_RETCODE GCGpricingmodificationApply(
 
    assert(pricingscip != NULL);
    assert(pricingmodification != NULL);
-
-   if( pricetype == GCG_PRICETYPE_FARKAS )
-   {
-      assert(pricingmodification->applyfarkasmodification != NULL);
-      SCIP_CALL( pricingmodification->applyfarkasmodification(pricingscip, pricingmodification) );
-   }
-   else if( pricetype == GCG_PRICETYPE_REDCOST )
-   {
-      assert(pricingmodification->applyredcostmodification != NULL);
-      SCIP_CALL( pricingmodification->applyredcostmodification(pricingscip, pricingmodification) );
-   }
 
    // add the inferred pricing variables
    assert(GCGvarIsInferredPricing(pricingmodification->coefvar));
@@ -602,7 +586,6 @@ SCIP_RETCODE GCGpricingmodificationApply(
 /** apply all pricing modifications */
 SCIP_RETCODE GCGmastercutApplyPricingModifications(
    SCIP*                  masterscip,         /**< master scip */
-   GCG_PRICETYPE          pricetype,          /**< pricing type */
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
    )
 {
@@ -620,7 +603,7 @@ SCIP_RETCODE GCGmastercutApplyPricingModifications(
    {
       pricingprob = GCGgetPricingprob(origscip, mastercutdata->pricingmodifications[i]->blocknr);
       assert(pricingprob != NULL);
-      SCIP_CALL( GCGpricingmodificationApply(pricingprob, pricetype, mastercutdata->pricingmodifications[i]) );
+      SCIP_CALL( GCGpricingmodificationApply(pricingprob, mastercutdata->pricingmodifications[i]) );
    }
 
    return SCIP_OKAY;

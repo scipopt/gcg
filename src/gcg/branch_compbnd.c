@@ -95,32 +95,6 @@ struct GCG_BranchData
  * Mastercutdata pricingmod modifications for pricing
  */
 
-/** method to apply the Farkas modification in down branch */
-static
-GCG_DECL_MASTERCUTAPPLYFARKASMODIFICATION(farkas_down)
-{
-   SCIP_CALL( SCIPchgVarUb(pricingscip, pricingmodification->coefvar, 0.0) );
-   return SCIP_OKAY;
-}
-
-/** method to apply the Farkas modification in up branch */
-static
-GCG_DECL_MASTERCUTAPPLYFARKASMODIFICATION(farkas_up)
-{
-   SCIP_CALL( SCIPchgVarLb(pricingscip, pricingmodification->coefvar, 1.0) );
-   return SCIP_OKAY;
-}
-
-/** method to apply the reduced cost modification (lb=0, ub=1) */
-static
-GCG_DECL_MASTERCUTAPPLYREDCOSTMODIFICATION(reducedcost)
-{
-   SCIP_CALL( SCIPchgVarLb(pricingscip, pricingmodification->coefvar, 0.0) );
-   SCIP_CALL( SCIPchgVarUb(pricingscip, pricingmodification->coefvar, 1.0) );
-   return SCIP_OKAY;
-}
-
-
 /*
  * Local methods
  */
@@ -792,9 +766,7 @@ SCIP_RETCODE createBranchingCons(
       additionalvars,
       nadditionalvars,
       additionalcons,
-      nadditionalcons,
-      branchdata->branchtype == GCG_BRANCH_DOWN ? farkas_down : farkas_up,
-      reducedcost
+      nadditionalcons
    ) );
    assert(pricingmod != NULL);
 
