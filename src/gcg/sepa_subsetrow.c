@@ -32,7 +32,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 #include <assert.h>
 
 #include "mastercutdata.h"
@@ -44,6 +44,7 @@
 #include "struct_sepagcg.h"
 #include "type_mastercutdata.h"
 #include "type_sepagcg.h"
+#include "event_sepacuts.h"
 
 
 
@@ -51,11 +52,12 @@
 #define SEPA_NAME              "subsetrow"
 #define SEPA_DESC              "subsetrow separator"
 #define SEPA_PRIORITY                 0
-#define SEPA_FREQ                    10
+#define SEPA_FREQ                    100
 #define SEPA_MAXBOUNDDIST           1.0
 #define SEPA_USESSUBSCIP          FALSE /**< does the separator use a secondary SCIP instance? */
 #define SEPA_DELAY                FALSE /**< should separation method be delayed, if other separators found cuts? */
 #define STARTMAXCUTS                50
+#define DEFAULT_RANDSEED       71
 
 /*
  * Data structures
@@ -66,7 +68,10 @@
 /** separator data */
 struct SCIP_SepaData
 {
-   int                     sepaidx;
+   int                     sepaidx;       /**< index of the separator in relaxdata->separators */
+   int                     ngeneratedcut; /**< counts the number of cuts generated */
+   SCIP_RANDNUMGEN*        randnumgen;    /**< random number generator (for strategy RANDOM) */
+   SCIP_Bool               enable;        /**< is this separator enabled?*/
 };
 
 
@@ -78,10 +83,17 @@ struct SCIP_SepaData
 
 
 #define sepaCopySubsetrow NULL
-#define sepaExitSubsetrow NULL
 #define sepaExecsolSubsetrow NULL
 
+static
+SCIP_DECL_SEPAEXIT(sepaExitSubsetrow)
+{
+   SCIP_SEPADATA* sepadata;
+   SCIPdebugMessage("exit sgcg sepa subsetrow\n");
 
+
+   return SCIP_OKAY;
+}
 
 /** destructor of separator to free user data (called when SCIP is exiting) */
 static
@@ -94,17 +106,302 @@ SCIP_DECL_SEPAFREE(sepaFreeSubsetrow)
 
    SCIPdebugMessage("free gcg sepa subsetrow sepa data\n");
    sepadata = SCIPsepaGetData(sepa);
+   SCIPfreeRandom(scip, &(sepadata->randnumgen));
    SCIPfreeBlockMemory(scip, &sepadata);
 
    return SCIP_OKAY;
 }
 
 
+static
+SCIP_RETCODE selectRandomRows(
+   SCIP_SEPADATA* sepadata,                   /**< sepa data */
+   int            nmasterconss,               /**< number of constraints in the master problem */
+   int*           selectedmasterconssidx,     /**< pointer to store the indices of the selected constraints */
+   int            n                           /**< number of constraints to be selected */
+   )
+{
+   int i;
+   int j;
+
+   assert(n > 0 && n < nmasterconss);
+
+   /* randomly select n of indices out of [0, ..., nmasterconss - 1] */
+   i = 0;
+   while( i < n )
+   {
+      selectedmasterconssidx[i] = SCIPrandomGetInt(sepadata->randnumgen, 0, nmasterconss-1);
+
+      /* if we get an element that we already had, we will draw again */
+      for( j = 0; j < i; j++ )
+      {
+         if( selectedmasterconssidx[i] == selectedmasterconssidx[j] )
+         {
+            --i;
+            break;
+         }
+      }
+      ++i;
+   }
+
+   for( i = 0; i < n; i++ )
+   {
+      SCIPdebugMessage("select index %i\n", selectedmasterconssidx[i]);
+      assert(0 <= selectedmasterconssidx[i] && selectedmasterconssidx[i] < nmasterconss);
+
+   }
+
+   return SCIP_OKAY;
+}
+
+static
+SCIP_RETCODE createSubsetRowCut(
+   SCIP*          masterscip,
+   SCIP_ROW**     ssrc,
+   SCIP_HASHMAP*  mapmastervarxcoeff,
+   SCIP_Real      rhs_ssrc,
+   SCIP_SEPA*     sepa
+   )
+{
+   int nssrcvars;
+   int i;
+
+   SCIPdebugMessage("create subset row cut\n");
+   /* create 'empty' subset row cut of form -inf <= ... <= rhs_ssrc
+    * - local, removable, modifiable */
+   SCIP_CALL( SCIPcreateEmptyRowSepa(masterscip, &(*ssrc), sepa, "subsetrow", -SCIPinfinity(masterscip), floor(rhs_ssrc), TRUE, TRUE, TRUE) );
+   assert(ssrc != NULL);
+   assert(*ssrc != NULL);
+   nssrcvars = SCIPhashmapGetNEntries(mapmastervarxcoeff);
+   SCIPdebugMessage("row contains %i variables \n", nssrcvars);
+   for( i = 0; i < nssrcvars; i++ )
+   {
+      SCIP_HASHMAPENTRY* entry;
+      SCIP_VAR* mastervar;
+      SCIP_Real ssrc_coeff;
+
+      entry = SCIPhashmapGetEntry(mapmastervarxcoeff, i);
+      if( entry == NULL )
+      {
+         //SCIPdebugMessage("entry is NULL\n");
+         continue;
+      }
+      mastervar = (SCIP_VAR*) SCIPhashmapEntryGetOrigin(entry);
+      ssrc_coeff = SCIPhashmapEntryGetImageReal(entry);
+      ssrc_coeff = floor(ssrc_coeff);
+      if( !SCIPisZero(masterscip, ssrc_coeff) )
+      {
+         SCIPdebugMessage("Add master variable %s with coefficient %f to subset row cut\n", SCIPvarGetName(mastervar), ssrc_coeff);
+         SCIP_CALL( SCIPaddVarToRow(masterscip, *ssrc, mastervar, ssrc_coeff) );
+      }
+   }
+   return SCIP_OKAY;
+}
+
+static
+SCIP_RETCODE computeSubsetRowCoefficientsAndRHS(
+   SCIP*          masterscip,             /**< SCIP data structure of master problem */
+   SCIP_CONS**    masterconss,            /**< constraints of the master problem */
+   int*           selectedconssidx,       /**< indices of the selected constraints */
+   int            nselectedconss,         /**< number of selected constraints */
+   int            k,                      /**< define the weights 1/k or -1/k */
+   SCIP_Real**    weights,                /**< pointer to store weights of the selected constraints */
+   SCIP_HASHMAP*  mapmastervarxcoeff,     /**< map to store the computed subsetrow coefficient for each master variable */
+   SCIP_Real*     rhs_ssrc                /**< pointer to store rhs of subsetrow */
+   )
+{
+   SCIP_CONS* mastercons;
+   SCIP_VAR** masterconsvars;
+   SCIP_Real* masterconscoeffs;
+   SCIP_Real  rhs_mastercons;
+   SCIP_Real  lhs_mastercons;
+   SCIP_Real  coeff_ssrc;
+   SCIP_Bool  success;
+   int        nmasterconsvars;
+   int        i;
+   int        j;
+
+   assert(masterscip != NULL);
+   assert(mapmastervarxcoeff != NULL);
+   assert(k != 0);
+
+   *rhs_ssrc = 0;
+   for( i = 0; i < nselectedconss; i++ )
+   {
+      /* lhs <= ax <= rhs */
+      mastercons = masterconss[selectedconssidx[i]];
+      lhs_mastercons = SCIPconsGetLhs(masterscip, mastercons, &success);
+      assert(success);
+      rhs_mastercons = SCIPconsGetRhs(masterscip, mastercons, &success);
+      assert(success);
+
+      /* we want all constraints to have form ax <= b to simplify the summation
+       * - if constraint has form ax <= b: weight is  1/k
+       * - if constraint has form b <= ax: weight is -1/k (to transform it to -ax <= -b) */
+      if( SCIPisInfinity(masterscip, -lhs_mastercons ) ) // lhs = -inf --> constraint has form: ax <= b
+      {
+         (*weights)[i] = 1.0 / k;
+         (*rhs_ssrc) += (*weights)[i] * rhs_mastercons;
+         SCIPdebugMessage("master constraint %s (ax <= %f) with weight %f\n", SCIPconsGetName(mastercons), rhs_mastercons, (*weights)[i]);
+      }
+      else if( SCIPisInfinity(masterscip, rhs_mastercons ) ) // lhs != -inf & rhs = inf --> constraint has form: b <= ax
+      {
+         (*weights)[i] = -1.0 / k;
+         (*rhs_ssrc) += (*weights)[i] * lhs_mastercons;
+         SCIPdebugMessage("master constraint %s (%f <= ax) with weight %f\n", SCIPconsGetName(mastercons), lhs_mastercons, (*weights)[i]);
+      }
+      else // lhs != -inf & rhs != inf --> constraint has form: b_l <= ax <= b_r
+      {
+         /* we use the right side: ax <= b_r */
+         (*weights)[i] = 1.0 / k;
+         (*rhs_ssrc) += (*weights)[i] * rhs_mastercons;
+         SCIPdebugMessage("master constraint %s (%f <= ax <= %f) with weight\n", SCIPconsGetName(mastercons), lhs_mastercons, rhs_mastercons);
+      }
+
+      SCIPdebugMessage("rhs of subset row cut: %f\n", *rhs_ssrc);
+
+      /* get all variables and there corresponding coefficients in the master constraint */
+      masterconsvars = NULL;
+      masterconscoeffs = NULL;
+      SCIP_CALL( SCIPgetConsNVars(masterscip, mastercons, &nmasterconsvars, &success) );
+      assert(success);
+      if( nmasterconsvars == 0 )
+      {
+         SCIPdebugMessage("constraint has no variables\n");
+         continue;
+      }
+
+      SCIPallocBufferArray(masterscip, &masterconsvars, nmasterconsvars);
+      SCIPallocBufferArray(masterscip, &masterconscoeffs, nmasterconsvars);
+      SCIP_CALL( SCIPgetConsVars(masterscip, mastercons, masterconsvars, nmasterconsvars, &success) );
+      assert(success);
+      SCIP_CALL( SCIPgetConsVals(masterscip, mastercons, masterconscoeffs, nmasterconsvars, &success) );
+      assert(success);
+
+      /* for each variable add its weighted coefficient in this constraint to its coefficient for the subsetrow cut */
+      for( j = 0; j < nmasterconsvars; j++ )
+      {
+         coeff_ssrc = SCIPhashmapGetImageReal(mapmastervarxcoeff, masterconsvars[j]);
+         if( coeff_ssrc == SCIP_INVALID )
+         {
+            SCIPhashmapSetImageReal(mapmastervarxcoeff, masterconsvars[j], (*weights)[i] * masterconscoeffs[j]);
+         }
+         else
+         {
+            SCIPhashmapSetImageReal(mapmastervarxcoeff, masterconsvars[j], coeff_ssrc + (*weights)[i] * masterconscoeffs[j]);
+         }
+      }
+
+      SCIPfreeBufferArray(masterscip, &masterconsvars);
+      SCIPfreeBufferArray(masterscip, &masterconscoeffs);
+   }
+
+   return SCIP_OKAY;
+}
+
 /** LP solution separation method of separator */
 static
 SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
-{  /*lint --e{715}*/
-   SCIPdebugMessage("sepaExeclpSubsetrow\n");
+{
+   SCIP*          origscip;
+   SCIP_SEPADATA* sepadata;
+   SCIP_ROW*      ssrc;
+   SCIP_HASHMAP*  mapmastervarxcoeff;// maps master variable to its coefficient in the subset row
+   SCIP_CONS**    masterconss;         // a              : constraints in master problem
+   SCIP_CONS**    originalconss;       // A              : constraints in original problem
+   int            nmasterconss;                // m              : number of constraints in master problem
+   int            nmastervars;                 // number of variables in master problem
+   SCIP_Real      rhs_ssrc;
+   int            n;                           // n = |S| > 0    : number of constraints used to construct subset row
+   int            k;                           // k > 0          : defines the possible weights
+   int            strategy;                    // 0 = RANDOM, 1 = ZERO-HALF
+   int*           selectedconssidx;           // indices of constraints used to construct subset row
+   SCIP_Real*     weights;              // w in {-1/k, 1/k}^n: vector of weights for selected constraints
+   SCIP_Bool      feasible;
+   int i;
+
+   assert(scip != NULL);
+   assert(result != NULL);
+   assert(sepa != NULL);
+   assert(GCGisMaster(scip));
+
+   origscip = GCGmasterGetOrigprob(scip);
+   assert(origscip != NULL);
+
+   sepadata = SCIPsepaGetData(sepa);
+   assert(sepadata != NULL);
+
+   *result = SCIP_DIDNOTFIND;
+   SCIPdebugMessage("Start subsetrow cut exec\n");
+   if( !sepadata->enable )
+   {
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
+   if( SCIPgetLPSolstat(scip) != SCIP_LPSOLSTAT_OPTIMAL )
+   {
+      SCIPdebugMessage("master LP not solved to optimality, do no separation!\n");
+      return SCIP_OKAY;
+   }
+
+   if( GCGgetNRelPricingprobs(origscip) < GCGgetNPricingprobs(origscip) )
+   {
+      SCIPdebugMessage("aggregated pricing problems, do no separation!\n");
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
+   /* ensure to separate current sol */
+   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
+
+   n = 3;
+   k = 2;
+
+   SCIPdebugMessage("Get master data\n");
+   /* get info of master problem */
+   originalconss = GCGgetOrigMasterConss(origscip);
+   masterconss = GCGgetMasterConss(origscip);
+   nmasterconss = GCGgetNMasterConss(origscip);
+   nmastervars = SCIPgetNVars(scip);
+
+   for( i = 0; i < 1; i ++ )
+   {
+      /* select n constraints and store their indices in selectedconssidx */
+      SCIPdebugMessage("Select %i out of %i constraints\n", n, nmasterconss);
+      selectedconssidx = NULL;
+      SCIPallocBufferArray(scip, &selectedconssidx, n);
+      SCIP_CALL( selectRandomRows(sepadata, nmasterconss, selectedconssidx, n) );
+
+      /* determine the variables, their coefficients and rhs in subset row */
+      SCIPdebugMessage("Compute coefficients and rhs for subset row\n");
+      weights = NULL;
+      mapmastervarxcoeff = NULL;
+      SCIPallocBufferArray(scip, &weights, n);
+      SCIPhashmapCreate(&mapmastervarxcoeff, SCIPblkmem(scip), nmastervars);
+      SCIP_CALL( computeSubsetRowCoefficientsAndRHS(scip, masterconss, selectedconssidx, n, k,
+                                                    &weights, mapmastervarxcoeff, &rhs_ssrc) );
+
+      /* create the subsetrow cut and add it do master sepa store*/
+      SCIPdebugMessage("Create ssrc\n");
+      ssrc = NULL;
+      SCIP_CALL( createSubsetRowCut(scip, &ssrc, mapmastervarxcoeff, rhs_ssrc, sepa) );
+      assert(ssrc != NULL);
+
+      SCIP_CALL( SCIPaddRow(scip, ssrc, TRUE, &feasible) );
+      //GCG_MASTERCUTDATA* mastercutdata = NULL;
+      //SCIP_CALL( GCGmastercutCreateFromRow(scip, &mastercutdata, ssrc, NULL, 0) );
+      //SCIP_CALL( GCGaddCutToGeneratedCutsSepa(scip, mastercutdata, sepadata->sepaidx) );
+      SCIPreleaseRow(scip, &ssrc);
+
+      /* create the pricing modifications */
+
+      /* free used data structure */
+      SCIPhashmapFree(&mapmastervarxcoeff);
+      SCIPfreeBufferArray(scip, &selectedconssidx);
+      SCIPfreeBufferArray(scip, &weights);
+      SCIPdebugMessage("End subsetrow cut exec\n");
+   }
 
    return SCIP_OKAY;
 }
@@ -167,6 +464,7 @@ SCIP_DECL_SEPAINIT(sepaInitSubsetrow)
    sepadata->sepaidx = GCGrelaxIncludeSeparator(origscip, sepa, gcgsepaGetVarCoefficientSubsetrow,
                                                 gcgsepaGetColCoefficientSubsetrow, gcgsepaSetObjectiveSubsetrow);
 
+
    return SCIP_OKAY;
 }
 
@@ -185,8 +483,15 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
 
    /* create subsetrow separator data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &sepadata) );
-   sepadata->sepaidx = 0;
    sepa = NULL;
+   sepadata->sepaidx = 0;
+   sepadata->ngeneratedcut = 0;
+   sepadata->randnumgen = NULL;
+   sepadata->enable = FALSE;
+   /* create random number generator */
+   SCIP_CALL( SCIPcreateRandom(scip, &(sepadata->randnumgen),
+                               SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED), TRUE) );
+
    SCIP_CALL( SCIPincludeSepaBasic(scip, &sepa, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
                                    SEPA_USESSUBSCIP, SEPA_DELAY,
                                    sepaExeclpSubsetrow, sepaExecsolSubsetrow,
@@ -196,6 +501,11 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
    /* set non fundamental callbacks via setter functions */
    SCIP_CALL( SCIPsetSepaFree(scip, sepa, sepaFreeSubsetrow) );
    SCIP_CALL( SCIPsetSepaInit(scip, sepa, sepaInitSubsetrow) );
+   SCIP_CALL( SCIPsetSepaExitsol(scip, sepa, sepaExitSubsetrow) );
+
+   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enable", "enable subsetrow separator",
+      &(sepadata->enable), FALSE, TRUE, NULL, NULL) );
+
 
    return SCIP_OKAY;
 }
