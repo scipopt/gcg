@@ -29,9 +29,6 @@
  *
  * @brief  component bound branching rule
  * @author Til Mohr
- * @author Marcel Schmickerath
- * @author Martin Bergner
- * @author Jonas Witt
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
