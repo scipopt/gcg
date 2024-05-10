@@ -219,10 +219,15 @@
             ]
         },
         {
-            "name": "gcg-linux",
-            "inherits": "gcg-default",
-            "displayName": "GCG Linux Default Build",
-            "description": "Default GCG Linux development build",
+            "name": "gcg-default-all",
+            "displayName": "GCG Default Build (all)",
+            "description": "Default GCG development build (all targets)",
+            "hidden": true
+        },
+        {
+            "name": "gcg-gcc-pb",
+            "displayName": "GCG GCC Parallel Build",
+            "description": "GCG GCC parallel build",
             "hidden": true,
             "nativeToolOptions": [
                 "-j12"
@@ -230,55 +235,123 @@
         },
         {
             "name": "gcg-linux-debug",
-            "inherits": "gcg-linux",
+            "inherits": [
+                "gcg-default",
+                "gcg-gcc-pb"
+            ],
             "configurePreset": "gcg-linux-debug",
             "displayName": "GCG Linux Debug Build",
             "description": "GCG Linux development debug build"
         },
         {
             "name": "gcg-linux-release",
-            "inherits": "gcg-linux",
+            "inherits": [
+                "gcg-default",
+                "gcg-gcc-pb"
+            ],
             "configurePreset": "gcg-linux-release",
             "displayName": "GCG Linux Release Build",
             "description": "GCG Linux development release build"
         },
         {
             "name": "gcg-linux-relwithdebinfo",
-            "inherits": "gcg-linux",
+            "inherits": [
+                "gcg-default",
+                "gcg-gcc-pb"
+            ],
             "configurePreset": "gcg-linux-relwithdebinfo",
             "displayName": "GCG Linux RelWithDebInfo Build",
             "description": "GCG Linux development release with debug info build"
         },
         {
-            "name": "gcg-macos",
-            "inherits": "gcg-default",
-            "displayName": "GCG macOS Default Build",
-            "description": "Default GCG macOS development build",
-            "hidden": true,
-            "nativeToolOptions": [
-                "-j12"
-            ]
+            "name": "gcg-linux-debug-all",
+            "inherits": [
+                "gcg-default-all",
+                "gcg-gcc-pb"
+            ],
+            "configurePreset": "gcg-linux-debug",
+            "displayName": "GCG Linux Debug Build (all)",
+            "description": "GCG Linux development debug build (all targets)"
+        },
+        {
+            "name": "gcg-linux-release-all",
+            "inherits": [
+                "gcg-default-all",
+                "gcg-gcc-pb"
+            ],
+            "configurePreset": "gcg-linux-release",
+            "displayName": "GCG Linux Release Build (all)",
+            "description": "GCG Linux development release build (all targets)"
+        },
+        {
+            "name": "gcg-linux-relwithdebinfo-all",
+            "inherits": [
+                "gcg-default-all",
+                "gcg-gcc-pb"
+            ],
+            "configurePreset": "gcg-linux-relwithdebinfo",
+            "displayName": "GCG Linux RelWithDebInfo Build (all)",
+            "description": "GCG Linux development release with debug info build (all targets)"
         },
         {
             "name": "gcg-macos-debug",
-            "inherits": "gcg-macos",
+            "inherits": [
+                "gcg-default",
+                "gcg-gcc-pb"
+            ],
             "configurePreset": "gcg-macos-debug",
             "displayName": "GCG macOS Debug Build",
             "description": "GCG macOS development debug build"
         },
         {
             "name": "gcg-macos-release",
-            "inherits": "gcg-macos",
+            "inherits": [
+                "gcg-default",
+                "gcg-gcc-pb"
+            ],
             "configurePreset": "gcg-macos-release",
             "displayName": "GCG macOS Release Build",
             "description": "GCG macOS development release build"
         },
         {
             "name": "gcg-macos-relwithdebinfo",
-            "inherits": "gcg-macos",
+            "inherits": [
+                "gcg-default",
+                "gcg-gcc-pb"
+            ],
             "configurePreset": "gcg-macos-relwithdebinfo",
             "displayName": "GCG macOS RelWithDebInfo Build",
             "description": "GCG macOS development release with debug info build"
+        },
+        {
+            "name": "gcg-macos-debug-all",
+            "inherits": [
+                "gcg-default-all",
+                "gcg-gcc-pb"
+            ],
+            "configurePreset": "gcg-macos-debug",
+            "displayName": "GCG macOS Debug Build (all)",
+            "description": "GCG macOS development debug build (all targets)"
+        },
+        {
+            "name": "gcg-macos-release-all",
+            "inherits": [
+                "gcg-default-all",
+                "gcg-gcc-pb"
+            ],
+            "configurePreset": "gcg-macos-release",
+            "displayName": "GCG macOS Release Build (all)",
+            "description": "GCG macOS development release build (all targets)"
+        },
+        {
+            "name": "gcg-macos-relwithdebinfo-all",
+            "inherits": [
+                "gcg-default-all",
+                "gcg-gcc-pb"
+            ],
+            "configurePreset": "gcg-macos-relwithdebinfo",
+            "displayName": "GCG macOS RelWithDebInfo Build (all)",
+            "description": "GCG macOS development release with debug info build (all targets)"
         },
         {
             "name": "gcg-windows-debug",
@@ -303,6 +376,30 @@
             "configuration": "RelWithDebInfo",
             "displayName": "GCG Windows RelWithDebInfo Build",
             "description": "GCG Windows development release with debug info build"
+        },
+        {
+            "name": "gcg-windows-debug-all",
+            "inherits": "gcg-default-all",
+            "configurePreset": "gcg-windows-debug",
+            "configuration": "Debug",
+            "displayName": "GCG Windows Debug Build (all)",
+            "description": "GCG Windows development debug build (all targets)"
+        },
+        {
+            "name": "gcg-windows-release-all",
+            "inherits": "gcg-default-all",
+            "configurePreset": "gcg-windows-release",
+            "configuration": "Release",
+            "displayName": "GCG Windows Release Build (all)",
+            "description": "GCG Windows development release build (all targets)"
+        },
+        {
+            "name": "gcg-windows-relwithdebinfo-all",
+            "inherits": "gcg-default-all",
+            "configurePreset": "gcg-windows-release",
+            "configuration": "RelWithDebInfo",
+            "displayName": "GCG Windows RelWithDebInfo Build (all)",
+            "description": "GCG Windows development release with debug info build (all targets)"
         }
     ],
     "testPresets": [
