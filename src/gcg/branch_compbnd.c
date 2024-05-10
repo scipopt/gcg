@@ -411,8 +411,7 @@ SCIP_Bool isMasterVarInB(
    SCIP_VAR*             mastervar,          /**< master variable to check */
    GCG_COMPBND*          B,                  /**< component bound sequence to check */
    int                   Bsize,              /**< size of B */
-   int                   blocknr,            /**< block we are branching in */
-   SCIP_Bool             ignoreNoEntry       /**< whether to ignore the components for which the mastervar has no generator entry */
+   int                   blocknr             /**< block we are branching in */
    )
 {
    int i;
@@ -429,14 +428,7 @@ SCIP_Bool isMasterVarInB(
    {
       if( !hasGeneratorEntry(mastervar, B[i].component, blocknr) )
       {
-         if( ignoreNoEntry )
-         {
-            continue;
-         }
-         else
-         {
-            return FALSE;
-         }
+         return FALSE;
       }
 
       generatorentry = getGeneratorEntry(mastervar, B[i].component);
@@ -490,7 +482,7 @@ SCIP_RETCODE addVarToMasterbranch(
    )
       return SCIP_OKAY;
 
-   if( !isMasterVarInB(scip, mastervar, branchdata->B, branchdata->Bsize, branchdata->blocknr, FALSE) )
+   if( !isMasterVarInB(scip, mastervar, branchdata->B, branchdata->Bsize, branchdata->blocknr) )
       return SCIP_OKAY;
 
    branchingcons = NULL;
@@ -541,8 +533,7 @@ SCIP_RETCODE addVarToMasterbranch(
             mastervars[i],
             branchdata->B,
             branchdata->Bsize,
-            branchdata->blocknr,
-            FALSE
+            branchdata->blocknr
          )
       )
       {
@@ -840,7 +831,7 @@ SCIP_RETCODE createChildNodesCompBnd(
             mastervars[i],
             GCGgetBlockRepresentative(scip, blocknr)
          )
-         && isMasterVarInB(scip, mastervars[i], B, Bsize, blocknr, FALSE)
+         && isMasterVarInB(scip, mastervars[i], B, Bsize, blocknr)
       )
       {
          constantSum += SCIPgetSolVal(masterscip, NULL, mastervars[i]);
@@ -1090,7 +1081,7 @@ SCIP_RETCODE _separation(
    if( *Bsize > 0 ) {
       for( int i = 0; i < Xsize; ++i )
       {
-         assert(isMasterVarInB(masterscip, X[i], *B, *Bsize, blocknr, FALSE));
+         assert(isMasterVarInB(masterscip, X[i], *B, *Bsize, blocknr));
       }
    }
 
@@ -1268,7 +1259,7 @@ SCIP_RETCODE _separation(
       SCIP_Bool inB1 = FALSE;
       SCIP_Bool inB2 = FALSE;
 #endif
-      if( isMasterVarInB(masterscip, X[x], B1, new_Bsize, blocknr, FALSE) )
+      if( isMasterVarInB(masterscip, X[x], B1, new_Bsize, blocknr) )
       {
          // increase the size of X1 by 1, and add the current variable to X1
          if( X1size == 0 )
@@ -1282,7 +1273,7 @@ SCIP_RETCODE _separation(
          inB1 = TRUE;
 #endif
       }
-      if( isMasterVarInB(masterscip, X[x], B2, new_Bsize, blocknr, FALSE) )
+      if( isMasterVarInB(masterscip, X[x], B2, new_Bsize, blocknr) )
       {
          // increase the size of X2 by 1, and add the current variable to X2
          if( X2size == 0 )
@@ -1457,7 +1448,7 @@ SCIP_RETCODE createInitialSetX(
       if( !GCGisMasterVarInBlock(mastervars[i], blocknr) )
          continue;
 
-      if( *Bsize > 0 && !isMasterVarInB(masterscip, mastervars[i], *B, *Bsize, blocknr, FALSE) )
+      if( *Bsize > 0 && !isMasterVarInB(masterscip, mastervars[i], *B, *Bsize, blocknr) )
             continue;
 
       if( *Xsize == 0 )
