@@ -290,7 +290,7 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
 
    (*mastercutdata)->type = GCG_MASTERCUTTYPE_ROW;
    (*mastercutdata)->cut.row = row;
-   SCIP_CALL( SCIPcaptureRow(scip, (*mastercutdata)->cut.row) );
+   //SCIP_CALL( SCIPcaptureRow(scip, (*mastercutdata)->cut.row) );
    (*mastercutdata)->pricingmodifications = pricingmodifications;
    (*mastercutdata)->npricingmodifications = npricingmodifications;
 

@@ -329,7 +329,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
       ncols = SCIProwGetNNonz(origcut);
       cols = SCIProwGetCols(origcut);
       vals = SCIProwGetVals(origcut);
-
       /* get the variables corresponding to the columns in the cut */
       SCIP_CALL( SCIPallocBufferArray(scip, &rowvars, ncols) );
       for( j = 0; j < ncols; j++ )
@@ -340,6 +339,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
       /* transform the original variables to master variables */
       shift = GCGtransformOrigvalsToMastervals(GCGmasterGetOrigprob(scip), rowvars, vals, ncols, mastervars, mastervals,
             nmastervars);
+      //SCIProwGetConstant()
 
       /* create new cut in the master problem */
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "mc_%s", SCIProwGetName(origcut));
@@ -349,10 +349,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
             ( SCIPisInfinity(scip, SCIProwGetRhs(origcut)) ?
               SCIProwGetRhs(origcut) : SCIProwGetRhs(origcut) - SCIProwGetConstant(origcut) - shift),
             SCIProwIsLocal(origcut), TRUE, FALSE) );
-
+      //SCIPinfoMessage(scip, NULL, "LHS: %i, RHS %f\n", SCIPisInfinity(scip, -SCIProwGetLhs(mastercut)), SCIProwGetRhs(mastercut));
       /* add master variables to the cut */
       SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
-
       /* add the cut to the master problem */
       SCIP_CALL( SCIPaddRow(scip, mastercut, FALSE, &feasible) );
       sepadata->mastercuts[sepadata->ncuts] = mastercut;
@@ -361,8 +360,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
       SCIP_CALL( SCIPcaptureRow(origscip, origcut) );
       sepadata->ncuts++;
       mastercutdata = NULL;
-      SCIP_CALL( GCGmastercutCreateFromRow(scip, &mastercutdata, mastercut, NULL, 0) );
-      SCIP_CALL( GCGaddCutToGeneratedCutsSepa(scip, mastercutdata, sepadata->sepaidx) );
+      //SCIP_CALL( GCGmastercutCreateFromRow(scip, &mastercutdata, mastercut, NULL, 0) );
+      //SCIP_CALL( GCGaddCutToGeneratedCutsSepa(scip, mastercutdata, sepadata->sepaidx) );
 
 
 #ifdef SCIP_DEBUG

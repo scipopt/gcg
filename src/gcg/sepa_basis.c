@@ -1535,8 +1535,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          SCIP_CALL( GCGsepaAddOriginalSepaCuts(scip, origcut, mastercut) );
          GCG_MASTERCUTDATA* mastercutdata;
          mastercutdata = NULL;
-         SCIP_CALL( GCGmastercutCreateFromRow(scip, &mastercutdata, mastercut, NULL, 0) );
-         SCIP_CALL( GCGaddCutToGeneratedCutsSepa(scip, mastercutdata, sepadata->sepaidx) );
+         //SCIP_CALL( GCGmastercutCreateFromRow(scip, &mastercutdata, mastercut, NULL, 0) );
+         //SCIP_CALL( GCGaddCutToGeneratedCutsSepa(scip, mastercutdata, sepadata->sepaidx) );
 
          SCIP_CALL( SCIPreleaseRow(scip, &mastercut) );
          SCIPfreeBufferArray(scip, &roworigvars);
