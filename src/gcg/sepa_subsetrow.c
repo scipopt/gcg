@@ -355,6 +355,8 @@ SCIP_RETCODE computePricingConssCoefficients(
          /* use the pricing variable corresponding to the original variable as key in map */
          //SCIPdebugMessage("orig var %s belongs to block %i\n", SCIPvarGetName(origconsvars[j]), GCGvarGetBlock(origconsvars[j]));
          pricingvar = GCGoriginalVarGetPricingVar(origconsvars[j]);
+         if( pricingvar == NULL )
+            continue;
          assert(pricingvar != NULL);
          coeff_pricing = SCIPhashmapGetImageReal(mappricingvarxcoeff, pricingvar);
          if( coeff_pricing == SCIP_INVALID )
