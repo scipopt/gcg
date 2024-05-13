@@ -315,6 +315,7 @@ SCIP_RETCODE computePricingConssCoefficients(
 {
    SCIP_CONS* origcons;
    SCIP_VAR** origconsvars;
+   SCIP_VAR* pricingvar;
    SCIP_VARDATA* origvardata;
    SCIP_Real* origconscoeffs;
    SCIP_Real coeff_pricing;
@@ -348,22 +349,23 @@ SCIP_RETCODE computePricingConssCoefficients(
       assert(success);
       SCIP_CALL( SCIPgetConsVals(origscip, origcons, origconscoeffs, norigconsvars, &success) );
       assert(success);
-
+      SCIPdebugMessage("number of orig vars %i\n", norigconsvars);
       for( j = 0; j < norigconsvars; j++ )
       {
          /* use the pricing variable corresponding to the original variable as key in map */
-         origvardata = SCIPvarGetData(origconsvars[j]);
-         assert(origvardata->vartype == GCG_VARTYPE_ORIGINAL);
-         assert(origvardata->data.origvardata.pricingvar != NULL);
-         coeff_pricing = SCIPhashmapGetImageReal(mappricingvarxcoeff, origvardata->data.origvardata.pricingvar);
+         //SCIPdebugMessage("orig var %s belongs to block %i\n", SCIPvarGetName(origconsvars[j]), GCGvarGetBlock(origconsvars[j]));
+         pricingvar = GCGoriginalVarGetPricingVar(origconsvars[j]);
+         assert(pricingvar != NULL);
+         coeff_pricing = SCIPhashmapGetImageReal(mappricingvarxcoeff, pricingvar);
          if( coeff_pricing == SCIP_INVALID )
          {
-            SCIPhashmapSetImageReal(mappricingvarxcoeff, origvardata->data.origvardata.pricingvar, weights[i] * origconscoeffs[j]);
+            //SCIPdebugMessage("pricing var %s: add %f * %f\n", SCIPvarGetName(pricingvar), weights[i], origconscoeffs[j]);
+            SCIPhashmapSetImageReal(mappricingvarxcoeff, pricingvar, weights[i] * origconscoeffs[j]);
          }
          else
          {
-            SCIPdebugMessage("add %f * %f to %f\n", weights[i], origconscoeffs[j], coeff_pricing);
-            SCIPhashmapSetImageReal(mappricingvarxcoeff, origvardata->data.origvardata.pricingvar, coeff_pricing + weights[i] * origconscoeffs[j]);
+            //SCIPdebugMessage("pricing var %s: add %f * %f to %f\n", SCIPvarGetName(pricingvar), weights[i], origconscoeffs[j], coeff_pricing);
+            SCIPhashmapSetImageReal(mappricingvarxcoeff, pricingvar, coeff_pricing + weights[i] * origconscoeffs[j]);
          }
       }
 
@@ -442,7 +444,13 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    originalconss = GCGgetOrigMasterConss(origscip);
    masterconss = GCGgetMasterConss(origscip);
    nmasterconss = GCGgetNMasterConss(origscip);
-   assert(n < nmasterconss);
+   if( n >= nmasterconss )
+   {
+      SCIPdebugMessage("Not enough constraints to build subsetrow: n = %i >= nmasterconss = %i!\n", n, nmasterconss);
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
 
    for( i = 0; i < 1; i ++ )
    {
@@ -499,7 +507,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
 
          npricingvars = SCIPgetNVars(pricingproblem);
          pricingvars = SCIPgetVars(pricingproblem);
-
+         //SCIPdebugMessage("number of pricing vars in problem %i: %i\n", j, npricingvars);
          SCIP_CALL( SCIPallocBlockMemoryArray(pricingproblem, &pricingconss, 1) ); // freed via GCGpricingmodificationFree
 
          /* create (and capture) 'empty' pricing constraint: -inf <= ... <= 1 - EPSILON */
@@ -516,7 +524,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
             pricingcoeff = SCIPhashmapGetImageReal(mappricingvarxcoeff, pricingvars[l]);
             if( pricingcoeff == SCIP_INVALID )
                continue;
-            SCIPdebugMessage("pricingcoeff is %f\n", pricingcoeff);
+
             pricingcoeff = floor(pricingcoeff);
             if( !SCIPisZero(pricingproblem, pricingcoeff) )
             {
