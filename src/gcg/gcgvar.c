@@ -129,6 +129,21 @@ SCIP_DECL_VARDELTRANS(gcgvardeltrans)
 }
 
 
+/** callback method called when an original GCG variable is deleted */
+static
+SCIP_DECL_VARDELORIG(GCGvarDelInferredPricing)
+{
+   if( *vardata == NULL )
+      return SCIP_OKAY;
+
+   assert((*vardata)->vartype == GCG_VARTYPE_INFERREDPRICING);
+
+   SCIPfreeBlockMemory(scip, vardata);
+
+   return SCIP_OKAY;
+}
+
+
 
 /** returns TRUE or FALSE whether variable is a pricing variable or not */
 SCIP_Bool GCGvarIsPricing(
@@ -1605,7 +1620,7 @@ SCIP_RETCODE GCGcreateInferredPricingVar(
 
    /* create variable in the master problem */
    SCIP_CALL( SCIPcreateVar(pricingscip, newvar, varname, lb, ub,
-         objcoeff, vartype, TRUE, TRUE, GCGvarDelOrig,
+         objcoeff, vartype, TRUE, TRUE, GCGvarDelInferredPricing,
          NULL, NULL, NULL, newvardata) );
 
    return SCIP_OKAY;
