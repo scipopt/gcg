@@ -1605,7 +1605,7 @@ SCIP_RETCODE GCGcreateInferredPricingVar(
 
    /* create variable in the master problem */
    SCIP_CALL( SCIPcreateVar(pricingscip, newvar, varname, lb, ub,
-         objcoeff, vartype, TRUE, TRUE, NULL,
+         objcoeff, vartype, TRUE, TRUE, GCGvarDelOrig,
          NULL, NULL, NULL, newvardata) );
 
    return SCIP_OKAY;
