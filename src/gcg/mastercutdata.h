@@ -242,7 +242,6 @@ SCIP_RETCODE GCGmastercutFreeMaster(
 /** apply all pricing modifications */
 SCIP_RETCODE GCGmastercutApplyPricingModificationsIndex(
    SCIP*                  masterscip,         /**< master scip */
-   GCG_PRICETYPE          pricetype,          /**< pricing type */
    GCG_MASTERCUTDATA*     mastercutdata,       /**< mastercut data */
    int                    index                /**< index of the mastercutdata in active cuts*/
 );

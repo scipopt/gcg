@@ -565,7 +565,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
          /* create pricing modifications containing y as the coeffvar and a single constraint */
          SCIPdebugMessage("create pricing modification for pricing problem %i\n", j);
          SCIP_CALL( GCGpricingmodificationCreate(scip, &pricingmodification, j, coeffvar, NULL,
-                                                 0, pricingconss, 1, NULL, NULL) ); // released in GCGpricingmodificationFree
+                                                 0, pricingconss, 1) ); // released in GCGpricingmodificationFree
 
          /* ensure we have enough memory for all the pricing modifications */
          if( npricingmodifcations == 0 )
@@ -588,10 +588,10 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       GCG_MASTERCUTDATA* mastercutdata = NULL;
       SCIP_CALL( GCGmastercutCreateFromRow(scip, &mastercutdata, ssrc, pricingmodifications, npricingmodifcations) ); // freed in GCGmastercutFree
 
-      SCIP_CALL( GCGmastercutFree(origscip, &mastercutdata) );
+      //SCIP_CALL( GCGmastercutFree(origscip, &mastercutdata) );
       /* add the subsetrow cut to the sepa store of the master problem and the generated cuts*/
-      //SCIP_CALL( SCIPaddRow(scip, ssrc, TRUE, &success) );
-      //GCGaddCutToGeneratedCutsSepa(scip, mastercutdata, sepadata->sepaidx);
+      //SCIP_CALL( SCIPaddRow(scip, ssrc, FALSE, &success) );
+      SCIP_CALL( GCGaddCutToGeneratedCutsSepa(scip, mastercutdata, sepadata->sepaidx) );
       //SCIPreleaseRow(scip, &ssrc);
 
       /* free used data structure */

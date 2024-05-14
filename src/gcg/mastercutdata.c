@@ -643,7 +643,6 @@ SCIP_RETCODE GCGpricingmodificationApply(
 /** apply all pricing modifications */
 SCIP_RETCODE GCGmastercutApplyPricingModificationsIndex(
    SCIP*                  masterscip,         /**< master scip */
-   GCG_PRICETYPE          pricetype,          /**< pricing type */
    GCG_MASTERCUTDATA*     mastercutdata,       /**< mastercut data */
    int                    index                /**< index of the mastercutdata in active cuts*/
 )
@@ -663,7 +662,7 @@ SCIP_RETCODE GCGmastercutApplyPricingModificationsIndex(
       SCIP_CALL( setCoeffVarSetIndex(mastercutdata->pricingmodifications[i], index) );
       pricingprob = GCGgetPricingprob(origscip, mastercutdata->pricingmodifications[i]->blocknr);
       assert(pricingprob != NULL);
-      SCIP_CALL( GCGpricingmodificationApply(pricingprob, pricetype, mastercutdata->pricingmodifications[i]) );
+      SCIP_CALL( GCGpricingmodificationApply(pricingprob, mastercutdata->pricingmodifications[i]) );
    }
 
    return SCIP_OKAY;

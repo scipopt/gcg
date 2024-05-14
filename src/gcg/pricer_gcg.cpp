@@ -3243,7 +3243,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       {
          if( GCGmastercutIsActive(activecuts[i][j]->mastercutdata) )
          {
-            SCIP_CALL( GCGmastercutApplyPricingModificationsIndex(scip_, pricetype->getType(), activecuts[i][j]->mastercutdata, j) );
+            SCIP_CALL( GCGmastercutApplyPricingModificationsIndex(scip_, activecuts[i][j]->mastercutdata, j) );
          }
       }
    }
