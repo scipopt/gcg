@@ -56,8 +56,6 @@ struct GCG_PricingModification
    int                   nadditionalvars;    /**< number of additional variables in the pricing programs */
    SCIP_CONS**           additionalconss;    /**< array of additional constraints in the pricing programs inferred from the master cut */
    int                   nadditionalconss;   /**< number of additional constraints in the pricing programs */
-   GCG_DECL_MASTERCUTAPPLYFARKASMODIFICATION ((*applyfarkasmodification)); /**< method to apply the Farkas modification */
-   GCG_DECL_MASTERCUTAPPLYREDCOSTMODIFICATION ((*applyredcostmodification)); /**< method to apply the reduced cost modification */
 };
 
 /** type of master cut */

@@ -256,7 +256,7 @@ GCG_PRICINGSTATUS getPricingstatus(
           || SCIPgetStatus(pricingprob) == SCIP_STATUS_INFORUNBD);
 
    /* translate SCIP solution status to GCG pricing status */
-   switch( SCIPgetStatus(pricingprob) ) 
+   switch( SCIPgetStatus(pricingprob) )
    {
    case SCIP_STATUS_USERINTERRUPT:
      SCIPdebugMessage("  -> interrupted, %d solutions found\n", SCIPgetNSols(pricingprob)); /*lint -fallthrough*/

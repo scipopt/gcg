@@ -59,7 +59,6 @@ SCIP_RETCODE GCGcreateGcgCol(
 {
    int i;
    int nnonz;
-   int ninferrednonz;
 
    SCIP_CALL( SCIPallocBlockMemory(pricingprob, gcgcol) );
 
@@ -88,7 +87,6 @@ SCIP_RETCODE GCGcreateGcgCol(
 
 
    nnonz = 0;
-   ninferrednonz = 0;
    for( i = 0; i < nvars; ++i )
    {
       SCIP_VAR* origvar;

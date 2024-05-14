@@ -36,6 +36,7 @@
 #include "def.h"
 #include "mastercutdata.h"
 #include "gcg.h"
+#include "gcg/scip_misc.h"
 #include "pricer_gcg.h"
 #include "struct_mastercutdata.h"
 
@@ -44,6 +45,7 @@
 #include <scip/pub_cons.h>
 #include <scip/pub_lp.h>
 #include <scip/scip.h>
+#include <scip/scip_prob.h>
 #include <scip/struct_scip.h>
 #include <scip/struct_mem.h>
 #include <scip/struct_var.h>
@@ -132,9 +134,7 @@ SCIP_RETCODE GCGpricingmodificationCreate(
    SCIP_VAR**             additionalvars,      /**< array of additional variables with no objective coefficient in the pricing programs inferred from the master cut */
    int                    nadditionalvars,     /**< number of additional variables in the pricing programs */
    SCIP_CONS**            additionalconss,     /**< array of additional constraints in the pricing programs inferred from the master cut */
-   int                    nadditionalconss,     /**< number of additional constraints in the pricing programs */
-   GCG_DECL_MASTERCUTAPPLYFARKASMODIFICATION ((*applyfarkasmodification)), /**< method to apply the Farkas modification */
-   GCG_DECL_MASTERCUTAPPLYREDCOSTMODIFICATION ((*applyredcostmodification)) /**< method to apply the reduced cost modification */
+   int                    nadditionalconss     /**< number of additional constraints in the pricing programs */
    )
 {
    SCIP* originalproblem;
@@ -175,8 +175,6 @@ SCIP_RETCODE GCGpricingmodificationCreate(
    (*pricingmodification)->nadditionalvars = nadditionalvars;
    (*pricingmodification)->additionalconss = additionalconss;
    (*pricingmodification)->nadditionalconss = nadditionalconss;
-   (*pricingmodification)->applyfarkasmodification = applyfarkasmodification;
-   (*pricingmodification)->applyredcostmodification = applyredcostmodification;
 
    return SCIP_OKAY;
 }
@@ -615,7 +613,6 @@ int GCGmastercutGetNPricingModifications(
 /** apply a pricing modification */
 SCIP_RETCODE GCGpricingmodificationApply(
    SCIP*                  pricingscip,        /**< pricing scip */
-   GCG_PRICETYPE          pricetype,          /**< pricing type */
    GCG_PRICINGMODIFICATION* pricingmodification /**< pricing modification */
    )
 {
@@ -623,17 +620,6 @@ SCIP_RETCODE GCGpricingmodificationApply(
 
    assert(pricingscip != NULL);
    assert(pricingmodification != NULL);
-
-   if( pricetype == GCG_PRICETYPE_FARKAS )
-   {
-      assert(pricingmodification->applyfarkasmodification != NULL);
-      SCIP_CALL( pricingmodification->applyfarkasmodification(pricingscip, pricingmodification) );
-   }
-   else if( pricetype == GCG_PRICETYPE_REDCOST )
-   {
-      assert(pricingmodification->applyredcostmodification != NULL);
-      SCIP_CALL( pricingmodification->applyredcostmodification(pricingscip, pricingmodification) );
-   }
 
    // add the inferred pricing variables
    assert(GCGvarIsInferredPricing(pricingmodification->coefvar));
@@ -686,7 +672,6 @@ SCIP_RETCODE GCGmastercutApplyPricingModificationsIndex(
 /** apply all pricing modifications */
 SCIP_RETCODE GCGmastercutApplyPricingModifications(
    SCIP*                  masterscip,         /**< master scip */
-   GCG_PRICETYPE          pricetype,          /**< pricing type */
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
    )
 {
@@ -704,7 +689,7 @@ SCIP_RETCODE GCGmastercutApplyPricingModifications(
    {
       pricingprob = GCGgetPricingprob(origscip, mastercutdata->pricingmodifications[i]->blocknr);
       assert(pricingprob != NULL);
-      SCIP_CALL( GCGpricingmodificationApply(pricingprob, pricetype, mastercutdata->pricingmodifications[i]) );
+      SCIP_CALL( GCGpricingmodificationApply(pricingprob, mastercutdata->pricingmodifications[i]) );
    }
 
    return SCIP_OKAY;
@@ -821,5 +806,70 @@ const char* GCGmastercutGetName(
    default:
       SCIP_CALL_ABORT( SCIP_ERROR );
       return NULL;
+   }
+}
+
+/** get the lhs of the mastercut */
+SCIP_Real GCGmastercutGetLhs(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   )
+{
+   assert(mastercutdata != NULL);
+
+   switch( mastercutdata->type )
+   {
+   case GCG_MASTERCUTTYPE_CONS:
+      assert(mastercutdata->cut.cons != NULL);
+      return GCGconsGetLhs(scip, mastercutdata->cut.cons);
+   case GCG_MASTERCUTTYPE_ROW:
+      assert(mastercutdata->cut.row != NULL);
+      return SCIProwGetLhs(mastercutdata->cut.row);
+   default:
+      SCIP_CALL_ABORT( SCIP_ERROR );
+      return SCIP_INVALID;
+   }
+}
+
+/** get the rhs of the mastercut */
+SCIP_Real GCGmastercutGetRhs(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   )
+{
+   assert(mastercutdata != NULL);
+
+   switch( mastercutdata->type )
+   {
+   case GCG_MASTERCUTTYPE_CONS:
+      assert(mastercutdata->cut.cons != NULL);
+      return GCGconsGetRhs(scip, mastercutdata->cut.cons);
+   case GCG_MASTERCUTTYPE_ROW:
+      assert(mastercutdata->cut.row != NULL);
+      return SCIProwGetRhs(mastercutdata->cut.row);
+   default:
+      SCIP_CALL_ABORT( SCIP_ERROR );
+      return SCIP_INVALID;
+   }
+}
+
+/** get the constant of the mastercut (always returns 0 if mastercut is a constraint, returns constant of row otherwise) */
+SCIP_Real GCGmastercutGetConstant(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   )
+{
+   assert(mastercutdata != NULL);
+
+   switch( mastercutdata->type )
+   {
+   case GCG_MASTERCUTTYPE_CONS:
+      return 0.0;
+   case GCG_MASTERCUTTYPE_ROW:
+      assert(mastercutdata->cut.row != NULL);
+      return SCIProwGetConstant(mastercutdata->cut.row);
+   default:
+      SCIP_CALL_ABORT( SCIP_ERROR );
+      return SCIP_INVALID;
    }
 }

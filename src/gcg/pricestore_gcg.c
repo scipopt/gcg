@@ -311,6 +311,13 @@ SCIP_RETCODE GCGpricestoreAddCol(
          var = col->vars[i];
          val = col->vals[i];
 
+         if( GCGvarIsInferredPricing(var) )
+         {
+            continue;
+         }
+
+         assert(GCGvarIsPricing(var));
+
          assert(SCIPisFeasGE(col->pricingprob, val, SCIPvarGetLbGlobal(GCGpricingVarGetOrigvars(var)[0])) &&
                 SCIPisFeasLE(col->pricingprob, val, SCIPvarGetUbGlobal(GCGpricingVarGetOrigvars(var)[0])));
       }

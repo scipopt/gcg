@@ -564,7 +564,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
    SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
    SCIP_CALL( SCIPincludeHeurXpcrossover(scip) );
-   SCIP_CALL( SCIPincludeHeurXprins(scip) );
+   //SCIP_CALL( SCIPincludeHeurXprins(scip) );
 
    /* Jonas' stuff */
    SCIP_CALL( SCIPsetSeparating(scip, SCIP_PARAMSETTING_OFF, TRUE) );
