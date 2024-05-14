@@ -68,7 +68,7 @@ SCIP_RETCODE setCoeffVarSetIndex(
 }
 
 /** free a pricing modification */
-static
+//static
 SCIP_RETCODE GCGpricingmodificationFree(
    SCIP*                  scip,               /**< SCIP data structure */
    GCG_PRICINGMODIFICATION** pricingmodification /**< pointer to the pricing modification */
@@ -87,7 +87,7 @@ SCIP_RETCODE GCGpricingmodificationFree(
    pricingscip = GCGgetPricingprob(scip, (*pricingmodification)->blocknr);
 
    BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
-
+   SCIPinfoMessage(pricingscip, NULL, "release coeff var\n");
    SCIP_CALL( SCIPreleaseVar(pricingscip, &(*pricingmodification)->coefvar) );
 
    BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
@@ -100,6 +100,7 @@ SCIP_RETCODE GCGpricingmodificationFree(
 
    for( i = 0; i < (*pricingmodification)->nadditionalconss; i++ )
    {
+      SCIPinfoMessage(pricingscip, NULL, "release cons %s\n", SCIPconsGetName((*pricingmodification)->additionalconss[i]));
       SCIP_CALL( SCIPreleaseCons(pricingscip, &(*pricingmodification)->additionalconss[i]) );
       BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
    }
@@ -107,6 +108,7 @@ SCIP_RETCODE GCGpricingmodificationFree(
    BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
    SCIPfreeBlockMemoryArray(pricingscip, &(*pricingmodification)->additionalvars, (*pricingmodification)->nadditionalvars);
    BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
+   SCIPinfoMessage(pricingscip, NULL, "free additionalconss\n");
    SCIPfreeBlockMemoryArray(pricingscip, &(*pricingmodification)->additionalconss, (*pricingmodification)->nadditionalconss);
    BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
    SCIPfreeBlockMemory(masterscip, pricingmodification);
@@ -339,7 +341,7 @@ SCIP_RETCODE GCGmastercutFree(
    {
       SCIP_CALL( GCGpricingmodificationFree(scip, &(*mastercutdata)->pricingmodifications[i]) );
    }
-
+   SCIPinfoMessage(masterscip, NULL, "free %i pricingmodifications", (*mastercutdata)->npricingmodifications);
    SCIPfreeBlockMemoryArray(masterscip, &(*mastercutdata)->pricingmodifications, (*mastercutdata)->npricingmodifications);
    SCIPfreeBlockMemory(masterscip, mastercutdata);
 

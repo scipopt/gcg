@@ -232,6 +232,11 @@ SCIP_RETCODE GCGmastercutApplyPricingModificationsIndex(
    GCG_MASTERCUTDATA*     mastercutdata,       /**< mastercut data */
    int                    index                /**< index of the mastercutdata in active cuts*/
 );
+
+SCIP_RETCODE GCGpricingmodificationFree(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_PRICINGMODIFICATION** pricingmodification /**< pointer to the pricing modification */
+);
 /**@} */
 #ifdef __cplusplus
 }
