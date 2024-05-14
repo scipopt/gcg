@@ -316,7 +316,6 @@ SCIP_RETCODE computePricingConssCoefficients(
    SCIP_CONS* origcons;
    SCIP_VAR** origconsvars;
    SCIP_VAR* pricingvar;
-   SCIP_VARDATA* origvardata;
    SCIP_Real* origconscoeffs;
    SCIP_Real coeff_pricing;
    SCIP_Bool success;
@@ -403,7 +402,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    int                        i;
    int                        j;
 
-
    assert(scip != NULL);
    assert(result != NULL);
    assert(sepa != NULL);
@@ -439,7 +437,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    /* ensure to separate current sol */
    SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
 
-   n = 5;
+   n = 3;
    k = 2;
 
    /* get info of master problem */
@@ -449,6 +447,13 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    if( n >= nmasterconss )
    {
       SCIPdebugMessage("Not enough constraints to build subsetrow: n = %i >= nmasterconss = %i!\n", n, nmasterconss);
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
+   if( SCIPgetCurrentNode(scip) != SCIPgetRootNode(scip) )
+   {
+      SCIPdebugMessage("Only run on root\n");
       *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
@@ -509,7 +514,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
 
          npricingvars = SCIPgetNVars(pricingproblem);
          pricingvars = SCIPgetVars(pricingproblem);
-         //SCIPdebugMessage("number of pricing vars in problem %i: %i\n", j, npricingvars);
+
+         /* we add at most one constraint to each pricing problem */
          SCIP_CALL( SCIPallocBlockMemoryArray(pricingproblem, &pricingconss, 1) ); // freed via GCGpricingmodificationFree
 
          /* create (and capture) 'empty' pricing constraint: -inf <= ... <= 1 - EPSILON */
@@ -538,7 +544,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
 
          /* if no variables were actually added, the constraint is useless and can be released */
          SCIP_CALL( SCIPgetConsNVars(pricingproblem, pricingconss[0], &nvars, &success) );
-         if( nvars == 0 )
+         if( nvars == 0  )
          {
             SCIPdebugMessage("constraint was empty --> release\n");
             SCIP_CALL( SCIPreleaseCons(pricingproblem, &pricingconss[0]) );
@@ -552,6 +558,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
          SCIP_CALL( GCGcreateInferredPricingVar(pricingproblem, &coeffvar, "subsetrow_coef", 0.0,
                                                 SCIPinfinity(pricingproblem), -1.0, SCIP_VARTYPE_INTEGER, j) ); // released in GCGpricingmodificationFree
 
+
          /* add y to constraint such that: -inf <= w^TAx - y <= 1 - EPSILON (or -inf <= w^TAx - 1 + EPSILON <= y)*/
          SCIP_CALL( SCIPaddCoefLinear(pricingproblem, pricingconss[0], coeffvar, -1.0) );
 
@@ -560,36 +567,34 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
          SCIP_CALL( GCGpricingmodificationCreate(scip, &pricingmodification, j, coeffvar, NULL,
                                                  0, pricingconss, 1, NULL, NULL) ); // released in GCGpricingmodificationFree
 
+         /* ensure we have enough memory for all the pricing modifications */
          if( npricingmodifcations == 0 )
          {
-            SCIPallocBlockMemoryArray(scip, &pricingmodifications, 1);
+            SCIPallocBlockMemoryArray(scip, &pricingmodifications, 1); // freed in GCGmastercutFree
          }
          else
          {
-            SCIPreallocBlockMemoryArray(scip, &pricingmodifications, npricingmodifcations, npricingmodifcations + 1);
+            SCIPreallocBlockMemoryArray(scip, &pricingmodifications, npricingmodifcations, npricingmodifcations + 1); // freed in GCGmastercutFree
          }
+
          pricingmodifications[npricingmodifcations] = pricingmodification;
          npricingmodifcations++;
       }
+      SCIPdebugMessage("number of pricing mods: %i\n", npricingmodifcations);
 
-      if( npricingmodifcations != 0 )
-      {
-         SCIPdebugMessage("free pricing mods\n");
-         SCIPfreeBlockMemoryArray(scip, &pricingmodifications, npricingmodifcations);
-      }
 
       /* create a mastercutdata containing y, ssrc and the pricing modifications */
-      //SCIPdebugMessage("create mastercut for subsetrow cut\n");
-      //GCG_MASTERCUTDATA* mastercutdata = NULL;
-      //SCIP_CALL( GCGmastercutCreateFromRow(scip, &mastercutdata, ssrc, pricingmodifications, npricingmodifcations) ); // freed in GCGmastercutFree
+      SCIPdebugMessage("create mastercut for subsetrow cut\n");
+      GCG_MASTERCUTDATA* mastercutdata = NULL;
+      SCIP_CALL( GCGmastercutCreateFromRow(scip, &mastercutdata, ssrc, pricingmodifications, npricingmodifcations) ); // freed in GCGmastercutFree
 
-      //SCIP_CALL( GCGmastercutFree(origscip, &mastercutdata) );
+      SCIP_CALL( GCGmastercutFree(origscip, &mastercutdata) );
       /* add the subsetrow cut to the sepa store of the master problem and the generated cuts*/
       //SCIP_CALL( SCIPaddRow(scip, ssrc, TRUE, &success) );
       //GCGaddCutToGeneratedCutsSepa(scip, mastercutdata, sepadata->sepaidx);
       //SCIPreleaseRow(scip, &ssrc);
+
       /* free used data structure */
-      SCIPreleaseRow(scip, &ssrc);
       SCIPhashmapFree(&mapmastervarxcoeff);
       SCIPhashmapFree(&mappricingvarxcoeff);
       SCIPfreeBufferArray(scip, &selectedconssidx);
