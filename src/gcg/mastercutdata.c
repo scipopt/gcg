@@ -89,7 +89,7 @@ SCIP_RETCODE GCGpricingmodificationFree(
    pricingscip = GCGgetPricingprob(scip, (*pricingmodification)->blocknr);
 
    BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
-   SCIPinfoMessage(pricingscip, NULL, "release coeff var\n");
+   //SCIPinfoMessage(pricingscip, NULL, "release coeff var\n");
    SCIP_CALL( SCIPreleaseVar(pricingscip, &(*pricingmodification)->coefvar) );
 
    BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
@@ -102,7 +102,7 @@ SCIP_RETCODE GCGpricingmodificationFree(
 
    for( i = 0; i < (*pricingmodification)->nadditionalconss; i++ )
    {
-      SCIPinfoMessage(pricingscip, NULL, "release cons %s\n", SCIPconsGetName((*pricingmodification)->additionalconss[i]));
+      //SCIPinfoMessage(pricingscip, NULL, "release cons %s\n", SCIPconsGetName((*pricingmodification)->additionalconss[i]));
       SCIP_CALL( SCIPreleaseCons(pricingscip, &(*pricingmodification)->additionalconss[i]) );
       BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
    }
@@ -110,7 +110,7 @@ SCIP_RETCODE GCGpricingmodificationFree(
    BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
    SCIPfreeBlockMemoryArray(pricingscip, &(*pricingmodification)->additionalvars, (*pricingmodification)->nadditionalvars);
    BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
-   SCIPinfoMessage(pricingscip, NULL, "free additionalconss\n");
+   //SCIPinfoMessage(pricingscip, NULL, "free additionalconss\n");
    SCIPfreeBlockMemoryArray(pricingscip, &(*pricingmodification)->additionalconss, (*pricingmodification)->nadditionalconss);
    BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
    SCIPfreeBlockMemory(masterscip, pricingmodification);
@@ -235,6 +235,7 @@ SCIP_RETCODE GCGmastercutCreateFromCons(
       pricingmodifications[i]->coefvar->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
       for( j = 0; j < pricingmodifications[i]->nadditionalvars; j++ ) {
          pricingmodifications[i]->additionalvars[j]->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
+         pricingmodifications[i]->additionalvars[j]->vardata->data.inferredpricingvardata.index = -1;
       }
    }
 
@@ -298,6 +299,7 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
       pricingmodifications[i]->coefvar->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
       for( j = 0; j < pricingmodifications[i]->nadditionalvars; j++ ) {
          pricingmodifications[i]->additionalvars[j]->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
+         pricingmodifications[i]->additionalvars[j]->vardata->data.inferredpricingvardata.index = -1;
       }
    }
 
@@ -339,7 +341,7 @@ SCIP_RETCODE GCGmastercutFree(
    {
       SCIP_CALL( GCGpricingmodificationFree(scip, &(*mastercutdata)->pricingmodifications[i]) );
    }
-   SCIPinfoMessage(masterscip, NULL, "free %i pricingmodifications", (*mastercutdata)->npricingmodifications);
+   //SCIPinfoMessage(masterscip, NULL, "free %i pricingmodifications", (*mastercutdata)->npricingmodifications);
    SCIPfreeBlockMemoryArray(masterscip, &(*mastercutdata)->pricingmodifications, (*mastercutdata)->npricingmodifications);
    SCIPfreeBlockMemory(masterscip, mastercutdata);
 
@@ -512,6 +514,16 @@ SCIP_RETCODE GCGmastercutGetRow(
    *row = mastercutdata->cut.row;
 
    return SCIP_OKAY;
+}
+
+/** get the block number of the pricing problem the modification belongs to */
+int GCGpricingmodificationGetBlock(
+   GCG_PRICINGMODIFICATION*   pricingmodification /**< pricing modification */
+   )
+{
+   assert(pricingmodification != NULL);
+
+   return pricingmodification->blocknr;
 }
 
 /** get the variable that determines the coefficient of a column in the master cut */

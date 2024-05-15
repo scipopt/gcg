@@ -61,7 +61,7 @@ typedef struct GCG_Sepa GCG_SEPA;             /**< separator for master problem*
  *    gcgcol          : the column representing a new master variable which should be included in cut
  *    coef            : stores the computed coefficient
  */
-#define GCG_DECL_SEPAGETCOLCOEFFICIENTS(x) SCIP_RETCODE x (SCIP* scip, GCG_SEPA* sepa, GCG_COL* gcgcol, SCIP_Real** coef, int ncoeffs)
+#define GCG_DECL_SEPAGETCOLCOEFFICIENTS(x) SCIP_RETCODE x (SCIP* scip, GCG_SEPA* sepa, GCG_COL* gcgcol, SCIP_Real** coeffs, int ncoeffs)
 
 /** method for computing the column coefficient for a cut
  *
@@ -74,7 +74,7 @@ typedef struct GCG_Sepa GCG_SEPA;             /**< separator for master problem*
  *    nvars           :
  *    coef            :
  */
-#define GCG_DECL_SEPAGETVARCOEFFICIENT(x) SCIP_RETCODE x (SCIP* scip, GCG_SEPA* sepa, GCG_MASTERCUTDATA* cut, SCIP_VAR** vars, SCIP_Real* vals, int nvars, SCIP_Real* coef)
+#define GCG_DECL_SEPAGETVARCOEFFICIENT(x) SCIP_RETCODE x (SCIP* scip, GCG_SEPA* sepa, GCG_MASTERCUTDATA* cut, SCIP_VAR** vars, SCIP_Real* vals, int nvars, int probnr, SCIP_Real* coef)
 
 
 /** method for modifying the objectives of pricing problems to account for master cut
@@ -85,7 +85,7 @@ typedef struct GCG_Sepa GCG_SEPA;             /**< separator for master problem*
  *    cut             : cut which has to be altered
  *    dual            : dual for objective
  */
-#define GCG_DECL_SEPASETOBJECTIVE(x) SCIP_RETCODE x (SCIP* scip, GCG_SEPA* sepa, GCG_MASTERCUTDATA* cut, SCIP_Real dual)
+#define GCG_DECL_SEPASETOBJECTIVE(x) SCIP_RETCODE x (SCIP* scip, GCG_SEPA* sepa, GCG_MASTERCUTDATA* cut, SCIP_Real dual, SCIP_Real*** realdualvalues)
 
 #ifdef __cplusplus
 }

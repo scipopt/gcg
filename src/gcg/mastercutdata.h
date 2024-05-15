@@ -211,6 +211,12 @@ SCIP_Bool GCGmastercutIsCoefVar(
    SCIP_VAR*              var                 /**< variable to check */
    );
 
+/** get the block number of the pricing problem the modification belongs to */
+int GCGpricingmodificationGetBlock(
+   GCG_PRICINGMODIFICATION*   pricingmodification /**< pricing modification */
+);
+
+
 /** get name of the mastercut */
 const char* GCGmastercutGetName(
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
