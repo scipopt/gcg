@@ -88,11 +88,12 @@ SCIP_RETCODE GCGpricingmodificationFree(
       SCIP_CALL( SCIPreleaseCons(pricingscip, &(*pricingmodification)->additionalconss[i]) );
    }
 
-   SCIPfreeBlockMemoryArray(pricingscip, &(*pricingmodification)->additionalvars, (*pricingmodification)->nadditionalvars);
-   SCIPfreeBlockMemoryArray(pricingscip, &(*pricingmodification)->additionalconss, (*pricingmodification)->nadditionalconss);
-   SCIPfreeBlockMemory(masterscip, pricingmodification);
-
-   *pricingmodification = NULL;
+   SCIPfreeBlockMemoryArrayNull(pricingscip, &(*pricingmodification)->additionalvars, (*pricingmodification)->nadditionalvars);
+   assert((*pricingmodification)->additionalvars == NULL);
+   SCIPfreeBlockMemoryArrayNull(pricingscip, &(*pricingmodification)->additionalconss, (*pricingmodification)->nadditionalconss);
+   assert((*pricingmodification)->additionalconss == NULL);
+   SCIPfreeBlockMemoryNull(masterscip, pricingmodification);
+   assert(*pricingmodification == NULL);
 
    return SCIP_OKAY;
 }
@@ -315,9 +316,9 @@ SCIP_RETCODE GCGmastercutFree(
       assert((*mastercutdata)->pricingmodifications[i] == NULL);
    }
 
-   SCIPfreeBlockMemoryArray(masterscip, &(*mastercutdata)->pricingmodifications, (*mastercutdata)->npricingmodifications);
+   SCIPfreeBlockMemoryArrayNull(masterscip, &(*mastercutdata)->pricingmodifications, (*mastercutdata)->npricingmodifications);
    assert((*mastercutdata)->pricingmodifications == NULL);
-   SCIPfreeBlockMemory(masterscip, mastercutdata);
+   SCIPfreeBlockMemoryNull(masterscip, mastercutdata);
    assert(*mastercutdata == NULL);
 
    return SCIP_OKAY;
@@ -394,7 +395,7 @@ SCIP_RETCODE GCGmastercutUpdateDualValue(
       assert(mastercutdata->pricingmodifications[i] != NULL);
       assert(mastercutdata->pricingmodifications[i]->coefvar != NULL);
       assert(GCGvarIsInferredPricing(mastercutdata->pricingmodifications[i]->coefvar));
-      assert(SCIPvarGetProbindex(mastercutdata->pricingmodifications[i]->coefvar) == mastercutdata->pricingmodifications[i]->blocknr);
+      assert(GCGgetBlockRepresentative(origscip, SCIPvarGetProbindex(mastercutdata->pricingmodifications[i]->coefvar)) == mastercutdata->pricingmodifications[i]->blocknr);
 
       pricingscip = GCGgetPricingprob(origscip, mastercutdata->pricingmodifications[i]->blocknr);
       assert(pricingscip != NULL);
