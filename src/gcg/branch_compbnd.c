@@ -262,7 +262,7 @@ SCIP_RETCODE simplifyComponentBounds(
 
       for( j=i+1; j<*Bsize; ++j )
       {
-         if( SCIPvarGetName(component) != SCIPvarGetName((*B)[j].component) )
+         if( SCIPvarCompare(component, (*B)[j].component) != 0 )
             continue;
          if( (*B)[i].sense != (*B)[j].sense )
             continue;
@@ -1315,7 +1315,14 @@ SCIP_RETCODE _separation(
          SCIP_CALL( _separation(masterscip, X1, X1size, &B1, &new_Bsize, blocknr, numInitialVars, result, FALSE) );
 
          // copy the new component bound sequence B1 into B
-         SCIPreallocBlockMemoryArray(masterscip, B, *Bsize, new_Bsize);
+         if( *Bsize == 0 )
+         {
+            SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, B, new_Bsize) );
+         }
+         else
+         {
+            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, B, *Bsize, new_Bsize) );
+         }
          for( i = 0; i < new_Bsize; ++i )
          {
             (*B)[i] = B1[i];
@@ -1338,7 +1345,14 @@ SCIP_RETCODE _separation(
          SCIP_CALL( _separation(masterscip, X2, X2size, &B2, &new_Bsize, blocknr, numInitialVars, result, FALSE) );
 
          // copy the new component bound sequence B2 into B, and free B2
-         SCIPreallocBlockMemoryArray(masterscip, B, *Bsize, new_Bsize);
+         if( *Bsize == 0 )
+         {
+            SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, B, new_Bsize) );
+         }
+         else
+         {
+            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, B, *Bsize, new_Bsize) );
+         }
          for( i = 0; i < new_Bsize; ++i )
          {
             (*B)[i] = B2[i];
@@ -1361,7 +1375,14 @@ SCIP_RETCODE _separation(
          X2size = 0;
 
          // copy the new component bound sequence B1 into B
-         SCIPreallocBlockMemoryArray(masterscip, B, *Bsize, new_Bsize);
+         if( *Bsize == 0 )
+         {
+            SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, B, new_Bsize) );
+         }
+         else
+         {
+            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, B, *Bsize, new_Bsize) );
+         }
          for( i = 0; i < new_Bsize; ++i )
          {
             (*B)[i] = B1[i];
@@ -1383,7 +1404,14 @@ SCIP_RETCODE _separation(
          X1size = 0;
 
          // copy the new component bound sequence B2 into B
-         SCIPreallocBlockMemoryArray(masterscip, B, *Bsize, new_Bsize);
+         if( *Bsize == 0 )
+         {
+            SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, B, new_Bsize) );
+         }
+         else
+         {
+            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, B, *Bsize, new_Bsize) );
+         }
          for( i = 0; i < new_Bsize; ++i )
          {
             (*B)[i] = B2[i];
@@ -1813,17 +1841,18 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteCompBnd)
    if( (*branchdata)->mastercons != NULL )
    {
       SCIP_CALL( GCGmastercutFree(scip, &(*branchdata)->mastercons) );
+      assert((*branchdata)->mastercons == NULL);
    }
 
    if( (*branchdata)->B != NULL && (*branchdata)->Bsize > 0 )
    {
       SCIPfreeBlockMemoryArrayNull(scip, &((*branchdata)->B), (*branchdata)->Bsize);
-      (*branchdata)->B = NULL;
+      assert((*branchdata)->B == NULL);
       (*branchdata)->Bsize = 0;
    }
 
    SCIPfreeBlockMemoryNull(scip, branchdata);
-   *branchdata = NULL;
+   assert(*branchdata == NULL);
 
    return SCIP_OKAY;
 }
