@@ -76,32 +76,21 @@ SCIP_RETCODE GCGpricingmodificationFree(
    masterscip = GCGgetMasterprob(scip);
    pricingscip = GCGgetPricingprob(scip, (*pricingmodification)->blocknr);
 
-   BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
-
    SCIP_CALL( SCIPreleaseVar(pricingscip, &(*pricingmodification)->coefvar) );
-
-   BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
 
    for( i = 0; i < (*pricingmodification)->nadditionalvars; i++ )
    {
       SCIP_CALL( SCIPreleaseVar(pricingscip, &(*pricingmodification)->additionalvars[i]) );
-      BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
    }
 
    for( i = 0; i < (*pricingmodification)->nadditionalconss; i++ )
    {
       SCIP_CALL( SCIPreleaseCons(pricingscip, &(*pricingmodification)->additionalconss[i]) );
-      BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
    }
 
-   BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
    SCIPfreeBlockMemoryArray(pricingscip, &(*pricingmodification)->additionalvars, (*pricingmodification)->nadditionalvars);
-   BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
    SCIPfreeBlockMemoryArray(pricingscip, &(*pricingmodification)->additionalconss, (*pricingmodification)->nadditionalconss);
-   BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
    SCIPfreeBlockMemory(masterscip, pricingmodification);
-
-   BMSgarbagecollectBlockMemory(pricingscip->mem->probmem);
 
    *pricingmodification = NULL;
 
@@ -207,7 +196,7 @@ SCIP_RETCODE GCGmastercutCreateFromCons(
    }
 
 #ifndef NDEBUG
-   SCIPfreeBlockMemory(scip, &seenblocks);
+   SCIPfreeBlockMemoryArrayNull(scip, &seenblocks, GCGgetNPricingprobs(originalproblem));
 #endif
 
    SCIP_CALL( SCIPallocBlockMemory(scip, mastercutdata) );
@@ -269,7 +258,7 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
    }
 
 #ifndef NDEBUG
-   SCIPfreeBlockMemory(scip, &seenblocks);
+   SCIPfreeBlockMemoryArrayNull(scip, &seenblocks, GCGgetNPricingprobs(originalproblem));
 #endif
 
    SCIP_CALL( SCIPallocBlockMemory(scip, mastercutdata) );
@@ -323,12 +312,13 @@ SCIP_RETCODE GCGmastercutFree(
    for( i = 0; i < (*mastercutdata)->npricingmodifications; i++ )
    {
       SCIP_CALL( GCGpricingmodificationFree(scip, &(*mastercutdata)->pricingmodifications[i]) );
+      assert((*mastercutdata)->pricingmodifications[i] == NULL);
    }
 
    SCIPfreeBlockMemoryArray(masterscip, &(*mastercutdata)->pricingmodifications, (*mastercutdata)->npricingmodifications);
+   assert((*mastercutdata)->pricingmodifications == NULL);
    SCIPfreeBlockMemory(masterscip, mastercutdata);
-
-   *mastercutdata = NULL;
+   assert(*mastercutdata == NULL);
 
    return SCIP_OKAY;
 }
