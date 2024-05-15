@@ -1355,6 +1355,8 @@ SCIP_RETCODE GCGcreateMasterVar(
    )
 {
    SCIP_VARDATA* newvardata;
+   SCIP_VAR** pricingvars;
+   int npricingvars;
    SCIP_Real lb;
    int i;
    int j;
@@ -1372,6 +1374,7 @@ SCIP_RETCODE GCGcreateMasterVar(
    assert(solvars != NULL || nsolvars == 0);
 
    trivialsol = FALSE;
+   npricingvars = 0;
 
    lb = 0.0;
    if( auxiliaryvar )
@@ -1418,7 +1421,14 @@ SCIP_RETCODE GCGcreateMasterVar(
     */
    if( newvardata->data.mastervardata.norigvars == 0 && !auxiliaryvar )
    {
-      newvardata->data.mastervardata.norigvars = SCIPgetNOrigVars(pricingscip);
+      npricingvars = SCIPgetNOrigVars(pricingscip);
+      pricingvars = SCIPgetOrigVars(pricingscip);
+      for( i = 0; i < npricingvars; i++ )
+      {
+         if( GCGvarIsInferredPricing(pricingvars[i]) )
+            continue;
+         newvardata->data.mastervardata.norigvars++;
+      }
       trivialsol = TRUE;
    }
 
@@ -1481,31 +1491,28 @@ SCIP_RETCODE GCGcreateMasterVar(
    }
    if( trivialsol )
    {
-      SCIP_VAR** pricingvars;
-      int npricingvars;
-
-      pricingvars = SCIPgetOrigVars(pricingscip);
-      npricingvars = SCIPgetNOrigVars(pricingscip);
-      for( j = 0; j < npricingvars; ++j )
+      j = 0;
+      for( i = 0; i < npricingvars; ++i )
       {
          SCIP_VAR* origvar;
-         assert(GCGvarIsPricing(pricingvars[j]) || GCGvarIsInferredPricing(pricingvars[j]));
+         assert(GCGvarIsPricing(pricingvars[i]) || GCGvarIsInferredPricing(pricingvars[i]));
 
-         if( GCGvarIsInferredPricing(pricingvars[j]) )
+         if( GCGvarIsInferredPricing(pricingvars[i]) )
             continue;
 
-         origvar = GCGpricingVarGetOrigvars(pricingvars[j])[0];
+         origvar = GCGpricingVarGetOrigvars(pricingvars[i])[0];
          assert(origvar != NULL);
 
          assert(newvardata->data.mastervardata.origvars != NULL);
          assert(newvardata->data.mastervardata.origvals != NULL);
          assert(GCGvarIsOriginal(origvar));
          /* save in the master problem variable's data the quota of the corresponding original variable */
-         newvardata->data.mastervardata.origvars[j] = origvar;
-         newvardata->data.mastervardata.origvals[j] = 0.0;
+         newvardata->data.mastervardata.origvars[i] = origvar;
+         newvardata->data.mastervardata.origvals[i] = 0.0;
          SCIPhashmapInsertReal(newvardata->data.mastervardata.origvar2val, origvar, 0.0);
          /* save the quota in the original variable's data */
          SCIP_CALL( GCGoriginalVarAddMasterVar(origscip, origvar, *newvar, 0.0) );
+         j++;
       }
    }
    assert(j == newvardata->data.mastervardata.norigvars);
