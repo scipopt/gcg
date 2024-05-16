@@ -234,7 +234,7 @@ SCIP_RETCODE readNDec(
             }
             if( blockdata.decomposition )
             {
-               BLOCK_STRUCTURE* nestedstructure = blockdata.decomposition->createBlockStructure(detprobdata);
+               BLOCK_STRUCTURE* nestedstructure = blockdata.decomposition->createBlockStructure(scip, detprobdata);
                partialdec->setBlockStructure(block, nestedstructure);
             }
          }
@@ -245,6 +245,7 @@ SCIP_RETCODE readNDec(
             bool success = true;
             auto& symmetrydata = data.rootdecomposition->symmetrydata;
 
+            // check symmetry data
             for( int b = 0; b < partialdec->getNBlocks() && success; ++b )
             {
                int symmetricalblock = data.rootdecomposition->blocks[b].symmetricalblock;
@@ -273,6 +274,7 @@ SCIP_RETCODE readNDec(
                }
             }
 
+            // if successful, set symmetry data
             if( success )
             {
                success = partialdec->setSymmetryInformation(
@@ -353,11 +355,14 @@ NestedDecompositionData::~NestedDecompositionData()
 }
 
 BLOCK_STRUCTURE* DecompositionData::createBlockStructure(
+   SCIP* scip,
    DETPROBDATA* detprobdata
    )
 {
    BLOCK_STRUCTURE* blockstructure = new BLOCK_STRUCTURE();
    int idx;
+
+   // master
    for( auto& cons : masterconstraints )
    {
       idx = detprobdata->getIndexForCons(cons.c_str());
@@ -365,6 +370,8 @@ BLOCK_STRUCTURE* DecompositionData::createBlockStructure(
          blockstructure->masterconss.push_back(idx);
 
    }
+
+   // blocks
    for( auto& blockdata : blocks )
    {
       blockstructure->blockconss.emplace_back();
@@ -375,11 +382,57 @@ BLOCK_STRUCTURE* DecompositionData::createBlockStructure(
             blockstructure->blockconss.back().push_back(idx);
       }
       if( blockdata.decomposition )
-         blockstructure->blockstructures.push_back(blockdata.decomposition->createBlockStructure(detprobdata));
+         blockstructure->blockstructures.push_back(blockdata.decomposition->createBlockStructure(scip, detprobdata));
       else
          blockstructure->blockstructures.emplace_back();
    }
-   // @todo: set nested symmetry information
+
+   // symmetry
+   if( !symmetrydata.empty() )
+   {
+      bool success = true;
+      for( auto& blockdata : blocks )
+      {
+         if( blockdata.symmetricalblock >= 0 && blockdata.symmetricalblock < blocks.size() )
+         {
+            blockstructure->symmetricalblocks.push_back(blockdata.symmetricalblock);
+         }
+         else
+         {
+            SCIPwarningMessage(scip, "Got invalid block number: %d.\n", blockdata.symmetricalblock);
+            success = false;
+            break;
+         }
+      }
+
+      if( success )
+      {
+         int idx2;
+         blockstructure->symmetrydata = std::move(blockstructure->symmetrydata);
+         for( auto& it : symmetrydata )
+         {
+            idx = detprobdata->getIndexForVar(it.first.c_str());
+            idx2 = detprobdata->getIndexForVar(it.second.c_str());
+            if( idx >= 0 && idx2 >= 0 )
+            {
+               blockstructure->symmetrydata.emplace(idx, idx2);
+            }
+            else
+            {
+               SCIPwarningMessage(scip, "Got invalid variable mapping: <%s> -> <%s>.\n", it.first.c_str(), it.second.c_str());
+               success = false;
+               blockstructure->symmetrydata.clear();
+               break;
+            }
+         }
+      }
+
+      if( !success )
+      {
+         SCIPwarningMessage(scip, "Could not set nested symmetry information.\n");
+      }
+   }
+
    return blockstructure;
 }
 
@@ -905,7 +958,7 @@ void DecompositionElementParser::handleValue(
    {
       if( json_is_object(value) )
       {
-         decdata_.blocks.emplace_back();
+         decdata_.blocks.emplace_back(decdata_.blocks.size());
          BlockElementParser blockparser(scip_, filehandler_, data_, decdata_.blocks.back());
          if( !filehandler_.parseElement(blockparser, value))
             error_ = true;

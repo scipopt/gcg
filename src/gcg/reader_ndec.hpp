@@ -48,7 +48,7 @@ struct DecompositionData;
 
 struct BlockData
 {
-   BlockData() : decomposition(NULL), symmetricalblock(-1) {}
+   BlockData(int probnr) : decomposition(NULL), probnr(probnr), symmetricalblock(probnr) {}
    BlockData(const BlockData&) = delete;
    BlockData(BlockData&&) noexcept;
    ~BlockData();
@@ -57,13 +57,14 @@ struct BlockData
    std::vector<std::string> constraints;
    DecompositionData* decomposition;
    int symmetricalblock;
+   int probnr;
 };
 
 struct DecompositionData
 {
    DecompositionData() = default;
    ~DecompositionData() = default;
-   BLOCK_STRUCTURE* createBlockStructure(DETPROBDATA* detprobdata);
+   BLOCK_STRUCTURE* createBlockStructure(SCIP* scip, DETPROBDATA* detprobdata);
 
    std::vector<std::string> masterconstraints;
    std::vector<BlockData> blocks;

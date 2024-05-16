@@ -46,6 +46,7 @@
 #include <vector>
 #include <string>
 #include <functional>
+#include <unordered_map>
 
 #include "def.h"
 #include "class_conspartition.h"
@@ -82,6 +83,8 @@ struct BLOCK_STRUCTURE
    std::vector<int> masterconss;
    std::vector<std::vector<int>> blockconss;
    std::vector<BLOCK_STRUCTURE*> blockstructures;
+   std::vector<int> symmetricalblocks;
+   std::unordered_map<int, int> symmetrydata;
 };
 
 
