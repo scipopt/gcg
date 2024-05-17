@@ -41,8 +41,7 @@
 
 #include "mastercutdata.h"
 #include "misc_varhistory.h"
-#include "struct_branchgcg.h"
-#include "struct_mastercutdata.h"
+#include "pub_gcgvar.h"
 #include "struct_vardata.h"
 #include "struct_sepagcg.h"
 #include "type_branchgcg.h"
@@ -286,6 +285,44 @@ SCIP_DECL_PARAMCHGD(paramChgdDisablecutoff)
    SCIP_CALL( SCIPsetIntParam(masterprob, "lp/disablecutoff", newval) );
 
    return SCIP_OKAY;
+}
+
+/** get variable index in the problem cleaned of inferred pricing variables */
+static
+int varGetIndexCleaned(
+   SCIP* pricingproblem,
+   SCIP_VAR* var
+   )
+{
+   SCIP_VAR** vars;
+   int nvars;
+   int i;
+   int j;
+
+   assert(pricingproblem != NULL);
+   assert(var != NULL);
+   assert(!GCGvarIsInferredPricing(var));
+
+   vars = SCIPgetOrigVars(pricingproblem);
+   nvars = SCIPgetNOrigVars(pricingproblem);
+
+   assert(var->probindex >= 0);
+   assert(var->probindex < nvars);
+
+   j = 0;
+
+   for( i = 0; i < nvars; i++ )
+   {
+      if( GCGvarIsInferredPricing(vars[i]) )
+         continue;
+
+      if( var->probindex == vars[i]->probindex )
+         return j;
+
+      j += 1;
+   }
+
+   SCIPABORT();
 }
 
 
@@ -752,6 +789,8 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    GCG_MASTERCUTDATA** branchmastercutdata = NULL;
    int nbranchmastercutdata;
 
+   int maxvarindex;
+
    assert(pricerdata != NULL);
    assert(stabilization != NULL);
 
@@ -767,8 +806,9 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    {
       if( pricerdata->pricingprobs[i] == NULL )
          continue;
-      probvars = SCIPgetVars(pricerdata->pricingprobs[i]);
-      nprobvars = SCIPgetNVars(pricerdata->pricingprobs[i]);
+      probvars = SCIPgetOrigVars(pricerdata->pricingprobs[i]);
+      nprobvars = SCIPgetNOrigVars(pricerdata->pricingprobs[i]);
+      maxvarindex = nprobvars - GCGcountInferredPricingVars(probvars, nprobvars);
 
       for( j = 0; j < nprobvars; j++ )
       {
@@ -777,16 +817,18 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          if( GCGvarIsInferredPricing(probvars[j]) )
             continue;
 
+         assert( 0 <= varGetIndexCleaned(pricerdata->pricingprobs[i], probvars[j]) && varGetIndexCleaned(pricerdata->pricingprobs[i], probvars[j]) < maxvarindex );
+
          assert( GCGoriginalVarIsLinking(GCGpricingVarGetOrigvars(probvars[j])[0]) || (GCGvarGetBlock(GCGpricingVarGetOrigvars(probvars[j])[0]) == i));
 
          SCIP_CALL( SCIPchgVarObj(pricerdata->pricingprobs[i], probvars[j], pricetype->varGetObj(probvars[j])));
 
-         pricerdata->realdualvalues[i][j] = pricetype->varGetObj(probvars[j]);
+         pricerdata->realdualvalues[i][varGetIndexCleaned(pricerdata->pricingprobs[i], probvars[j])] = pricetype->varGetObj(probvars[j]);
 #ifdef PRINTDUALSOLS
-         if( !SCIPisZero(scip_, pricerdata->realdualvalues[i][j]) )
+         if( !SCIPisZero(scip_, pricerdata->realdualvalues[i][varGetIndexCleaned(pricerdata->pricingprobs[i], probvars[j])]) )
          {
             SCIPdebugMessage("pricingobj var <%s> %g (-> realdualvalues)\n", SCIPvarGetName(probvars[j]),
-               pricerdata->realdualvalues[i][j]);
+               pricerdata->realdualvalues[i][varGetIndexCleaned(pricerdata->pricingprobs[i], probvars[j])]);
          }
 #endif
       }
@@ -828,15 +870,14 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
        * lambda variables get coef -1 in linking constraints --> add dualsol
        */
       SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[block], pricingvar, dualsol) );
-      assert(SCIPvarGetProbindex(pricingvar) >= 0 && SCIPvarGetProbindex(pricingvar) < SCIPgetNVars(pricerdata->pricingprobs[block]));
-      pricerdata->realdualvalues[block][SCIPvarGetProbindex(pricingvar)] += pricetype->consGetDual(scip_, linkcons);
+      pricerdata->realdualvalues[block][varGetIndexCleaned(pricerdata->pricingprobs[block], pricingvar)] += pricetype->consGetDual(scip_, linkcons);
 
 #ifdef PRINTDUALSOLS
       if( !SCIPisZero(scip_, pricetype->consGetDual(scip_, linkcons)) || !SCIPisZero(scip_, dualsol) )
       {
          SCIPdebugMessage("pricingobj var <%s> %g (cons <%s>), realdualvalues + %g -> %g\n", SCIPvarGetName(pricingvar),
             dualsol, SCIPconsGetName(linkcons), pricetype->consGetDual(scip_, linkcons),
-            pricerdata->realdualvalues[block][SCIPvarGetProbindex(pricingvar)]);
+            pricerdata->realdualvalues[block][varGetIndexCleaned(pricerdata->pricingprobs[block], pricingvar)]);
       }
 #endif
    }
@@ -881,7 +922,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
             SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[blocknr],
                   GCGoriginalVarGetPricingVar(consvars[j]), -1.0 * dualsol * consvals[j]) );
 
-            pricerdata->realdualvalues[blocknr][SCIPvarGetProbindex(GCGoriginalVarGetPricingVar(consvars[j]))] -= consvals[j] * pricetype->consGetDual(scip_, masterconss[i]);
+            pricerdata->realdualvalues[blocknr][varGetIndexCleaned(pricerdata->pricingprobs[blocknr], GCGoriginalVarGetPricingVar(consvars[j]))] -= consvals[j] * pricetype->consGetDual(scip_, masterconss[i]);
 
 #ifdef PRINTDUALSOLS
             if( !SCIPisZero(scip_, dualsol) || !SCIPisZero(scip_, consvals[j] * pricetype->consGetDual(scip_, masterconss[i])) )
@@ -889,7 +930,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
                SCIPdebugMessage("pricingobj var <%s> %g, realdualvalues + %g -> %g\n",
                   SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol,
                   -1.0 * consvals[j] * pricetype->consGetDual(scip_, masterconss[i]),
-                  pricerdata->realdualvalues[blocknr][SCIPvarGetProbindex(GCGoriginalVarGetPricingVar(consvars[j]))]);
+                  pricerdata->realdualvalues[blocknr][varGetIndexCleaned(pricerdata->pricingprobs[blocknr], GCGoriginalVarGetPricingVar(consvars[j]))]);
             }
 #endif
          }
@@ -951,7 +992,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
             SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[blocknr],
                   GCGoriginalVarGetPricingVar(consvars[j]), -1.0 * dualsol * consvals[j]) );
 
-            pricerdata->realdualvalues[blocknr][SCIPvarGetProbindex(GCGoriginalVarGetPricingVar(consvars[j]))] -= consvals[j]* pricetype->rowGetDual(originalsepamastercuts[i]);
+            pricerdata->realdualvalues[blocknr][varGetIndexCleaned(pricerdata->pricingprobs[blocknr], GCGoriginalVarGetPricingVar(consvars[j]))] -= consvals[j]* pricetype->rowGetDual(originalsepamastercuts[i]);
 
 #ifdef PRINTDUALSOLS
             if( !SCIPisZero(scip_, dualsol) || !SCIPisZero(scip_, consvals[j] * pricetype->rowGetDual(mastercuts[i])) )
@@ -959,7 +1000,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
                SCIPdebugMessage("pricingobj var <%s> %g, realdualvalues + %g -> %g\n",
                   SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol,
                      -1.0 * consvals[j] * pricetype->rowGetDual(mastercuts[i]),
-                     pricerdata->realdualvalues[blocknr][SCIPvarGetProbindex(GCGoriginalVarGetPricingVar(consvars[j]))]);
+                     pricerdata->realdualvalues[blocknr][varGetIndexCleaned(pricerdata->pricingprobs[blocknr], GCGoriginalVarGetPricingVar(consvars[j]))]);
             }
 #endif
          }
@@ -1614,7 +1655,6 @@ SCIP_RETCODE ObjPricerGcg::computeColOriginalSepaCuts(
 
    SCIP_CALL( SCIPallocBufferArray(origprob, &neworiginalsepamastercuts, noriginalsepamastercuts - noldoriginalsepamastercuts) );
 
-
    nneworiginalsepamastercuts = 0;
 
    /* compute coef of the variable in the cuts and add it to the cuts */
@@ -1801,6 +1841,7 @@ SCIP_RETCODE ObjPricerGcg::addRootBounds(
    SCIP_Real             dualbound           /**< new dual bound for the root master LP */
    )
 {
+   SCIP_VAR** probvars;
    int nprobvars;
    int i;
    int j;
@@ -1829,13 +1870,15 @@ SCIP_RETCODE ObjPricerGcg::addRootBounds(
       if( pricerdata->pricingprobs[i] == NULL )
          continue;
 
-      nprobvars = SCIPgetNVars(pricerdata->pricingprobs[i]);
+      probvars = SCIPgetOrigVars(pricerdata->pricingprobs[i]);
+      nprobvars = SCIPgetNOrigVars(pricerdata->pricingprobs[i]);
+      nprobvars -= GCGcountInferredPricingVars(probvars, nprobvars);
 
       pricerdata->dualsolconvs[pricerdata->nrootbounds][i] = pricerdata->dualsolconv[i];
       SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &(pricerdata->dualvalues[pricerdata->nrootbounds][i]), nprobvars) );
 
       for( j = 0; j < nprobvars; j++ )
-         pricerdata->dualvalues[pricerdata->nrootbounds][i][j] = pricerdata->realdualvalues[i][j];
+         pricerdata->dualvalues[pricerdata->nrootbounds][i][varGetIndexCleaned(pricerdata->pricingprobs[i], probvars[j])] = pricerdata->realdualvalues[i][varGetIndexCleaned(pricerdata->pricingprobs[i], probvars[j])];
    }
 
    pricerdata->nrootbounds++;
@@ -1891,11 +1934,10 @@ SCIP_Real ObjPricerGcg::computeRedCost(
    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip_, &solvals, nsolvars) );
    SCIP_CALL_ABORT( SCIPgetSolVals(pricingscip, sol, nsolvars, solvars, solvals) );
 
-   /* compute the objective function value of the solution
-    * @todo sepa mastercuts should be considered, as realdualvalues is updated when setting the objectives; dont know about branching  cuts?*/
+   /* compute the objective function value of the solution */
    for( i = 0; i < nsolvars; i++ ) {
-      assert(GCGvarIsPricing(solvars[i]) || GCGvarIsInferredPricing(solvars[i]));
-      objvalue += solvals[i] * pricerdata->realdualvalues[probnr][SCIPvarGetProbindex(solvars[i])];
+      assert(GCGvarIsPricing(solvars[i]));
+      objvalue += solvals[i] * pricerdata->realdualvalues[probnr][varGetIndexCleaned(pricingscip, solvars[i])];
    }
 
    if( objvalptr != NULL )
@@ -1961,7 +2003,7 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
       assert(GCGvarIsPricing(solvars[i]) || GCGvarIsInferredPricing(solvars[i]));
       if( GCGvarIsPricing(solvars[i]) )
       {
-         objvalue += solvals[i] * pricerdata->realdualvalues[probnr][SCIPvarGetProbindex(solvars[i])];
+         objvalue += solvals[i] * pricerdata->realdualvalues[probnr][varGetIndexCleaned(pricingprob->pricingscip, solvars[i])];
       }
       else
       {
@@ -3148,6 +3190,7 @@ SCIP_RETCODE ObjPricerGcg::computeDualDiff(
 {
    int i;
    int j;
+   SCIP_VAR** probvars;
    int nprobvars;
 
    *dualdiff = 0.0;
@@ -3156,7 +3199,9 @@ SCIP_RETCODE ObjPricerGcg::computeDualDiff(
       if( pricerdata->pricingprobs[i] == NULL )
          continue;
 
-      nprobvars = SCIPgetNVars(pricerdata->pricingprobs[i]);
+      probvars = SCIPgetOrigVars(pricerdata->pricingprobs[i]);
+      nprobvars = SCIPgetNOrigVars(pricerdata->pricingprobs[i]);
+      nprobvars -= GCGcountInferredPricingVars(probvars, nprobvars);
 
       for( j = 0; j < nprobvars; j++ )
       {
@@ -3215,6 +3260,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIP_Real** olddualvalues;
    SCIP_Real* olddualconv;
 
+   SCIP_VAR** probvars;
    int nprobvars;
    int nstabrounds;
    SCIP_Real pricingtime;
@@ -3303,13 +3349,14 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          if( pricerdata->pricingprobs[i] == NULL )
             continue;
 
+         probvars = SCIPgetVars(pricerdata->pricingprobs[i]);
          nprobvars = SCIPgetNVars(pricerdata->pricingprobs[i]);
 
          olddualconv[i] = pricerdata->dualsolconv[i];
          SCIP_CALL( SCIPallocBufferArray(scip_, &(olddualvalues[i]), nprobvars) );
 
          for( j = 0; j < nprobvars; j++ )
-            olddualvalues[i][j] = pricerdata->realdualvalues[i][j];
+            olddualvalues[i][varGetIndexCleaned(pricerdata->pricingprobs[i], probvars[j])] = pricerdata->realdualvalues[i][varGetIndexCleaned(pricerdata->pricingprobs[i], probvars[j])];
       }
    }
 
@@ -4060,7 +4107,6 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
 /** destructor of variable pricer to free user data (called when SCIP is exiting) */
 SCIP_DECL_PRICERFREE(ObjPricerGcg::scip_free)
 {
-   //SCIPinfoMessage(scip_, NULL, "free pricer\n");
    assert(scip == scip_);
    SCIP_CALL( solversFree() );
 
@@ -4121,6 +4167,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    int nmasterconss;
    int origverblevel;
    int size;
+   int npricingvars;
 
    assert(scip == scip_);
    assert(pricer != NULL);
@@ -4180,7 +4227,9 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
       {
          pricerdata->pricingprobs[i] = GCGgetPricingprob(origprob, i);
          pricerdata->npricingprobsnotnull++;
-         pricerdata->maxrealdualvalues[i] = SCIPcalcMemGrowSize(scip, SCIPgetNVars(pricerdata->pricingprobs[i]));
+         npricingvars = SCIPgetNOrigVars(pricerdata->pricingprobs[i]);
+         npricingvars -= GCGcountInferredPricingVars(SCIPgetOrigVars(pricerdata->pricingprobs[i]), npricingvars);
+         pricerdata->maxrealdualvalues[i] = SCIPcalcMemGrowSize(scip, npricingvars);
          SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->realdualvalues[i]), pricerdata->maxrealdualvalues[i]) ); /*lint !e666 !e866*/
       }
       else
@@ -4411,6 +4460,7 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
 
    for( i = 0; i < pricerdata->npricingprobs; ++i )
    {
+      assert(0 <= pricerdata->maxrealdualvalues[i]);
       SCIPfreeBlockMemoryArrayNull(scip, &(pricerdata->realdualvalues[i]), pricerdata->maxrealdualvalues[i]);
    }
    SCIPfreeBlockMemoryArray(scip, &(pricerdata->realdualvalues), pricerdata->maxrealdualvaluescapacity);

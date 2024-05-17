@@ -88,6 +88,12 @@ SCIP_Bool GCGvarIsInferredPricing(
    );
 #endif
 
+/** count the number of inferred pricing variables in a array of variables */
+int GCGcountInferredPricingVars(
+   SCIP_VAR**             vars,               /**< array of variables */
+   int                    nvars               /**< number of variables */
+   );
+
 #ifdef NDEBUG
 #define GCGoriginalVarIsLinking(var)         (SCIPvarGetData(var)->blocknr == -2)
 #else
