@@ -1569,7 +1569,7 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
 
       SCIPdebugMessage("\nTrying to branch in block %d:\n", blocknr);
 
-      //printBranchingDecisions(masterscip);
+      printBranchingDecisions(masterscip);
 
       /* 2. Check B&B-tree ancestors for previous compbnd branching in the node */
       SCIP_CALL( initComponentBoundsFromAncestors(masterscip, &B, &Bsize, blocknr) );
@@ -1615,7 +1615,7 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
    }
 
    /* 4. Remove component bounds that are strengthened by others */
-   //SCIP_CALL( simplifyComponentBounds(masterscip, &B, &Bsize) );
+   SCIP_CALL( simplifyComponentBounds(masterscip, &B, &Bsize) );
    assert(Bsize > 0);
    assert(B != NULL);
 

@@ -298,22 +298,21 @@ int varGetIndexCleaned(
 
    assert(pricingproblem != NULL);
    assert(var != NULL);
-   assert(!GCGvarIsInferredPricing(var));
+   assert(GCGvarIsPricing(var));
 
    vars = SCIPgetOrigVars(pricingproblem);
    nvars = SCIPgetNOrigVars(pricingproblem);
 
-   assert(var->probindex >= 0);
-   assert(var->probindex < nvars);
+   assert(0 <= SCIPvarGetIndex(var) && SCIPvarGetIndex(var) < nvars);
 
    j = 0;
 
    for( i = 0; i < nvars; i++ )
    {
-      if( GCGvarIsInferredPricing(vars[i]) )
+      if( !GCGvarIsPricing(vars[i]) )
          continue;
 
-      if( var->probindex == vars[i]->probindex )
+      if( SCIPvarCompare(var, vars[i]) == 0 )
          return j;
 
       j += 1;
