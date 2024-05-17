@@ -79,7 +79,7 @@ struct GCG_MasterCutData
 {
    GCG_MASTERCUTTYPE     type;               /**< type of the master cut */
    GCG_MASTERCUTCUT      cut;                /**< constraint or row in the master problem that represents the master cut */
-   GCG_PRICINGMODIFICATION** pricingmodifications; /**< array of pricing modifications for the master cut */
+   GCG_PRICINGMODIFICATION* pricingmodifications; /**< array of pricing modifications for the master cut */
    int                   npricingmodifications; /**< number of pricing modifications for the master cut */
 };
 

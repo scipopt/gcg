@@ -569,8 +569,7 @@ SCIP_RETCODE createBranchingCons(
    int nadditionalvars;
    SCIP_CONS** additionalcons;
    int nadditionalcons;
-   GCG_PRICINGMODIFICATION* pricingmod;
-   GCG_PRICINGMODIFICATION** pricingmods; // will always only contain one element in this branching rule
+   GCG_PRICINGMODIFICATION* pricingmods; // will always only contain one element in this branching rule
 
    char name[SCIP_MAXSTRLEN];
 
@@ -746,10 +745,11 @@ SCIP_RETCODE createBranchingCons(
    }
 
    // create the pricing modification
-   pricingmod = NULL;
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricingmods, 1) );
+   assert(pricingmods != NULL);
    SCIP_CALL( GCGpricingmodificationCreate(
       scip,
-      &pricingmod,
+      &pricingmods[0],
       branchdata->blocknr,
       coefvar,
       additionalvars,
@@ -757,11 +757,6 @@ SCIP_RETCODE createBranchingCons(
       additionalcons,
       nadditionalcons
    ) );
-   assert(pricingmod != NULL);
-
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricingmods, 1) );
-   assert(pricingmods != NULL);
-   pricingmods[0] = pricingmod;
 
    // create the master constraint
    SCIP_CALL( GCGmastercutCreateFromCons(scip, &branchdata->mastercons, branchcons, pricingmods, 1) );
@@ -1860,8 +1855,6 @@ GCG_DECL_BRANCHUPDATEDUAL(branchUpdateDualCompBnd)
    assert(branchdata != NULL);
    assert(branchdata->mastercons != NULL);
    assert(branchdata->mastercons->npricingmodifications == 1);
-   assert(branchdata->mastercons->pricingmodifications[0] != NULL);
-   assert(branchdata->mastercons->pricingmodifications[0]->coefvar != NULL);
 
    assert((!SCIPisFeasPositive(scip, dual) && branchdata->branchtype == GCG_BRANCH_DOWN) || (!SCIPisFeasNegative(scip, dual) && branchdata->branchtype == GCG_BRANCH_UP));
 
