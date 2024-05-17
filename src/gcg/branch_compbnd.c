@@ -66,7 +66,7 @@
 
 #define BRANCHRULE_NAME            "compbnd"                      /**< name of branching rule */
 #define BRANCHRULE_DESC            "component bound branching"    /**< short description of branching rule */
-#define BRANCHRULE_PRIORITY        -1                             /**< priority of this branching rule */
+#define BRANCHRULE_PRIORITY        -100000                        /**< priority of this branching rule */
 #define BRANCHRULE_MAXDEPTH        -1                             /**< maximal depth level of the branching rule */
 #define BRANCHRULE_MAXBOUNDDIST    1.0                            /**< maximal relative distance from current node's
                                                                    dual bound to primal bound compared to best node's
