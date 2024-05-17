@@ -246,8 +246,8 @@ static
 SCIP_RETCODE dropActiveBranchMastercut(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_RELAXDATA*       relaxdata,          /**< relaxator data data structure */
-   GCG_BRANCHRULE*       branchrule,         /**< branchrule that was activated */
-   GCG_BRANCHDATA*       branchdata          /**< branchdata that was activated */
+   GCG_BRANCHRULE*       branchrule,         /**< branchrule that was deactivated */
+   GCG_BRANCHDATA*       branchdata          /**< branchdata that was deactivated */
    )
 {
    assert(scip != NULL);
