@@ -663,7 +663,10 @@ SCIP_RETCODE checkIdenticalBlocks(
    GCGconshdlrDecompGetPartialdecFromID(scip, GCGdecompGetPartialdecID(relaxdata->decomp), &partialdec);
 
    if( !GCGconshdlrDecompPartialdecAggregationInformationCalculated(partialdec) )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Calculating aggregation information.\n");
       GCGconshdlrDecompPartialdecCalcAggregationInformation(partialdec, TRUE);
+   }
 
    nrelevant = GCGconshdlrDecompPartialdecGetNEquivalenceClasses(partialdec);
    assert(nrelevant > 0 || GCGconshdlrDecompPartialdecGetNBlocks(partialdec) == 0);
