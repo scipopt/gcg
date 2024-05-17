@@ -228,7 +228,7 @@ void DETPROBDATA::getTranslatedPartialdecs(
    std::vector<int>& colothertothis,
    std::vector<int>& colthistoother,
    std::vector<PARTIALDECOMP*>& translatedpartialdecs,
-   SCIP_Bool translateSymmetry
+   SCIP_Bool translatesymmetry
    )
 {
    for( auto otherpartialdec : origpartialdecs )
@@ -270,7 +270,7 @@ void DETPROBDATA::getTranslatedPartialdecs(
       for( int b = 0; b < blockstructures.size(); ++ b )
       {
          if( blockstructures[b] )
-            newpartialdec->setBlockStructure(b, blockstructures[b]->translateStructure(rowothertothis));
+            newpartialdec->setBlockStructure(b, blockstructures[b]->translateStructure(rowothertothis, colothertothis, translatesymmetry));
       }
 
       // we do not assign variables as the previous assignment might be invalid due to presolving
@@ -305,7 +305,7 @@ void DETPROBDATA::getTranslatedPartialdecs(
       newpartialdec->setFinishedByFinisher(otherpartialdec->getFinishedByFinisher());
       newpartialdec->prepare();
 
-      if( translateSymmetry && otherpartialdec->getNBlocks() == newpartialdec->getNBlocks() && otherpartialdec->aggInfoCalculated() )
+      if( translatesymmetry && otherpartialdec->getNBlocks() == newpartialdec->getNBlocks() && otherpartialdec->aggInfoCalculated() )
       {
          newpartialdec->setSymmetryInformation(
             [otherpartialdec] (int b)

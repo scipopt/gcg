@@ -287,8 +287,8 @@ SCIP_Bool buildProblem(
       if( blockstructure )
       {
          gcg::DETPROBDATA* detprobdata = GCGconshdlrDecompGetDetprobdataOrig(subgcg);
+         assert(subgcg == detprobdata->getScip());
          gcg::PARTIALDECOMP* newpartialdec = blockstructure->createPartialdec(partialdec, detprobdata, probnr);
-         GCGconshdlrDecompAddPreexisitingPartialDec(subgcg, newpartialdec);
       }
    }
    else

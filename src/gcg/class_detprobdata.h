@@ -177,7 +177,7 @@ private:
        std::vector<int>& colothertothis,   /** variable index mapping from old to new detprobdata */
        std::vector<int>& colthistoother,   /** variable index mapping from new to old detprobdata */
        std::vector<PARTIALDECOMP*>& translatedpartialdecs,   /**< will contain translated partialdecs */
-       SCIP_Bool translateSymmetry  /**< translate symmetry information (the old/original information must be valid for each translated partialdec!) */
+       SCIP_Bool translatesymmetry  /**< translate symmetry information (the old/original information must be valid for each translated partialdec!) */
        );
 
 public:

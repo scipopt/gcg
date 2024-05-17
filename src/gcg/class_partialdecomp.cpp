@@ -105,43 +105,96 @@ PARTIALDECOMP* BLOCK_STRUCTURE::createPartialdec(
    DETPROBDATA* olddetprobdata = parentpartialdec->getDetprobdata();
    PARTIALDECOMP* partialdec = new PARTIALDECOMP(newdetprobdata->getScip(), newdetprobdata->isAssignedToOrigProb());
    int nblocks = blockconss.size();
-   char consname[SCIP_MAXSTRLEN];
+   char buffer[SCIP_MAXSTRLEN];
+   std::vector<int> rowmapping(olddetprobdata->getNConss(), -1);
+   std::vector<int> colmapping(olddetprobdata->getNVars(), -1);
+   std::vector<int> reversecolmapping(newdetprobdata->getNVars(), -1);
+
+   for( int cons = 0; cons < rowmapping.size(); ++cons)
+   {
+      SCIPsnprintf(buffer, SCIP_MAXSTRLEN, "p%d_%s", probnr, SCIPconsGetName(olddetprobdata->getCons(cons)));
+      int idx = newdetprobdata->getIndexForCons(buffer);
+      if( idx >= 0 )
+         rowmapping[cons] = idx;
+   }
+
+   for( int var = 0; var < colmapping.size(); ++var)
+   {
+      SCIPsnprintf(buffer, SCIP_MAXSTRLEN, "pr%d_%s", probnr, SCIPvarGetName(olddetprobdata->getVar(var)));
+      int idx = newdetprobdata->getIndexForVar(buffer);
+      if( idx >= 0 )
+      {
+         colmapping[var] = idx;
+         assert(idx < reversecolmapping.size());
+         reversecolmapping[idx] = var;
+      }
+   }
+
    for( auto cons : masterconss )
    {
-      SCIPsnprintf(consname, SCIP_MAXSTRLEN, "p%d_%s", probnr, SCIPconsGetName(olddetprobdata->getCons(cons)));
-      int idx = newdetprobdata->getIndexForCons(consname);
+      int idx = rowmapping[cons];
       if( idx >= 0 )
          partialdec->fixConsToMaster(idx);
    }
+
    partialdec->setNBlocks(nblocks);
    for( int block = 0; block < nblocks; ++block )
    {
       for( auto cons : blockconss[block] )
       {
-         SCIPsnprintf(consname, SCIP_MAXSTRLEN, "p%d_%s", probnr, SCIPconsGetName(olddetprobdata->getCons(cons)));
-         int idx = newdetprobdata->getIndexForCons(consname);
+         int idx = rowmapping[cons];
          if( idx >= 0 )
             partialdec->fixConsToBlock(idx, block);
       }
       for( int subblock = 0; subblock < blockstructures.size(); ++subblock )
       {
          BLOCK_STRUCTURE* subblockstructure = blockstructures[subblock];
+         BLOCK_STRUCTURE* newsubblockstructure = NULL;
          if( subblockstructure )
          {
-            // todo
-            // partialdec->setBlockStructure(subblock, subblockstructure->translateStructure(rowmapping));
-            SCIPwarningMessage(olddetprobdata->getScip(), "Not implemented.\n");
+            newsubblockstructure = subblockstructure->translateStructure(rowmapping, colmapping, TRUE);
          }
-         else
-            partialdec->setBlockStructure(subblock, NULL);
+         partialdec->setBlockStructure(subblock, newsubblockstructure);
       }
    }
+
+   GCGconshdlrDecompAddPreexisitingPartialDec(newdetprobdata->getScip(), partialdec);
+
+   if( !symmetrydata.empty() )
+   {
+      bool success = true;
+      success = partialdec->setSymmetryInformation(
+         [&] (int b)
+         {
+            assert(b < nblocks);
+            return symmetricalblocks[b];
+         },
+         [&] (int b, int vi)
+         {
+            int var = reversecolmapping[partialdec->getVarsForBlock(b)[vi]];
+            assert(symmetrydata.find(var) != symmetrydata.end());
+            assert(symmetrydata[var] >= 0);
+            int repvar = colmapping[symmetrydata[var]];
+            assert(partialdec->getVarProbindexForBlock(repvar, symmetricalblocks[b]) >= 0);
+            return partialdec->getVarProbindexForBlock(repvar, symmetricalblocks[b]);
+         }
+      );
+      assert(partialdec->aggInfoCalculated());
+
+      if( !success )
+      {
+         SCIPwarningMessage(olddetprobdata->getScip(), "Could not set symmetry information.\n");
+      }
+   }
+
    return partialdec;
 }
 
 
 BLOCK_STRUCTURE* BLOCK_STRUCTURE::translateStructure(
-   std::vector<int>& rowmapping
+   std::vector<int>& rowmapping,
+   std::vector<int>& colmapping,
+   SCIP_Bool translatesymmetry
    )
 {
    BLOCK_STRUCTURE* blockstructure = new BLOCK_STRUCTURE();
@@ -164,10 +217,24 @@ BLOCK_STRUCTURE* BLOCK_STRUCTURE::translateStructure(
       }
    }
 
+   if( translatesymmetry )
+   {
+      blockstructure->symmetricalblocks = symmetricalblocks;
+
+      for( auto& it : symmetrydata )
+      {
+         int idx1 = colmapping[it.first];
+         int idx2 = colmapping[it.second];
+         assert((idx1 >= 0 && idx2 >= 0) || (idx1 < 0 && idx2 < 0));
+         if( idx1 >= 0 && idx2 >= 0 )
+            blockstructure->symmetrydata.emplace(idx1, idx2);
+      }
+   }
+
    for( auto block : blockstructures )
    {
       if( block )
-         blockstructure->blockstructures.push_back(block->translateStructure(rowmapping));
+         blockstructure->blockstructures.push_back(block->translateStructure(rowmapping, colmapping, translatesymmetry));
       else
          blockstructure->blockstructures.emplace_back();
    }

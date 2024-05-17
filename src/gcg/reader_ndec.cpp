@@ -278,12 +278,12 @@ SCIP_RETCODE readNDec(
             if( success )
             {
                success = partialdec->setSymmetryInformation(
-                  [&data] (int b)
+                  [&] (int b)
                   {
                      assert(b < (int)data.rootdecomposition->blocks.size());
                      return data.rootdecomposition->blocks[b].symmetricalblock;
                   },
-                  [&data, detprobdata, partialdec, &symmetrydata] (int b, int vi)
+                  [&] (int b, int vi)
                   {
                      SCIP_VAR* var = detprobdata->getVar(partialdec->getVarsForBlock(b)[vi]);
                      assert(var != NULL);

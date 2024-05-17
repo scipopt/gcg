@@ -78,7 +78,7 @@ struct BLOCK_STRUCTURE
 {
    ~BLOCK_STRUCTURE();
    PARTIALDECOMP* createPartialdec(PARTIALDECOMP* parentpartialdec, DETPROBDATA* newdetprobdata, int probnr);
-   BLOCK_STRUCTURE* translateStructure(std::vector<int>& rowmapping);
+   BLOCK_STRUCTURE* translateStructure(std::vector<int>& rowmapping, std::vector<int>& colmapping, SCIP_Bool translatesymmetry);
 
    std::vector<int> masterconss;
    std::vector<std::vector<int>> blockconss;
@@ -1611,7 +1611,7 @@ public:
     */
    void setBlockStructure(
       int block,                          /**< block id */
-      BLOCK_STRUCTURE* blockstructure    /**< structure information */
+      BLOCK_STRUCTURE* blockstructure     /**< structure information */
    );
 
    /**
