@@ -34,6 +34,7 @@
 
 // #define SCIP_DEBUG
 // #define DEBUG_PRICING_ALL_OUTPUT
+#define SUBGCG_DEBUG_ITER -1
 
 #include "scip/scip.h"
 #include "gcg.h"
@@ -51,6 +52,7 @@
 #include "class_partialdecomp.h"
 #include "scip/scip_timing.h"
 #include "struct_decomp.h"
+#include "class_detprobdata.h"
 
 #define SOLVER_NAME          "gcg"
 #define SOLVER_DESC          "gcg solver for pricing problems"
@@ -152,9 +154,7 @@ SCIP_RETCODE adjustSettings(SCIP* pricingprob, SCIP* subgcg)
    SCIP_CALL( SCIPsetBoolParam(subgcg, "constraints/setppc/presolusehashing", FALSE) );
    SCIP_CALL( SCIPsetBoolParam(subgcg, "constraints/logicor/presolusehashing", FALSE) );
 
-   // SCIP_CALL( SCIPsetIntParam(subgcg, "propagating/dualfix/freq", -1) );
    SCIP_CALL( SCIPsetIntParam(subgcg, "propagating/dualfix/maxprerounds", 0) );
-   // SCIP_CALL( SCIPfixParam(subgcg, "propagating/dualfix/freq") );
    SCIP_CALL( SCIPfixParam(subgcg, "propagating/dualfix/maxprerounds") );
 
    SCIP_CALL( SCIPsetIntParam(subgcg, "limits/maxorigsol", 0) );
@@ -186,23 +186,8 @@ SCIP_RETCODE adjustSettings(SCIP* pricingprob, SCIP* subgcg)
    SCIP_CALL( SCIPsetRealParam(subgcg, "numerics/lpfeastolfactor", lpfeastolfactor) );
    SCIP_CALL( SCIPsetRealParam(subgcg, "numerics/dualfeastol", dualfeastol) );
 
-   //SCIP_CALL( SCIPsetIntParam(subgcg, "presolving/maxrounds", 0) );
-
-   /*SCIP_CALL( SCIPsetIntParam(subgcg, "detection/scoretype", 0) );
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "detection/varclassifier/scipvartype/enabled", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "detection/varclassifier/objectivevalues/enabled", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "detection/varclassifier/objectivevaluesigns/enabled", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "detection/varclassifier/scipvartype/origenabled", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "detection/varclassifier/objectivevalues/origenabled", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "detection/varclassifier/objectivevaluesigns/origenabled", FALSE) );*/
-
-   // @todo: hack
-   //SCIP_CALL( SCIPsetBoolParam(subgcg, "pricing/masterpricer/stabilization", FALSE) );
-   //SCIP_CALL( SCIPsetIntParam(subgcg, "lp/solvefreq", -1) );
-   //SCIP_CALL( SCIPsetBoolParam(subgcg, "sepa/basis/enable", FALSE) );
-   //SCIP_CALL( SCIPsetBoolParam(subgcg, "relaxing/gcg/aggregation", FALSE) );
-   //SCIP_CALL( SCIPsetIntParam(subgcg, "heuristics/xpcrossover/freq", -1) );
-   //SCIP_CALL( SCIPsetIntParam(subgcg, "heuristics/xprins/freq", -1) );
+   // we disable presolving by default (can be enabled using a settings file)
+   SCIP_CALL( SCIPsetIntParam(subgcg, "presolving/maxrounds", 0) );
 
    return SCIP_OKAY;
 }
@@ -249,6 +234,11 @@ SCIP_Bool buildProblem(
    solverdata->nbasicpricingconss[probnr] = SCIPgetNOrigConss(pricingprob);
 
    SCIP_CALL( adjustSettings(pricingprob, subgcg) );
+
+   if( strcmp(solverdata->settingsfile, "-") != 0 )
+   {
+      SCIP_CALL( SCIPreadParams(subgcg, solverdata->settingsfile) );
+   }
 
    // TODO: setting needed parameters (also user specified ones)
 
@@ -455,30 +445,40 @@ SCIP_RETCODE solveProblem(
    SCIP_Real timelimit;
    SCIP_HASHMAP* varmap = solverdata->varmaps[probnr];
 
+   solverdata->count++;
+
    // set time limit
    SCIP_CALL( SCIPgetRealParam(pricingprob, "limits/time", &timelimit) );
    SCIP_CALL( SCIPsetRealParam(subgcg, "limits/time", timelimit) );
+
+   if( SCIPgetStage(subgcg) == SCIP_STAGE_PROBLEM )
+   {
+#ifdef SCIP_DEBUG
+      if( SUBGCG_DEBUG_ITER >= 0 && solverdata->count == SUBGCG_DEBUG_ITER )
+      {
+         SCIPwriteOrigProblem(pricingprob, "pricingprob.lp", NULL, FALSE);
+         SCIPwriteOrigProblem(subgcg, "subgcg.lp", NULL, FALSE);
+         SCIPwriteOrigProblem(subgcg, "subgcg.dec", NULL, FALSE);
+         SCIPwriteParams(subgcg, "params.txt", FALSE, FALSE);
+      }
+#endif
+      SCIPstartClock(solverdata->origprob, solverdata->inittime);
+      SCIP_CALL( SCIPpresolve(subgcg) );
+      GCGconshdlrDecompTranslateNBestOrigPartialdecs(subgcg, 1, TRUE);
+      SCIPstopClock(solverdata->origprob, solverdata->inittime);
+#ifdef SCIP_DEBUG
+      if( SUBGCG_DEBUG_ITER >= 0 && solverdata->count == SUBGCG_DEBUG_ITER )
+      {
+         SCIPwriteTransProblem(subgcg, "subgcg_p.lp", NULL, FALSE);
+         SCIPwriteTransProblem(subgcg, "subgcg_p.dec", NULL, FALSE);
+      }
+#endif
+   }
 
    SCIPstartClock(solverdata->origprob, solverdata->solvingtime);
    retcode = SCIPsolve(subgcg);
    SCIPstopClock(solverdata->origprob, solverdata->solvingtime);
    SCIPdebugMessage("Problem %i solved\n", probnr);
-
-   /*sol = SCIPgetBestSol(subgcg);
-   assert(sol != NULL);
-   SCIP_CALL( SCIPcreateSol(pricingprob, &pricingsol, NULL) );
-
-   SCIP_CALL( SCIPgetVarsData(pricingprob, &vars, &nvars, NULL, NULL, NULL, NULL) );
-   for( i = 0; i < nvars; ++i )
-   {
-   SCIP_VAR* subvar;
-
-   subvar = (SCIP_VAR*) SCIPhashmapGetImage(varmap, vars[i]);
-   assert(subvar != NULL);
-
-   SCIP_CALL( SCIPsetSolVal(pricingprob, pricingsol, vars[i], SCIPgetSolVal(subgcg, sol, subvar)) );
-   }
-   */
 
    //solverdata->iters += GCGmasterGetPricingSimplexIters(GCGgetMasterprob(subgcg));
    //solverdata->iters += SCIPgetNLPIterations(GCGgetMasterprob(subgcg));
@@ -741,54 +741,18 @@ GCG_DECL_SOLVERSOLVE(solverSolveGcg)
 
    *lowerbound = -SCIPinfinity(pricingprob);
 
-   solverdata->count++;
-
    SCIPdebugMessage("GCG Solver %li: solve start, probnr: %i, status: %u\n", solverdata->count, probnr, *status);
 
    subgcg = solverdata->pricingprobs[probnr];
 
-   if (SCIPgetStage(subgcg) == SCIP_STAGE_PROBLEM)
-   {
-#ifdef SCIP_DEBUG
-      if (solverdata->count == 625)
-      {
-         SCIPwriteOrigProblem(pricingprob, "pricingprob.lp", NULL, FALSE);
-         SCIPwriteOrigProblem(subgcg, "subgcg.lp", NULL, FALSE);
-         SCIPwriteOrigProblem(subgcg, "subgcg.dec", NULL, FALSE);
-         SCIPwriteParams(subgcg, "params.txt", FALSE, FALSE);
-      }
-#endif
-      SCIPstartClock(solverdata->origprob, solverdata->inittime);
-      SCIP_CALL( SCIPpresolve(subgcg) );
-      GCGconshdlrDecompTranslateNBestOrigPartialdecs(subgcg, 1, TRUE);
-      SCIPstopClock(solverdata->origprob, solverdata->inittime);
-#ifdef SCIP_DEBUG
-      if (solverdata->count == 625)
-      {
-         SCIPwriteTransProblem(subgcg, "subgcg_p.lp", NULL, FALSE);
-         SCIPwriteTransProblem(subgcg, "subgcg_p.dec", NULL, FALSE);
-      }
-#endif
-   }
-
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
-   SCIP_CALL( SCIPwriteParams(subgcg, "pricing.set", TRUE, TRUE) );
 #endif
-
-   if( strcmp(solverdata->settingsfile, "-") != 0 )
-   {
-      SCIP_CALL( SCIPreadParams(subgcg, solverdata->settingsfile) );
-   }
 
    SCIP_CALL( SCIPsetLongintParam(subgcg, "limits/stallnodes", -1LL) );
    SCIP_CALL( SCIPsetLongintParam(subgcg, "limits/nodes", -1LL) );
    SCIP_CALL( SCIPsetRealParam(subgcg, "limits/gap", 0.0) );
    SCIP_CALL( SCIPsetIntParam(subgcg, "limits/solutions", -1) );
-
-   // TODO: new parameters?
-   //SCIP_CALL( SCIPgetIntParam(solverdata->origprob, "pricing/masterpricer/heurpricingiters", &heurpricingiters) );
-   //SCIP_CALL( SCIPsetIntParam(subgcg, "pricing/masterpricer/heurpricingiters", heurpricingiters) );
 
    SCIPdebugMessage("Solving pricing problem %d (pointer: %p)\n", probnr, (void*)pricingprob);
 
@@ -823,8 +787,6 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurGcg)
 
    *lowerbound = -SCIPinfinity(pricingprob);
 
-   solverdata->count++;
-
    SCIPdebugMessage("GCG Solver %li: solveHeur start, probnr: %i, status: %u\n", solverdata->count, probnr, *status);
 
    subgcg = solverdata->pricingprobs[probnr];
@@ -837,41 +799,14 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurGcg)
    /* setup heuristic solver parameters */
    if (SCIPgetStage(subgcg) == SCIP_STAGE_PROBLEM)
    {
-      //SCIP_RESULT decompresult;
-      //char fname[SCIP_MAXSTRLEN];
-
-      //SCIPsnprintf(fname, SCIP_MAXSTRLEN, "block%i.dec", probnr);
-
       solverdata->curnodelimit[probnr] = solverdata->startnodelimit;
       solverdata->curstallnodelimit[probnr] = solverdata->startstallnodelimit;
       solverdata->curgaplimit[probnr] = solverdata->startgaplimit;
       solverdata->cursollimit[probnr] = solverdata->startsollimit;
-
-
-      /*t1 = std::chrono::high_resolution_clock::now();
-      SCIPdebugMessage("SUBGCG Detecting structure of problem %i\n", probnr);
-      //SCIPreadProb(subgcg, fname, NULL);
-      SCIP_CALL( SCIPpresolve(subgcg) );
-      SCIP_CALL( DECdetectStructure(subgcg, &decompresult) );
-
-      if (decompresult != SCIP_SUCCESS)
-      {
-         SCIPwarningMessage(pricingprob, "No decomposition found!\n");
-         SCIP_CALL( SCIPfree(&subgcg) );
-         solverdata->pricingprobs[probnr] = NULL;
-         return SCIP_OKAY;
-      }
-      t2 = std::chrono::high_resolution_clock::now();
-      solverdata->inittime += std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
-
-      SCIPdebugMessage("SUBGCG Problem %i structure detected in %li ms, stage: %i\n", probnr, std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count(), SCIPgetStage(subgcg));
-      */
-      //SCIP_CALL( SCIPtransformProb(subgcg) );
-      //SCIP_CALL( SCIPpresolve(subgcg) );
    }
    else
    {
-      switch (SCIPgetStatus(subgcg))
+      switch( SCIPgetStatus(subgcg) )
       {
       case SCIP_STATUS_NODELIMIT:
          if (solverdata->nodelimitfac > 1.0)
@@ -914,21 +849,10 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurGcg)
    /* solve the pricing problem */
    SCIPdebugMessage("Solving pricing problem %d heuristically (pointer: %p)\n", probnr, (void*)pricingprob);
 
-#ifdef SCIP_DEBUG
-   if (solverdata->count == 19)
-   {
-      SCIPwriteOrigProblem(pricingprob, "pricingprob.lp", NULL, FALSE);
-      SCIPwriteOrigProblem(subgcg, "subgcg.lp", NULL, FALSE);
-      SCIPwriteOrigProblem(subgcg, "subgcg.dec", NULL, FALSE);
-      SCIPwriteParams(subgcg, "params.txt", FALSE, FALSE);
-   }
-#endif
-
    SCIP_CALL( solveProblem(pricingprob, subgcg, probnr, solverdata, lowerbound, status) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", 0) );
-   SCIP_CALL( SCIPprintStatistics(subgcg, NULL) );
 #endif
 
    SCIPdebugMessage("GCG Solver: solveHeur finished, probnr: %i, status: %u\n", probnr, *status);
