@@ -271,7 +271,8 @@ SCIP_RETCODE simplifyComponentBounds(
          if( (*B)[i].sense == GCG_COMPBND_SENSE_LE )
          {
             bound = MIN((*B)[j].bound, (*B)[i].bound);
-         } else if ( (*B)[i].sense == GCG_COMPBND_SENSE_GE )
+         }
+         else if( (*B)[i].sense == GCG_COMPBND_SENSE_GE )
          {
             bound = MAX((*B)[j].bound, (*B)[i].bound);
          }
@@ -304,9 +305,11 @@ SCIP_RETCODE simplifyComponentBounds(
    }
 
    SCIPfreeBlockMemoryArrayNull(scip, &already_added, *Bsize);
+   assert(already_added == NULL);
 
    // free old B and replace it with newB
    SCIPfreeBlockMemoryArrayNull(scip, B, *Bsize);
+   assert(*B == NULL);
    *B = newB;
    *Bsize = newBsize;
 
@@ -1095,6 +1098,10 @@ SCIP_RETCODE _separation(
       *numInitialVars = Xsize;
       *result = SCIP_DIDNOTFIND;
 
+      SCIPfreeBlockMemoryArrayNull(masterscip, &X, Xsize);
+      Xsize = 0;
+      assert(X == NULL);
+
       return SCIP_OKAY;
    }
 
@@ -1107,6 +1114,10 @@ SCIP_RETCODE _separation(
 
       *numInitialVars = Xsize;
       *result = SCIP_BRANCHED;
+
+      SCIPfreeBlockMemoryArrayNull(masterscip, &X, Xsize);
+      Xsize = 0;
+      assert(X == NULL);
 
       return SCIP_OKAY;
    }
@@ -1205,6 +1216,10 @@ SCIP_RETCODE _separation(
 
       *numInitialVars = 0;
 
+      SCIPfreeBlockMemoryArrayNull(masterscip, &X, Xsize);
+      Xsize = 0;
+      assert(X == NULL);
+
       return SCIP_OKAY;
    }
    assert(largest_diff_min <= largest_diff_max);
@@ -1235,6 +1250,9 @@ SCIP_RETCODE _separation(
    // add the new component bounds to B1 and B2
    B1[*Bsize] = (GCG_COMPBND){selected_origvar, GCG_COMPBND_SENSE_LE, value};
    B2[*Bsize] = (GCG_COMPBND){selected_origvar, GCG_COMPBND_SENSE_GE, value};
+
+   SCIPfreeBlockMemoryArrayNull(masterscip, B, *Bsize);
+   assert(*B == NULL);
 
    SCIPdebugMessage("B1 and B2 after adding the new component bounds\n");
    for (i = 0; i < new_Bsize; ++i)
@@ -1294,6 +1312,10 @@ SCIP_RETCODE _separation(
    SCIPdebugMessage("X1size: %d, X2size: %d\n", X1size, X2size);
    assert(X1size + X2size >= 0);
 
+   SCIPfreeBlockMemoryArrayNull(masterscip, &X, Xsize);
+   Xsize = 0;
+   assert(X == NULL);
+
    // determine the fractionality of B1 and B2
    SCIP_Real fractionality1 = calcFractionality(masterscip, X1, X1size);
    SCIP_Real fractionality2 = calcFractionality(masterscip, X2, X2size);
@@ -1318,22 +1340,10 @@ SCIP_RETCODE _separation(
          SCIP_CALL( _separation(masterscip, X1, X1size, &B1, &new_Bsize, blocknr, numInitialVars, result, FALSE) );
 
          // copy the new component bound sequence B1 into B
-         if( *Bsize == 0 )
-         {
-            SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, B, new_Bsize) );
-         }
-         else
-         {
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, B, *Bsize, new_Bsize) );
-         }
-         for( i = 0; i < new_Bsize; ++i )
-         {
-            (*B)[i] = B1[i];
-         }
          *Bsize = new_Bsize;
+         *B = B1;
 
-         // free B1 and X1
-         SCIPfreeBlockMemoryArrayNull(masterscip, &B1, new_Bsize);
+         // free X1
          SCIPfreeBlockMemoryArrayNull(masterscip, &X1, X1size);
          X1size = 0;
       }
@@ -1347,23 +1357,11 @@ SCIP_RETCODE _separation(
          // recursive call
          SCIP_CALL( _separation(masterscip, X2, X2size, &B2, &new_Bsize, blocknr, numInitialVars, result, FALSE) );
 
-         // copy the new component bound sequence B2 into B, and free B2
-         if( *Bsize == 0 )
-         {
-            SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, B, new_Bsize) );
-         }
-         else
-         {
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, B, *Bsize, new_Bsize) );
-         }
-         for( i = 0; i < new_Bsize; ++i )
-         {
-            (*B)[i] = B2[i];
-         }
+         // copy the new component bound sequence B2 into B
          *Bsize = new_Bsize;
+         *B = B2;
 
-         // free B2 and X2
-         SCIPfreeBlockMemoryArrayNull(masterscip, &B2, new_Bsize);
+         // free X2
          SCIPfreeBlockMemoryArrayNull(masterscip, &X2, X2size);
          X2size = 0;
       }
@@ -1378,24 +1376,12 @@ SCIP_RETCODE _separation(
          X2size = 0;
 
          // copy the new component bound sequence B1 into B
-         if( *Bsize == 0 )
-         {
-            SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, B, new_Bsize) );
-         }
-         else
-         {
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, B, *Bsize, new_Bsize) );
-         }
-         for( i = 0; i < new_Bsize; ++i )
-         {
-            (*B)[i] = B1[i];
-         }
          *Bsize = new_Bsize;
+         *B = B1;
 
          *numInitialVars = X1size;
 
-         // free B1 and X1
-         SCIPfreeBlockMemoryArrayNull(masterscip, &B1, new_Bsize);
+         // free X1
          SCIPfreeBlockMemoryArrayNull(masterscip, &X1, X1size);
          X1size = 0;
       }
@@ -1407,24 +1393,12 @@ SCIP_RETCODE _separation(
          X1size = 0;
 
          // copy the new component bound sequence B2 into B
-         if( *Bsize == 0 )
-         {
-            SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, B, new_Bsize) );
-         }
-         else
-         {
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, B, *Bsize, new_Bsize) );
-         }
-         for( i = 0; i < new_Bsize; ++i )
-         {
-            (*B)[i] = B2[i];
-         }
          *Bsize = new_Bsize;
+         *B = B2;
 
          *numInitialVars = X2size;
 
-         // free B2 and X2
-         SCIPfreeBlockMemoryArrayNull(masterscip, &B2, new_Bsize);
+         // free X2
          SCIPfreeBlockMemoryArrayNull(masterscip, &X2, X2size);
          X2size = 0;
       }
@@ -1546,9 +1520,6 @@ SCIP_RETCODE separation(
 
    /* 2. Call the recursive separation algorithm */
    SCIP_CALL( _separation(masterscip, X, Xsize, B, Bsize, blocknr, numInitialVars, result, TRUE) );
-
-   SCIPfreeBlockMemoryArrayNull(masterscip, &X, Xsize);
-   Xsize = 0;
 
    return SCIP_OKAY;
 }
