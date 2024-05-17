@@ -193,6 +193,26 @@ SCIP_Bool GCGvarIsInferredPricing(
 }
 #endif
 
+/** count the number of inferred pricing variables in a array of variables */
+int GCGcountInferredPricingVars(
+   SCIP_VAR**             vars,               /**< array of variables */
+   int                    nvars               /**< number of variables */
+   )
+{
+   int i;
+   int count = 0;
+
+   assert(vars != NULL);
+
+   for( i = 0; i < nvars; i++ )
+   {
+      if( GCGvarIsInferredPricing(vars[i]) )
+         count++;
+   }
+
+   return count;
+}
+
 #ifndef NDEBUG
 /** returns TRUE or FALSE whether variable is a original variable or not */
 SCIP_Bool GCGvarIsOriginal(
@@ -1423,12 +1443,7 @@ SCIP_RETCODE GCGcreateMasterVar(
    {
       npricingvars = SCIPgetNOrigVars(pricingscip);
       pricingvars = SCIPgetOrigVars(pricingscip);
-      for( i = 0; i < npricingvars; i++ )
-      {
-         if( GCGvarIsInferredPricing(pricingvars[i]) )
-            continue;
-         newvardata->data.mastervardata.norigvars++;
-      }
+      newvardata->data.mastervardata.norigvars = npricingvars - GCGcountInferredPricingVars(pricingvars, npricingvars);
       trivialsol = TRUE;
    }
 

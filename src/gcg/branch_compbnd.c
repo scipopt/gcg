@@ -270,11 +270,11 @@ SCIP_RETCODE simplifyComponentBounds(
 
          if( (*B)[i].sense == GCG_COMPBND_SENSE_LE )
          {
-            bound = MIN((*B)[j].bound, (*B)[i].bound);
+            bound = MIN((*B)[j].bound, bound);
          }
          else if( (*B)[i].sense == GCG_COMPBND_SENSE_GE )
          {
-            bound = MAX((*B)[j].bound, (*B)[i].bound);
+            bound = MAX((*B)[j].bound, bound);
          }
       }
 
@@ -1569,7 +1569,7 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
 
       SCIPdebugMessage("\nTrying to branch in block %d:\n", blocknr);
 
-      printBranchingDecisions(masterscip);
+      //printBranchingDecisions(masterscip);
 
       /* 2. Check B&B-tree ancestors for previous compbnd branching in the node */
       SCIP_CALL( initComponentBoundsFromAncestors(masterscip, &B, &Bsize, blocknr) );
@@ -1598,6 +1598,8 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
 
    if( !foundBlock )
    {
+      assert(Bsize == 0);
+      assert(B == NULL);
       SCIPdebugMessage("No block found to branch on\n");
       *result = SCIP_CUTOFF;
       return SCIP_OKAY;
@@ -1613,7 +1615,7 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
    }
 
    /* 4. Remove component bounds that are strengthened by others */
-   SCIP_CALL( simplifyComponentBounds(masterscip, &B, &Bsize) );
+   //SCIP_CALL( simplifyComponentBounds(masterscip, &B, &Bsize) );
    assert(Bsize > 0);
    assert(B != NULL);
 
