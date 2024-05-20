@@ -112,6 +112,7 @@ struct GCG_InferredPricingVarData
 {
    GCG_MASTERCUTDATA*    mastercutdata;      /**< master cut data that was used to infer the pricing variable */
    int                   index;              /**< index of the mastercut in activecuts */
+   int                   modidex;
 };
 typedef struct GCG_InferredPricingVarData GCG_INFERREDPRICINGVARDATA;
 

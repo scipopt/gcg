@@ -1609,6 +1609,8 @@ SCIP_RETCODE GCGcreateInferredPricingVar(
    newvardata->vartype = GCG_VARTYPE_INFERREDPRICING;
    newvardata->blocknr = prob;
    newvardata->data.inferredpricingvardata.mastercutdata = NULL; // will be set in GCGmastercutCreateFrom*
+   newvardata->data.inferredpricingvardata.modidex = -1;
+   newvardata->data.inferredpricingvardata.index = -1;
 
    /* create variable in the master problem */
    SCIP_CALL( SCIPcreateVar(pricingscip, newvar, varname, lb, ub,

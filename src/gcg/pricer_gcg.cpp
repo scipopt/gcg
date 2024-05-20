@@ -1002,8 +1002,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    nactivecuts = GCGgetNActiveCuts(scip_);
    nsepas = GCGrelaxGetNSeparators(scip_);
    sepas = GCGrelaxGetSeparators(scip_);
-
-   //SCIPinfoMessage(scip_, NULL, "stabilize %i\n", stabilize);
+   assert(!stabilize);
 
    for( i = 0; i < nsepas; i++ )
    {
@@ -3329,7 +3328,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    activecuts = GCGgetActiveCuts(scip_);
    nactivecuts = GCGgetNActiveCuts(scip_);
    nsepas = GCGrelaxGetNSeparators(scip_);
-   //SCIPinfoMessage(scip_, NULL, "Start Do\n");
+
    for( i = 0; i < nsepas; i++ )
    {
       for( j = 0; j < nactivecuts[i]; j++ )
@@ -3390,7 +3389,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             if( pricerdata->pricingprobs[j] != NULL )
             {
                SCIP_CALL( GCGsolverUpdate(pricerdata->pricingprobs[j], pricerdata->solvers[i], j,
-                     TRUE, TRUE, (nbranchmastercuts > 0)) );
+                     TRUE, TRUE, TRUE) ); //(nbranchmastercuts > 0) || (nactivecuts != NULL)
             }
          }
       }
