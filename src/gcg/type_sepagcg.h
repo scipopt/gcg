@@ -43,6 +43,7 @@
 #include "scip/type_var.h"
 #include "struct_mastercutdata.h"
 #include "type_gcgcol.h"
+#include "event_sepacuts.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,7 +62,7 @@ typedef struct GCG_Sepa GCG_SEPA;             /**< separator for master problem*
  *    gcgcol          : the column representing a new master variable which should be included in cut
  *    coef            : stores the computed coefficient
  */
-#define GCG_DECL_SEPAGETCOLCOEFFICIENTS(x) SCIP_RETCODE x (SCIP* scip, GCG_SEPA* sepa, GCG_COL* gcgcol, SCIP_Real** coeffs, int ncoeffs)
+#define GCG_DECL_SEPAGETCOLCOEFFICIENTS(x) SCIP_RETCODE x (SCIP* scip, GCG_SEPA* sepa, GCG_MASTERSEPACUT* cut, GCG_COL* gcgcol, SCIP_Real* coeff)
 
 /** method for computing the column coefficient for a cut
  *
@@ -85,7 +86,7 @@ typedef struct GCG_Sepa GCG_SEPA;             /**< separator for master problem*
  *    cut             : cut which has to be altered
  *    dual            : dual for objective
  */
-#define GCG_DECL_SEPASETOBJECTIVE(x) SCIP_RETCODE x (SCIP* scip, GCG_SEPA* sepa, GCG_MASTERCUTDATA* cut, SCIP_Real dual, SCIP_Real*** realdualvalues)
+#define GCG_DECL_SEPASETOBJECTIVE(x) SCIP_RETCODE x (SCIP* scip, GCG_SEPA* sepa, GCG_MASTERCUTDATA* cut, SCIP_Real dual)
 
 #ifdef __cplusplus
 }

@@ -42,6 +42,7 @@
 #include "def.h"
 #include "type_solver.h"
 #include "type_colpool.h"
+#include "type_varhistory.h"
 
 #ifdef __cplusplus
 extern "C" {

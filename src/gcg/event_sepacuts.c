@@ -29,7 +29,7 @@
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-//#define SCIP_DEBUG
+// SCIP_DEBUG
 
 #include <scip/pub_tree.h>
 #include <scip/scip_mem.h>
@@ -73,7 +73,6 @@ struct SCIP_EventhdlrData
 /*
  * Local methods
  */
-
 /** creates and captures a master separator cut */
 static
 SCIP_RETCODE createMasterSepaCut(
@@ -91,6 +90,53 @@ SCIP_RETCODE createMasterSepaCut(
    (*mastersepacut)->mastercutdata = mastercutdata;
    (*mastersepacut)->nuses = 0;
    (*mastersepacut)->knownvarhistory = NULL; // initially NULL, until row is added to LP for first time
+   (*mastersepacut)->weights = NULL;
+   (*mastersepacut)->conssindices = NULL;
+   (*mastersepacut)->n = 0;
+   SCIP_CALL(GCGcaptureMasterSepaCut(*mastersepacut) );
+
+   return SCIP_OKAY;
+}
+
+
+/** creates and captures a subset row cut */
+static
+SCIP_RETCODE createMasterSubsetrowSepaCut(
+   SCIP*                masterscip,            /**< SCIP data structure */
+   GCG_MASTERSEPACUT**  mastersepacut,         /**< pointer to store master separator cut */
+   GCG_MASTERCUTDATA*   mastercutdata,         /**< data associated with the cut */
+   SCIP_Real*           weights,               /**< weights which were used to create the cut */
+   int*                 indices,               /**< indices of constraints used to create the cut */
+   int                  n                      /**< number of constraints used to create the cut */
+)
+{
+   int i;
+   assert(masterscip != NULL);
+   assert(mastercutdata != NULL);
+   assert(mastersepacut != NULL);
+   assert(GCGisMaster(masterscip));
+
+   SCIP_CALL( SCIPallocBlockMemory(masterscip, mastersepacut) );
+   (*mastersepacut)->mastercutdata = mastercutdata;
+   (*mastersepacut)->nuses = 0;
+   (*mastersepacut)->knownvarhistory = NULL; // initially NULL, until row is added to LP for first time
+   (*mastersepacut)->weights = NULL;
+   (*mastersepacut)->conssindices = NULL;
+   (*mastersepacut)->n = 0;
+
+   if( n > 0 )
+   {
+      SCIPallocBlockMemoryArray(masterscip, &((*mastersepacut)->weights), n);
+      SCIPallocBlockMemoryArray(masterscip, &((*mastersepacut)->conssindices), n);
+      (*mastersepacut)->n = n;
+
+      for( i = 0; i < n; i++ )
+      {
+         (*mastersepacut)->weights[i] = weights[i];
+         (*mastersepacut)->conssindices[i] = indices[i];
+      }
+   }
+
    SCIP_CALL(GCGcaptureMasterSepaCut(*mastersepacut) );
 
    return SCIP_OKAY;
@@ -109,11 +155,18 @@ SCIP_RETCODE freeMasterSepaCut(
    assert(mastersepacut != NULL);
    assert(*mastersepacut != NULL);
 
-   if((*mastersepacut)->knownvarhistory != NULL )
+   if( (*mastersepacut)->knownvarhistory != NULL )
    {
       SCIPdebugMessage("free mastersepacut: var history is freed\n");
       SCIP_CALL( GCGvarhistoryFreeReference(masterscip, &((*mastersepacut)->knownvarhistory)) );
    }
+   if( (*mastersepacut)->n > 0 )
+   {
+      SCIPfreeBlockMemoryArrayNull(masterscip, &((*mastersepacut)->conssindices), (*mastersepacut)->n);
+      SCIPfreeBlockMemoryArrayNull(masterscip, &((*mastersepacut)->weights), (*mastersepacut)->n);
+      (*mastersepacut)->n = 0;
+   }
+
    SCIP_CALL( GCGmastercutGetRow((*mastersepacut)->mastercutdata, &row) );
    SCIPdebugMessage("free mastersepacut: free cut for row %s\n", SCIProwGetName(row));
    GCGmastercutFreeMaster(masterscip, &((*mastersepacut)->mastercutdata));
@@ -545,7 +598,7 @@ SCIP_RETCODE GCGreleaseMasterSepaCut(
 
    if((*mastersepacut)->nuses == 0 )
    {
-      SCIP_CALL(freeMasterSepaCut(masterscip, mastersepacut) );
+      SCIP_CALL( freeMasterSepaCut(masterscip, mastersepacut) );
    }
 
    *mastersepacut = NULL;
@@ -555,9 +608,12 @@ SCIP_RETCODE GCGreleaseMasterSepaCut(
 
 /** adds a new cut to generatedcut */
 SCIP_RETCODE GCGaddCutToGeneratedCutsSepa(
-   SCIP* masterscip,                   /**< SCIP data structure */
-   GCG_MASTERCUTDATA* mastercutdata,   /**< mastercut data */
-   int sepaidx                         /**< index of the separator which generated the cut */
+   SCIP*                masterscip,       /**< SCIP data structure */
+   GCG_MASTERCUTDATA*   mastercutdata,    /**< mastercut data */
+   SCIP_Real*           weights,          /**< weights used to create the cut */
+   int*                 conssindices,     /**< indices of constraints used to create the cut */
+   int                  n,                /**< number of constraints used to create the cut */
+   int                  sepaidx           /**< index of the separator which generated the cut */
 )
 {
    SCIP_EVENTHDLR* eventhdlr;
@@ -579,7 +635,8 @@ SCIP_RETCODE GCGaddCutToGeneratedCutsSepa(
    assert(row != NULL);
 
    SCIP_CALL( ensureGeneratedSize(masterscip, eventhdlrdata, sepaidx, eventhdlrdata->ngeneratedcuts[sepaidx] + 1) );
-   SCIP_CALL( createMasterSepaCut(masterscip, &mastersepacut, mastercutdata) );
+   SCIP_CALL( createMasterSubsetrowSepaCut(masterscip, &mastersepacut, mastercutdata, weights, conssindices, n) );
+   //SCIP_CALL( createMasterSepaCut(masterscip, &mastersepacut, mastercutdata) );
    eventhdlrdata->generatedcuts[sepaidx][eventhdlrdata->ngeneratedcuts[sepaidx]] = mastersepacut;
    SCIP_CALL( SCIPhashmapSetImageInt(eventhdlrdata->rowxgeneratedmap, row, eventhdlrdata->ngeneratedcuts[sepaidx]) );
    (eventhdlrdata->ngeneratedcuts[sepaidx])++;
@@ -802,4 +859,40 @@ SCIP_RETCODE GCGaddCutActiveCuts(
    (eventhdlrdata->nactivecuts[sepaidx])++;
 
    return SCIP_OKAY;
+}
+
+GCG_MASTERCUTDATA* GCGsepamastercutGetMastercutData(
+   GCG_MASTERSEPACUT* mastersepacut
+   )
+{
+   assert(mastersepacut != NULL);
+
+   return mastersepacut->mastercutdata;
+}
+
+SCIP_Real* GCGsepamastercutGetWeights(
+   GCG_MASTERSEPACUT* mastersepacut
+   )
+{
+   assert(mastersepacut != NULL);
+
+   return mastersepacut->weights;
+}
+
+int* GCGsepamastercutGetConssIndices(
+   GCG_MASTERSEPACUT* mastersepacut
+   )
+{
+   assert(mastersepacut != NULL);
+
+   return mastersepacut->conssindices;
+}
+
+int GCGsepamastercutGetNWeights(
+   GCG_MASTERSEPACUT* mastersepacut
+   )
+{
+   assert(mastersepacut != NULL);
+
+   return  mastersepacut->n;
 }

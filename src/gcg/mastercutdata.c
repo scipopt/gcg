@@ -57,17 +57,6 @@
  * @{
  */
 
-static
-SCIP_RETCODE setCoeffVarSetIndex(
-   GCG_PRICINGMODIFICATION* pricingmodification,
-   int index
-   )
-{
-   assert(pricingmodification != NULL);
-   assert(GCGvarIsInferredPricing(pricingmodification->coefvar));
-   pricingmodification->coefvar->vardata->data.inferredpricingvardata.index = index;
-   return SCIP_OKAY;
-}
 
 /** free a pricing modification */
 //static
@@ -235,7 +224,6 @@ SCIP_RETCODE GCGmastercutCreateFromCons(
       pricingmodifications[i]->coefvar->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
       for( j = 0; j < pricingmodifications[i]->nadditionalvars; j++ ) {
          pricingmodifications[i]->additionalvars[j]->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
-         pricingmodifications[i]->additionalvars[j]->vardata->data.inferredpricingvardata.index = -1;
       }
    }
 
@@ -299,7 +287,6 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
       pricingmodifications[i]->coefvar->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
       for( j = 0; j < pricingmodifications[i]->nadditionalvars; j++ ) {
          pricingmodifications[i]->additionalvars[j]->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
-         pricingmodifications[i]->additionalvars[j]->vardata->data.inferredpricingvardata.index = -1;
       }
    }
 
@@ -671,7 +658,6 @@ SCIP_RETCODE GCGmastercutApplyPricingModificationsIndex(
 
    for( i = 0; i < mastercutdata->npricingmodifications; i++ )
    {
-      SCIP_CALL( setCoeffVarSetIndex(mastercutdata->pricingmodifications[i], index) );
       pricingprob = GCGgetPricingprob(origscip, mastercutdata->pricingmodifications[i]->blocknr);
       assert(pricingprob != NULL);
       SCIP_CALL( GCGpricingmodificationApply(pricingprob, mastercutdata->pricingmodifications[i]) );

@@ -39,6 +39,7 @@
 #include <scip/type_sepa.h>
 
 #include "type_sepagcg.h"
+#include "event_sepacuts.h"
 
 #ifdef __cplusplus
 extern "C" {

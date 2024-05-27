@@ -135,8 +135,8 @@ SCIP_DECL_SEPAINIT(sepaInitOriginal)
 
    SCIPdebugMessage("initialize gcg sepaorig \n");
    /* creates the subsetrow gcg separator and includes in the relaxator data of the original problem */
-   sepadata->sepaidx = GCGrelaxIncludeSeparator(origscip, sepa, NULL,
-                                                NULL, NULL);
+   //sepadata->sepaidx = GCGrelaxIncludeSeparator(origscip, sepa, NULL,
+    //                                            NULL, NULL);
 
    return SCIP_OKAY;
 }

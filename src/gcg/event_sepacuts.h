@@ -38,6 +38,7 @@
 
 #include "def.h"
 #include "mastercutdata.h"
+#include "type_varhistory.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,6 +50,9 @@ struct GCG_MasterSepaCut
    GCG_MASTERCUTDATA*      mastercutdata;          /**< mastercutdata */
    GCG_VARHISTORY*         knownvarhistory;        /**< pointer to the history of priced variables */
    int                     nuses;                  /**< number of times this cut is referenced */
+   int                     n;                      /**< number of constraints used to create cut */
+   int*                    conssindices;           /**< indices of constraints used to create cut */
+   SCIP_Real*              weights;                /**< weights used to create cut */
 };
 
 typedef struct GCG_MasterSepaCut GCG_MASTERSEPACUT;
@@ -92,13 +96,32 @@ SCIP_RETCODE GCGcaptureMasterSepaCut(
 );
 
 SCIP_RETCODE GCGaddCutToGeneratedCutsSepa(
-   SCIP* masterscip,                   /**< SCIP data structure */
-   GCG_MASTERCUTDATA* mastercutdata,   /**< mastercut data */
-   int sepaidx                         /**< index of the separator which generated the cut */
+   SCIP*                masterscip,       /**< SCIP data structure */
+   GCG_MASTERCUTDATA*   mastercutdata,    /**< mastercut data */
+   SCIP_Real*           weights,          /**< weights used to create the cut */
+   int*                 conssindices,     /**< indices of constraints used to create the cut */
+   int                  n,                /**< number of constraints used to create the cut */
+   int                  sepaidx           /**< index of the separator which generated the cut */
 );
 
 SCIP_RETCODE GCGclearGeneratedCuts(
    SCIP* masterscip     /**< SCIP data structure */
+);
+
+GCG_MASTERCUTDATA* GCGsepamastercutGetMastercutData(
+   GCG_MASTERSEPACUT* mastersepacut
+);
+
+SCIP_Real* GCGsepamastercutGetWeights(
+   GCG_MASTERSEPACUT* mastersepacut
+);
+
+int* GCGsepamastercutGetConssIndices(
+   GCG_MASTERSEPACUT* mastersepacut
+);
+
+int GCGsepamastercutGetNWeights(
+   GCG_MASTERSEPACUT* mastersepacut
 );
 
 #ifdef __cplusplus

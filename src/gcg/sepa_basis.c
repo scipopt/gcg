@@ -886,8 +886,8 @@ SCIP_DECL_SEPAINIT(sepaInitBasis)
          SCIP_CALL( SCIPaddVarToRow(origscip, sepadata->objrow, origvars[i], obj) );
       }
    }
-   sepadata->sepaidx = GCGrelaxIncludeSeparator(origscip, sepa, NULL,
-                                                NULL, NULL);
+   //sepadata->sepaidx = GCGrelaxIncludeSeparator(origscip, sepa, NULL,
+   //                                             NULL, NULL);
 
    return SCIP_OKAY;
 }
