@@ -32,8 +32,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-// #define SCIP_DEBUG
-// #define DEBUG_PRICING_ALL_OUTPUT
+/* #define SCIP_DEBUG */
+/* #define DEBUG_PRICING_ALL_OUTPUT */
 #define SUBGCG_DEBUG_ITER -1
 
 #include "scip/scip.h"
@@ -219,12 +219,8 @@ SCIP_Bool buildProblem(
    SCIP_CALL( SCIPcreate(&subgcg) );
    solverdata->pricingprobs[probnr] = subgcg;
 
-#ifndef SCIP_DEBUG
    SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
-#if SCIP_VERSION > 210
    SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/printreason", FALSE) );
-#endif
-#endif
 
    SCIP_CALL( SCIPincludeGcgPlugins(subgcg, (SCIP_Bool)(solverdata->depth + 1 < solverdata->maxdepth)) );
    (void)SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_subgcg", SCIPgetProbName(pricingprob) );
@@ -759,8 +755,8 @@ GCG_DECL_SOLVERSOLVE(solverSolveGcg)
    SCIP_CALL( solveProblem(pricingprob, subgcg, probnr, solverdata, lowerbound, status) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
+   SCIP_CALL( GCGprintStatistics(subgcg, NULL) );
    SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", 0) );
-   SCIP_CALL( SCIPprintStatistics(subgcg, NULL) );
 #endif
 
    SCIPdebugMessage("GCG Solver: solve finished, probnr: %i, status: %u\n", probnr, *status);
