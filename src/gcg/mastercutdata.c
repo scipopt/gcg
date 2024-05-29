@@ -65,16 +65,16 @@ SCIP_RETCODE GCGpricingmodificationFree(
    GCG_PRICINGMODIFICATION* pricingmodification /**< pointer to the pricing modification */
    )
 {
-   SCIP* masterscip;
+   SCIP* originalscip;
    SCIP* pricingscip;
    int i;
 
    assert(scip != NULL);
-   assert(GCGisOriginal(scip));
+   assert(GCGisMaster(scip));
    assert(pricingmodification != NULL);
 
-   masterscip = GCGgetMasterprob(scip);
-   pricingscip = GCGgetPricingprob(scip, pricingmodification->blocknr);
+   originalscip = GCGmasterGetOrigprob(scip);
+   pricingscip = GCGgetPricingprob(originalscip, pricingmodification->blocknr);
 
    SCIP_CALL( SCIPreleaseVar(pricingscip, &pricingmodification->coefvar) );
 
@@ -168,6 +168,7 @@ SCIP_RETCODE GCGmastercutCreateFromCons(
    int j;
 
    assert(scip != NULL);
+   assert(GCGisMaster(scip));
    assert(mastercutdata != NULL);
    assert(*mastercutdata == NULL);
    assert(cons != NULL);
@@ -230,6 +231,7 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
    int j;
 
    assert(scip != NULL);
+   assert(GCGisMaster(scip));
    assert(mastercutdata != NULL);
    assert(*mastercutdata == NULL);
    assert(row != NULL);
@@ -280,25 +282,22 @@ SCIP_RETCODE GCGmastercutFree(
    GCG_MASTERCUTDATA**    mastercutdata        /**< pointer to the mastercut data */
    )
 {
-   SCIP* masterscip;
    int i;
 
    assert(scip != NULL);
-   assert(GCGisOriginal(scip));
+   assert(GCGisMaster(scip));
    assert(mastercutdata != NULL);
    assert(*mastercutdata != NULL);
-
-   masterscip = GCGgetMasterprob(scip);
 
    switch( (*mastercutdata)->type )
    {
    case GCG_MASTERCUTTYPE_CONS:
       assert((*mastercutdata)->cut.cons != NULL);
-      SCIP_CALL( SCIPreleaseCons(masterscip, &(*mastercutdata)->cut.cons) );
+      SCIP_CALL( SCIPreleaseCons(scip, &(*mastercutdata)->cut.cons) );
       break;
    case GCG_MASTERCUTTYPE_ROW:
       assert((*mastercutdata)->cut.row != NULL);
-      SCIP_CALL( SCIPreleaseRow(masterscip, &(*mastercutdata)->cut.row) );
+      SCIP_CALL( SCIPreleaseRow(scip, &(*mastercutdata)->cut.row) );
       break;
    default:
       SCIP_CALL( SCIP_ERROR );
@@ -309,9 +308,9 @@ SCIP_RETCODE GCGmastercutFree(
       SCIP_CALL( GCGpricingmodificationFree(scip, &(*mastercutdata)->pricingmodifications[i]) );
    }
 
-   SCIPfreeBlockMemoryArrayNull(masterscip, &(*mastercutdata)->pricingmodifications, (*mastercutdata)->npricingmodifications);
+   SCIPfreeBlockMemoryArrayNull(scip, &(*mastercutdata)->pricingmodifications, (*mastercutdata)->npricingmodifications);
    assert((*mastercutdata)->pricingmodifications == NULL);
-   SCIPfreeBlockMemoryNull(masterscip, mastercutdata);
+   SCIPfreeBlockMemoryNull(scip, mastercutdata);
    assert(*mastercutdata == NULL);
 
    return SCIP_OKAY;
@@ -347,6 +346,7 @@ SCIP_RETCODE GCGmastercutAddMasterVar(
    )
 {
    assert(masterscip != NULL);
+   assert(GCGisMaster(masterscip));
    assert(mastercutdata != NULL);
    assert(var != NULL);
 
@@ -379,6 +379,7 @@ SCIP_RETCODE GCGmastercutUpdateDualValue(
    SCIP* pricingscip;
 
    assert(mastercutdata != NULL);
+   assert(GCGisMaster(masterscip));
 
    origscip = GCGmasterGetOrigprob(masterscip);
    assert(origscip != NULL);
@@ -501,6 +502,7 @@ GCG_PRICINGMODIFICATION* GCGmastercutGetPricingModification(
    int i;
 
    assert(mastercutdata != NULL);
+   assert(GCGisMaster(masterscip));
    assert(blocknr >= 0);
 
    originalproblem = GCGgetOriginalprob(masterscip);
@@ -576,6 +578,7 @@ SCIP_RETCODE GCGmastercutApplyPricingModifications(
    SCIP* pricingprob;
 
    assert(masterscip != NULL);
+   assert(GCGisMaster(masterscip));
    assert(mastercutdata != NULL);
 
    origscip = GCGmasterGetOrigprob(masterscip);
@@ -636,6 +639,7 @@ SCIP_RETCODE GCGmastercutUndoPricingModifications(
    SCIP* pricingprob;
 
    assert(masterscip != NULL);
+   assert(GCGisMaster(masterscip));
    assert(mastercutdata != NULL);
 
    origscip = GCGmasterGetOrigprob(masterscip);
