@@ -34,3 +34,10 @@ cmake-build-*/
 .idea/
 __pycache__
 .vscode/
+*.lp
+*.mps
+*.dec
+*.ndec
+*.set
+*.test
+*.solu
