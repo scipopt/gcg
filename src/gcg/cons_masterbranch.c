@@ -36,7 +36,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/*#define SCIP_DEBUG*/
+/* #define SCIP_DEBUG */
 #include <assert.h>
 #include <string.h>
 
@@ -198,12 +198,16 @@ SCIP_RETCODE initializeConsdata(
    origcons = GCGconsOrigbranchGetActiveCons(origscip);
    assert(origcons != NULL);
 
-   /* @fixme: There should be an assertion instead; I guess consdata->origcons should be NULL */
-   if( consdata->origcons != origcons ) /*rootnode?*/
+   if( consdata->origcons == NULL ) /*rootnode?*/
    {
       SCIPdebugMessage("set root origcons\n");
       consdata->origcons = origcons;
       GCGconsOrigbranchSetMastercons(origcons, cons);
+   }
+   else if( consdata->origcons != origcons )
+   {
+      // todo: Check this case.
+      SCIPdebugMessage("B&B trees could be out of sync\n");
    }
 
    /* @fixme: Why should anything else happen? */
@@ -1638,7 +1642,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    assert(origscip != NULL);
 
 
-   SCIPdebugMessage("Activating ");
+   SCIPdebugMessage("Activating branch master constraint: <%s>[stack size: %d].\n", SCIPconsGetName(cons), conshdlrdata->nstack+1);
    /* If the node is activated the first time, we have to initialize the constraint data first */
    if( consdata->nactivated == 0 )
    {

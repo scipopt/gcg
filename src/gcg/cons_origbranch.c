@@ -284,6 +284,7 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
 
    /* free constraint data */
    SCIPfreeBlockMemory(scip, consdata);
+   *consdata = NULL;
 
    return SCIP_OKAY;
 }
