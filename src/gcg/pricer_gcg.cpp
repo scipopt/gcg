@@ -3746,11 +3746,14 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
       }
       if( !reliable && pricerdata->onlyreliablebigm )
       {
-         pricerdata->useartificialvars = FALSE;
+         if( pricerdata->useartificialvars )
+         {
+            pricerdata->useartificialvars = FALSE;
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Big M to be used for artificial variables not reliable; use regular Farkas pricing instead.\n");
+         }
          pricerdata->maxobj = SCIPinfinity(origprob);
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Big M to be used for artificial variables not reliable; use regular Farkas pricing instead.\n");
       }
-      else if( !reliable && !pricerdata->onlyreliablebigm )
+      else if( pricerdata->useartificialvars && !reliable && !pricerdata->onlyreliablebigm )
          SCIPwarningMessage(scip, "Big M used for artificial variables not reliable. This might lead to wrong solutions.\n");
    }
    else
