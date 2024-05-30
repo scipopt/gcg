@@ -1337,6 +1337,8 @@ SCIP_RETCODE _separation(
       (SCIPisFeasIntegral(masterscip, fractionality1) && SCIPisFeasIntegral(masterscip, fractionality2)) ||
       (!SCIPisFeasIntegral(masterscip, fractionality1) && !SCIPisFeasIntegral(masterscip, fractionality2))
    );
+   long long memused7;
+   long long memused8;
 
    if( SCIPisFeasIntegral(masterscip, fractionality1) && SCIPisFeasIntegral(masterscip, fractionality2) )
    {
@@ -1394,8 +1396,10 @@ SCIP_RETCODE _separation(
       {
          // free B1 and X1
          SCIPfreeBlockMemoryArrayNull(masterscip, &B1, new_Bsize);
+         memused7 = BMSgetBlockMemoryUsed_call(SCIPblkmem(masterscip));
          SCIPfreeBlockMemoryArrayNull(masterscip, &X1, X1size);
          X1size = 0;
+         memused8 = BMSgetBlockMemoryUsed_call(SCIPblkmem(masterscip));
 
          // copy the new component bound sequence B2 into B
          *Bsize = new_Bsize;
@@ -1409,7 +1413,7 @@ SCIP_RETCODE _separation(
       }
    }
 
-   long long memused7 = BMSgetBlockMemoryUsed_call(SCIPblkmem(masterscip));
+   long long memused9 = BMSgetBlockMemoryUsed_call(SCIPblkmem(masterscip));
 
    return SCIP_OKAY;
 }
@@ -1531,6 +1535,8 @@ SCIP_RETCODE separation(
 
    /* 2. Call the recursive separation algorithm */
    SCIP_CALL( _separation(masterscip, X, Xsize, B, Bsize, blocknr, numInitialVars, result, TRUE) );
+
+   long long memused3 = BMSgetBlockMemoryUsed_call(SCIPblkmem(masterscip));
 
    return SCIP_OKAY;
 }
