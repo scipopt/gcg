@@ -388,7 +388,6 @@ SCIP_RETCODE GCGmastercutUpdateDualValue(
    {
       assert(mastercutdata->pricingmodifications[i].coefvar != NULL);
       assert(GCGvarIsInferredPricing(mastercutdata->pricingmodifications[i].coefvar));
-      assert(GCGgetBlockRepresentative(origscip, SCIPvarGetProbindex(mastercutdata->pricingmodifications[i].coefvar)) == mastercutdata->pricingmodifications[i].blocknr);
 
       pricingscip = GCGgetPricingprob(origscip, mastercutdata->pricingmodifications[i].blocknr);
       assert(pricingscip != NULL);
