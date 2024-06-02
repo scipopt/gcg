@@ -303,7 +303,12 @@ SCIP_RETCODE GCGpricestoreAddCol(
          SCIPcreateSol(col->pricingprob, &sol, NULL);
          SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals);
          SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE);
-         assert(feasible);
+         /* solutions from the column pool might become infeasible if cuts were added to the LP after their creation */
+         if( !feasible && GCGcolGetAge(col) > 0 )
+         {
+            /* @todo delete column and consider solutions created by heurs */
+            SCIPdebugMessage("column no longer feasible after addition of new cut\n");
+         }
          SCIPfreeSol(col->pricingprob, &sol);
       }
       for( i = 0; i < col->nvars; ++i )

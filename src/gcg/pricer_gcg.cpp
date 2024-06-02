@@ -3344,14 +3344,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          GCG_MASTERCUTDATA* mastercutdata;
 
          mastercutdata = GCGsepamastercutGetMastercutData(activecuts[i][j]);
-         assert(mastercutdata);
+         assert(mastercutdata != NULL);
          if( GCGmastercutIsActive(mastercutdata) )
          {
-            //SCIP_Real realdual;
-            //realdual = pricetype->mastercutGetDual(scip_, activecuts[i][j]->mastercutdata);
-            /* if dual of cut is zero: the modifications are useless and can be left */
-            //if( SCIPisZero(scip_, realdual) )
-            //   continue;
             SCIP_CALL( GCGmastercutApplyPricingModifications(scip_, mastercutdata) );
          }
       }
@@ -3801,14 +3796,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       {
          GCG_MASTERCUTDATA* mastercutdata;
          mastercutdata = GCGsepamastercutGetMastercutData(activecuts[i][j]);
-         assert(mastercutdata);
+         assert(mastercutdata != NULL);
          if( GCGmastercutIsActive(mastercutdata) )
          {
-            //SCIP_Real realdual;
-            //realdual = pricetype->mastercutGetDual(scip_, activecuts[i][j]->mastercutdata);
-            //if( SCIPisZero(scip_, realdual) )
-            //   continue;
-
             SCIP_CALL( GCGmastercutUndoPricingModifications(scip_, mastercutdata) );
          }
       }
