@@ -292,6 +292,8 @@ SCIP_RETCODE eventRowAddedToLP(
       if( SCIPhashmapExists(eventhdlrdata->rowxgeneratedmap, row) )
       {
          /* create corresponding storedcut of new row and add it to active cuts */
+         SCIPinfoMessage(scip, NULL, "row added event: row %s is added to active cuts at %i\n", SCIProwGetName(row),
+                         eventhdlrdata->nactivecuts[sepaidx]);
          SCIPdebugMessage("row added event: row %s is added to active cuts at %i\n", SCIProwGetName(row),
                           eventhdlrdata->nactivecuts[sepaidx]);
          generatedidx = SCIPhashmapGetImageInt(eventhdlrdata->rowxgeneratedmap, row);
