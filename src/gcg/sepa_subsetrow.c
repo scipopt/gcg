@@ -50,8 +50,8 @@
 
 #define SEPA_NAME              "subsetrow"
 #define SEPA_DESC              "subsetrow separator"
-#define SEPA_PRIORITY                 0
-#define SEPA_FREQ                    100
+#define SEPA_PRIORITY                 1000
+#define SEPA_FREQ                    1
 #define SEPA_MAXBOUNDDIST           1.0
 #define SEPA_USESSUBSCIP          FALSE /**< does the separator use a secondary SCIP instance? */
 #define SEPA_DELAY                FALSE /**< should separation method be delayed, if other separators found cuts? */
@@ -645,6 +645,8 @@ GCG_DECL_SEPAGETCOLCOEFFICIENTS(gcgsepaGetColCoefficientSubsetrow)
 {
    SCIP_Real* weights;
    SCIP_Real* mastercoeffs;
+   SCIP_ROW* mastercutrow;
+   GCG_MASTERCUTDATA* mastercutdata;
    int* conssindices;
    int n;
    int i;
@@ -671,7 +673,13 @@ GCG_DECL_SEPAGETCOLCOEFFICIENTS(gcgsepaGetColCoefficientSubsetrow)
       *coeff += weights[i] * mastercoeffs[conssindices[i]];
    }
 
-   SCIPdebugMessage("column coeff: %f\n", *coeff);
+#ifdef SCIP_DEBUG
+   mastercutdata = GCGsepamastercutGetMastercutData(cut);
+   assert(mastercutdata != NULL);
+   SCIP_CALL( GCGmastercutGetRow(mastercutdata, &mastercutrow) );
+   assert(mastercutrow != NULL);
+   SCIPdebugMessage("column coeff for cut %s: %f\n", SCIProwGetName(mastercutrow), *coeff);
+#endif
    *coeff = SCIPfeasFloor(scip, *coeff);
 
    return SCIP_OKAY;
