@@ -117,7 +117,7 @@ if(HMETIS_FOUND)
 endif()
 
 set(SYM sbliss CACHE STRING "options for symmetry computation")  #create the variable
-set_property(CACHE SYM PROPERTY STRINGS sbliss bliss none )  #define list of values GUI will offer for the variable
+set_property(CACHE SYM PROPERTY STRINGS sbliss bliss nauty snauty none )  #define list of values GUI will offer for the variable
 
 #set the correct rpath for OS X
 set(CMAKE_MACOSX_RPATH ON)
@@ -228,11 +228,9 @@ if(SYM STREQUAL "bliss" OR SYM STREQUAL "sbliss")
    set(SYM_PIC_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
-elseif(SYM STREQUAL "none")
+else()
    set(SYM_LIBRARIES)
    set(SYM_PIC_LIBRARIES)
-else()
-   message(FATAL_ERROR "option SYM has wrong value")
 endif()
 
 # TODO: In SCIP, license is in COPYING file and not in LICENSE.
