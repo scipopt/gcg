@@ -47,6 +47,7 @@
 #include "event_sepacuts.h"
 #include "scip/cons_linear.h"
 #include "pub_gcgcol.h"
+#include "scip_misc.h"
 
 #define SEPA_NAME              "subsetrow"
 #define SEPA_DESC              "subsetrow separator"
@@ -359,8 +360,8 @@ SCIP_RETCODE computePricingConssCoefficients(
       /* get all variables and their corresponding coefficients in the original constraint */
       origcons = originalconss[selectedconssidx[i]];
       SCIPdebugMessage("Process original constraint %s\n", SCIPconsGetName(origcons));
-      SCIP_CALL( SCIPgetConsNVars(origscip, origcons, &norigconsvars, &success) );
-      assert(success);
+      norigconsvars = GCGconsGetNVars(origscip, origcons);
+
       if( norigconsvars == 0 )
       {
          SCIPdebugMessage("constraint has no variables\n");
@@ -371,13 +372,13 @@ SCIP_RETCODE computePricingConssCoefficients(
       origconscoeffs = NULL;
       SCIPallocBufferArray(origscip, &origconsvars, norigconsvars);
       SCIPallocBufferArray(origscip, &origconscoeffs, norigconsvars);
-      SCIP_CALL( SCIPgetConsVars(origscip, origcons, origconsvars, norigconsvars, &success) );
-      assert(success);
-      SCIP_CALL( SCIPgetConsVals(origscip, origcons, origconscoeffs, norigconsvars, &success) );
-      assert(success);
+      SCIP_CALL( GCGconsGetVars(origscip, origcons, origconsvars, norigconsvars) );
+      SCIP_CALL(GCGconsGetVals(origscip, origcons, origconscoeffs, norigconsvars) );
+
       SCIPdebugMessage("number of orig vars %i\n", norigconsvars);
       for( j = 0; j < norigconsvars; j++ )
       {
+         assert(GCGvarIsOriginal(origconsvars[j]));
          /* use the pricing variable corresponding to the original variable as key in map */
          pricingvar = GCGoriginalVarGetPricingVar(origconsvars[j]);
          if( pricingvar == NULL )
