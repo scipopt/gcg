@@ -301,20 +301,54 @@ SCIP_RETCODE GCGpricestoreAddCol(
       if( SCIPgetStage(col->pricingprob) <= SCIP_STAGE_SOLVING )
       {
          SCIPcreateSol(col->pricingprob, &sol, NULL);
-         SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals);
-         SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE);
-         SCIPfreeSol(col->pricingprob, &sol);
-
-         /* solutions from the column pool might become infeasible if cuts were added to the LP after their creation */
-         if( !feasible && GCGcolGetAge(col) > 0 )
+         SCIP_RETCODE setsol = SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals);
+         if( setsol != SCIP_OKAY )
          {
-            /* @todo these columns should be discarded */
-            SCIPdebugMessage("discard column from column pool as it now violates cut added after its creation\n");
+            SCIPdebugMessage("could not set solution: thses columns should robably also be discarded\n");
          }
          else
          {
-            assert(feasible);
+            if( col->nvars == 0 )
+            {
+               assert(col->nvars == 0);
+               SCIPdebugMessage("\n");
+            }
+
+            SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE);
+
+            /* solutions from the column pool might become infeasible if cuts were added to the LP after their creation */
+            if( !feasible && GCGcolGetAge(col) > 0 )
+            {
+               /* @todo these columns should be discarded */
+               SCIPdebugMessage("discard column from column pool as it now violates cut added after its creation\n");
+            }
+            else
+            {
+               if( !feasible )
+               {
+                  for( i = 0; i < col->nvars; i++ )
+                  {
+                     SCIPinfoMessage(scip, NULL, "%s: %f\n", SCIPvarGetName(col->vars[i]), col->vals[i]);
+                  }
+                  int nprobvars;
+                  SCIP_VAR** probvars;
+                  SCIP_Real solval;
+
+                  nprobvars = SCIPgetNOrigVars(col->pricingprob);
+                  probvars = SCIPgetOrigVars(col->pricingprob);
+                  for( i = 0; i < nprobvars; i++ )
+                  {
+                     solval = SCIPgetSolVal(col->pricingprob, sol, probvars[i]);
+                     SCIPinfoMessage(scip, NULL, "solval %s: %f\n", SCIPvarGetName(probvars[i]), solval);
+                  }
+                  nprobvars = 0;
+
+               }
+               //assert(feasible);
+            }
          }
+         SCIPfreeSol(col->pricingprob, &sol);
+
 
       }
       for( i = 0; i < col->nvars; ++i )
