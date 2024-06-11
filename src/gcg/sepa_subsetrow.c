@@ -32,7 +32,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 #include <assert.h>
 
 #include "mastercutdata.h"
@@ -221,10 +221,11 @@ SCIP_RETCODE createSubsetRowCut(
       ssrc_coeff = SCIPfeasFloor(masterscip, ssrc_coeff);
       if( !SCIPisZero(masterscip, ssrc_coeff) )
       {
-         SCIPdebugMessage("Add master variable %s with coefficient %f to subset row cut\n", SCIPvarGetName(mastervar), ssrc_coeff);
+         //SCIPdebugMessage("Add master variable %s with coefficient %f to subset row cut\n", SCIPvarGetName(mastervar), ssrc_coeff);
          SCIP_CALL( SCIPaddVarToRow(masterscip, *ssrc, mastervar, ssrc_coeff) );
       }
    }
+
    SCIP_CALL( SCIPflushRowExtensions(masterscip, *ssrc) );
 
    return SCIP_OKAY;
@@ -264,6 +265,7 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS(
 
       /* lhs <= ax <= rhs */
       mastercons = masterconss[selectedconssidx[i]];
+      SCIPdebugPrintCons(masterscip, mastercons, NULL);
       lhs_mastercons = SCIPconsGetLhs(masterscip, mastercons, &success);
       assert(success);
       rhs_mastercons = SCIPconsGetRhs(masterscip, mastercons, &success);
@@ -360,6 +362,7 @@ SCIP_RETCODE computePricingConssCoefficients(
       /* get all variables and their corresponding coefficients in the original constraint */
       origcons = originalconss[selectedconssidx[i]];
       SCIPdebugMessage("Process original constraint %s\n", SCIPconsGetName(origcons));
+      SCIPdebugPrintCons(origscip, origcons, NULL);
       norigconsvars = GCGconsGetNVars(origscip, origcons);
 
       if( norigconsvars == 0 )
@@ -391,10 +394,12 @@ SCIP_RETCODE computePricingConssCoefficients(
          coeff_pricing = SCIPhashmapGetImageReal(mappricingvarxcoeff, pricingvar);
          if( coeff_pricing == SCIP_INVALID )
          {
+            //SCIPdebugMessage("initial coeff for pricing var %s: %f\n", SCIPvarGetName(pricingvar), weights[i] * origconscoeffs[j]);
             SCIPhashmapSetImageReal(mappricingvarxcoeff, pricingvar, weights[i] * origconscoeffs[j]);
          }
          else
          {
+            //SCIPdebugMessage("raise coeff for pricing var %s to: %f\n", SCIPvarGetName(pricingvar), coeff_pricing + weights[i] * origconscoeffs[j]);
             SCIPhashmapSetImageReal(mappricingvarxcoeff, pricingvar, coeff_pricing + weights[i] * origconscoeffs[j]);
          }
       }
@@ -500,8 +505,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       int                        npricingmodifications = 0;    // number of pricing modifications associated with cut
       char                       name[SCIP_MAXSTRLEN];
 
+      //assert(sepadata->ngeneratedcut < 477);
       /* select n constraints and store their indices in selectedconssidx */
-      SCIPdebugMessage("Select %i out of %i constraints\n", sepadata->n, nmasterconss);
+      SCIPdebugMessage("Cut % i: Select %i out of %i constraints\n", i, sepadata->n, nmasterconss);
       if( sepadata->strategy == 0 )
          SCIP_CALL( selectRandomRows(sepadata, nmasterconss, selectedconssidx, sepadata->n) );
 
@@ -519,8 +525,10 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
          SCIPdebugMessage("created an empty row: release row\n");
          SCIPreleaseRow(scip, &ssrc);
          SCIP_CALL( SCIPhashmapRemoveAll(mapmastervarxcoeff) );
+         SCIP_CALL( SCIPhashmapRemoveAll(mappricingvarxcoeff) );
          continue;
       }
+      SCIPprintRow(scip, ssrc, NULL);
 
       /* determine the pricing variables and their coefficients for the pricing constraints */
       SCIP_CALL( computePricingConssCoefficients(origscip, originalconss, selectedconssidx, sepadata->n,
@@ -567,8 +575,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
 
             if( !SCIPisZero(pricingproblem, pricingcoeff) )
             {
-               SCIPdebugMessage("add pricing var %s with coefficient %f to constraint for pricing problem %i\n",
-                                SCIPvarGetName(pricingvars[l]), pricingcoeff, j);
+               //SCIPdebugMessage("add pricing var %s with coefficient %f to constraint for pricing problem %i\n",
+               //                 SCIPvarGetName(pricingvars[l]), pricingcoeff, j);
                SCIP_CALL( SCIPaddCoefLinear(pricingproblem, pricingconss[0], pricingvars[l], pricingcoeff) );
             }
          }
@@ -587,12 +595,13 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
          /* create (and capture) y: 0 <= y <= inf */
          SCIPdebugMessage("create new (inferred) pricing variable y for pricing problem %i\n", j);
          (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pp%i_y_ssrc_%i", j, sepadata->ngeneratedcut);
-         SCIP_CALL( GCGcreateInferredPricingVar(pricingproblem, &coeffvar, name, 0.0,
+         SCIP_CALL( GCGcreateInferredPricingVar(pricingproblem, &coeffvar, name, -SCIPinfinity(pricingproblem),
                                                 SCIPinfinity(pricingproblem), -1.0, SCIP_VARTYPE_INTEGER, j) ); // released in GCGpricingmodificationFree
          assert(coeffvar != NULL);
 
          /* add y to constraint such that: -inf <= w^TAx - y <= 1 - EPSILON */
          SCIP_CALL( SCIPaddCoefLinear(pricingproblem, pricingconss[0], coeffvar, -1.0) );
+         SCIPdebugPrintCons(pricingproblem, pricingconss[0], NULL);
 
          /* create pricing modifications containing y as the coeffvar and a single constraint */
          SCIP_CALL( GCGpricingmodificationCreate(scip, &pricingmodification, j, coeffvar, NULL,
@@ -646,8 +655,6 @@ GCG_DECL_SEPAGETCOLCOEFFICIENTS(gcgsepaGetColCoefficientSubsetrow)
 {
    SCIP_Real* weights;
    SCIP_Real* mastercoeffs;
-   SCIP_ROW* mastercutrow;
-   GCG_MASTERCUTDATA* mastercutdata;
    int* conssindices;
    int n;
    int i;
@@ -675,11 +682,64 @@ GCG_DECL_SEPAGETCOLCOEFFICIENTS(gcgsepaGetColCoefficientSubsetrow)
    }
 
 #ifdef SCIP_DEBUG
+   int nsolvars;
+   SCIP_Real check_coeff = 0.0;
+   SCIP_VAR** solvars;
+   SCIP_Real* solvals;
+   GCG_PRICINGMODIFICATION* pricemod;
+   SCIP_ROW* mastercutrow;
+   GCG_MASTERCUTDATA* mastercutdata;
+
    mastercutdata = GCGsepamastercutGetMastercutData(cut);
    assert(mastercutdata != NULL);
    SCIP_CALL( GCGmastercutGetRow(mastercutdata, &mastercutrow) );
    assert(mastercutrow != NULL);
-   SCIPdebugMessage("column coeff for cut %s: %f\n", SCIProwGetName(mastercutrow), *coeff);
+   SCIPdebugMessage("column (%i) coeff for cut %s: %f\n", GCGcolGetProbNr(gcgcol), SCIProwGetName(mastercutrow), *coeff);
+   nsolvars = GCGcolGetNVars(gcgcol);
+   solvars = GCGcolGetVars(gcgcol);
+   solvals = GCGcolGetVals(gcgcol);
+   pricemod = GCGmastercutGetPricingModification(scip, mastercutdata, GCGcolGetProbNr(gcgcol));
+   if( pricemod != NULL )
+   {
+      SCIP* pricingprob;
+      SCIP* origscip;
+      int npriceconsvars;
+      int j;
+      SCIP_VAR** priceconsvars = NULL;
+      SCIP_Real* priceconsvals = NULL;
+      SCIP_Bool success;
+      SCIP_CONS* pricecons;
+
+      origscip = GCGmasterGetOrigprob(scip);
+      pricecons = GCGpricingmodificationGetAdditionalConss(pricemod)[0];
+      pricingprob = GCGgetPricingprob(origscip, GCGcolGetProbNr(gcgcol));
+
+
+      SCIP_CALL( SCIPgetConsNVars(pricingprob, pricecons, &npriceconsvars, &success) );
+      assert(success);
+      SCIP_CALL( SCIPallocBufferArray(scip, &priceconsvars, npriceconsvars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &priceconsvals, npriceconsvars) );
+      SCIP_CALL( SCIPgetConsVars(pricingprob, pricecons, priceconsvars, npriceconsvars, &success) );
+      assert(success);
+      SCIP_CALL( SCIPgetConsVals(pricingprob, pricecons, priceconsvals, npriceconsvars, &success) );
+      assert(success);
+      for( i = 0; i < npriceconsvars; i++ )
+      {
+         if( GCGvarIsInferredPricing(priceconsvars[i]) )
+            continue;
+
+         for( j = 0; j < nsolvars; j++ )
+         {
+            if( priceconsvars[i] == solvars[j] )
+            {
+               check_coeff += solvals[j] * priceconsvals[i];
+            }
+         }
+      }
+      SCIPfreeBufferArray(scip, &priceconsvars);
+      SCIPfreeBufferArray(scip, &priceconsvals);
+      assert(check_coeff == *coeff);
+   }
 #endif
    *coeff = SCIPfeasFloor(scip, *coeff);
 
@@ -708,6 +768,14 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
 
    origscip = GCGgetOriginalprob(scip);
    pricingmod = GCGmastercutGetPricingModification(scip, cut, probnr);
+
+   /* no pricing modification for this problem */
+   if( pricingmod == NULL )
+   {
+      SCIPdebugMessage("no pricing mode for pp%i --> variable coeff %f\n", probnr, *coef);
+      *coef = 0.0;
+      return SCIP_OKAY;
+   }
    pricingscip = GCGgetPricingprob(origscip, probnr);
    pricingconss = GCGpricingmodificationGetAdditionalConss(pricingmod);
 
@@ -741,7 +809,6 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
    SCIPfreeBufferArray(scip, &pricingconscoeffs);
 
    return SCIP_OKAY;
-
 }
 
 /** get all the cuts generated by this master separator */
@@ -783,9 +850,7 @@ GCG_DECL_SEPASETOBJECTIVE(gcgsepaSetObjectiveSubsetrow)
          SCIP_CALL( SCIPchgVarObj(pricingproblem, coeffvar, -1.0 * dual) );
          SCIPdebugMessage("%s's objective: %f\n", SCIPvarGetName(coeffvar), SCIPvarGetObj(coeffvar));
       }
-
    }
-   SCIPdebugMessage("dual is %f\n", dual);
 
    return SCIP_OKAY;
 }
