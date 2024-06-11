@@ -3887,6 +3887,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
       else
       {
          pricerdata->realdualvalues[i] = NULL;
+         pricerdata->maxrealdualvalues[i] = 0;
          pricerdata->pricingprobs[i] = NULL;
       }
       pricerdata->npointsprob[i] = 0;

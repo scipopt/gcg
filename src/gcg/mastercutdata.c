@@ -93,6 +93,7 @@ SCIP_RETCODE GCGpricingmodificationFree(
    SCIPfreeBlockMemoryArrayNull(pricingscip, &pricingmodification->additionalconss, pricingmodification->nadditionalconss);
    assert(pricingmodification->additionalconss == NULL);
 
+
    return SCIP_OKAY;
 }
 
@@ -192,7 +193,7 @@ SCIP_RETCODE GCGmastercutCreateFromCons(
    }
 
 #ifndef NDEBUG
-   SCIPfreeBlockMemoryArrayNull(scip, &seenblocks, GCGgetNRelPricingprobs(originalproblem));
+   SCIPfreeBlockMemoryArray(scip, &seenblocks, GCGgetNRelPricingprobs(originalproblem));
    assert(seenblocks == NULL);
 #endif
 
@@ -255,7 +256,7 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
    }
 
 #ifndef NDEBUG
-   SCIPfreeBlockMemoryArrayNull(scip, &seenblocks, GCGgetNRelPricingprobs(originalproblem));
+   SCIPfreeBlockMemoryArray(scip, &seenblocks, GCGgetNRelPricingprobs(originalproblem));
 #endif
 
    SCIP_CALL( SCIPallocBlockMemory(scip, mastercutdata) );
@@ -308,9 +309,9 @@ SCIP_RETCODE GCGmastercutFree(
       SCIP_CALL( GCGpricingmodificationFree(scip, &(*mastercutdata)->pricingmodifications[i]) );
    }
 
-   SCIPfreeBlockMemoryArrayNull(scip, &(*mastercutdata)->pricingmodifications, (*mastercutdata)->npricingmodifications);
+   SCIPfreeBlockMemoryArray(scip, &(*mastercutdata)->pricingmodifications, (*mastercutdata)->npricingmodifications);
    assert((*mastercutdata)->pricingmodifications == NULL);
-   SCIPfreeBlockMemoryNull(scip, mastercutdata);
+   SCIPfreeBlockMemory(scip, mastercutdata);
    assert(*mastercutdata == NULL);
 
    return SCIP_OKAY;
