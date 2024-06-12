@@ -1067,8 +1067,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          {
             dualsol = pricetype->mastercutGetDual(scip_, mastercutdata);
          }
-         //if( SCIPisZero(scip_, dualsol) )
-         //   continue;
+
          /* modify the objective of pricing problems affected by this mastercut */
          SCIP_CALL( sepas[i]->gcgsepasetobjective(scip_, sepas[i], mastercutdata, dualsol) );
       }
@@ -1997,7 +1996,6 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
 
    pricingprob = pricingcontroller->getPricingprob(probnr);
    assert(pricingprob != NULL);
-
    /* compute the objective function value of the column */
    for( i = 0; i < nsolvars; i++ ) {
       assert(GCGvarIsPricing(solvars[i]) || GCGvarIsInferredPricing(solvars[i]));
@@ -2061,6 +2059,7 @@ SCIP_RETCODE ObjPricerGcg::addColToPricestore(
    )
 {
    SCIP_RETCODE retcode;
+   SCIP_Bool freecol;
 
    assert(col != NULL);
    assert(pricingtype != NULL);
@@ -2072,7 +2071,7 @@ SCIP_RETCODE ObjPricerGcg::addColToPricestore(
 
    #pragma omp critical (update)
    {
-      retcode = GCGpricestoreAddCol(scip_, pricestore, col, FALSE);
+      retcode = GCGpricestoreAddCol(scip_, pricestore, col, FALSE, &freecol);
    }
    SCIP_CALL( retcode );
 
@@ -2166,7 +2165,6 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
    /* sepa mastercuts */
    GCG_SEPA** sepas = NULL;
    GCG_MASTERSEPACUT*** activecuts = NULL;
-
    int* nactivecuts;
    int nsepas;
 
@@ -2545,6 +2543,66 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
          }
       }
       SCIPfreeBufferArray(scip_, &consvars);
+   }
+
+   for(i = 0; i < nsepas; i++ )
+   {
+      for( j = 0; j < nactivecuts[i]; j++ )
+      {
+         SCIP_ROW* mastercutrow = NULL;
+         GCG_MASTERCUTDATA* mastercutdata = NULL;
+
+         mastercutdata = GCGsepamastercutGetMastercutData(activecuts[i][j]);
+         assert(mastercutdata != NULL);
+         SCIP_CALL( GCGmastercutGetRow(mastercutdata,  &mastercutrow) );
+         assert(mastercutrow != NULL);
+
+         /* get columns and vals of the cut */
+         nconsvars = SCIProwGetNNonz(mastercutrow);
+         cols = SCIProwGetCols(mastercutrow);
+         consvals = SCIProwGetVals(mastercutrow);
+
+         /* get the variables corresponding to the columns in the cut */
+         consvars = NULL;
+         SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
+         for( j = 0; j < nconsvars; j++ )
+            consvars[j] = SCIPcolGetVar(cols[j]);
+
+         /* @todo stabilize */
+         if( stabilize )
+         {
+            dualsol = pricetype->rowGetDual(mastercutrow);
+         }
+         else
+         {
+            dualsol = pricetype->rowGetDual(mastercutrow);
+         }
+
+         for( j = 0; j < nconsvars; j++ )
+         {
+            int blocknr;
+
+            blocknr = GCGvarGetBlock(consvars[j]);
+
+            /* master variable is static variable */
+            if( blocknr < 0 )
+            {
+               SCIP_VAR* origvar;
+               int varindex;
+
+               assert(GCGmasterVarGetNOrigvars(consvars[j]) == 1);
+               assert(GCGmasterVarGetOrigvals(consvars[j])[0] == 1);
+               origvar = GCGmasterVarGetOrigvars(consvars[j])[0];
+               assert(GCGoriginalVarGetNMastervars(origvar) == 1);
+               /* coefficient of master variable in this cut corresponds to the coefficient of static var in hypothetical original cut???*/
+               varindex = SCIPvarGetProbindex(GCGoriginalVarGetMastervars(origvar)[0]);
+               assert( varindex < nstaticvars);
+               assert(staticvars[varindex] == GCGoriginalVarGetMastervars(origvar)[0]);
+               stabredcosts[varindex] -= dualsol * consvals[j];
+            }
+         }
+         SCIPfreeBufferArray(scip_, &consvars);
+      }
    }
 
    /* add (redcost coefficients * lb/ub) of static variables to *stabdualval */

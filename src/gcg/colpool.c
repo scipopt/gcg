@@ -394,13 +394,15 @@ SCIP_RETCODE GCGcolpoolPrice(
 
       if( SCIPisDualfeasNegative(colpool->scip, redcost) )
       {
+         SCIP_Bool freecol = FALSE;
+
          /* insert col in separation storage */
          SCIPdebugMessage(" -> col %p from the col pool (redcost: %g)\n",
             (void*)col, redcost );
 
-         SCIP_CALL( GCGpricestoreAddCol(colpool->scip, pricestore, col, FALSE) );
+         SCIP_CALL( GCGpricestoreAddCol(colpool->scip, pricestore, col, FALSE, &freecol) );
 
-         SCIP_CALL( colpoolDelCol(colpool, col, FALSE) );
+         SCIP_CALL( colpoolDelCol(colpool, col, freecol) );
 
          col->age = 0;
       }

@@ -244,7 +244,8 @@ SCIP_RETCODE GCGpricestoreAddCol(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_PRICESTORE*       pricestore,         /**< price storage */
    GCG_COL*              col,                /**< priced col */
-   SCIP_Bool             forcecol            /**< should the col be forced to enter the LP? */
+   SCIP_Bool             forcecol,           /**< should the col be forced to enter the LP? */
+   SCIP_Bool*            freecol             /**< should column be freed after call */
    )
 {
    SCIP_Real colobjparallelism;
@@ -302,41 +303,67 @@ SCIP_RETCODE GCGpricestoreAddCol(
       if( SCIPgetStage(col->pricingprob) <= SCIP_STAGE_SOLVING )
       {
          SCIP_RETCODE setsol;
-         SCIP_Bool deleted = FALSE;
 
          SCIPcreateSol(col->pricingprob, &sol, NULL);
          setsol = SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals);
          SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE);
 
+         /* column is from column pool and does not fulfill current requirements: delete column */
+         if( !feasible && GCGcolGetAge(col) > 0 )
+         {
+            SCIPdebugMessage("Column does not fulfill new constraints\n");
+            *freecol = TRUE;
+            SCIPfreeSol(col->pricingprob, &sol);
+            SCIP_CALL( SCIPstopClock(pricestore->scip, pricestore->priceclock) );
+            return SCIP_OKAY;
+         }
          /* if column was generated using mip-solver:
           * some solutions are created during presolving by heuristics;
           * sometimes variables are fixed after the creation of those initial solutions;
           * if values of those fixed variables in the initial solutions differ from the fixed values, we get an error/warning,
           * as those values cannot not be set in the solution --> the solution might then also not pass its check */
-         if( !feasible && (setsol != SCIP_OKAY || col->nvars == 0) )
+         else if( !feasible && setsol != SCIP_OKAY )
          {
-            /* column is newly generated (not from column pool): we discard column
-             * - solution is probably not useful as it does not align with the fixation of values */
-            if( GCGcolGetAge(col) == 0 )
-            {
-               GCGfreeGcgCol(&col);
-               deleted = TRUE;
-            }
-            // else: column is from column pool and cannot be deleted
+            SCIPdebugMessage("Column could not be successfully transformed into a solution\n");
          }
-         else // if values were set without problem, the solution should pass the check
+         else if( !feasible )
          {
-            if( GCGcolGetAge(col) == 0 )
-               assert(feasible);
+            /* check if values of column match the values in solution */
+            SCIP_Bool solutionmatch = TRUE;
+            SCIP_VAR** vars;
+            int nvars;
+
+            vars = SCIPgetOrigVars(col->pricingprob);
+            nvars = SCIPgetNOrigVars(col->pricingprob);
+
+            for( i = 0; i < nvars; i++ )
+            {
+               SCIP_Real solval;
+
+               solval = SCIPgetSolVal(col->pricingprob, sol, vars[i]);
+               if( !SCIPisZero(col->pricingprob, solval) )
+               {
+                  int j;
+                  SCIP_Bool valmatch = FALSE;
+
+                  for( j = 0; j < col->nvars; j++ )
+                  {
+                     if( col->vars[j] == vars[i] )
+                     {
+                        valmatch = (col->vals[j] == solval);
+                        break;
+                     }
+                  }
+                  solutionmatch = solutionmatch && valmatch;
+               }
+            }
+            /* values don't match: column was not properly transformed into solution
+                   * --> infeasibility of solution does not ensure infeasibility of column
+                   * values match: column is infeasible */
+            assert(!solutionmatch);
          }
 
          SCIPfreeSol(col->pricingprob, &sol);
-         if( deleted )
-         {
-            SCIP_CALL( SCIPstopClock(pricestore->scip, pricestore->priceclock) );
-            return SCIP_OKAY;
-         }
-
 
       }
       for( i = 0; i < col->nvars; ++i )
