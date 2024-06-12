@@ -298,56 +298,44 @@ SCIP_RETCODE GCGpricestoreAddCol(
       SCIP_Real val;
       SCIP_SOL* sol;
       SCIP_Bool feasible;
+
       if( SCIPgetStage(col->pricingprob) <= SCIP_STAGE_SOLVING )
       {
+         SCIP_RETCODE setsol;
+         SCIP_Bool deleted = FALSE;
+
          SCIPcreateSol(col->pricingprob, &sol, NULL);
-         SCIP_RETCODE setsol = SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals);
-         if( setsol != SCIP_OKAY )
+         setsol = SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals);
+         SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE);
+
+         /* if column was generated using mip-solver:
+          * some solutions are created during presolving by heuristics;
+          * sometimes variables are fixed after the creation of those initial solutions;
+          * if values of those fixed variables in the initial solutions differ from the fixed values, we get an error/warning,
+          * as those values cannot not be set in the solution --> the solution might then also not pass its check */
+         if( !feasible && (setsol != SCIP_OKAY || col->nvars == 0) )
          {
-            SCIPdebugMessage("could not set solution: thses columns should robably also be discarded\n");
+            /* column is newly generated (not from column pool): we discard column
+             * - solution is probably not useful as it does not align with the fixation of values */
+            if( GCGcolGetAge(col) == 0 )
+            {
+               GCGfreeGcgCol(&col);
+               deleted = TRUE;
+            }
+            // else: column is from column pool and cannot be deleted
          }
-         else
+         else // if values were set without problem, the solution should pass the check
          {
-            if( col->nvars == 0 )
-            {
-               assert(col->nvars == 0);
-               SCIPdebugMessage("\n");
-            }
-
-            SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE);
-
-            /* solutions from the column pool might become infeasible if cuts were added to the LP after their creation */
-            if( !feasible && GCGcolGetAge(col) > 0 )
-            {
-               /* @todo these columns should be discarded */
-               SCIPdebugMessage("discard column from column pool as it now violates cut added after its creation\n");
-            }
-            else
-            {
-               if( !feasible )
-               {
-                  for( i = 0; i < col->nvars; i++ )
-                  {
-                     SCIPinfoMessage(scip, NULL, "%s: %f\n", SCIPvarGetName(col->vars[i]), col->vals[i]);
-                  }
-                  int nprobvars;
-                  SCIP_VAR** probvars;
-                  SCIP_Real solval;
-
-                  nprobvars = SCIPgetNOrigVars(col->pricingprob);
-                  probvars = SCIPgetOrigVars(col->pricingprob);
-                  for( i = 0; i < nprobvars; i++ )
-                  {
-                     solval = SCIPgetSolVal(col->pricingprob, sol, probvars[i]);
-                     SCIPinfoMessage(scip, NULL, "solval %s: %f\n", SCIPvarGetName(probvars[i]), solval);
-                  }
-                  nprobvars = 0;
-
-               }
-               //assert(feasible);
-            }
+            if( GCGcolGetAge(col) == 0 )
+               assert(feasible);
          }
+
          SCIPfreeSol(col->pricingprob, &sol);
+         if( deleted )
+         {
+            SCIP_CALL( SCIPstopClock(pricestore->scip, pricestore->priceclock) );
+            return SCIP_OKAY;
+         }
 
 
       }
