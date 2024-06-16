@@ -2055,7 +2055,6 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       else
          continue;
 
-      // TODO-TMO
       boundval -= GCGmastercutGetConstant(scip_, branchmastercutdata[i]);
 
 #ifdef PRINTDUALSOLS

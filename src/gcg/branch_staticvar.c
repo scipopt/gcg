@@ -305,7 +305,7 @@ SCIP_DECL_BRANCHINIT(branchInitStaticVar)
 
    SCIP_CALL( GCGrelaxIncludeBranchrule(origprob, branchrule, branchActiveMasterStaticVar,
          branchDeactiveMasterStaticVar, branchPropMasterStaticVar, branchMasterSolvedStaticVar, branchDataDeleteStaticVar,
-         NULL, NULL, NULL) );
+         NULL, NULL) );
 
    return SCIP_OKAY;
 }
