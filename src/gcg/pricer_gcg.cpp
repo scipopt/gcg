@@ -1026,7 +1026,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
             }
       #endif
 
-      SCIP_CALL( GCGrelaxBranchUpdateDualWithGCGBranchrule(scip_, activebranchrules[i], activebranchdata[i], dualsol) );
+      SCIP_CALL( GCGmastercutUpdateDualValue(scip_, branchmastercutdata[i], dualsol) );
    }
 
    /* get dual solutions / farkas values of the convexity constraints */
@@ -2055,6 +2055,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       else
          continue;
 
+      // TODO-TMO
       boundval -= GCGmastercutGetConstant(scip_, branchmastercutdata[i]);
 
 #ifdef PRINTDUALSOLS
