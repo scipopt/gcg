@@ -32,6 +32,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+#define SCIP_DEBUG
 #include <assert.h>
 
 #include "scip/def.h"
@@ -328,6 +329,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
          }
          else if( !feasible )
          {
+            SCIPdebugMessage("check if infeasibility is due to somme values  not being transferred correctly to solution\n");
             /* check if values of column match the values in solution */
             SCIP_Bool solutionmatch = TRUE;
             SCIP_VAR** vars;
@@ -358,8 +360,8 @@ SCIP_RETCODE GCGpricestoreAddCol(
                }
             }
             /* values don't match: column was not properly transformed into solution
-                   * --> infeasibility of solution does not ensure infeasibility of column
-                   * values match: column is infeasible */
+             * --> infeasibility of solution does not ensure infeasibility of column
+             * values match: column is infeasible */
             assert(!solutionmatch);
          }
 
