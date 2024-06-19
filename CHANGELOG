@@ -1,4 +1,13 @@
 @page RN36 Release notes for GCG 3.6
+@section RN362 GCG 3.6.2
+*************************
+
+Build system
+------------
+
+- CMake configuration does not fail if value of 'SYM' is not supported
+
+
 @section RN361 GCG 3.6.1
 *************************
 
