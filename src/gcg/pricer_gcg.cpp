@@ -319,6 +319,7 @@ int varGetIndexCleaned(
    }
 
    SCIPABORT();
+   return -1;
 }
 
 
@@ -785,7 +786,9 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    GCG_MASTERCUTDATA** branchmastercutdata = NULL;
    int nbranchmastercutdata;
 
+#ifndef NDEBUG
    int maxvarindex;
+#endif
 
    assert(pricerdata != NULL);
    assert(stabilization != NULL);
@@ -804,7 +807,10 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          continue;
       probvars = SCIPgetOrigVars(pricerdata->pricingprobs[i]);
       nprobvars = SCIPgetNOrigVars(pricerdata->pricingprobs[i]);
+
+#ifndef NDEBUG
       maxvarindex = nprobvars - GCGcountInferredPricingVars(probvars, nprobvars);
+#endif
 
       for( j = 0; j < nprobvars; j++ )
       {
@@ -813,7 +819,9 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          if( GCGvarIsInferredPricing(probvars[j]) )
             continue;
 
+#ifndef NDEBUG
          assert( 0 <= varGetIndexCleaned(pricerdata->pricingprobs[i], probvars[j]) && varGetIndexCleaned(pricerdata->pricingprobs[i], probvars[j]) < maxvarindex );
+#endif
 
          assert( GCGoriginalVarIsLinking(GCGpricingVarGetOrigvars(probvars[j])[0]) || (GCGvarGetBlock(GCGpricingVarGetOrigvars(probvars[j])[0]) == i));
 

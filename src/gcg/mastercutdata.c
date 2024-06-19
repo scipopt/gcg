@@ -112,7 +112,6 @@ SCIP_RETCODE GCGpricingmodificationCreate(
    int                    nadditionalconss     /**< number of additional constraints in the pricing programs */
    )
 {
-   SCIP* originalproblem;
    int i;
 
    assert(scip != NULL);
@@ -120,9 +119,8 @@ SCIP_RETCODE GCGpricingmodificationCreate(
    assert(pricingmodification != NULL);
    assert(blocknr >= 0);
 
-   originalproblem = GCGgetOriginalprob(scip);
+   assert(blocknr < GCGgetNPricingprobs(GCGgetOriginalprob(scip)));
 
-   assert(blocknr < GCGgetNPricingprobs(originalproblem));
    assert(coefvar != NULL);
    assert(GCGvarIsInferredPricing(coefvar));
    assert(additionalvars != NULL || nadditionalvars == 0);
@@ -498,16 +496,13 @@ GCG_PRICINGMODIFICATION* GCGmastercutGetPricingModification(
    int                    blocknr             /**< block number */
    )
 {
-   SCIP* originalproblem;
    int i;
 
    assert(mastercutdata != NULL);
    assert(GCGisMaster(masterscip));
    assert(blocknr >= 0);
 
-   originalproblem = GCGgetOriginalprob(masterscip);
-
-   assert(blocknr < GCGgetNPricingprobs(originalproblem));
+   assert(blocknr < GCGgetNPricingprobs(GCGgetOriginalprob(masterscip)));
 
    for( i = 0; i < mastercutdata->npricingmodifications; i++ )
    {
