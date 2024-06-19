@@ -1921,6 +1921,8 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
    GCG_BRANCHDATA** activebranchdata = NULL;
    GCG_MASTERCUTDATA** branchmastercutdata = NULL;
    int nbranchmastercutdata;
+   SCIP_CONS* tmpCons = NULL;
+   SCIP_ROW* tmpRow = NULL;
 
    SCIP_Real* stabredcosts = NULL;
 
@@ -2243,6 +2245,89 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
          }
       }
       SCIPfreeBufferArray(scip_, &consvars);
+   }
+
+   /* compute reduced cost for generic master cuts and update (stabilized) reduced cost coefficients */
+   for( i = 0; i < nbranchmastercutdata; i++ )
+   {
+      if( stabilize )
+      {
+         SCIP_CALL( stabilization->mastercutGetDual(branchmastercutdata[i], &dualsol) );
+      }
+      else
+      {
+         dualsol = pricetype->mastercutGetDual(scip_, branchmastercutdata[i]);
+      }
+
+      /* get columns and vals of the cut */
+      switch( branchmastercutdata[i]->type )
+      {
+      case GCG_MASTERCUTTYPE_CONS:
+         assert(branchmastercutdata[i]->cut.cons != NULL);
+         GCGmastercutGetCons(branchmastercutdata[i], &tmpCons);
+         nconsvars = GCGconsGetNVars(origprob, origconss[i]);
+         SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
+         SCIP_CALL( SCIPallocBufferArray(scip_, &consvals, nconsvars) );
+         GCGconsGetVars(origprob, origconss[i], consvars, nconsvars);
+         GCGconsGetVals(origprob, origconss[i], consvals, nconsvars);
+         break;
+      case GCG_MASTERCUTTYPE_ROW:
+         assert(branchmastercutdata[i]->cut.row != NULL);
+         GCGmastercutGetRow(branchmastercutdata[i], &tmpRow);
+         nconsvars = SCIProwGetNNonz(tmpRow);
+         cols = SCIProwGetCols(tmpRow);
+         consvals = SCIProwGetVals(tmpRow);
+         SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
+         for( j = 0; j < nconsvars; j++ )
+            consvars[j] = SCIPcolGetVar(cols[j]);
+         break;
+      default:
+         SCIP_CALL_ABORT( SCIP_ERROR );
+         return SCIP_ERROR;
+      }
+
+      /* search for static variables in the constraint, and update their red. cost coefficients */
+      for( j = 0; j < nconsvars; j++ )
+      {
+         SCIP_VAR* mastervar;
+         int blocknr;
+
+         assert(GCGvarIsMaster(consvars[j]));
+
+         mastervar = consvars[j];
+         blocknr = GCGvarGetBlock(mastervar);
+
+         if( blocknr < 0 )
+         {
+            int varindex;
+            varindex = SCIPvarGetProbindex(GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]); // hack
+            assert(varindex < nstaticvars);
+            assert(staticvars[varindex] == GCGoriginalVarGetMastervars(GCGmasterVarGetOrigvars(mastervar)[0])[0]);
+
+            stabredcosts[varindex] -= dualsol * consvals[j];
+#ifdef PRINTDUALSOLS
+            if( !SCIPisZero(scip_, dualsol) )
+            {
+               SCIPdebugMessage("  stabredcost <%s> add %g * %g = %g (cut <%s>)\n",
+                  SCIPvarGetName(staticvars[varindex]), dualsol, consvals[j], -dualsol * consvals[j],
+                  SCIProwGetName(origcuts[i]));
+            }
+#endif
+         }
+      }
+      switch( branchmastercutdata[i]->type )
+      {
+      case GCG_MASTERCUTTYPE_CONS:
+         SCIPfreeBufferArray(scip_, &consvals);
+         SCIPfreeBufferArray(scip_, &consvars);
+         break;
+      case GCG_MASTERCUTTYPE_ROW:
+         SCIPfreeBufferArray(scip_, &consvars);
+         break;
+      default:
+         SCIP_CALL_ABORT( SCIP_ERROR );
+         return SCIP_ERROR;
+      }
    }
 
    /* add (redcost coefficients * lb/ub) of static variables to *stabdualval */
