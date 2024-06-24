@@ -456,7 +456,7 @@ SCIP_RETCODE solveKnapsack(
    }
 
    SCIP_CALL( GCGcreateGcgCol(pricingprob, &col, probnr, solvars, solvals, nsolvars, FALSE, SCIPinfinity(pricingprob)) );
-   SCIP_CALL( GCGpricerAddCol(scip, col) );
+   SCIP_CALL( GCGpricerAddCol(scip, col, TRUE) );
 
    solval = 0.0;
 

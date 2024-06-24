@@ -57,6 +57,8 @@
 #include "pub_colpool.h"
 #include "misc_varhistory.h"
 #include "event_sepacuts.h"
+#include "type_sepagcg.h"
+#include "struct_sepagcg.h"
 
 
 /*#define CHECKPROPAGATEDVARS*/
@@ -172,6 +174,110 @@ struct SCIP_ConshdlrData
 /*
  * Local methods
  */
+
+static
+SCIP_RETCODE addMissedVariables(
+   SCIP*                scip,             /**< SCIP data structure */
+   GCG_MASTERSEPACUT*   mastersepacut,
+   GCG_SEPA*            sepa
+)
+{
+   GCG_VARHISTORYBUFFER* next;
+   int i;
+
+   assert(mastersepacut->knownvarhistory != NULL);
+   if( mastersepacut->knownvarhistory->buffer->nvars == 0 )
+   {
+      return SCIP_OKAY;
+   }
+
+   if( mastersepacut->knownvarhistory->pos < 0 )
+   {
+      mastersepacut->knownvarhistory->pos = -1;
+   }
+
+
+   do
+   {
+      assert(mastersepacut->knownvarhistory->buffer->nvars > 0);
+      assert(mastersepacut->knownvarhistory->pos < mastersepacut->knownvarhistory->buffer->nvars);
+
+      for( i = mastersepacut->knownvarhistory->pos + 1; i < mastersepacut->knownvarhistory->buffer->nvars; i++ )
+      {
+         SCIP_VAR* mastervar;
+         SCIP_VAR** origvars;
+         SCIP_VAR** pricingvars;
+         SCIP_Real* pricingvals;
+         SCIP_Real coef;
+         int blocknr;
+         int npricingvars;
+         int j;
+
+         if( mastersepacut->knownvarhistory->buffer->vars[i]->deleted )
+         {
+            assert(SCIPvarGetProbindex(mastersepacut->knownvarhistory->buffer->vars[i]) == -1);
+            SCIPdebugMessage("Skipping deleted Variable <%s>!\n", SCIPvarGetName(mastersepacut->knownvarhistory->buffer->vars[i]));
+            continue;
+         }
+
+         mastervar = mastersepacut->knownvarhistory->buffer->vars[i];
+         assert(GCGvarIsMaster(mastervar));
+         npricingvars = GCGmasterVarGetNOrigvars(mastervar);
+         origvars = GCGmasterVarGetOrigvars(mastervar);
+         pricingvals = GCGmasterVarGetOrigvals(mastervar);
+         SCIPallocBufferArray(scip, &pricingvars, npricingvars);
+
+         /* create array of corresponding */
+         for( j = 0; j < npricingvars; j++ )
+         {
+            pricingvars[j] = GCGoriginalVarGetPricingVar(origvars[j]);
+            assert(pricingvars[j] != NULL);
+         }
+
+         coef = 0.0;
+         if( npricingvars > 0 )
+         {
+            blocknr = GCGvarGetBlock(pricingvars[0]);
+            SCIP_CALL( sepa->gcgsepagetvarcoefficient(scip, sepa, mastersepacut->mastercutdata, pricingvars, pricingvals,
+                                                      npricingvars, blocknr, &coef) );
+         }
+
+         if( !SCIPisZero(scip, coef) )
+         {
+            SCIP_ROW* mastercutrow;
+
+            SCIP_CALL( GCGmastercutGetRow(mastersepacut->mastercutdata, &mastercutrow) );
+            assert(mastercutrow != NULL);
+
+            SCIP_CALL( SCIPaddVarToRow(scip, mastercutrow, mastervar, coef) );
+         }
+
+         SCIPfreeBufferArrayNull(scip, &pricingvars);
+      }
+      next = mastersepacut->knownvarhistory->buffer->next;
+      if( next != NULL )
+      {
+         SCIP_CALL( GCGvarhistoryCaptureBuffer(next) );
+         SCIP_CALL( GCGvarhistoryReleaseBuffer(scip, &mastersepacut->knownvarhistory->buffer) );
+
+         mastersepacut->knownvarhistory->buffer = next;
+         mastersepacut->knownvarhistory->pos = -1;
+      }
+      else
+      {
+         break;
+      }
+   }
+   while( TRUE );
+
+   mastersepacut->knownvarhistory->pos = mastersepacut->knownvarhistory->buffer->nvars - 1;
+   assert(mastersepacut->knownvarhistory->buffer->next == NULL);
+   assert(mastersepacut->knownvarhistory->pos >= 0);
+
+   return SCIP_OKAY;
+}
+
+
 /** remove the cuts generated at this node from active cuts */
 static
 SCIP_RETCODE removeStoredCutsFromActiveCuts(
@@ -200,6 +306,7 @@ SCIP_RETCODE addStoredCutsToActiveCuts(
    int nsepas                 /**< number of registered separators */
    )
 {
+   GCG_SEPA** sepas;
    SCIP_ROW* mastercutrow;
    int* nactivecuts;
    int i;
@@ -215,6 +322,7 @@ SCIP_RETCODE addStoredCutsToActiveCuts(
    if( nsepas > 0 )
    {
       nactivecuts = GCGgetNActiveCuts(scip);
+      sepas = GCGrelaxGetSeparators(scip);
       for( i = 0; i < nsepas; i++ )
       {
          assert(consdata->firstnewcut[i] == nactivecuts[i]);
@@ -228,9 +336,11 @@ SCIP_RETCODE addStoredCutsToActiveCuts(
                 || SCIPnodeGetType(consdata->node) == SCIP_NODETYPE_PSEUDOFORK
                 || SCIPnodeGetType(consdata->node) == SCIP_NODETYPE_SUBROOT);
 
+
          for( j = 0; j < consdata->naddedcuts[i]; j++ )
          {
             /* @todo: update rows with missed variable */
+            SCIP_CALL( addMissedVariables(scip, consdata->addedcuts[i][j], sepas[i]) );
             SCIP_CALL( GCGmastercutGetRow(consdata->addedcuts[i][j]->mastercutdata, &mastercutrow) );
 #ifndef MASTERSEP_DEBUG
             SCIPinfoMessage(scip, NULL, "add to active cuts: update row %s from node %lli and add it to active cuts\n",
@@ -1702,6 +1812,7 @@ SCIP_RETCODE forwardUpdateSeenHistory(
          {
             if( consdata->knownvarhistory->buffer->vars[i]->deleted )
             {
+               assert(SCIPvarGetProbindex(consdata->knownvarhistory->buffer->vars[i]) == -1);
                SCIPdebugMessage("Skipping deleted Variable <%s>!\n", SCIPvarGetName(consdata->knownvarhistory->buffer->vars[i]));
                continue;
             }
@@ -1995,6 +2106,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    }
 
    SCIP_CALL( GCGclearGeneratedCuts(scip) );
+   SCIPinfoMessage(scip, NULL, "activate node %lli\n", consdata->node->number);
 
    return SCIP_OKAY;
 }
@@ -2058,12 +2170,13 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
                    SCIPnodeGetType(consdata->node), consdata->name);
 #endif
    /* node is deactivated without any of its children being activated: store added cuts*/
-   if( !consdata->addedcutsinit )
+   if( !consdata->addedcutsinit && consdata->firstnewcut != NULL )
    {
       SCIP_CALL( initializeAddedCuts(scip, consdata, conshdlrdata) );
    }
 
-   SCIP_CALL( removeStoredCutsFromActiveCuts(scip, consdata, conshdlrdata->nsepas) );
+   if( consdata->addedcutsinit )
+      SCIP_CALL( removeStoredCutsFromActiveCuts(scip, consdata, conshdlrdata->nsepas) );
 
    return SCIP_OKAY;
 }
@@ -2213,16 +2326,14 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
    if( (*consdata)->name != NULL )
    {
-#ifndef MASTERSEP_DEBUG
-      SCIPinfoMessage(scip, NULL, "Delete cons %s\n", (*consdata)->name);
-#endif
       SCIPfreeBlockMemoryArray(scip, &(*consdata)->name, strlen((*consdata)->name)+1);
    }
 
    nsepas = GCGrelaxGetNSeparators(scip);
+   SCIPinfoMessage(scip, NULL, "delete master: node %lli  nsepas = %i\n", SCIPnodeGetNumber((*consdata)->node), nsepas);
 #ifndef MASTERSEP_DEBUG
    SCIPinfoMessage(scip, NULL, "---------> current stage: %i\n", SCIPgetStage(scip));
-   SCIPinfoMessage(scip, NULL, "delete master: node %lli  nsepas = %i\n", SCIPnodeGetNumber((*consdata)->node), nsepas);
+
 #endif
    if( nsepas > 0 && (*consdata)->addedcutsinit )
    {
@@ -2251,6 +2362,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 #ifndef MASTERSEP_DEBUG
       SCIPinfoMessage(scip, NULL, "delete master: free firstnewcut \n");
 #endif
+      // should probably be deleted even if not init ?????
       SCIPfreeBlockMemoryArray(scip, &((*consdata)->firstnewcut), nsepas);
    }
 
@@ -2713,6 +2825,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    consdata->origbranchconss = origbranchconss;
    consdata->norigbranchconss = norigbranchconss;
 
+   /* initialize structures for managing separator generated cuts for master problem*/
    consdata->addedcuts = NULL;
    consdata->naddedcuts = NULL;
    consdata->firstnewcut = NULL;
@@ -3226,7 +3339,7 @@ SCIP_RETCODE GCGdeleteNode(
 #endif
                for( j = 0; j < consdata->naddedcuts[i]; j++ )
                {
-                  SCIP_CALL(GCGreleaseMasterSepaCut(scip, &(consdata->addedcuts[i][j])) );
+                  SCIP_CALL( GCGreleaseMasterSepaCut(scip, &(consdata->addedcuts[i][j])) );
                }
                SCIPfreeBlockMemoryArray(scip, &(consdata->addedcuts[i]), consdata->naddedcuts[i]);
             }
@@ -3236,7 +3349,8 @@ SCIP_RETCODE GCGdeleteNode(
             SCIPfreeBlockMemoryArray(scip, &(consdata->addedcuts), conshdlrdata->nsepas);
             SCIPfreeBlockMemoryArray(scip, &(consdata->naddedcuts), conshdlrdata->nsepas);
          }
-
+         SCIPfreeBlockMemoryArray(scip, &(consdata->firstnewcut), conshdlrdata->nsepas);
+         consdata->firstnewcut = NULL;
       }
       consdata->nodestoredcuts = FALSE;
       consdata->addedcutsinit = FALSE;

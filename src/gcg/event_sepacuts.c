@@ -169,7 +169,7 @@ SCIP_RETCODE freeMasterSepaCut(
 
    SCIP_CALL( GCGmastercutGetRow((*mastersepacut)->mastercutdata, &row) );
    SCIPdebugMessage("free mastersepacut: free cut for row %s\n", SCIProwGetName(row));
-   GCGmastercutFreeMaster(masterscip, &((*mastersepacut)->mastercutdata));
+   SCIP_CALL( GCGmastercutFreeMaster(masterscip, &((*mastersepacut)->mastercutdata)) );
    SCIPfreeBlockMemory(masterscip, mastersepacut);
 
    *mastersepacut = NULL;
@@ -665,7 +665,7 @@ SCIP_RETCODE GCGreinsertGlobalMasterSepaCut(
    SCIPdebugMessage("re-add global cuts: row %s is added to generated guts\n", SCIProwGetName(row));
    SCIP_CALL( ensureGeneratedSize(masterscip, eventhdlrdata, sepaidx, eventhdlrdata->ngeneratedcuts[sepaidx] + 1) );
    eventhdlrdata->generatedcuts[sepaidx][eventhdlrdata->ngeneratedcuts[sepaidx]] = mastersepacut;
-   SCIP_CALL(GCGcaptureMasterSepaCut(eventhdlrdata->generatedcuts[sepaidx][eventhdlrdata->ngeneratedcuts[sepaidx]]) );
+   SCIP_CALL( GCGcaptureMasterSepaCut(eventhdlrdata->generatedcuts[sepaidx][eventhdlrdata->ngeneratedcuts[sepaidx]]) );
    SCIP_CALL( SCIPhashmapSetImageInt(eventhdlrdata->rowxgeneratedmap, row, eventhdlrdata->ngeneratedcuts[sepaidx]) );
    (eventhdlrdata->ngeneratedcuts[sepaidx])++;
 
@@ -785,7 +785,7 @@ SCIP_RETCODE GCGshrinkActiveCuts(
           * --> these cuts will be re-added to the next LP */
          if( masterscip->tree->correctlpdepth != -1 && !SCIProwIsLocal(row) && SCIProwGetAge(row) == 0 )
          {
-            SCIP_CALL(GCGreinsertGlobalMasterSepaCut(masterscip, eventhdlrdata->activecuts[i][j], eventhdlrdata, i) );
+            SCIP_CALL( GCGreinsertGlobalMasterSepaCut(masterscip, eventhdlrdata->activecuts[i][j], eventhdlrdata, i) );
          }
 
          SCIP_CALL(GCGreleaseMasterSepaCut(masterscip, &(eventhdlrdata->activecuts[i][j])) );

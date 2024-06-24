@@ -117,9 +117,14 @@ SCIP_RETCODE GCGcreateGcgCol(
          continue;
 
       assert((GCGvarIsPricing(origvar) && GCGpricingVarGetNOrigvars(origvar) > 0 && GCGpricingVarGetOrigvars(origvar)[0] != NULL) || GCGvarIsInferredPricing(origvar));
-
+//      if( GCGvarIsInferredPricing(origvar) )
+//         SCIPinfoMessage(pricingprob, NULL, "%s: %f\n", SCIPvarGetName(origvar), origval);
       (*gcgcol)->vars[nnonz] = origvar;
       (*gcgcol)->vals[nnonz] = origval;
+
+      /* we capture inferred pricing variables to avoid them being deleted before column is deleted */
+      if( GCGvarIsInferredPricing((*gcgcol)->vars[nnonz]) )
+         SCIPcaptureVar((*gcgcol)->pricingprob, (*gcgcol)->vars[nnonz]);
       ++nnonz;
    }
 
@@ -148,6 +153,12 @@ void GCGfreeGcgCol(
 
    /* todo: release vars? */
    assert((*gcgcol)->nvars == 0 || (*gcgcol)->vars != NULL);
+   for( i = 0; i < (*gcgcol)->nvars; i++ )
+   {
+      /* release inferred vars as they were captured */
+      if( GCGvarIsInferredPricing((*gcgcol)->vars[i]) )
+         SCIPreleaseVar((*gcgcol)->pricingprob, &((*gcgcol)->vars[i]));
+   }
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vars, (*gcgcol)->maxvars);
    assert((*gcgcol)->nvars == 0 || (*gcgcol)->vals != NULL);
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vals, (*gcgcol)->maxvars);

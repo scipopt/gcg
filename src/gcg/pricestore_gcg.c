@@ -32,7 +32,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#define SCIP_DEBUG
+//#define SCIP_DEBUG
 #include <assert.h>
 
 #include "scip/def.h"
@@ -51,7 +51,9 @@
 #include "pricestore_gcg.h"
 #include "struct_pricestore_gcg.h"
 #include "pricer_gcg.h"
-
+#include "event_sepacuts.h"
+#include "type_sepagcg.h"
+#include "struct_sepagcg.h"
 /*
  * dynamic memory arrays
  */
@@ -238,6 +240,104 @@ int pricestoreFindEqualCol(
    return -1;
 }
 
+static
+SCIP_RETCODE correctCoeffVariables(
+   SCIP*          scip,
+   GCG_COL*       gcgcol
+)
+{
+   int i;
+   int j;
+   int nsepas;
+   int* nactivecuts;
+   GCG_SEPA** sepas;
+   GCG_MASTERSEPACUT*** activecuts;
+
+   assert(gcgcol != NULL);
+
+   nsepas = GCGrelaxGetNSeparators(scip);
+   sepas = GCGrelaxGetSeparators(scip);
+   nactivecuts = GCGgetNActiveCuts(scip);
+   activecuts = GCGgetActiveCuts(scip);
+
+   for( i = 0; i < nsepas; i++ )
+   {
+      for( j = 0; j < nactivecuts[i]; j++ )
+      {
+         GCG_PRICINGMODIFICATION* pricemod;
+         GCG_MASTERCUTDATA* mastercutdata;
+
+         mastercutdata = GCGsepamastercutGetMastercutData(activecuts[i][j]);
+         assert(mastercutdata != NULL);
+
+         if( !GCGmastercutIsActive(mastercutdata) )
+            continue;
+
+         pricemod = GCGmastercutGetPricingModification(scip, mastercutdata, gcgcol->probnr);
+
+         if( pricemod != NULL )
+         {
+            SCIP_VAR* coefvar;
+            SCIP_Real coefvarval;
+
+            coefvar = GCGpricingmodificationGetCoefVar(pricemod);
+            assert(coefvar != NULL);
+
+            if( SCIPvarGetIndex(coefvar) == -1 )
+               continue;
+
+            if( gcgcol->initcoefs )
+            {
+               SCIP_CALL( sepas[i]->gcgsepagetcolcoefficient(scip, sepas[i], activecuts[i][j], gcgcol, &coefvarval) );
+            }
+            else
+            {
+               SCIP_CALL( sepas[i]->gcgsepagetvarcoefficient(scip, sepas[i], mastercutdata, gcgcol->vars, gcgcol->vals, gcgcol->nvars, gcgcol->probnr, &coefvarval) );
+            }
+
+            if( !SCIPisZero(gcgcol->pricingprob, coefvarval) )
+            {
+               SCIP_Bool foundvar;
+               int k;
+
+               /* find the coeff var in the column and replace its solution value */
+               foundvar = FALSE;
+               for( k = 0; k < gcgcol->nvars; k++ )
+               {
+                  if( gcgcol->vars[k] == coefvar )
+                  {
+                     gcgcol->vals[k] = coefvarval;
+                     foundvar = TRUE;
+                     break;
+                  }
+               }
+
+               /* if variable is not already in the column, append it */
+               if( !foundvar )
+               {
+                  if( gcgcol->maxvars < gcgcol->nvars + 1 )
+                  {
+                     int newmaxvars = SCIPcalcMemGrowSize(gcgcol->pricingprob, gcgcol->nvars + 1);
+                     SCIP_CALL( SCIPreallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->vars), gcgcol->maxvars,
+                                                            newmaxvars) );
+                     SCIP_CALL( SCIPreallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->vals), gcgcol->maxvars,
+                                                            newmaxvars) );
+                     gcgcol->maxvars = newmaxvars;
+                  }
+                  gcgcol->vars[gcgcol->nvars] = coefvar;
+                  gcgcol->vals[gcgcol->nvars] = coefvarval;
+                  /* we capture inferred vars */
+                  SCIPcaptureVar(gcgcol->pricingprob, gcgcol->vars[gcgcol->nvars]);
+                  (gcgcol->nvars)++;
+               }
+            }
+         }
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
 /** adds col to price storage;
  *  if the col should be forced to enter the LP, an infinite score will be used
  */
@@ -246,7 +346,8 @@ SCIP_RETCODE GCGpricestoreAddCol(
    GCG_PRICESTORE*       pricestore,         /**< price storage */
    GCG_COL*              col,                /**< priced col */
    SCIP_Bool             forcecol,           /**< should the col be forced to enter the LP? */
-   SCIP_Bool*            freecol             /**< should column be freed after call */
+   SCIP_Bool             checkcol,           /**< should the col be checked */
+   SCIP_Bool             fromcolpool         /**< is column from colpool */
    )
 {
    SCIP_Real colobjparallelism;
@@ -301,7 +402,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
       SCIP_SOL* sol;
       SCIP_Bool feasible;
 
-      if( SCIPgetStage(col->pricingprob) <= SCIP_STAGE_SOLVING )
+      if( SCIPgetStage(col->pricingprob) <= SCIP_STAGE_SOLVING && checkcol )
       {
          SCIP_RETCODE setsol;
 
@@ -309,62 +410,37 @@ SCIP_RETCODE GCGpricestoreAddCol(
          setsol = SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals);
          SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE);
 
-         /* column is from column pool and does not fulfill current requirements: delete column */
-         if( !feasible && GCGcolGetAge(col) > 0 )
+         /* column is from column pool and does not fulfill current requirements */
+         if( !feasible && fromcolpool )
          {
-            SCIPdebugMessage("Column does not fulfill new constraints\n");
-            *freecol = TRUE;
+            SCIP_Real redcost;
+
             SCIPfreeSol(col->pricingprob, &sol);
-            SCIP_CALL( SCIPstopClock(pricestore->scip, pricestore->priceclock) );
-            return SCIP_OKAY;
-         }
-         /* if column was generated using mip-solver:
-          * some solutions are created during presolving by heuristics;
-          * sometimes variables are fixed after the creation of those initial solutions;
-          * if values of those fixed variables in the initial solutions differ from the fixed values, we get an error/warning,
-          * as those values cannot not be set in the solution --> the solution might then also not pass its check */
-         else if( !feasible && setsol != SCIP_OKAY )
-         {
-            SCIPdebugMessage("Column could not be successfully transformed into a solution\n");
-         }
-         else if( !feasible )
-         {
-            SCIPdebugMessage("check if infeasibility is due to somme values  not being transferred correctly to solution\n");
-            /* check if values of column match the values in solution */
-            SCIP_Bool solutionmatch = TRUE;
-            SCIP_VAR** vars;
-            int nvars;
 
-            vars = SCIPgetOrigVars(col->pricingprob);
-            nvars = SCIPgetNOrigVars(col->pricingprob);
+            /* auxiliary constraints (and variables) from master cuts might not have been present
+             * when column was generated
+             * --> compute correct value for those variables */
+            SCIP_CALL( correctCoeffVariables(scip, col) );
 
-            for( i = 0; i < nvars; i++ )
+            /* re-compute reduced cost of column */
+            GCGcomputeRedCostGcgCol(scip, pricestore->infarkas, col, &redcost);
+            GCGcolUpdateRedcost(col, redcost, FALSE);
+
+            /* reduced cost of modified column is not negative anymore: discard column */
+            if( !SCIPisDualfeasNegative(scip, redcost) )
             {
-               SCIP_Real solval;
-
-               solval = SCIPgetSolVal(col->pricingprob, sol, vars[i]);
-               if( !SCIPisZero(col->pricingprob, solval) )
-               {
-                  int j;
-                  SCIP_Bool valmatch = FALSE;
-
-                  for( j = 0; j < col->nvars; j++ )
-                  {
-                     if( col->vars[j] == vars[i] )
-                     {
-                        valmatch = (col->vals[j] == solval);
-                        break;
-                     }
-                  }
-                  solutionmatch = solutionmatch && valmatch;
-               }
+               GCGfreeGcgCol(&col);
+               SCIP_CALL( SCIPstopClock(pricestore->scip, pricestore->priceclock) );
+               return SCIP_OKAY;
             }
-            /* values don't match: column was not properly transformed into solution
-             * --> infeasibility of solution does not ensure infeasibility of column
-             * values match: column is infeasible */
-            assert(!solutionmatch);
+            col->age = 0;
+            /* again, we try to create a solution using the updated column and check it */
+            sol = NULL;
+            SCIPcreateSol(col->pricingprob, &sol, NULL);
+            SCIP_CALL( SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals) );
+            SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE);
          }
-
+         assert(feasible);
          SCIPfreeSol(col->pricingprob, &sol);
 
       }

@@ -230,7 +230,8 @@ public:
 
    /** add a new column to the pricing storage */
    SCIP_RETCODE addColToPricestore(
-      GCG_COL*              col                 /**< priced col */
+      GCG_COL*              col,                 /**< priced col */
+      SCIP_Bool             checkcol
       );
 
    /** for each pricing problem, get the best found column from the pricing storage */

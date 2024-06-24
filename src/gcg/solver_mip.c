@@ -357,7 +357,7 @@ SCIP_RETCODE getColumnsFromPricingprob(
       if( !solutionHasInfiniteValue(pricingprob, probsols[s]) )
       {
          SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &col, probnr, probsols[s], FALSE, SCIPinfinity(pricingprob)) );
-         SCIP_CALL( GCGpricerAddCol(scip, col) );
+         SCIP_CALL( GCGpricerAddCol(scip, col, FALSE) );
       }
       /* If the best solution has infinite values, try to repair it */
       else if( s == 0 )
@@ -375,7 +375,7 @@ SCIP_RETCODE getColumnsFromPricingprob(
          assert(newsol != NULL);
 
          SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &col, probnr, newsol, FALSE, SCIPinfinity(pricingprob)) );
-         SCIP_CALL( GCGpricerAddCol(scip, col) );
+         SCIP_CALL( GCGpricerAddCol(scip, col, TRUE) );
       }
    }
 
@@ -445,7 +445,7 @@ SCIP_RETCODE solveProblem(
 
       SCIPdebugMessage("  -> unbounded, creating column from ray\n");
       SCIP_CALL( createColumnFromRay(pricingprob, probnr, &col) );
-      SCIP_CALL( GCGpricerAddCol(scip, col) );
+      SCIP_CALL( GCGpricerAddCol(scip, col, TRUE) );
 
       break;
 

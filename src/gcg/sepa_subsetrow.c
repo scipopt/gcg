@@ -51,24 +51,24 @@
 
 #define SEPA_NAME              "subsetrow"
 #define SEPA_DESC              "subsetrow separator"
-#define SEPA_PRIORITY                 1000
+#define SEPA_PRIORITY              1000
 #define SEPA_FREQ                    1
 #define SEPA_MAXBOUNDDIST           1.0
 #define SEPA_USESSUBSCIP          FALSE /**< does the separator use a secondary SCIP instance? */
 #define SEPA_DELAY                FALSE /**< should separation method be delayed, if other separators found cuts? */
-#define STARTMAXCUTS                50
-#define DEFAULT_RANDSEED       71
+#define STARTMAXCUTS                 50
+#define DEFAULT_RANDSEED             71
 
-#define DEFAULT_MAXROUNDS             5 /**< maximal number of zerohalf separation rounds per node (-1: unlimited) */
-#define DEFAULT_MAXROUNDSROOT        20 /**< maximal number of zerohalf separation rounds in the root node (-1: unlimited) */
-#define DEFAULT_MAXSEPACUTS         1000 /**< maximal number of zerohalf cuts separated per separation round */
-#define DEFAULT_MAXSEPACUTSROOT      10 /**< maximal number of zerohalf cuts separated per separation round in root node */
-#define DEFAULT_MAXCUTCANDS        2000 /**< maximal number of zerohalf cuts considered per separation round */
+#define DEFAULT_MAXROUNDS             1 /**< maximal number of subsetrow separation rounds per non-root node (-1: unlimited) */
+#define DEFAULT_MAXROUNDSROOT         1 /**< maximal number of subsetrow separation calls in the root node (-1: unlimited) */
+#define DEFAULT_MAXSEPACUTS         200 /**< maximal number of subsetrow cuts separated per call in non-root nodes */
+#define DEFAULT_MAXSEPACUTSROOT    1000 /**< maximal number of subsetrow cuts separated per call in root node */
+#define DEFAULT_MAXCUTCANDS        5000 /**< maximal number of subsetrow cuts in total */
 #define DEFAULT_INITSEED         0x5EED /**< default initial seed used for random tie-breaking in cut selection */
-#define DEFAULT_ONLYROOT           TRUE /**< only apply separator in root node */
-#define DEFAULT_STRATEGY              0 /**< strategy which is used to determine which rows to considers cut computation */
+#define DEFAULT_ONLYROOT          FALSE /**< only apply separator in root node */
+#define DEFAULT_STRATEGY              0 /**< strategy which is used to determine which rows to consider for cut computation */
 #define DEFAULT_N                     3 /**< number of rows used to create a new cut */
-#define DEFAULT_K                     2 /**< inverse of weight used for cut generation*/
+#define DEFAULT_K                     2 /**< inverse of weight used for cut generation */
 
 /*
  * Data structures
@@ -83,13 +83,13 @@ struct SCIP_SepaData
    SCIP_Bool               enable;              /**< is this separator enabled? */
    SCIP_Bool               onlyroot;            /**< indicates if separator should only be applied at root node */
    int                     sepaidx;             /**< index of the separator in relaxdata->separators */
-   int                     ngeneratedcut;       /**< counts the number of cuts generated */
-   int                     maxrounds;           /**< maximal number of separation rounds per node */
-   int                     maxsepacutsroot;     /**< number of cuts generated per separation round of root node */
-   int                     maxroundsroot;       /**< maximal number of separation rounds for root node */
-   int                     maxsepacuts;         /**< number of cuts generated per separation round */
+   int                     ngeneratedcut;       /**< counts the total number of cuts generated */
+   int                     maxrounds;           /**< maximal number of separation calls per non-root node */
+   int                     maxsepacutsroot;     /**< number of cuts generated per separation call of root node */
+   int                     maxroundsroot;       /**< maximal number of separation calls for root node */
+   int                     maxsepacuts;         /**< number of cuts generated per separation call at non-root node */
    int                     initseed;            /**< */
-   int                     maxcutcands;         /**< */
+   int                     maxcutcands;         /**< maximal number of cuts generated in total */
    int                     strategy;            /**< RANDOM (0), KOSTER-AL (1) */
    int                     n;                   /**< k > 0          : defines the possible weights 1/k */
    int                     k;                   /**< n = |S| > 0    : number of constraints used to construct subset row */
@@ -440,6 +440,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    int                        i;
    int                        j;
    int                        nmastervars;
+   int                        maxcuts;
 
    assert(scip != NULL);
    assert(result != NULL);
@@ -457,6 +458,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    SCIPdebugMessage("Start subsetrow cut exec\n");
    if( !sepadata->enable )
    {
+      SCIPdebugMessage("Subsetrow separator is not enabled.\n");
       *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
@@ -467,12 +469,26 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       return SCIP_OKAY;
    }
 
-   /*if( GCGgetNRelPricingprobs(origscip) < GCGgetNPricingprobs(origscip) )
+   if( SCIPsepaGetNCallsAtNode(sepa) > sepadata->maxrounds )
    {
-      SCIPdebugMessage("aggregated pricing problems, do no separation!\n");
+      SCIPdebugMessage("exceeded max rounds for this node.\n");
       *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
-   }*/
+   }
+
+   if( (SCIPgetCurrentNode(scip) != SCIPgetRootNode(scip) && sepadata->onlyroot) )
+   {
+      SCIPdebugMessage("Subsetrow separator is only configured to run on root node.\n");
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
+   if( sepadata->ngeneratedcut >= sepadata->maxcutcands )
+   {
+      SCIPdebugMessage("Already computed the maximal number of cuts.\n");
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
 
    /* ensure to separate current sol */
    SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
@@ -491,11 +507,14 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       return SCIP_OKAY;
    }
 
-   if( (SCIPgetCurrentNode(scip) != SCIPgetRootNode(scip) && sepadata->onlyroot) || sepadata->ngeneratedcut > 0 )
+   /* determine the number of cuts to generated based on node type */
+   if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) )
    {
-      SCIPdebugMessage("only run on root node\n");
-      *result = SCIP_DIDNOTRUN;
-      return SCIP_OKAY;
+      maxcuts = sepadata->maxsepacutsroot;
+   }
+   else
+   {
+      maxcuts = sepadata->maxsepacuts;
    }
 
    /* alloc memory for structures used to store
@@ -508,7 +527,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    SCIPhashmapCreate(&mapmastervarxcoeff, SCIPblkmem(scip), nmastervars);
    SCIPhashmapCreate(&mappricingvarxcoeff, SCIPblkmem(scip), nmastervars);
 
-   for( i = 0; i < sepadata->maxsepacuts; i ++ )
+   for( i = 0; i < maxcuts; i ++ )
    {
       GCG_MASTERCUTDATA*         mastercutdata = NULL;         // mastercutdata for cut
       GCG_PRICINGMODIFICATION**  pricingmodifications = NULL;  // pricing modifications associated with cut
@@ -518,7 +537,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       char                       name[SCIP_MAXSTRLEN];
 
       /* select n constraints and store their indices in selectedconssidx */
-      SCIPdebugMessage("Cut % i: Select %i out of %i constraints\n", i, sepadata->n, nmasterconss);
+      SCIPdebugMessage("cut % i: select %i out of %i constraints\n", i, sepadata->n, nmasterconss);
       if( sepadata->strategy == 0 )
          SCIP_CALL( selectRandomRows(sepadata, nmasterconss, selectedconssidx, sepadata->n) );
 
@@ -539,13 +558,13 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
          SCIP_CALL( SCIPhashmapRemoveAll(mappricingvarxcoeff) );
          continue;
       }
-      SCIPprintRow(scip, ssrc, NULL);
+      //SCIPprintRow(scip, ssrc, NULL);
 
       /* determine the pricing variables and their coefficients for the pricing constraints */
       SCIP_CALL( computePricingConssCoefficients(origscip, originalconss, selectedconssidx, sepadata->n,
                                                  weights, mappricingvarxcoeff) );
 
-      /* create the pricing modification for every pricing problem */
+      /* create the pricing modification for every (relevant) pricing problem */
       for( j = 0; j < npricingproblems; j++ )
       {
          SCIP*                      pricingproblem;
@@ -594,7 +613,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
          }
 
          /* if no variables were actually added, the constraint is useless and can be released */
-
          SCIP_CALL( SCIPgetConsNVars(pricingproblem, pricingconss[0], &nvars, &success) );
          if( nvars == 0  )
          {
@@ -638,7 +656,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       SCIP_CALL( GCGmastercutCreateFromRow(scip, &mastercutdata, ssrc, pricingmodifications, npricingmodifications) ); // freed in GCGmastercutFree
       sepadata->ngeneratedcut++;
 
-      /* add the subsetrow cut to the sepa store of the master problem and the generated cuts*/
+      /* add the subsetrow cut to the sepa store of the master problem and the generated cuts */
       SCIP_CALL( SCIPaddRow(scip, ssrc, FALSE, &success) );
       SCIP_CALL( GCGaddCutToGeneratedCutsSepa(scip, mastercutdata, weights, selectedconssidx, sepadata->n, sepadata->sepaidx) );
 
@@ -779,6 +797,8 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
    assert(cut != NULL);
 
    origscip = GCGgetOriginalprob(scip);
+   assert(origscip != NULL);
+
    pricingmod = GCGmastercutGetPricingModification(scip, cut, probnr);
 
    /* no pricing modification for this problem */
@@ -788,9 +808,12 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
       *coef = 0.0;
       return SCIP_OKAY;
    }
+
+   /* get the pricing modification of the problem which generated this master variable */
    pricingscip = GCGgetPricingprob(origscip, probnr);
    pricingconss = GCGpricingmodificationGetAdditionalConss(pricingmod);
 
+   /* get all the pricing variables and their coefficients in the constraint */
    SCIP_CALL( SCIPgetConsNVars(pricingscip, pricingconss[0], &npricingconsvars, &success) );
    assert(success);
    SCIPallocBufferArray(scip, &pricingconsvars, npricingconsvars);
@@ -800,7 +823,7 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
    SCIP_CALL( SCIPgetConsVals(pricingscip, pricingconss[0], pricingconscoeffs, npricingconsvars, &success) );
    assert(success);
 
-   /* compute floor(w^TAx) */
+   /* compute w^TAx using the pricing constraint */
    *coef = 0.0;
    for( j = 0; j < npricingconsvars; j++ )
    {
@@ -814,6 +837,7 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
       }
    }
 
+   /* finally, we round down w^TAx */
    SCIPdebugMessage("variable coeff %f for row %s\n", *coef, SCIProwGetName(cut->cut.row));
    *coef = SCIPfeasFloor(scip, *coef);
 
@@ -823,7 +847,7 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
    return SCIP_OKAY;
 }
 
-/** get all the cuts generated by this master separator */
+/** modifies the objective values of the pricing variables affected by the master cut */
 static
 GCG_DECL_SEPASETOBJECTIVE(gcgsepaSetObjectiveSubsetrow)
 {
@@ -853,15 +877,8 @@ GCG_DECL_SEPASETOBJECTIVE(gcgsepaSetObjectiveSubsetrow)
       pricingproblem = GCGgetPricingprob(origscip, pricingblocknr);
       coeffvar = GCGpricingmodificationGetCoefVar(pricingmodifications[i]);
       assert(SCIPvarGetProbindex(coeffvar) != -1);
-      /*if( SCIPisZero(pricingproblem, dual) )
-      {
-         SCIP_CALL( SCIPchgVarObj(pricingproblem, coeffvar, 0.0) );
-      }
-      else
-      {*/
       SCIP_CALL( SCIPchgVarObj(pricingproblem, coeffvar, -1.0 * dual) );
       SCIPdebugMessage("%s's objective: %f\n", SCIPvarGetName(coeffvar), SCIPvarGetObj(coeffvar));
-
    }
 
    return SCIP_OKAY;
@@ -893,7 +910,6 @@ SCIP_DECL_SEPAINIT(sepaInitSubsetrow)
    /* creates the subsetrow gcg separator and includes in the relaxator data of the original problem */
    sepadata->sepaidx = GCGrelaxIncludeSeparator(origscip, sepa, gcgsepaGetVarCoefficientSubsetrow,
                                                 gcgsepaGetColCoefficientSubsetrow, gcgsepaSetObjectiveSubsetrow);
-
 
    return SCIP_OKAY;
 }
@@ -954,11 +970,11 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
       &sepadata->initseed, FALSE, DEFAULT_INITSEED, 0, INT_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip,
                               "sepa/" SEPA_NAME "/maxsepacutsroot",
-      "maximal number of zerohalf cuts separated per separation round in the root node",
+      "maximal number of subsetrow cuts separated per separation round in the root node",
       &sepadata->maxsepacutsroot, FALSE, DEFAULT_MAXSEPACUTSROOT, 0, INT_MAX, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip,
                               "sepa/" SEPA_NAME "/maxcutcands",
-      "maximal number of zerohalf cuts considered per separation round",
+      "maximal number of total subsetrow cuts considered",
       &sepadata->maxcutcands, FALSE, DEFAULT_MAXCUTCANDS, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/onlyroot", "apply subsetrow separator only on root",

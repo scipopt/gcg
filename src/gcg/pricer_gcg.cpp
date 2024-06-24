@@ -1746,7 +1746,7 @@ SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
          if( nactivecuts[i] == 0 )
             continue;
 
-         /* compute ceofficient for each cut */
+         /* compute coefficient for each cut */
          SCIP_CALL( SCIPallocBufferArray(origprob, &coeffs, nactivecuts[i]) );
          assert(sepas[i]->gcgsepagetcolcoefficient != NULL);
          for( j = 0; j < nactivecuts[i]; j++ )
@@ -2005,7 +2005,6 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
       assert(GCGvarIsPricing(solvars[i]) || GCGvarIsInferredPricing(solvars[i]));
       if( GCGvarIsPricing(solvars[i]) )
       {
-         //SCIPinfoMessage(scip_, NULL, "pricing  var %s: %f\n", SCIPvarGetName(solvars[i]), solvals[i]);
          objvalue += solvals[i] * pricerdata->realdualvalues[probnr][varGetIndexCleaned(pricingprob->pricingscip, solvars[i])];
       }
       else
@@ -2015,8 +2014,6 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
          if( GCGmastercutIsCoefVar(mastercutdata, solvars[i]) )
          {
             objvalue -= solvals[i] * pricetype->mastercutGetDual(scip_, mastercutdata);
-            //SCIPinfoMessage(scip_, NULL, "subtract  %f\n", solvals[i] * pricetype->mastercutGetDual(scip_, mastercutdata));
-            //SCIPinfoMessage(scip_, NULL, "coeff var %s: objval: %f\n", SCIPvarGetName(solvars[i]), SCIPvarGetObj(solvars[i]));
          }
       }
    }
@@ -2036,9 +2033,7 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
          objvalue -= branchduals[i];
       }
    }
-   //SCIPinfoMessage(scip_, NULL, "objval: %f\n", objvalue);
    redcost = (isray ? objvalue : objvalue - pricerdata->dualsolconv[probnr]);
-   //SCIPinfoMessage(scip_, NULL, "redcost: %f\n", redcost);
    return redcost;
 }
 
@@ -2062,11 +2057,11 @@ void ObjPricerGcg::updateRedcosts(
 
 /** add a new column to the pricing storage */
 SCIP_RETCODE ObjPricerGcg::addColToPricestore(
-   GCG_COL*              col                 /**< priced col */
+   GCG_COL*              col,                 /**< priced col */
+   SCIP_Bool             checkcol
    )
 {
    SCIP_RETCODE retcode;
-   SCIP_Bool freecol;
 
    assert(col != NULL);
    assert(pricingtype != NULL);
@@ -2078,7 +2073,7 @@ SCIP_RETCODE ObjPricerGcg::addColToPricestore(
 
    #pragma omp critical (update)
    {
-      retcode = GCGpricestoreAddCol(scip_, pricestore, col, FALSE, &freecol);
+      retcode = GCGpricestoreAddCol(scip_, pricestore, col, FALSE, checkcol, FALSE);
    }
    SCIP_CALL( retcode );
 
@@ -3462,6 +3457,8 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             SCIP_Real dual = pricetype->mastercutGetDual(scip_, mastercutdata);
             if( !SCIPisZero(scip_, dual) )
                SCIP_CALL( GCGmastercutApplyPricingModifications(scip_, mastercutdata) );
+            if( SCIPisZero(scip_, dual) )
+               SCIPinfoMessage(scip_, NULL, "dual zero: 1, dual neg: %i\n", SCIPisDualfeasNegative(scip_, dual));
          }
       }
    }
@@ -3904,7 +3901,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       SCIP_CALL( GCGmastercutUndoPricingModifications(scip_, branchmastercutdata[i]) );
    }
 
-   /* as generation of new columns is finished, the modifications to the pricing problems are undone*/
+   /* as generation of new columns is finished, the modifications to the pricing problems are undone */
    for( i = 0; i < nsepas; i++ )
    {
       for( j = 0; j < nactivecuts[i]; j++ )
@@ -3914,6 +3911,8 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          assert(mastercutdata != NULL);
          if( GCGmastercutIsActive(mastercutdata) )
          {
+            /* update the var history of all the cuts still in the LP */
+            SCIP_CALL( GCGvarhistoryJumpToLatest(scip_, &(activecuts[i][j]->knownvarhistory)) );
             SCIP_Real dual = pricetype->mastercutGetDual(scip_, mastercutdata);
             if( !SCIPisZero(scip_, dual) )
                SCIP_CALL( GCGmastercutUndoPricingModifications(scip_, mastercutdata) );
@@ -5537,7 +5536,8 @@ int GCGpricerGetMaxColsProb(
 extern "C"
 SCIP_RETCODE GCGpricerAddCol(
    SCIP*                 scip,               /**< SCIP data structure */
-   GCG_COL*              col                 /**< priced col */
+   GCG_COL*              col,                 /**< priced col */
+   SCIP_Bool             checkcol
    )
 {
    ObjPricerGcg* pricer;
@@ -5545,7 +5545,7 @@ SCIP_RETCODE GCGpricerAddCol(
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
-   SCIP_CALL( pricer->addColToPricestore(col) );
+   SCIP_CALL( pricer->addColToPricestore(col, checkcol) );
 
    return SCIP_OKAY;
 }
