@@ -763,7 +763,7 @@ SCIP_RETCODE solveCplex(
       }
 
       SCIP_CALL( GCGcreateGcgCol(pricingprob, &col, probnr, solverdata->pricingvars[probnr], cplexsolvals, numcols, TRUE, SCIPinfinity(pricingprob)) );
-      SCIP_CALL( GCGpricerAddCol(scip, col) );
+      SCIP_CALL( GCGpricerAddCol(scip, col, TRUE) );
       ++(*ncols);
 
       *status = GCG_PRICINGSTATUS_UNBOUNDED;
@@ -895,7 +895,7 @@ SCIP_RETCODE solveCplex(
       if( feasible )
       {
          SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &col, probnr, sol, FALSE, SCIPinfinity(pricingprob)) );
-         SCIP_CALL( GCGpricerAddCol(scip, col) );
+         SCIP_CALL( GCGpricerAddCol(scip, col, TRUE) );
          ++(*ncols);
       }
 

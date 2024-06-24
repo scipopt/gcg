@@ -1115,7 +1115,7 @@ SCIP_RETCODE solveCliquer(
 
    /* Create a column corresponding to our clique result */
    SCIP_CALL( GCGcreateGcgCol(pricingprob, &col, probnr, pricingprobvars, solvals, npricingprobvars, FALSE, SCIPinfinity(pricingprob)) );
-   SCIP_CALL( GCGpricerAddCol(scip, col) );
+   SCIP_CALL( GCGpricerAddCol(scip, col, TRUE) );
    *status = GCG_PRICINGSTATUS_UNKNOWN;
    set_free(clique); /* clique can only be freed if non-empty */ 
 
