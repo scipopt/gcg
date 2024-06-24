@@ -3354,6 +3354,7 @@ SCIP_RETCODE GCGdeleteNode(
       }
       consdata->nodestoredcuts = FALSE;
       consdata->addedcutsinit = FALSE;
+      SCIP_CALL( SCIPhashmapRemove(conshdlrdata->mapnodetocons, node) );
    }
 
    return SCIP_OKAY;

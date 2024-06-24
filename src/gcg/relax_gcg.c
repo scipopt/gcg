@@ -2655,7 +2655,7 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
       SCIPfreeMemoryArray(scip, &(relaxdata->separators));
    }
 
-
+   relaxdata->nseparators = 0;
    relaxdata->nbranchrules = 0;
    relaxdata->relaxisinitialized = FALSE;
 

@@ -29,7 +29,7 @@
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 
 #include <scip/pub_tree.h>
 #include <scip/scip_mem.h>
@@ -357,6 +357,25 @@ SCIP_DECL_EVENTFREE(eventFreeMastercutUpdate)
    SCIPhashmapFree(&(eventhdlrdata->rowxgeneratedmap));
    SCIPhashmapFree(&(eventhdlrdata->scipsepaxgcgsepamap));
 
+   SCIPdebugMessage("event free: free event handler data\n");
+   SCIPfreeBlockMemory(scip, &eventhdlrdata);
+
+   return SCIP_OKAY;
+}
+
+static
+SCIP_DECL_EVENTEXIT(eventExitMastercutUpdate)
+{
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+   int i;
+
+   assert(scip != NULL);
+   assert(eventhdlr != NULL);
+   assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
+
+   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
+   assert(eventhdlrdata != NULL);
+
    /* free all the arrays */
    if( eventhdlrdata->nsepas > 0)
    {
@@ -364,23 +383,22 @@ SCIP_DECL_EVENTFREE(eventFreeMastercutUpdate)
       for( i = eventhdlrdata->nsepas - 1; i >= 0 ; i-- )
       {
          SCIPdebugMessage("event free: free mem (%i) for activecuts[%i]\n", eventhdlrdata->activecutssize[i], i);
-         SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->activecuts[i]), eventhdlrdata->activecutssize[i]);
+         SCIPfreeBlockMemoryArrayNull(scip, &(eventhdlrdata->activecuts[i]), eventhdlrdata->activecutssize[i]);
          SCIPdebugMessage("event free: free mem (%i) for generatedcuts[%i]\n", eventhdlrdata->generatedcutssize[i], i);
-         SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->generatedcuts[i]), eventhdlrdata->generatedcutssize[i]);
+         SCIPfreeBlockMemoryArrayNull(scip, &(eventhdlrdata->generatedcuts[i]), eventhdlrdata->generatedcutssize[i]);
       }
-      SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->activecuts), eventhdlrdata->nsepas);
-      SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->generatedcuts), eventhdlrdata->nsepas);
-      SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->nactivecuts), eventhdlrdata->nsepas);
-      SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->ngeneratedcuts), eventhdlrdata->nsepas);
-      SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->generatedcutssize), eventhdlrdata->nsepas);
-      SCIPfreeBlockMemoryArray(scip, &(eventhdlrdata->activecutssize), eventhdlrdata->nsepas);
+      SCIPfreeBlockMemoryArrayNull(scip, &(eventhdlrdata->activecuts), eventhdlrdata->nsepas);
+      SCIPfreeBlockMemoryArrayNull(scip, &(eventhdlrdata->generatedcuts), eventhdlrdata->nsepas);
+      SCIPfreeBlockMemoryArrayNull(scip, &(eventhdlrdata->nactivecuts), eventhdlrdata->nsepas);
+      SCIPfreeBlockMemoryArrayNull(scip, &(eventhdlrdata->ngeneratedcuts), eventhdlrdata->nsepas);
+      SCIPfreeBlockMemoryArrayNull(scip, &(eventhdlrdata->generatedcutssize), eventhdlrdata->nsepas);
+      SCIPfreeBlockMemoryArrayNull(scip, &(eventhdlrdata->activecutssize), eventhdlrdata->nsepas);
    }
    else
    {
       SCIPdebugMessage("event free: no sepas registered: arrays remained NULL --> nothing to free\n");
    }
-   SCIPdebugMessage("event free: free event handler data\n");
-   SCIPfreeBlockMemory(scip, &eventhdlrdata);
+   eventhdlrdata->nsepas = 0;
 
    return SCIP_OKAY;
 }
@@ -477,7 +495,7 @@ SCIP_DECL_EVENTEXITSOL(eventExitSolMastercutUpdate)
          for( j = 0; j < eventhdlrdata->ngeneratedcuts[i]; j++ )
          {
             assert(eventhdlrdata->generatedcuts[i][j] != NULL);
-            SCIP_CALL(GCGreleaseMasterSepaCut(scip, &(eventhdlrdata->generatedcuts[i][j])) );
+            SCIP_CALL( GCGreleaseMasterSepaCut(scip, &(eventhdlrdata->generatedcuts[i][j])) );
             assert(eventhdlrdata->generatedcuts[i][j] == NULL);
          }
          eventhdlrdata->ngeneratedcuts[i] = 0;
@@ -485,7 +503,7 @@ SCIP_DECL_EVENTEXITSOL(eventExitSolMastercutUpdate)
          for( j = 0; j < eventhdlrdata->nactivecuts[i]; j++ )
          {
             assert(eventhdlrdata->activecuts[i][j] != NULL);
-            SCIP_CALL(GCGreleaseMasterSepaCut(scip, &(eventhdlrdata->activecuts[i][j])) );
+            SCIP_CALL( GCGreleaseMasterSepaCut(scip, &(eventhdlrdata->activecuts[i][j])) );
             assert(eventhdlrdata->activecuts[i][j] == NULL);
          }
          eventhdlrdata->nactivecuts[i] = 0;
@@ -550,9 +568,7 @@ SCIP_RETCODE SCIPincludeEventHdlrSepaCuts(
    SCIP_CALL( SCIPhashmapCreate(&(eventhdlrdata->rowxgeneratedmap), SCIPblkmem(scip), STARTMAXCUTS) );
    SCIP_CALL( SCIPhashmapCreate(&(eventhdlrdata->scipsepaxgcgsepamap), SCIPblkmem(scip), 10) );
    eventhdlrdata->nsepas = 0;
-   /* use SCIPincludeEventhdlrBasic() plus setter functions if you want to set callbacks one-by-one and your code should
-    * compile independent of new callbacks being added in future SCIP versions
-    */
+
    eventhdlr = NULL;
    SCIP_CALL( SCIPincludeEventhdlrBasic(scip, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC,
          eventExecEvent, eventhdlrdata) );
@@ -561,6 +577,7 @@ SCIP_RETCODE SCIPincludeEventHdlrSepaCuts(
    /* set non fundamental callbacks via setter functions */
    SCIP_CALL( SCIPsetEventhdlrInit(scip, eventhdlr, eventInitMastercutUpdate) );
    SCIP_CALL( SCIPsetEventhdlrExitsol(scip, eventhdlr, eventExitSolMastercutUpdate) );
+   SCIP_CALL(SCIPsetEventhdlrExit(scip, eventhdlr, eventExitMastercutUpdate) );
    SCIP_CALL( SCIPsetEventhdlrFree(scip, eventhdlr, eventFreeMastercutUpdate) );
 
    return SCIP_OKAY;

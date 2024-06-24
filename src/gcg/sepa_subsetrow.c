@@ -910,7 +910,7 @@ SCIP_DECL_SEPAINIT(sepaInitSubsetrow)
    /* creates the subsetrow gcg separator and includes in the relaxator data of the original problem */
    sepadata->sepaidx = GCGrelaxIncludeSeparator(origscip, sepa, gcgsepaGetVarCoefficientSubsetrow,
                                                 gcgsepaGetColCoefficientSubsetrow, gcgsepaSetObjectiveSubsetrow);
-
+   sepadata->ngeneratedcut = 0;
    return SCIP_OKAY;
 }
 
