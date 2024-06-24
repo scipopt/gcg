@@ -229,12 +229,36 @@ SCIP_RETCODE simplifyComponentBounds(
 /** computes the generator of mastervar for the entry in origvar
  * @return entry of the generator corresponding to origvar */
 static
+SCIP_Real getGeneratorEntryCol(
+   SCIP_VAR**            solvars,            /**< column solution variables */
+   SCIP_Real*            solvals,            /**< column solution values */
+   int                   nsolvars,           /**< number of column solution variables */
+   SCIP_VAR*             origvar             /**< corresponding origvar */
+   )
+{
+   int i;
+
+   assert(origvar != NULL);
+
+   for( i = 0; i < nsolvars; ++i )
+   {
+      if( SCIPvarCompare(solvars[i], origvar) == 0 )
+      {
+         return solvals[i];
+      }
+   }
+
+   return 0.0;
+}
+
+/** computes the generator of mastervar for the entry in origvar
+ * @return entry of the generator corresponding to origvar */
+static
 SCIP_Real getGeneratorEntry(
    SCIP_VAR*             mastervar,          /**< current mastervariable */
    SCIP_VAR*             origvar             /**< corresponding origvar */
    )
 {
-   int i;
    SCIP_VAR** origvars;
    SCIP_Real* origvals;
    int norigvars;
@@ -246,15 +270,7 @@ SCIP_Real getGeneratorEntry(
    norigvars = GCGmasterVarGetNOrigvars(mastervar);
    origvals = GCGmasterVarGetOrigvals(mastervar);
 
-   for( i = 0; i < norigvars; ++i )
-   {
-      if( SCIPvarCompare(origvars[i], origvar) == 0 )
-      {
-         return origvals[i];
-      }
-   }
-
-   return 0.0;
+   return getGeneratorEntryCol(origvars, origvals, norigvars, origvar);
 }
 
 /** determines whether a mastervar has a entry for a origvar given a specific block */
@@ -288,6 +304,37 @@ SCIP_Bool hasGeneratorEntry(
 
 /** whether a master variable is in B or not */
 static
+SCIP_Bool isColInB(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR**            solvars,            /**< column solution variables */
+   SCIP_Real*            solvals,            /**< column solution values */
+   int                   nsolvars,           /**< number of column solution variables */
+   GCG_COMPBND*          B,                  /**< component bound sequence to check */
+   int                   Bsize,              /**< size of B */
+   int                   blocknr             /**< block we are branching in */
+   )
+{
+   int i;
+   SCIP_Real generatorentry;
+
+   assert(Bsize > 0);
+   assert(B != NULL);
+
+   for( i = 0; i < Bsize; ++i )
+   {
+      generatorentry = getGeneratorEntryCol(solvars, solvals, nsolvars, B[i].component);
+      if ( (B[i].sense == GCG_COMPBND_SENSE_GE && SCIPisLT(scip, generatorentry, SCIPfloor(scip, B[i].bound) + 1.0)) ||
+         (B[i].sense == GCG_COMPBND_SENSE_LE && SCIPisGT(scip, generatorentry, SCIPfloor(scip, B[i].bound))) )
+      {
+         return FALSE;
+      }
+   }
+
+   return TRUE;
+}
+
+/** whether a master variable is in B or not */
+static
 SCIP_Bool isMasterVarInB(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR*             mastervar,          /**< master variable to check */
@@ -308,11 +355,6 @@ SCIP_Bool isMasterVarInB(
 
    for( i = 0; i < Bsize; ++i )
    {
-      if( !hasGeneratorEntry(mastervar, B[i].component, blocknr) )
-      {
-
-      }
-
       generatorentry = getGeneratorEntry(mastervar, B[i].component);
       if ( (B[i].sense == GCG_COMPBND_SENSE_GE && SCIPisLT(scip, generatorentry, SCIPfloor(scip, B[i].bound) + 1.0)) ||
          (B[i].sense == GCG_COMPBND_SENSE_LE && SCIPisGT(scip, generatorentry, SCIPfloor(scip, B[i].bound))) )
@@ -333,96 +375,57 @@ SCIP_RETCODE addVarToMasterbranch(
    SCIP_Bool*            added               /**< whether the variable was added */
 )
 {
-   SCIP* origscip;
-#ifdef SCIP_DEBUG
-   SCIP_CONS* branchingcons;
-   SCIP_VAR** mastervars;
-   int nmastervars;
-   int i;
-   SCIP_Real constantSum;
-   int numvars;
-   SCIP_VAR** consvars;
-   SCIP_Bool found = FALSE;
-#endif
+   SCIP_Real coef;
+   SCIP_VAR** origvars;
+   SCIP_Real* origvals;
+   int norigvars;
 
    assert(scip != NULL);
    assert(mastervar != NULL);
    assert(branchdata != NULL);
    assert(added != NULL);
 
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
+   origvars = GCGmasterVarGetOrigvars(mastervar);
+   norigvars = GCGmasterVarGetNOrigvars(mastervar);
+   origvals = GCGmasterVarGetOrigvals(mastervar);
 
    *added = FALSE;
 
-   if(
-      GCGvarGetBlock(mastervar) == -1
-      || !GCGisMasterVarInBlock(
-         mastervar,
-         GCGgetBlockRepresentative(origscip, branchdata->blocknr)
-      )
-   )
+   coef = GCGmastercutGetCoeff(scip, branchdata->mastercons, origvars, origvals, norigvars, GCGvarGetBlock(mastervar));
+
+   if( !SCIPisZero(scip, coef) )
+   {
+      SCIPdebugMessage("Adding variable %s to branching constraint: %s%.2f\n", SCIPvarGetName(mastervar), branchdata->branchtype == GCG_BRANCH_DOWN ? "<=" : ">=", branchdata->constant);
+      SCIP_CALL( GCGmastercutAddMasterVar(scip, branchdata->mastercons, mastervar, coef) );
+      *added = TRUE;
+   }
+
+   return SCIP_OKAY;
+}
+
+/** callback new column method */
+static
+GCG_DECL_MASTERCUTGETCOEFF(mastercutGetCoeffCompBnd)
+{
+   GCG_BRANCHDATA* branchdata;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+
+   branchdata = (GCG_BRANCHDATA*) GCGmastercutGetData(mastercutdata);
+
+   assert(branchdata != NULL);
+   assert(branchdata->mastercons == mastercutdata);
+
+   *coef = 0.;
+
+   if( probnr == -1 || probnr != branchdata->blocknr )
       return SCIP_OKAY;
 
-   if( !isMasterVarInB(scip, mastervar, branchdata->B, branchdata->Bsize, branchdata->blocknr) )
+   if( !isColInB(scip, solvars, solvals, nsolvars, branchdata->B, branchdata->Bsize, branchdata->blocknr) )
       return SCIP_OKAY;
 
-#ifdef SCIP_DEBUG
-   branchingcons = NULL;
-   SCIP_CALL( GCGmastercutGetCons(branchdata->mastercons, &branchingcons) );
-   assert(branchingcons != NULL);
-
-   numvars = SCIPgetNVarsLinear(scip, branchingcons);
-#endif
-
-   SCIPdebugMessage("Adding variable %s to branching constraint: %s%.2f\n", SCIPvarGetName(mastervar), branchdata->branchtype == GCG_BRANCH_DOWN ? "<=" : ">=", branchdata->constant);
-   SCIP_CALL( GCGmastercutAddMasterVar(scip, branchdata->mastercons, mastervar, 1.0) );
-
-#ifdef SCIP_DEBUG
-   assert(SCIPgetNVarsLinear(scip, branchingcons) == numvars + 1);
-
-   numvars = SCIPgetNVarsLinear(scip, branchingcons);
-   consvars = SCIPgetVarsLinear(scip, branchingcons);
-
-   for( i = 0; i < numvars; ++i )
-   {
-      if( consvars[i] == mastervar )
-      {
-         found = TRUE;
-         break;
-      }
-   }
-   assert(found);
-#endif
-
-   *added = TRUE;
-
-#ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
-   assert(nmastervars >= 0);
-   /* determine the constant value of the master constraint, i.e. the rhs for the down branch, and lhs for the up branch */
-   constantSum = 0;
-   for( i = 0; i < nmastervars; ++i )
-   {
-      if(
-         GCGisMasterVarInBlock(
-            mastervars[i],
-            GCGgetBlockRepresentative(origscip, branchdata->blocknr)
-         )
-         && isMasterVarInB(
-            scip,
-            mastervars[i],
-            branchdata->B,
-            branchdata->Bsize,
-            branchdata->blocknr
-         )
-      )
-      {
-         constantSum += SCIPgetSolVal(scip, NULL, mastervars[i]);
-      }
-   }
-   SCIPdebugMessage("Constant sum: %g\n", constantSum);
-#endif
+   *coef = 1.;
 
    return SCIP_OKAY;
 }
@@ -642,7 +645,7 @@ SCIP_RETCODE createBranchingCons(
    ) );
 
    // create the master constraint
-   SCIP_CALL( GCGmastercutCreateFromCons(scip, &branchdata->mastercons, branchcons, pricingmods, 1) );
+   SCIP_CALL( GCGmastercutCreateFromCons(scip, &branchdata->mastercons, branchcons, pricingmods, 1, branchdata, mastercutGetCoeffCompBnd) );
 
    // add the variables to the constraint
    for( i = 0; i < nmastervars; i++ )

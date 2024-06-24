@@ -59,12 +59,12 @@ private:
    SCIP_Real* stabcenteroriginalsepacutvals;
    int stabcenteroriginalsepacutvalssize;
    int nstabcenteroriginalsepacutvals;
+   SCIP_HASHMAP* stabcentermastercutvals;
    SCIP_Real* stabcenterlinkingconsvals;
    int nstabcenterlinkingconsvals;
    int stabcenterlinkingconsvalssize;
    SCIP_Real* stabcenterconv;
    int nstabcenterconv;
-   SCIP_HASHMAP* stabcentermastercutvals;
    SCIP_Real dualdiffnorm; /**< norm of difference between stabcenter and current duals */
    SCIP_Real* subgradientconsvals;
    int subgradientconsvalssize;
@@ -72,6 +72,7 @@ private:
    SCIP_Real* subgradientoriginalsepacutvals;
    int subgradientoriginalsepacutvalssize;
    int nsubgradientoriginalsepacutvals;
+   SCIP_HASHMAP* subgradientmastercutvals;
    SCIP_Real* subgradientlinkingconsvals;
    int subgradientlinkingconsvalssize;
    SCIP_Real subgradientnorm;
@@ -128,9 +129,7 @@ public:
    SCIP_RETCODE updateStabilityCenter(
       SCIP_Real             lowerbound,         /**< lower bound due to lagrange function corresponding to current (stabilized) dual vars */
       SCIP_Real*            dualsolconv,        /**< corresponding feasible dual solution for convexity constraints */
-      GCG_COL**             pricingcols,        /**< columns of the pricing problems */
-      GCG_MASTERCUTDATA**   mastercutdata,      /**< array of mastercutdata */
-      int                   nmastercuts         /**< number of mastercuts */
+      GCG_COL**             pricingcols         /**< columns of the pricing problems */
    );
 
    /** updates the alpha after unsuccessful pricing */
@@ -197,14 +196,20 @@ private:
    /** updates the constraints in the stability center (and allocates more memory) */
    SCIP_RETCODE updateStabcenterconsvals();
 
-   /** updates the cuts in the stability center (and allocates more memory) */
-   SCIP_RETCODE updateStabcentercutvals();
+   /** updates the original cuts in the stability center (and allocates more memory) */
+   SCIP_RETCODE updateStabcenteroriginalcutvals();
+
+   /** updates the generic mastercuts in the stability center (and allocates more memory) */
+   SCIP_RETCODE updateStabcentermastercutvals();
 
    /** updates the constraints in the subgradient (and allocates more memory) */
    SCIP_RETCODE updateSubgradientconsvals();
 
-   /** updates the cuts in the subgradient (and allocates more memory) */
-   SCIP_RETCODE updateSubgradientcutvals();
+   /** updates the original cuts in the subgradient (and allocates more memory) */
+   SCIP_RETCODE updateSubgradientoriginalcutvals();
+
+   /** updates the generic mastercuts in the subgradient (and allocates more memory) */
+   SCIP_RETCODE updateSubgradientmastercutvals();
 
    /** increase the alpha value */
    void increaseAlpha();
@@ -239,8 +244,7 @@ private:
       SCIP_Real          current,            /**< current dual value */
       SCIP_Real          subgradient,         /**< subgradient (or 0.0 if not needed) */
       SCIP_Real          lhs,                 /**< lhs (or 0.0 if not needed) */
-      SCIP_Real          rhs,                 /**< rhs (or 0.0 if not needed) */
-      SCIP_Bool          hassubgradient       /**< is subgradient available? */
+      SCIP_Real          rhs                  /**< rhs (or 0.0 if not needed) */
    ) const;
 };
 

@@ -48,6 +48,7 @@
 #include "pricer_gcg.h"
 #include "gcg.h"
 #include "pub_gcgcol.h"
+#include "pub_gcgvar.h"
 #include "sepa_original.h"
 #include "objscip/objscip.h"
 #include "scip/cons_linear.h"
@@ -56,7 +57,9 @@
 #include "scip/def.h"
 #include "scip/pub_misc.h"
 #include "scip/type_misc.h"
+#include "type_mastercutdata.h"
 #include <scip/type_cons.h>
+#include <scip/type_retcode.h>
 
 namespace gcg {
 
@@ -76,6 +79,7 @@ Stabilization::Stabilization(
       inmispricingschedule(FALSE), subgradientproduct(0.0)
 {
    SCIP_CALL_ABORT( SCIPhashmapCreate(&stabcentermastercutvals, SCIPblkmem(scip), 0) );
+   SCIP_CALL_ABORT( SCIPhashmapCreate(&subgradientmastercutvals, SCIPblkmem(scip), 0) );
 }
 
 Stabilization::~Stabilization()
@@ -95,6 +99,7 @@ Stabilization::~Stabilization()
    pricingtype = (PricingType*) NULL;
    nodenr = -1;
    SCIPhashmapFree(&stabcentermastercutvals);
+   SCIPhashmapFree(&subgradientmastercutvals);
 }
 
 SCIP_RETCODE Stabilization::updateStabcenterconsvals()
@@ -121,7 +126,7 @@ SCIP_RETCODE Stabilization::updateStabcenterconsvals()
    return SCIP_OKAY;
 }
 
-SCIP_RETCODE Stabilization::updateStabcentercutvals()
+SCIP_RETCODE Stabilization::updateStabcenteroriginalcutvals()
 {
    int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(scip_);
 
@@ -140,6 +145,40 @@ SCIP_RETCODE Stabilization::updateStabcentercutvals()
    BMSclearMemoryArray(&stabcenteroriginalsepacutvals[nstabcenteroriginalsepacutvals], (size_t)noriginalsepacuts - nstabcenteroriginalsepacutvals); /*lint !e866*/
 
    nstabcenteroriginalsepacutvals = noriginalsepacuts;
+
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE Stabilization::updateStabcentermastercutvals()
+{
+   GCG_BRANCHRULE** branchrules;
+   GCG_BRANCHDATA** branchdata;
+   GCG_MASTERCUTDATA** branchmastercutdata;
+   int nbranchmastercuts;
+   int i;
+   SCIP_HASHMAP* newMap;
+
+   branchrules = NULL;
+   branchdata = NULL;
+   branchmastercutdata = NULL;
+   nbranchmastercuts = 0;
+   SCIP_CALL( GCGrelaxBranchGetAllActiveMasterCuts(scip_, &branchrules, &branchdata, &branchmastercutdata, &nbranchmastercuts) );
+
+   SCIP_CALL_ABORT( SCIPhashmapCreate(&newMap, SCIPblkmem(scip_), nbranchmastercuts) );
+
+   for( i = 0; i < nbranchmastercuts; i++ )
+   {
+      if( SCIPhashmapExists(stabcentermastercutvals, branchmastercutdata[i]) )
+      {
+         SCIP_CALL( SCIPhashmapInsertReal(newMap, branchmastercutdata[i], SCIPhashmapGetImageReal(stabcentermastercutvals, branchmastercutdata[i])));
+      } else {
+         SCIP_CALL( SCIPhashmapInsertReal(newMap, branchmastercutdata[i], 0.0));
+      }
+   }
+
+   SCIPhashmapFree(&stabcentermastercutvals);
+
+   stabcentermastercutvals = newMap;
 
    return SCIP_OKAY;
 }
@@ -168,7 +207,7 @@ SCIP_RETCODE Stabilization::updateSubgradientconsvals()
    return SCIP_OKAY;
 }
 
-SCIP_RETCODE Stabilization::updateSubgradientcutvals()
+SCIP_RETCODE Stabilization::updateSubgradientoriginalcutvals()
 {
    int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(scip_);
 
@@ -187,6 +226,40 @@ SCIP_RETCODE Stabilization::updateSubgradientcutvals()
    BMSclearMemoryArray(&subgradientoriginalsepacutvals[nsubgradientoriginalsepacutvals], (size_t)noriginalsepacuts - nsubgradientoriginalsepacutvals); /*lint !e866*/
 
    nsubgradientoriginalsepacutvals = noriginalsepacuts;
+
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE Stabilization::updateSubgradientmastercutvals()
+{
+   GCG_BRANCHRULE** branchrules;
+   GCG_BRANCHDATA** branchdata;
+   GCG_MASTERCUTDATA** branchmastercutdata;
+   int nbranchmastercuts;
+   int i;
+   SCIP_HASHMAP* newMap;
+
+   branchrules = NULL;
+   branchdata = NULL;
+   branchmastercutdata = NULL;
+   nbranchmastercuts = 0;
+   SCIP_CALL( GCGrelaxBranchGetAllActiveMasterCuts(scip_, &branchrules, &branchdata, &branchmastercutdata, &nbranchmastercuts) );
+
+   SCIP_CALL_ABORT( SCIPhashmapCreate(&newMap, SCIPblkmem(scip_), nbranchmastercuts) );
+
+   for( i = 0; i < nbranchmastercuts; i++ )
+   {
+      if( SCIPhashmapExists(subgradientmastercutvals, branchmastercutdata[i]) )
+      {
+         SCIP_CALL( SCIPhashmapInsertReal(newMap, branchmastercutdata[i], SCIPhashmapGetImageReal(subgradientmastercutvals, branchmastercutdata[i])));
+      } else {
+         SCIP_CALL( SCIPhashmapInsertReal(newMap, branchmastercutdata[i], 0.0));
+      }
+   }
+
+   SCIPhashmapFree(&subgradientmastercutvals);
+
+   subgradientmastercutvals = newMap;
 
    return SCIP_OKAY;
 }
@@ -252,8 +325,7 @@ SCIP_Real Stabilization::linkingconsGetDual(
       pricingtype->consGetDual(scip_, cons),
       subgradient,
       0.0,
-      0.0,
-      TRUE
+      0.0
    );
 }
 
@@ -289,8 +361,7 @@ SCIP_RETCODE Stabilization::consGetDual(
       pricingtype->consGetDual(scip_, cons),
       subgradient,
       SCIPgetLhsLinear(scip_, cons),
-      SCIPgetRhsLinear(scip_, cons),
-      TRUE
+      SCIPgetRhsLinear(scip_, cons)
    );
    return SCIP_OKAY;
 
@@ -311,13 +382,13 @@ SCIP_RETCODE Stabilization::rowGetDual(
    SCIP_Real subgradient = 0.0;
 
    if( i >= nstabcenteroriginalsepacutvals )
-      SCIP_CALL( updateStabcentercutvals() );
+      SCIP_CALL( updateStabcenteroriginalcutvals() );
 
    assert(i < nstabcenteroriginalsepacutvals);
    assert(stabcenteroriginalsepacutvals != NULL);
 
    if( i >= nsubgradientoriginalsepacutvals && hybridascent )
-      SCIP_CALL( updateSubgradientcutvals() );
+      SCIP_CALL( updateSubgradientoriginalcutvals() );
 
    if( hybridascent && hasstabilitycenter )
    {
@@ -330,8 +401,7 @@ SCIP_RETCODE Stabilization::rowGetDual(
       pricingtype->rowGetDual(originalsepacut),
       subgradient,
       SCIProwGetLhs(originalsepacut),
-      SCIProwGetRhs(originalsepacut),
-      TRUE
+      SCIProwGetRhs(originalsepacut)
    );
 
    return SCIP_OKAY;
@@ -355,8 +425,7 @@ SCIP_Real Stabilization::convGetDual(
       pricingtype->consGetDual(scip_, cons),
       subgradient,
       (SCIP_Real) GCGgetNIdenticalBlocks(origprob, i),
-      (SCIP_Real) GCGgetNIdenticalBlocks(origprob, i),
-      TRUE
+      (SCIP_Real) GCGgetNIdenticalBlocks(origprob, i)
    );
 }
 
@@ -372,16 +441,14 @@ SCIP_RETCODE Stabilization::mastercutGetDual(
 
    SCIP_CALL( GCGmastercutGetCons(mastercutdata, &cons) );
 
-   if( !SCIPhashmapExists(stabcentermastercutvals, cons) )
-      SCIP_CALL( SCIPhashmapInsertReal(stabcentermastercutvals, cons, 0.0));
+   assert(SCIPhashmapExists(stabcentermastercutvals, cons));
 
    *dual = computeDual(
       SCIPhashmapGetImageReal(stabcentermastercutvals, cons),
       pricingtype->mastercutGetDual(scip_, mastercutdata),
       0.0,
       SCIPgetLhsLinear(scip_, cons),
-      SCIPgetRhsLinear(scip_, cons),
-      FALSE
+      SCIPgetRhsLinear(scip_, cons)
    );
 
    return SCIP_OKAY;
@@ -390,13 +457,13 @@ SCIP_RETCODE Stabilization::mastercutGetDual(
 SCIP_RETCODE Stabilization::updateStabilityCenter(
    SCIP_Real             lowerbound,         /**< lower bound due to lagrange function corresponding to current (stabilized) dual vars */
    SCIP_Real*            dualsolconv,        /**< corresponding feasible dual solution for convexity constraints */
-   GCG_COL**             pricingcols,        /**< columns of the pricing problems */
-   GCG_MASTERCUTDATA**   mastercutdata,      /**< array of mastercutdata */
-   int                   nmastercuts         /**< number of mastercuts */
+   GCG_COL**             pricingcols         /**< columns of the pricing problems */
    )
 {
-   SCIP_CONS* cons;
    SCIP_Real dual;
+   int i;
+   SCIP_HASHMAPENTRY* hashmapEntry;
+   GCG_MASTERCUTDATA* tmpMastercutData;
 
    assert(dualsolconv != NULL);
    SCIPdebugMessage("Updating stability center: ");
@@ -412,19 +479,14 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
 
    /* first update the arrays */
    SCIP_CALL( updateStabcenterconsvals() );
-   SCIP_CALL( updateStabcentercutvals() );
-   for( int i = 0; i < nmastercuts; ++i )
-   {
-      cons = NULL;
-      SCIP_CALL( GCGmastercutGetCons(mastercutdata[i], &cons) );
-      if( !SCIPhashmapExists(stabcentermastercutvals, cons) )
-         SCIP_CALL( SCIPhashmapInsertReal(stabcentermastercutvals, cons, 0.0));
-   }
+   SCIP_CALL( updateStabcenteroriginalcutvals() );
+   SCIP_CALL( updateStabcentermastercutvals() );
 
    if( hybridascent )
    {
       SCIP_CALL( updateSubgradientconsvals() );
-      SCIP_CALL( updateSubgradientcutvals() );
+      SCIP_CALL( updateSubgradientoriginalcutvals() );
+      SCIP_CALL( updateSubgradientmastercutvals() );
    }
 
    /* get new dual values */
@@ -438,34 +500,36 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
    assert(nconss <= nstabcenterconsvals);
    assert(noriginalsepacuts <= nstabcenteroriginalsepacutvals);
 
-   for( int i = 0; i < nconss; ++i )
+   for( i = 0; i < nconss; ++i )
    {
       SCIP_CALL( consGetDual(i, &stabcenterconsvals[i]) );
    }
 
-   for( int i = 0; i < noriginalsepacuts; ++i )
+   for( i = 0; i < noriginalsepacuts; ++i )
    {
       SCIP_CALL( rowGetDual(i, &stabcenteroriginalsepacutvals[i]) );
    }
 
-   for( int i = 0; i < nstabcenterlinkingconsvals; ++i)
+   for( i = 0; i < nstabcenterlinkingconsvals; ++i)
    {
       stabcenterlinkingconsvals[i] = linkingconsGetDual(i);
    }
 
-   for( int i = 0; i < nprobs; ++i )
+   for( i = 0; i < nprobs; ++i )
    {
       if(!GCGisPricingprobRelevant(origprob, i))
          continue;
       stabcenterconv[i] = dualsolconv[i];
    }
 
-   for( int i = 0; i < nmastercuts; ++i )
+   for( i = 0; i < SCIPhashmapGetNElements(stabcentermastercutvals); ++i )
    {
-      cons = NULL;
-      SCIP_CALL( GCGmastercutGetCons(mastercutdata[i], &cons) );
-      SCIP_CALL( mastercutGetDual(mastercutdata[i], &dual) );
-      SCIP_CALL( SCIPhashmapInsertReal(stabcentermastercutvals, cons, dual) );
+      hashmapEntry = SCIPhashmapGetEntry(stabcentermastercutvals, i);
+      assert(hashmapEntry != NULL);
+      tmpMastercutData = (GCG_MASTERCUTDATA*) SCIPhashmapEntryGetOrigin(hashmapEntry);
+      assert(tmpMastercutData != NULL);
+      SCIP_CALL( mastercutGetDual(tmpMastercutData, &dual) );
+      SCIPhashmapEntrySetImageReal(hashmapEntry, dual);
    }
 
    if( hybridascent )
@@ -482,8 +546,7 @@ SCIP_Real Stabilization::computeDual(
       SCIP_Real         current,
       SCIP_Real         subgradient,         /**< subgradient (or 0.0 if not needed) */
       SCIP_Real         lhs,                 /**< lhs (or 0.0 if not needed) */
-      SCIP_Real         rhs,                 /**< rhs (or 0.0 if not needed) */
-      SCIP_Bool         hassubgradient       /**< is subgradient available? */
+      SCIP_Real         rhs                 /**< rhs (or 0.0 if not needed) */
       ) const
 {
    SCIP_Real usedalpha = alpha;
@@ -497,7 +560,7 @@ SCIP_Real Stabilization::computeDual(
 
    if( hasstabilitycenter && (SCIPisZero(scip_, usedbeta) || SCIPisZero(scip_, usedalpha)) )
       return usedalpha*center+(1.0-usedalpha)*current;
-   else if( hasstabilitycenter && SCIPisPositive(scip_, usedbeta) && hassubgradient )
+   else if( hasstabilitycenter && SCIPisPositive(scip_, usedbeta) )
    {
       SCIP_Real dual = center + hybridfactor * (beta * (center + subgradient * dualdiffnorm / subgradientnorm) + (1.0 - beta) * current - center);
 
@@ -544,10 +607,10 @@ SCIP_RETCODE Stabilization::updateHybrid()
    {
       /* first update the arrays */
       SCIP_CALL( updateStabcenterconsvals() );
-      SCIP_CALL( updateStabcentercutvals() );
+      SCIP_CALL( updateStabcenteroriginalcutvals() );
 
       SCIP_CALL( updateSubgradientconsvals() );
-      SCIP_CALL( updateSubgradientcutvals() );
+      SCIP_CALL( updateSubgradientoriginalcutvals() );
 
       if( SCIPisPositive(scip_, alpha) )
       {
@@ -698,7 +761,7 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
       SCIPfreeBufferArray(origprob, &vars);
    }
 
-   /* mastercuts */
+   /* originalcuts */
    for( int i = 0; i < noriginalsepacuts; ++i )
    {
       SCIP_COL** cols;
@@ -903,7 +966,7 @@ void Stabilization::calculateSubgradient(
       SCIPfreeBufferArray(origprob, &vars);
    }
 
-   /* mastercuts */
+   /* originalcuts */
    for( int i = 0; i < noriginalsepacuts; ++i )
    {
       SCIP_COL** cols;
@@ -971,6 +1034,91 @@ void Stabilization::calculateSubgradient(
       assert(!SCIPisInfinity(scip_, SQR(infeasibility)));
 
       subgradientoriginalsepacutvals[i] = infeasibility;
+
+      if( SCIPisPositive(scip_, SQR(infeasibility)) )
+         subgradientnorm += SQR(infeasibility);
+   }
+
+   /* generic mastercuts */
+   for( int i = 0; i < SCIPhashmapGetNElements(subgradientmastercutvals); ++i )
+   {
+      SCIP_COL** cols;
+      SCIP_Real* vals;
+      int nvars;
+      SCIP_Real val;
+      SCIP_VAR* var;
+      SCIP_Real activity;
+      SCIP_Real infeasibility;
+      SCIP_HASHMAPENTRY* hashmapEntry;
+      GCG_MASTERCUTDATA* tmpMastercutData;
+
+      hashmapEntry = SCIPhashmapGetEntry(stabcentermastercutvals, i);
+      assert(hashmapEntry != NULL);
+      tmpMastercutData = (GCG_MASTERCUTDATA*) SCIPhashmapEntryGetOrigin(hashmapEntry);
+      assert(tmpMastercutData != NULL);
+
+      nvars = GCGmastercutGetNNonz(scip_, tmpMastercutData);
+      cols = GCGmastercutGetCols(scip_, tmpMastercutData);
+      vals = GCGmastercutGetVals(scip_, tmpMastercutData);
+
+      activity = 0.0;
+
+      assert(SCIPhashmapExists(stabcentermastercutvals, tmpMastercutData));
+      SCIP_Real dual = SCIPhashmapGetImageReal(stabcentermastercutvals, tmpMastercutData);
+      assert(!SCIPisInfinity(scip_, ABS(dual)));
+      for( int j = 0; j < nvars; ++j )
+      {
+         val = 0.0;
+         var = SCIPcolGetVar(cols[j]);
+         assert(GCGvarIsMaster(var));
+
+         /* only linking or static master variable */
+         if( GCGvarGetBlock(var) >= 0 )
+            continue;
+
+         val = SCIPgetSolVal(scip_, (SCIP_SOL*) NULL, var);
+         assert(!SCIPisInfinity(scip_, ABS(val)));
+         val = val * vals[j];
+
+         assert(vals != NULL);
+         activity += val;
+      }
+
+      for( int block = 0; block < GCGgetNPricingprobs(scip_); block++ )
+      {
+         if( !GCGisPricingprobRelevant(scip_, block) )
+            continue;
+
+         GCG_PRICINGMODIFICATION* pricingmod = GCGmastercutGetPricingModification(scip_, tmpMastercutData, block);
+         if( pricingmod == NULL )
+            continue;
+
+         assert(pricingcols[block] != NULL);
+
+         SCIP_VAR* pricingvar = GCGpricingmodificationGetCoefVar(pricingmod);
+         assert(GCGvarIsInferredPricing(pricingvar));
+         SCIP* pricingprob = GCGgetPricingprob(origprob, block);
+         assert(pricingprob != NULL);
+         val = GCGcolGetSolVal(pricingprob, pricingcols[block], pricingvar);
+         assert(!SCIPisInfinity(scip_, ABS(val)));
+
+         activity += val;
+      }
+
+      infeasibility = 0.0;
+
+      if( SCIPisFeasPositive(scip_, dual) )
+      {
+         infeasibility = GCGmastercutGetLhs(scip_, tmpMastercutData) - activity;
+      }
+      else if( SCIPisFeasNegative(scip_, dual) )
+      {
+         infeasibility = GCGmastercutGetRhs(scip_, tmpMastercutData) - activity;
+      }
+
+      assert(!SCIPisInfinity(scip_, SQR(infeasibility)));
+
+      SCIPhashmapEntrySetImageReal(hashmapEntry, infeasibility);
 
       if( SCIPisPositive(scip_, SQR(infeasibility)) )
          subgradientnorm += SQR(infeasibility);
@@ -1047,7 +1195,7 @@ void Stabilization::calculateDualdiffnorm()
          dualdiffnorm += dualdiff;
    }
 
-   /* mastercuts */
+   /* originalcuts */
    assert(stabcenterconsvals != NULL);
 
    for( int i = 0; i < noriginalsepacuts; ++i )
@@ -1101,7 +1249,7 @@ void Stabilization::calculateBeta()
          beta += product;
    }
 
-   /* mastercuts */
+   /* originalcuts */
    assert(stabcenteroriginalsepacutvals != NULL || noriginalsepacuts == 0);
 
    for( int i = 0; i < noriginalsepacuts; ++i )
@@ -1163,7 +1311,7 @@ void Stabilization::calculateHybridFactor()
          divisornorm += divisor;
    }
 
-   /* mastercuts */
+   /* originalcuts */
    assert(stabcenteroriginalsepacutvals != NULL);
 
    for( int i = 0; i < noriginalsepacuts; ++i )
@@ -1235,7 +1383,7 @@ SCIP_RETCODE Stabilization::updateSubgradientProduct(
 {
    /* first update the arrays */
    SCIP_CALL( updateStabcenterconsvals() );
-   SCIP_CALL( updateStabcentercutvals() );
+   SCIP_CALL( updateStabcenteroriginalcutvals() );
 
    subgradientproduct = calculateSubgradientProduct(pricingcols);
 

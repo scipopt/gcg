@@ -3087,7 +3087,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       && (SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) || pricerdata->stabilizationtree)
       && (pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST)
       && !GCGisBranchruleGeneric(GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
-   enablestab = FALSE;
+   enablestab = FALSE; // TODO-TMO
 
    /* allocate memory */
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &bestcols, pricerdata->npricingprobs) );
@@ -3453,8 +3453,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
                /* update subgradient product before a potential change of the stability center */
                SCIP_CALL( stabilization->updateSubgradientProduct(bestcols) );
-               /** @todo-mastercuts: branchmastercuts -> all mastercuts (active branchmastercuts & (in-)active separator-mastercuts )*/
-               SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate, bestobjvals, bestcols, branchmastercutdata, nbranchmastercuts) );
+               SCIP_CALL( stabilization->updateStabilityCenter(lowerboundcandidate, bestobjvals, bestcols) );
             }
 
             /* activate or deactivate mispricing schedule, depending on whether improving columns have been found */

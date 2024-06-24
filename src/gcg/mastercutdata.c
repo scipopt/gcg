@@ -45,7 +45,9 @@
 #include <scip/def.h>
 #include <scip/pub_cons.h>
 #include <scip/pub_lp.h>
+#include <scip/pub_misc_linear.h>
 #include <scip/scip.h>
+#include <scip/scip_cons.h>
 #include <scip/scip_prob.h>
 #include <scip/struct_scip.h>
 #include <scip/struct_mem.h>
@@ -152,11 +154,13 @@ SCIP_RETCODE GCGpricingmodificationCreate(
 /** create a master cut, taking ownership over pricingmodifications */
 GCG_EXPORT
 SCIP_RETCODE GCGmastercutCreateFromCons(
-   SCIP*                  scip,               /**< SCIP data structure */
-   GCG_MASTERCUTDATA**    mastercutdata,       /**< pointer to store the mastercut data */
-   SCIP_CONS*             cons,                /**< constraint in the master problem that represents the master cut */
-   GCG_PRICINGMODIFICATION* pricingmodifications, /**< pricing modifications for the master cut */
-   int                    npricingmodifications /**< number of pricing modifications for the master cut */
+   SCIP*                  scip,                 /**< SCIP data structure */
+   GCG_MASTERCUTDATA**    mastercutdata,        /**< pointer to store the mastercut data */
+   SCIP_CONS*             cons,                 /**< constraint in the master problem that represents the master cut */
+   GCG_PRICINGMODIFICATION* pricingmodifications,/**< pricing modifications for the master cut */
+   int                    npricingmodifications,/**< number of pricing modifications for the master cut */
+   void*                  data,                 /**< any data that might be required to calculate the coefficient of a column solution */
+   GCG_DECL_MASTERCUTGETCOEFF((*mastercutGetCoeff))/**< callback to calculate the coefficient of a column solution */
    )
 {
 #ifndef NDEBUG
@@ -201,6 +205,8 @@ SCIP_RETCODE GCGmastercutCreateFromCons(
    (*mastercutdata)->cut.cons = cons;
    (*mastercutdata)->pricingmodifications = pricingmodifications;
    (*mastercutdata)->npricingmodifications = npricingmodifications;
+   (*mastercutdata)->data = data;
+   (*mastercutdata)->mastercutGetCoeff = mastercutGetCoeff;
 
    for( i = 0; i < npricingmodifications; i++ ) {
       pricingmodifications[i].coefvar->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
@@ -215,11 +221,13 @@ SCIP_RETCODE GCGmastercutCreateFromCons(
 /** create a master cut, taking ownership over pricingmodifications */
 GCG_EXPORT
 SCIP_RETCODE GCGmastercutCreateFromRow(
-   SCIP*                  scip,               /**< SCIP data structure */
-   GCG_MASTERCUTDATA**    mastercutdata,       /**< pointer to store the mastercut data */
-   SCIP_ROW*              row,                 /**< row in the master problem that represents the master cut */
-   GCG_PRICINGMODIFICATION* pricingmodifications, /**< pricing modifications for the master cut */
-   int                    npricingmodifications /**< number of pricing modifications for the master cut */
+   SCIP*                  scip,                 /**< SCIP data structure */
+   GCG_MASTERCUTDATA**    mastercutdata,        /**< pointer to store the mastercut data */
+   SCIP_ROW*              row,                  /**< row in the master problem that represents the master cut */
+   GCG_PRICINGMODIFICATION* pricingmodifications,/**< pricing modifications for the master cut */
+   int                    npricingmodifications,/**< number of pricing modifications for the master cut */
+   void*                  data,                 /**< any data that might be required to calculate the coefficient of a column solution */
+   GCG_DECL_MASTERCUTGETCOEFF((*mastercutGetCoeff))/**< callback to calculate the coefficient of a column solution */
    )
 {
 #ifndef NDEBUG
@@ -263,6 +271,8 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
    (*mastercutdata)->cut.row = row;
    (*mastercutdata)->pricingmodifications = pricingmodifications;
    (*mastercutdata)->npricingmodifications = npricingmodifications;
+   (*mastercutdata)->data = data;
+   (*mastercutdata)->mastercutGetCoeff = mastercutGetCoeff;
 
    for( i = 0; i < npricingmodifications; i++ ) {
       pricingmodifications[i].coefvar->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
@@ -765,4 +775,100 @@ SCIP_Real GCGmastercutGetConstant(
       SCIP_CALL_ABORT( SCIP_ERROR );
       return SCIP_INVALID;
    }
+}
+
+/** get number of nonzero entries in the mastercut */
+int GCGmastercutGetNNonz(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   )
+{
+   assert(mastercutdata != NULL);
+
+   switch( mastercutdata->type )
+   {
+   case GCG_MASTERCUTTYPE_CONS:
+      assert(mastercutdata->cut.cons != NULL);
+      return SCIProwGetNNonz(SCIPconsGetRow(scip, mastercutdata->cut.cons));
+   case GCG_MASTERCUTTYPE_ROW:
+      assert(mastercutdata->cut.row != NULL);
+      return SCIProwGetNNonz(mastercutdata->cut.row);
+   default:
+      SCIP_CALL_ABORT( SCIP_ERROR );
+      return -1;
+   }
+}
+
+/** get array of columns with nonzero entries */
+SCIP_COL** GCGmastercutGetCols(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   )
+{
+   assert(mastercutdata != NULL);
+
+   switch( mastercutdata->type )
+   {
+   case GCG_MASTERCUTTYPE_CONS:
+      assert(mastercutdata->cut.cons != NULL);
+      return SCIProwGetCols(SCIPconsGetRow(scip, mastercutdata->cut.cons));
+   case GCG_MASTERCUTTYPE_ROW:
+      assert(mastercutdata->cut.row != NULL);
+      return SCIProwGetCols(mastercutdata->cut.row);
+   default:
+      SCIP_CALL_ABORT( SCIP_ERROR );
+      return NULL;
+   }
+}
+
+/** get array of coefficients with nonzero entries */
+SCIP_Real* GCGmastercutGetVals(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   )
+{
+   assert(mastercutdata != NULL);
+
+   switch( mastercutdata->type )
+   {
+   case GCG_MASTERCUTTYPE_CONS:
+      assert(mastercutdata->cut.cons != NULL);
+      return SCIProwGetVals(SCIPconsGetRow(scip, mastercutdata->cut.cons));
+   case GCG_MASTERCUTTYPE_ROW:
+      assert(mastercutdata->cut.row != NULL);
+      return SCIProwGetVals(mastercutdata->cut.row);
+   default:
+      SCIP_CALL_ABORT( SCIP_ERROR );
+      return NULL;
+   }
+}
+
+/** get the additional data */
+void* GCGmastercutGetData(
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   )
+{
+   assert(mastercutdata != NULL);
+
+   return mastercutdata->data;
+}
+
+/** calculate the coefficient of a column solution in the master cut */
+SCIP_Real GCGmastercutGetCoeff(
+   SCIP*                  scip,               /**< SCIP data structure */
+   GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
+   SCIP_VAR**             solvars,            /**< array of column solution variables */
+   SCIP_Real*             solvals,            /**< array of column solution values */
+   int                    nsolvars,           /**< number of column solution variables and values */
+   int                    probnr              /**< the pricing problem that the column belongs to */
+   )
+{
+   SCIP_Real coef;
+
+   assert(scip != NULL);
+   assert(mastercutdata != NULL);
+
+   SCIP_CALL( mastercutdata->mastercutGetCoeff(scip, mastercutdata, solvars, solvals, nsolvars, probnr, &coef) );
+
+   return coef;
 }

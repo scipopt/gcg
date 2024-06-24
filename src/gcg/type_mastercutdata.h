@@ -43,6 +43,19 @@ extern "C" {
 typedef struct GCG_PricingModification GCG_PRICINGMODIFICATION;
 typedef struct GCG_MasterCutData GCG_MASTERCUTDATA;
 
+/** determine the coefficient of a column solution in the mastercut
+ *
+ *  input:
+ *    scip            : SCIP main data structure of the original problem
+ *    mastercutdata   : the generic mastercut data
+ *    solvars         : array of column solution variables
+ *    solvals         : array of column solution values
+ *    nsolvars        : number of column solution variables and values
+ *    probnr          : the pricing problem that the column belongs to
+ *    coef            : the calculated coefficient
+ */
+#define GCG_DECL_MASTERCUTGETCOEFF(x) SCIP_RETCODE x (SCIP* scip, GCG_MASTERCUTDATA* mastercutdata, SCIP_VAR** solvars, SCIP_Real* solvals, int nsolvars, int probnr, SCIP_Real* coef)
+
 #ifdef __cplusplus
 }
 #endif

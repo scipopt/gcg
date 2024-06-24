@@ -44,6 +44,7 @@
 #include "sepa_original.h"
 
 #include <assert.h>
+#include <scip/pub_message.h>
 
 /** create a gcg column */
 SCIP_RETCODE GCGcreateGcgCol(
@@ -78,6 +79,10 @@ SCIP_RETCODE GCGcreateGcgCol(
    (*gcgcol)->noriginalsepamastercuts = 0;
    (*gcgcol)->maxmastercoefs = 0;
    (*gcgcol)->maxoriginalsepamastercuts = 0;
+   //(*gcgcol)->mastercutcoefvars = NULL;
+   //(*gcgcol)->mastercutcoefvals = NULL;
+   //(*gcgcol)->nmastercutcoefvars = 0;
+   //(*gcgcol)->maxmastercutcoefvars = 0;
    (*gcgcol)->nlinkvars = 0;
    (*gcgcol)->initcoefs = FALSE;
 
@@ -110,6 +115,10 @@ SCIP_RETCODE GCGcreateGcgCol(
          continue;
 
       assert((GCGvarIsPricing(origvar) && GCGpricingVarGetNOrigvars(origvar) > 0 && GCGpricingVarGetOrigvars(origvar)[0] != NULL) || GCGvarIsInferredPricing(origvar));
+
+      if(GCGvarIsInferredPricing(origvar)) {
+//TODO
+      }
 
       (*gcgcol)->vars[nnonz] = origvar;
       (*gcgcol)->vals[nnonz] = origval;
@@ -483,6 +492,8 @@ void GCGcolComputeNorm(
          norm += SQR(originalsepamastercuts[i]);
    }
 
+//TODO
+
 
    for( i = 0; i < nlinkvars; ++i )
    {
@@ -578,7 +589,7 @@ SCIP_Real GCGcolGetNorm(
    return gcgcol->norm;
 }
 
-/** update original separator cut coefficients information of column in the amster problem */
+/** update original separator cut coefficients information of column in the master problem */
 SCIP_RETCODE GCGcolUpdateOriginalSepaMastercuts(
    GCG_COL*             gcgcol,             /**< gcg column structure */
    SCIP_Real*           neworiginalsepamastercuts,/**< pointer to new array of master cut coefficients */
@@ -606,6 +617,8 @@ SCIP_RETCODE GCGcolUpdateOriginalSepaMastercuts(
 
    return SCIP_OKAY;
 }
+
+//TODO
 
 /** return solution value of variable in gcg column */
 SCIP_Real GCGcolGetSolVal(
@@ -735,6 +748,8 @@ SCIP_Real GCGcolComputeDualObjPara(
       }
    }
 
+//TODO
+
    for( i = 0; i < GCGgetNPricingprobs(GCGmasterGetOrigprob(scip)); ++i )
       dualobjnorm += SQR(GCGgetNIdenticalBlocks(GCGmasterGetOrigprob(scip), i));
 
@@ -829,6 +844,8 @@ SCIP_Real GCGcolComputeOrth(
       if( SCIPisPositive(scip, originalsepamastercuts2[i]) )
          norm2 += SQR(originalsepamastercuts2[i]);
    }
+
+//TODO
 
    for( i = 0; i < nlinkvars1; ++i )
    {

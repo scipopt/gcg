@@ -66,6 +66,7 @@
 
 #include <assert.h>
 #include <scip/def.h>
+#include <scip/scip_numerics.h>
 #include <string.h>
 
 
@@ -113,6 +114,30 @@ typedef struct GCG_Record GCG_RECORD;
 #define branchInitsolGeneric NULL
 #define branchExitsolGeneric NULL
 
+/** computes the generator of mastervar for the entry in origvar
+ * @return entry of the generator corresponding to origvar */
+static
+SCIP_Real getGeneratorEntryCol(
+   SCIP_VAR**            solvars,            /**< column solution variables */
+   SCIP_Real*            solvals,            /**< column solution values */
+   int                   nsolvars,           /**< number of column solution variables */
+   SCIP_VAR*             origvar             /**< corresponding origvar */
+   )
+{
+   int i;
+
+   assert(origvar != NULL);
+
+   for( i = 0; i < nsolvars; ++i )
+   {
+      if( SCIPvarCompare(solvars[i], origvar) == 0 )
+      {
+         return solvals[i];
+      }
+   }
+
+   return 0.0;
+}
 
 /** computes the generator of mastervar for the entry in origvar
  * @return entry of the generator corresponding to origvar */
@@ -122,7 +147,6 @@ SCIP_Real getGeneratorEntry(
    SCIP_VAR*             origvar             /**< corresponding origvar */
    )
 {
-   int i;
    SCIP_VAR** origvars;
    SCIP_Real* origvals;
    int norigvars;
@@ -134,39 +158,30 @@ SCIP_Real getGeneratorEntry(
    norigvars = GCGmasterVarGetNOrigvars(mastervar);
    origvals = GCGmasterVarGetOrigvals(mastervar);
 
-   for( i = 0; i < norigvars; ++i )
-   {
-      if( origvars[i] == origvar )
-      {
-         return origvals[i];
-      }
-   }
-
-   return 0.0;
+   return getGeneratorEntryCol(origvars, origvals, norigvars, origvar);
 }
 
-/** adds a variable to a branching constraint */
+/** determine the coefficient for a column */
 static
-SCIP_RETCODE addVarToMasterbranch(
+SCIP_Real getColCoefficient(
    SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_VAR*             mastervar,          /**< the variable to add */
    GCG_BRANCHDATA*       branchdata,         /**< branching data structure where the variable should be added */
-   SCIP_Bool*            added               /**< whether the variable was added */
-)
+   SCIP_VAR**            solvars,            /**< column solution variables */
+   SCIP_Real*            solvals,            /**< column solution values */
+   int                   nsolvars,           /**< number of column solution variables */
+   int                   probnr              /**< number of the pricing problem */
+   )
 {
    int p;
-
    SCIP_Bool varinS = TRUE;
 
    assert(scip != NULL);
-   assert(mastervar != NULL);
+   assert(GCGisMaster(scip));
    assert(branchdata != NULL);
-   assert(added != NULL);
+   assert(branchdata->mastercons != NULL);
 
-   *added = FALSE;
-
-   if( GCGvarGetBlock(mastervar) == -1 || GCGbranchGenericBranchdataGetConsblocknr(branchdata) == -3 || !GCGisMasterVarInBlock(mastervar, GCGbranchGenericBranchdataGetConsblocknr(branchdata)) )
-      return SCIP_OKAY;
+   if( probnr == -1 || GCGbranchGenericBranchdataGetConsblocknr(branchdata) == -3 || probnr != GCGbranchGenericBranchdataGetConsblocknr(branchdata) )
+      return 0.;
 
    SCIPdebugMessage("consSsize = %d\n", GCGbranchGenericBranchdataGetConsSsize(branchdata));
 
@@ -174,7 +189,7 @@ SCIP_RETCODE addVarToMasterbranch(
    {
       SCIP_Real generatorentry;
 
-      generatorentry = getGeneratorEntry(mastervar, GCGbranchGenericBranchdataGetConsS(branchdata)[p].component);
+      generatorentry = getGeneratorEntryCol(solvars, solvals, nsolvars, GCGbranchGenericBranchdataGetConsS(branchdata)[p].component);
 
       if( GCGbranchGenericBranchdataGetConsS(branchdata)[p].sense == GCG_COMPSENSE_GE )
       {
@@ -194,10 +209,43 @@ SCIP_RETCODE addVarToMasterbranch(
       }
    }
 
-   if( varinS )
+   if(varinS)
+      return 1.;
+   else
+      return 0.;
+}
+
+/** adds a variable to a branching constraint */
+static
+SCIP_RETCODE addVarToMasterbranch(
+   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP_VAR*             mastervar,          /**< the variable to add */
+   GCG_BRANCHDATA*       branchdata,         /**< branching data structure where the variable should be added */
+   SCIP_Bool*            added               /**< whether the variable was added */
+)
+{
+   SCIP_Real coef;
+   SCIP_VAR** origvars;
+   SCIP_Real* origvals;
+   int norigvars;
+
+   assert(scip != NULL);
+   assert(mastervar != NULL);
+   assert(branchdata != NULL);
+   assert(added != NULL);
+
+   origvars = GCGmasterVarGetOrigvars(mastervar);
+   norigvars = GCGmasterVarGetNOrigvars(mastervar);
+   origvals = GCGmasterVarGetOrigvals(mastervar);
+
+   *added = FALSE;
+
+   coef = getColCoefficient(scip, branchdata, origvars, origvals, norigvars, GCGvarGetBlock(mastervar));
+
+   if( !SCIPisZero(scip, coef) )
    {
       SCIPdebugMessage("mastervar is added\n");
-      SCIP_CALL( SCIPaddCoefLinear(scip, GCGbranchGenericBranchdataGetMastercons(branchdata), mastervar, 1.0) );
+      SCIP_CALL( SCIPaddCoefLinear(scip, GCGbranchGenericBranchdataGetMastercons(branchdata), mastervar, coef) );
       *added = TRUE;
    }
 
