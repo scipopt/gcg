@@ -1434,6 +1434,7 @@ SCIP_RETCODE GCGcreateMasterVar(
 
    if( newvardata->data.mastervardata.norigvars > 0 )
    {
+      //SCIPinfoMessage(pricingscip, NULL, "new master var: %s\n", varname);
       newvardata->data.mastervardata.maxorigvars = SCIPcalcMemGrowSize(scip, newvardata->data.mastervardata.norigvars);
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), newvardata->data.mastervardata.maxorigvars) );
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvals), newvardata->data.mastervardata.maxorigvars) );
@@ -1448,7 +1449,10 @@ SCIP_RETCODE GCGcreateMasterVar(
 
    /* number of original variables already saved in mastervardata */
    j = 0;
-
+   if( strcmp("p_5_148", varname) == 0 )
+   {
+      SCIPinfoMessage(scip, NULL, "create p_5_148\n");
+   }
    /* update variable datas */
    for( i = 0; i < nsolvars && !trivialsol; i++ )
    {
@@ -1507,8 +1511,8 @@ SCIP_RETCODE GCGcreateMasterVar(
          assert(newvardata->data.mastervardata.origvals != NULL);
          assert(GCGvarIsOriginal(origvar));
          /* save in the master problem variable's data the quota of the corresponding original variable */
-         newvardata->data.mastervardata.origvars[i] = origvar;
-         newvardata->data.mastervardata.origvals[i] = 0.0;
+         newvardata->data.mastervardata.origvars[j] = origvar;
+         newvardata->data.mastervardata.origvals[j] = 0.0;
          SCIPhashmapInsertReal(newvardata->data.mastervardata.origvar2val, origvar, 0.0);
          /* save the quota in the original variable's data */
          SCIP_CALL( GCGoriginalVarAddMasterVar(origscip, origvar, *newvar, 0.0) );
