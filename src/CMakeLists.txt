@@ -118,6 +118,7 @@ set(gcgsources
     gcg/heur_xpcrossover.c
     gcg/heur_xprins.c
     gcg/mastercutdata.c
+    gcg/mastersepacut.c
     gcg/masterplugins.c
     gcg/misc_varhistory.c
     gcg/misc.c
@@ -257,6 +258,7 @@ set(gcgheaders
     gcg/heur_xpcrossover.h
     gcg/heur_xprins.h
     gcg/mastercutdata.h
+    gcg/mastersepacut.h
     gcg/masterplugins.h
     gcg/nodesel_master.h
     gcg/objdialog.h
@@ -315,6 +317,7 @@ set(gcgheaders
     gcg/struct_gcgcol.h
     gcg/struct_gcgpqueue.h
     gcg/struct_mastercutdata.h
+    gcg/struct_mastersepacutdata.h
     gcg/struct_pricestore_gcg.h
     gcg/struct_pricingjob.h
     gcg/struct_pricingprob.h

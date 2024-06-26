@@ -44,10 +44,12 @@
 #include "struct_sepagcg.h"
 #include "type_mastercutdata.h"
 #include "type_sepagcg.h"
-#include "event_sepacuts.h"
+//#include "event_sepacuts.h"
 #include "scip/cons_linear.h"
 #include "pub_gcgcol.h"
 #include "scip_misc.h"
+#include "struct_mastersepacutdata.h"
+#include "mastersepacut.h"
 
 #define SEPA_NAME              "subsetrow"
 #define SEPA_DESC              "subsetrow separator"
@@ -65,7 +67,7 @@
 #define DEFAULT_MAXSEPACUTSROOT    1000 /**< maximal number of subsetrow cuts separated per call in root node */
 #define DEFAULT_MAXCUTCANDS        5000 /**< maximal number of subsetrow cuts in total */
 #define DEFAULT_INITSEED         0x5EED /**< default initial seed used for random tie-breaking in cut selection */
-#define DEFAULT_ONLYROOT          FALSE /**< only apply separator in root node */
+#define DEFAULT_ONLYROOT           TRUE /**< only apply separator in root node */
 #define DEFAULT_STRATEGY              0 /**< strategy which is used to determine which rows to consider for cut computation */
 #define DEFAULT_N                     3 /**< number of rows used to create a new cut */
 #define DEFAULT_K                     2 /**< inverse of weight used for cut generation */
@@ -127,6 +129,33 @@ SCIP_DECL_SEPAFREE(sepaFreeSubsetrow)
    sepadata = SCIPsepaGetData(sepa);
    SCIPfreeRandom(scip, &(sepadata->randnumgen));
    SCIPfreeBlockMemory(scip, &sepadata);
+
+   return SCIP_OKAY;
+}
+
+/**< create and add a subset row cut the generated cuts */
+static
+SCIP_RETCODE addSubsetRowCutToGeneratedCuts(
+   SCIP*                masterscip,       /**< SCIP data structure */
+   GCG_MASTERCUTDATA*   mastercutdata,    /**< mastercut data */
+   SCIP_Real*           weights,          /**< weights used to create the cut */
+   int*                 conssindices,     /**< indices of constraints used to create the cut */
+   int                  n,                /**< number of constraints used to create the cut */
+   int                  sepaidx           /**< index of the separator which generated the cut */
+)
+{
+   GCG_MASTERSEPACUT* mastersepacut;
+
+   assert(masterscip != NULL);
+   assert(GCGisMaster(masterscip));
+   assert(mastercutdata != NULL);
+
+   /* create a subset row cut */
+   SCIP_CALL( GCGcreateSubsetRowCut(masterscip, &mastersepacut, mastercutdata, NULL, weights, conssindices, n) );
+   assert(mastersepacut != NULL);
+
+   /* add the created subset row cut to the generated cuts */
+   SCIP_CALL( GCGaddCutToGeneratedCuts(masterscip, mastersepacut, sepaidx) );
 
    return SCIP_OKAY;
 }
@@ -483,6 +512,13 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       return SCIP_OKAY;
    }
 
+   if( SCIPnodeGetType(SCIPgetCurrentNode(scip)) == SCIP_NODETYPE_PROBINGNODE || SCIPnodeGetType(SCIPgetCurrentNode(scip)) == SCIP_NODETYPE_REFOCUSNODE )
+   {
+      SCIPdebugMessage("Subsetrow separator does not run on probing or refocus nodes.\n");
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
    if( sepadata->ngeneratedcut >= sepadata->maxcutcands )
    {
       SCIPdebugMessage("Already computed the maximal number of cuts.\n");
@@ -593,7 +629,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
          (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pp%i_cons_ssrc_%i", j, sepadata->ngeneratedcut);
          SCIP_CALL( SCIPcreateConsBasicLinear(pricingproblem, &pricingconss[0], name,
                                               0, NULL, NULL, -SCIPinfinity(pricingproblem),
-                                              1 - 0.0001) ); // released via GCGpricingmodificationFree
+                                              1 - 0.00001) ); // released via GCGpricingmodificationFree
 
          /* fill constraint such that -inf <= w^TAx <= 1 - EPSILON */
          for( l = 0; l < npricingvars; l++ )
@@ -658,7 +694,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
 
       /* add the subsetrow cut to the sepa store of the master problem and the generated cuts */
       SCIP_CALL( SCIPaddRow(scip, ssrc, FALSE, &success) );
-      SCIP_CALL( GCGaddCutToGeneratedCutsSepa(scip, mastercutdata, weights, selectedconssidx, sepadata->n, sepadata->sepaidx) );
+      SCIP_CALL( addSubsetRowCutToGeneratedCuts(scip, mastercutdata, weights, selectedconssidx, sepadata->n, sepadata->sepaidx) );
 
       /* empty the hashmaps containing the coeffcients for variables */
       SCIP_CALL( SCIPhashmapRemoveAll(mapmastervarxcoeff) );
@@ -696,9 +732,9 @@ GCG_DECL_SEPAGETCOLCOEFFICIENTS(gcgsepaGetColCoefficientSubsetrow)
    assert(gcgcol != NULL);
 
    mastercoeffs = GCGcolGetMastercoefs(gcgcol);
-   weights = GCGsepamastercutGetWeights(cut);
-   conssindices = GCGsepamastercutGetConssIndices(cut);
-   n = GCGsepamastercutGetNWeights(cut);
+   weights = GCGsubsetrowCutGetWeights(cut);
+   conssindices = GCGsubsetrowCutGetConssIndices(cut);
+   n = GCGsubsetrowCutGetNWeights(cut);
 
    assert(mastercoeffs != NULL);
    assert(weights != NULL);
@@ -877,7 +913,15 @@ GCG_DECL_SEPASETOBJECTIVE(gcgsepaSetObjectiveSubsetrow)
       pricingproblem = GCGgetPricingprob(origscip, pricingblocknr);
       coeffvar = GCGpricingmodificationGetCoefVar(pricingmodifications[i]);
       assert(SCIPvarGetProbindex(coeffvar) != -1);
-      SCIP_CALL( SCIPchgVarObj(pricingproblem, coeffvar, -1.0 * dual) );
+      if( SCIPisZero(scip, dual) )
+      {
+         SCIP_CALL( SCIPchgVarObj(pricingproblem, coeffvar, 0.0) );
+      }
+      else
+      {
+         SCIP_CALL( SCIPchgVarObj(pricingproblem, coeffvar, -1.0 * dual) );
+      }
+
       SCIPdebugMessage("%s's objective: %f\n", SCIPvarGetName(coeffvar), SCIPvarGetObj(coeffvar));
    }
 

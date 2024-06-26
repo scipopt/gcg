@@ -54,6 +54,7 @@
 #include "event_sepacuts.h"
 #include "type_sepagcg.h"
 #include "struct_sepagcg.h"
+#include "mastersepacut.h"
 /*
  * dynamic memory arrays
  */
@@ -267,7 +268,7 @@ SCIP_RETCODE correctCoeffVariables(
          GCG_PRICINGMODIFICATION* pricemod;
          GCG_MASTERCUTDATA* mastercutdata;
 
-         mastercutdata = GCGsepamastercutGetMastercutData(activecuts[i][j]);
+         mastercutdata = GCGmastersepacutGetMasterCutData(activecuts[i][j]);
          assert(mastercutdata != NULL);
 
          if( !GCGmastercutIsActive(mastercutdata) )
@@ -411,7 +412,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
          SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE);
 
          /* column is from column pool and does not fulfill current requirements */
-         if( !feasible && fromcolpool )
+         if( !feasible && fromcolpool ) //
          {
             SCIP_Real redcost;
 
@@ -439,8 +440,13 @@ SCIP_RETCODE GCGpricestoreAddCol(
             SCIPcreateSol(col->pricingprob, &sol, NULL);
             SCIP_CALL( SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals) );
             SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE);
+            assert(feasible);
          }
-         assert(feasible);
+         else
+         {
+            assert(feasible);
+         }
+
          SCIPfreeSol(col->pricingprob, &sol);
 
       }

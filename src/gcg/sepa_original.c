@@ -349,7 +349,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
             ( SCIPisInfinity(scip, SCIProwGetRhs(origcut)) ?
               SCIProwGetRhs(origcut) : SCIProwGetRhs(origcut) - SCIProwGetConstant(origcut) - shift),
             SCIProwIsLocal(origcut), TRUE, FALSE) );
-      //SCIPinfoMessage(scip, NULL, "LHS: %i, RHS %f\n", SCIPisInfinity(scip, -SCIProwGetLhs(mastercut)), SCIProwGetRhs(mastercut));
       /* add master variables to the cut */
       SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
       /* add the cut to the master problem */
@@ -360,8 +359,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
       SCIP_CALL( SCIPcaptureRow(origscip, origcut) );
       sepadata->ncuts++;
       mastercutdata = NULL;
-      //SCIP_CALL( GCGmastercutCreateFromRow(scip, &mastercutdata, mastercut, NULL, 0) );
-      //SCIP_CALL( GCGaddCutToGeneratedCutsSepa(scip, mastercutdata, sepadata->sepaidx) );
 
 
 #ifdef SCIP_DEBUG
