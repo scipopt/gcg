@@ -159,6 +159,14 @@ SCIP_Real GCGcolGetSolVal(
    SCIP_VAR*            var                 /**< variable */
    );
 
+/** returns true if the gcg column knows the solution value of the variable */
+GCG_EXPORT
+SCIP_Bool GCGcolKnowsSolVar(
+   SCIP*                scip,               /**< SCIP data structure */
+   GCG_COL*             gcgcol,             /**< gcg column */
+   SCIP_VAR*            var                 /**< variable */
+   );
+
 /** get master coefficients of column */
 GCG_EXPORT
 SCIP_Real* GCGcolGetMastercoefs(
@@ -237,6 +245,18 @@ int GCGcolGetNOriginalSepaMastercuts(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
+/** get generic mastercut coefficients of column in the master problem */
+GCG_EXPORT
+SCIP_Real* GCGcolGetGenericMastercuts(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** get number of generic mastercut coefficients of column in the master problem */
+GCG_EXPORT
+int GCGcolGetNGenericMastercuts(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
 /** get norm of column */
 GCG_EXPORT
 SCIP_Real GCGcolGetNorm(
@@ -249,6 +269,15 @@ SCIP_RETCODE GCGcolUpdateOriginalSepaMastercuts(
    GCG_COL*             gcgcol,             /**< gcg column structure */
    SCIP_Real*           neworiginalsepamastercuts,/**< pointer to new array of master cut coefficients */
    int                  nneworiginalsepamastercuts/**< new number of master cut coefficients */
+   );
+
+/** set generic mastercut coefficients information of column in the master problem */
+GCG_EXPORT
+SCIP_RETCODE GCGcolSetGenericMastercuts(
+   GCG_COL*             gcgcol,             /**< gcg column structure */
+   SCIP_Real*           genericmastercuts,  /**< pointer to array of master cut coefficients */
+   SCIP_Real*           genericmastercutbounds,/**< pointer to array of master cut bounds */
+   int                  ngenericmastercuts  /**< number of master cut coefficients */
    );
 
 /** gets the age of the col */

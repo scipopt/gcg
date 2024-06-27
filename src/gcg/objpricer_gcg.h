@@ -266,6 +266,11 @@ public:
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
+   /** compute generic master cut coefficients of column */
+   SCIP_RETCODE computeColMastercuts(
+      GCG_COL*              gcgcol              /**< GCG column data structure */
+      );
+
 private:
    ReducedCostPricing*    reducedcostpricing;
    FarkasPricing*         farkaspricing;

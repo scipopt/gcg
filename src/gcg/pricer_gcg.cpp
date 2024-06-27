@@ -45,12 +45,14 @@
 #include "struct_vardata.h"
 #include "type_branchgcg.h"
 #include "type_mastercutdata.h"
+#include "type_pricingprob.h"
 #include <cassert>
 #include <cstring>
 #include <lpi/type_lpi.h>
 #include <scip/def.h>
 #include <scip/pub_var.h>
 #include <scip/scip_lp.h>
+#include <scip/scip_mem.h>
 #include <scip/scip_message.h>
 #include <scip/scip_prob.h>
 #include <scip/type_lp.h>
@@ -1586,6 +1588,104 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMastercuts(
    return SCIP_OKAY;
 }
 
+/** compute generic mastercut coefficients of column in the master problem */
+SCIP_RETCODE ObjPricerGcg::computeColMastercuts(
+   GCG_COL*              gcgcol              /**< GCG column data structure */
+   )
+{
+   int i;
+   SCIP_Real lhs;
+   SCIP_Real rhs;
+   SCIP_Real coef;
+   SCIP_Real bound;
+
+   GCG_PRICINGMODIFICATION* pricemod;
+   SCIP_VAR* coefvar;
+
+   GCG_BRANCHRULE** branchrules;
+   GCG_BRANCHDATA** branchdata;
+   GCG_MASTERCUTDATA** branchmastercutdata;
+   int nbranchmastercuts;
+
+   SCIP_VAR** solvars = NULL;
+   SCIP_Real* solvals = NULL;
+   int nsolvars;
+   int probnr;
+
+   assert(scip_ != NULL);
+   assert(gcgcol != NULL);
+
+   solvars = GCGcolGetVars(gcgcol);
+   solvals = GCGcolGetVals(gcgcol);
+   nsolvars = GCGcolGetNVars(gcgcol);
+   probnr = GCGcolGetProbNr(gcgcol);
+
+   SCIP_Real* genericmastercutcoeffs;
+   SCIP_Real* genericmastercutbounds;
+   int ngenericmastercuts;
+
+   assert(scip_ != NULL);
+   assert(solvars != NULL);
+   assert(solvals != NULL);
+
+   /* get all active generic mastercuts */
+   branchrules = NULL;
+   branchdata = NULL;
+   branchmastercutdata = NULL;
+   nbranchmastercuts = 0;
+   SCIP_CALL( GCGrelaxBranchGetAllActiveMasterCuts(scip_, &branchrules, &branchdata, &branchmastercutdata, &nbranchmastercuts) );
+   assert(nbranchmastercuts == 0 || branchmastercutdata != NULL);
+
+   /* allocate arrays */
+   ngenericmastercuts = nbranchmastercuts;
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &genericmastercutcoeffs, ngenericmastercuts) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &genericmastercutbounds, ngenericmastercuts) );
+
+   /* compute coef of the variable in the cuts and add it to the cuts */
+   for( i = 0; i < nbranchmastercuts; i++ )
+   {
+      pricemod = GCGmastercutGetPricingModification(scip_, branchmastercutdata[i], probnr);
+
+      if( pricemod == NULL )
+         continue;
+
+      lhs = GCGmastercutGetLhs(scip_, branchmastercutdata[i]);
+      rhs = GCGmastercutGetRhs(scip_, branchmastercutdata[i]);
+
+      assert(!(SCIPisInfinity(scip_, -lhs) && SCIPisInfinity(scip_, rhs)));
+      assert(!SCIPisInfinity(scip_, -lhs) || !SCIPisInfinity(scip_, rhs));
+
+      if( SCIPisInfinity(scip_, -lhs) )
+         bound = rhs;
+      else
+         bound = lhs;
+
+      coefvar = GCGpricingmodificationGetCoefVar(pricemod);
+
+      assert(coefvar != NULL);
+
+      // Optimization by not recomputing the coefficients if they are already stored in the column
+      if( GCGcolKnowsSolVar(scip_, gcgcol, coefvar) )
+      {
+         coef = GCGcolGetSolVal(scip_, gcgcol, coefvar);
+      }
+      else
+      {
+         coef = GCGmastercutGetCoeff(scip_, branchmastercutdata[i], solvars, solvals, nsolvars, probnr);
+      }
+
+      genericmastercutcoeffs[i] = coef;
+      genericmastercutbounds[i] = bound;
+   }
+
+   GCGcolSetGenericMastercuts(gcgcol, genericmastercutcoeffs, genericmastercutbounds, ngenericmastercuts);
+
+   SCIPfreeBlockMemoryArrayNull(scip_, &genericmastercutcoeffs, ngenericmastercuts);
+   SCIPfreeBlockMemoryArrayNull(scip_, &genericmastercutbounds, ngenericmastercuts);
+
+   return SCIP_OKAY;
+}
+
 /** adds new variable to the end of the priced variables array */
 SCIP_RETCODE ObjPricerGcg::addVariableToPricedvars(
    SCIP_VAR*             newvar              /**< variable to add */
@@ -3087,7 +3187,8 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       && (SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) || pricerdata->stabilizationtree)
       && (pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST)
       && !GCGisBranchruleGeneric(GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
-   enablestab = FALSE; // TODO-TMO
+   //enablestab = FALSE; // TODO-TMO
+   enablestab = pricerdata->stabilization && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST;
 
    /* allocate memory */
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &bestcols, pricerdata->npricingprobs) );
@@ -3693,6 +3794,7 @@ SCIP_RETCODE GCGcomputeColMastercoefs(
 
    pricer->computeColMastercoefs(gcgcol);
    pricer->computeColOriginalSepaCuts(gcgcol);
+   pricer->computeColMastercuts(gcgcol);
 
    return SCIP_OKAY;
 
