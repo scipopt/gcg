@@ -36,6 +36,7 @@
 #ifndef GCG_STRUCT_MASTERCUTDATA_H_
 #define GCG_STRUCT_MASTERCUTDATA_H_
 
+#include <scip/def.h>
 #include <scip/type_cons.h>
 #include <scip/type_lp.h>
 #include <scip/type_var.h>

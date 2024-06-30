@@ -33,7 +33,17 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 #include <assert.h>
+#include <scip/pub_var.h>
+#include <scip/scip_general.h>
+#include <scip/scip_mem.h>
+#include <scip/scip_prob.h>
+#include <scip/scip_probing.h>
+#include <scip/scip_sol.h>
+#include <scip/scip_solve.h>
+#include <scip/type_retcode.h>
 
+#include "pub_gcgcol.h"
+#include "pub_gcgvar.h"
 #include "scip/def.h"
 #include "scip/set.h"
 #include "scip/stat.h"
@@ -237,6 +247,118 @@ int pricestoreFindEqualCol(
    return -1;
 }
 
+/**< re-computes the values of inferred pricing variables of column from column pool
+ * (in case the cut was not yet present during creation of of column) */
+static
+SCIP_RETCODE correctAuxiliaryPricingVariables(
+   SCIP*                 scip,               /**<* SCIP data structure */
+   GCG_COL*              gcgcol,             /**<* GCG column */
+   GCG_PRICESTORE*       pricestore         /**< price storage */
+   )
+{
+   SCIP* pricingprob_copy;
+   SCIP_Bool valid;
+
+   SCIP_VAR** origsolvars;
+   int norigsolvars;
+   SCIP_VAR** copysolvars;
+   int ncopysolvars;
+
+   SCIP_VAR** colvars;
+   SCIP_Real* colvals;
+   int ncolvars;
+
+   int i;
+   SCIP_Real fixedval;
+   SCIP_Bool infeasible;
+   SCIP_Bool fixed;
+
+   SCIP_SOL* bestsol;
+   SCIP_Real redcost;
+
+#ifndef NDEBUG
+   SCIP_Bool feasible;
+#endif
+
+   SCIP_CALL( SCIPcreate(&pricingprob_copy) );
+   SCIP_CALL( SCIPcopyOrig(gcgcol->pricingprob, pricingprob_copy, NULL, NULL, "", TRUE, FALSE, FALSE, &valid) );
+   assert(valid);
+
+
+   origsolvars = SCIPgetOrigVars(gcgcol->pricingprob);
+   norigsolvars = SCIPgetNOrigVars(gcgcol->pricingprob);
+   copysolvars = SCIPgetOrigVars(pricingprob_copy);
+   ncopysolvars = SCIPgetNOrigVars(pricingprob_copy);
+
+   assert(norigsolvars == ncopysolvars);
+
+   /* fixate the known and "original" variables and save their actual lb and ub */
+   for( i = 0; i < norigsolvars; i++ )
+   {
+      if( GCGcolKnowsSolVar(scip, gcgcol, origsolvars[i]) )
+      {
+         fixedval = GCGcolGetSolVal(scip, gcgcol, origsolvars[i]);
+         SCIP_CALL( SCIPfixVar(pricingprob_copy, copysolvars[i], fixedval, &infeasible, &fixed) );
+         assert(!infeasible);
+         assert(fixed);
+      }
+      else
+      {
+         if( !GCGvarIsInferredPricing(origsolvars[i]) )
+         {
+            SCIP_CALL( SCIPfixVar(pricingprob_copy, copysolvars[i], 0, &infeasible, &fixed) );
+            assert(!infeasible);
+            assert(fixed);
+         }
+      }
+   }
+
+   /* resolve the pricing problem */
+   SCIP_CALL( SCIPsolve(pricingprob_copy) );
+   assert(SCIPgetStatus(pricingprob_copy) == SCIP_STATUS_OPTIMAL);
+
+   /* get the optimal solution */
+   bestsol = SCIPgetBestSol(pricingprob_copy);
+   assert(bestsol != NULL);
+#ifndef NDEBUG
+   SCIPcheckSolOrig(pricingprob_copy, bestsol, &feasible, TRUE, TRUE);
+   assert(feasible);
+#endif
+
+   /* write it to the gcg column */
+   SCIP_CALL( SCIPallocBufferArray(scip, &colvars, norigsolvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &colvals, norigsolvars) );
+   ncolvars = 0;
+   for( i = 0; i < norigsolvars; ++i )
+   {
+      fixedval = SCIPgetSolVal(pricingprob_copy, bestsol, copysolvars[i]);
+
+      /* round solval if possible to avoid numerical troubles */
+      if( SCIPvarIsIntegral(copysolvars[i]) && SCIPisFeasIntegral(pricingprob_copy, fixedval) )
+         fixedval = SCIPround(pricingprob_copy, fixedval);
+
+      if( SCIPisZero(pricingprob_copy, fixedval) )
+      {
+         continue;
+      }
+
+      colvars[ncolvars] = origsolvars[i];
+      colvals[ncolvars] = fixedval;
+      ++ncolvars;
+   }
+   SCIP_CALL( GCGreinitGcgCol(gcgcol->pricingprob, gcgcol, GCGcolGetProbNr(gcgcol), colvars, colvals, ncolvars, GCGcolIsRay(gcgcol), SCIP_INVALID) );
+   SCIPfreeBufferArray(scip, &colvals);
+   SCIPfreeBufferArray(scip, &colvars);
+   SCIPfree(&pricingprob_copy);
+
+   /* update further relevant information */
+   SCIP_CALL( GCGcomputeColMastercoefs(scip, gcgcol) );
+   redcost = GCGcomputeRedCostGcgCol(scip, pricestore->infarkas, gcgcol, NULL);
+   GCGcolUpdateRedcost(gcgcol, redcost, FALSE);
+
+   return SCIP_OKAY;
+}
+
 /** adds col to price storage;
  *  if the col should be forced to enter the LP, an infinite score will be used
  */
@@ -244,7 +366,9 @@ SCIP_RETCODE GCGpricestoreAddCol(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_PRICESTORE*       pricestore,         /**< price storage */
    GCG_COL*              col,                /**< priced col */
-   SCIP_Bool             forcecol            /**< should the col be forced to enter the LP? */
+   SCIP_Bool             forcecol,           /**< should the col be forced to enter the LP? */
+   SCIP_Bool             fromcolpool         /**< is column from colpool */
+
    )
 {
    SCIP_Real colobjparallelism;
@@ -259,6 +383,15 @@ SCIP_RETCODE GCGpricestoreAddCol(
 
    /* start timing */
    SCIP_CALL( SCIPstartClock(pricestore->scip, pricestore->priceclock) );
+
+   if( fromcolpool )
+   {
+      /*
+         Some inferred pricing variables might not have existed when the column was created
+         As a consequence, some column related data (e.g. norm) might be invalid
+      */
+      SCIP_CALL( correctAuxiliaryPricingVariables(scip, col, pricestore) );
+   }
 
    /* a col is forced to enter the LP if
     *  - we construct the initial LP, or
@@ -300,11 +433,11 @@ SCIP_RETCODE GCGpricestoreAddCol(
       SCIP_Bool feasible;
       if( SCIPgetStage(col->pricingprob) <= SCIP_STAGE_SOLVING )
       {
-         SCIPcreateSol(col->pricingprob, &sol, NULL);
-         SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals);
-         SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE);
+         SCIP_CALL( SCIPcreateOrigSol(col->pricingprob, &sol, NULL) );
+         SCIP_CALL( SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals) );
+         SCIP_CALL( SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE) );
          assert(feasible);
-         SCIPfreeSol(col->pricingprob, &sol);
+         SCIP_CALL( SCIPfreeSol(col->pricingprob, &sol) );
       }
       for( i = 0; i < col->nvars; ++i )
       {

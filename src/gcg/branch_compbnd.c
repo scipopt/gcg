@@ -237,12 +237,22 @@ SCIP_Real getGeneratorEntryCol(
    )
 {
    int i;
+   SCIP_VAR* pricingvar;
+   SCIP_VAR* cmp;
 
    assert(origvar != NULL);
+   assert(GCGvarIsOriginal(origvar));
+
+   pricingvar = GCGoriginalVarGetPricingVar(origvar);
 
    for( i = 0; i < nsolvars; ++i )
    {
-      if( SCIPvarCompare(solvars[i], origvar) == 0 )
+      if( GCGvarIsOriginal(solvars[i]) )
+         cmp = origvar;
+      else
+         cmp = pricingvar;
+
+      if( SCIPvarCompare(solvars[i], cmp) == 0 )
       {
          return solvals[i];
       }
@@ -972,7 +982,7 @@ SCIP_RETCODE separation(
    fractionality = calcFractionality(masterscip, X, Xsize);
    assert(fractionality >= 0.0);
 
-   if( SCIPisEQ(masterscip, fractionality, 0.0) )
+   if( SCIPisEQ(masterscip, fractionality, 0.0) ) // should never happen - the branching scheme is sound and complete
    {
       // all variables are integral, nothing to do
       SCIPdebugMessage("All variables are integral, nothing to do\n");
@@ -984,7 +994,7 @@ SCIP_RETCODE separation(
       Xsize = 0;
       assert(X == NULL);
 
-      return SCIP_OKAY;
+      return SCIP_ERROR;
    }
 
    if( *Bsize > 0 && !SCIPisFeasIntegral(masterscip, fractionality) )
@@ -1024,7 +1034,6 @@ SCIP_RETCODE separation(
    int j;
    SCIP_Real generatorentry;
    SCIP_Bool found = FALSE;
-   SCIP_Bool updated;
 
    SCIP_CALL( initIndexSet(masterscip, &indexSet, &indexSetSize, X, Xsize) );
 
@@ -1036,7 +1045,6 @@ SCIP_RETCODE separation(
       assert(SCIPisFeasLE(masterscip, given_min, given_max));
       current_min = SCIPinfinity(masterscip);
       current_max = -SCIPinfinity(masterscip);
-      updated = FALSE;
       for( i=0; i<Xsize; ++i )
       {
          current_mastervar = X[i];
@@ -1048,34 +1056,19 @@ SCIP_RETCODE separation(
             continue;
          }
 
-         if( !hasGeneratorEntry(current_mastervar, current_origvar, blocknr) )
-            continue;
+         /*if( !hasGeneratorEntry(current_mastervar, current_origvar, blocknr) )
+            continue;*/
 
          generatorentry = getGeneratorEntry(current_mastervar, current_origvar);
 
          // first, check if we can update the min and max values
-         if( updated )
-         {
-            if( SCIPisLT(masterscip, generatorentry, current_min) )
-               current_min = generatorentry;
-            else if( SCIPisLT(masterscip, current_max, generatorentry) )
-               current_max = generatorentry;
-         }
-         else
-         {
+         if( SCIPisLT(masterscip, generatorentry, current_min) )
             current_min = generatorentry;
+         else if( SCIPisLT(masterscip, current_max, generatorentry) )
             current_max = generatorentry;
-            updated = TRUE;
-         }
 
          // now could be that min<max
-         if(
-            updated
-            && (
-               (SCIPisLT(masterscip, current_min, current_max) && (SCIPisLT(masterscip, given_min, current_min) || SCIPisLT(masterscip, current_max, given_max)))
-               || (SCIPisEQ(masterscip, current_min, current_max) && SCIPisLT(masterscip, given_min, current_min) && SCIPisLT(masterscip, current_max, given_max))
-            )
-         )
+         if( SCIPisLT(masterscip, current_min, current_max) && SCIPisLE(masterscip, given_min, current_min) && SCIPisLE(masterscip, current_max, given_max) )
          {
             found = TRUE;
             current_diff = current_max - current_min;
@@ -1093,7 +1086,7 @@ SCIP_RETCODE separation(
    SCIPfreeBlockMemoryArray(masterscip, &indexSet, indexSetSize);
    indexSetSize = 0;
 
-   if( !found )
+   if( !found ) // should always be able to find - the branching scheme is sound and complete
    {
       *result = SCIP_DIDNOTFIND;
 
@@ -1103,10 +1096,10 @@ SCIP_RETCODE separation(
       Xsize = 0;
       assert(X == NULL);
 
-      return SCIP_OKAY;
+      return SCIP_ERROR;
    }
-   assert(largest_diff_min <= largest_diff_max);
-   assert(largest_diff >= 0);
+   assert(largest_diff_min < largest_diff_max);
+   assert(largest_diff > 0);
    assert(SCIPisFeasLE(masterscip, SCIPvarGetLbGlobal(selected_origvar), largest_diff_min));
    assert(SCIPisFeasLE(masterscip, largest_diff_max, SCIPvarGetUbGlobal(selected_origvar)));
    SCIPdebugMessage("Found %d for origvar %s, j=%d, min=%f, max=%f\n", found, SCIPvarGetName(selected_origvar), j, largest_diff_min, largest_diff_max);
@@ -1203,6 +1196,8 @@ SCIP_RETCODE separation(
    SCIP_Real fractionality1 = calcFractionality(masterscip, X1, X1size);
    SCIP_Real fractionality2 = calcFractionality(masterscip, X2, X2size);
 
+   assert(fractionality1 > 0);
+   assert(fractionality2 > 0);
    //assert(!SCIPisGT(masterscip, fractionality1, fractionality / 2) || !SCIPisGT(masterscip, fractionality2, fractionality / 2));
    assert(
       (SCIPisFeasIntegral(masterscip, fractionality1) && SCIPisFeasIntegral(masterscip, fractionality2)) ||
@@ -1390,15 +1385,11 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
 
       SCIPdebugMessage("\nTrying to branch in block %d:\n", blocknr);
 
-#ifdef SCIP_DEBUG
-      printBranchingDecisions(masterscip);
-#endif
-
       /* 2. Check whether the fractionality of all master variables in this block is not 0. */
       createInitialSetX(masterscip, &X, &Xsize, blocknr, NULL, 0);
       assert((Xsize > 0) == (X != NULL));
       fractionality = calcFractionality(masterscip, X, Xsize);
-      assert(SCIPisIntegral(masterscip, fractionality));
+      assert(SCIPisFeasIntegral(masterscip, fractionality));
       if( SCIPisZero(masterscip, fractionality) )
       {
          SCIPdebugMessage("No fractional integer variables in block %d\n", blocknr);

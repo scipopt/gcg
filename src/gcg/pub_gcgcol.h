@@ -56,6 +56,19 @@ extern "C" {
  * @{
  */
 
+/** reinitialize gcg column */
+GCG_EXPORT
+SCIP_RETCODE GCGreinitGcgCol(
+   SCIP*                pricingprob,        /**< SCIP data structure (pricing problem) */
+   GCG_COL*             gcgcol,             /**< gcg column */
+   int                  probnr,             /**< number of corresponding pricing problem */
+   SCIP_VAR**           vars,               /**< (sorted) array of variables of corresponding pricing problem */
+   SCIP_Real*           vals,               /**< array of solution values (belonging to vars) */
+   int                  nvars,              /**< number of variables */
+   SCIP_Bool            isray,              /**< is the column a ray? */
+   SCIP_Real            redcost             /**< last known reduced cost */
+);
+
 /** create a gcg column */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateGcgCol(
@@ -73,6 +86,17 @@ SCIP_RETCODE GCGcreateGcgCol(
 GCG_EXPORT
 void GCGfreeGcgCol(
    GCG_COL**            gcgcol              /**< pointer to store gcg column */
+);
+
+/** reinitialize a gcg column from a solution to a pricing problem */
+GCG_EXPORT
+SCIP_RETCODE GCGreinitGcgColFromSol(
+   SCIP*                pricingprob,        /**< SCIP data structure (pricing problem) */
+   GCG_COL*             gcgcol,             /**< gcg column */
+   int                  prob,               /**< number of corresponding pricing problem */
+   SCIP_SOL*            sol,                /**< solution of pricing problem with index prob */
+   SCIP_Bool            isray,              /**< is column a ray? */
+   SCIP_Real            redcost             /**< last known reduced cost */
 );
 
 /** create a gcg column from a solution to a pricing problem */

@@ -1789,6 +1789,8 @@ SCIP_Real ObjPricerGcg::computeRedCost(
    int nsolvars;
    SCIP_Real objvalue;
 
+   GCG_MASTERCUTDATA* mastercutdata;
+
    assert(pricerdata != NULL);
 
    pricingprob = pricingcontroller->getPricingprob(probnr);
@@ -1803,8 +1805,24 @@ SCIP_Real ObjPricerGcg::computeRedCost(
 
    /* compute the objective function value of the solution */
    for( i = 0; i < nsolvars; i++ ) {
-      assert(GCGvarIsPricing(solvars[i]));
-      objvalue += solvals[i] * pricerdata->realdualvalues[probnr][varGetIndexCleaned(pricingscip, solvars[i])];
+      assert(GCGvarIsPricing(solvars[i]) || GCGvarIsInferredPricing(solvars[i]));
+      if( GCGvarIsPricing(solvars[i]) )
+      {
+         objvalue += solvals[i] * pricerdata->realdualvalues[probnr][varGetIndexCleaned(pricingscip, solvars[i])];
+      }
+   }
+
+   for( i = 0; i < nsolvars; i++ )
+   {
+      assert(GCGvarIsPricing(solvars[i]) || GCGvarIsInferredPricing(solvars[i]));
+      if( GCGvarIsInferredPricing(solvars[i]) )
+      {
+         mastercutdata = solvars[i]->vardata->data.inferredpricingvardata.mastercutdata;
+         if( GCGmastercutIsCoefVar(mastercutdata, solvars[i]) )
+         {
+            objvalue -= solvals[i] * pricetype->mastercutGetDual(scip_, mastercutdata);
+         }
+      }
    }
 
    if( objvalptr != NULL )
@@ -1866,15 +1884,20 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
    assert(pricingprob != NULL);
 
    /* compute the objective function value of the column */
-   for( i = 0; i < nsolvars; i++ ) {
+   for( i = 0; i < nsolvars; i++ )
+   {
       assert(GCGvarIsPricing(solvars[i]) || GCGvarIsInferredPricing(solvars[i]));
       if( GCGvarIsPricing(solvars[i]) )
       {
          objvalue += solvals[i] * pricerdata->realdualvalues[probnr][varGetIndexCleaned(pricingprob->pricingscip, solvars[i])];
       }
-      else
+   }
+
+   for( i = 0; i < nsolvars; i++ )
+   {
+      assert(GCGvarIsPricing(solvars[i]) || GCGvarIsInferredPricing(solvars[i]));
+      if( GCGvarIsInferredPricing(solvars[i]) )
       {
-         assert(GCGvarIsInferredPricing(solvars[i]));
          mastercutdata = solvars[i]->vardata->data.inferredpricingvardata.mastercutdata;
          if( GCGmastercutIsCoefVar(mastercutdata, solvars[i]) )
          {
@@ -1939,7 +1962,7 @@ SCIP_RETCODE ObjPricerGcg::addColToPricestore(
 
    #pragma omp critical (update)
    {
-      retcode = GCGpricestoreAddCol(scip_, pricestore, col, FALSE);
+      retcode = GCGpricestoreAddCol(scip_, pricestore, col, FALSE, FALSE);
    }
    SCIP_CALL( retcode );
 
@@ -3187,8 +3210,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       && (SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) || pricerdata->stabilizationtree)
       && (pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST)
       && !GCGisBranchruleGeneric(GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
-   //enablestab = FALSE; // TODO-TMO
-   enablestab = pricerdata->stabilization && pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST;
 
    /* allocate memory */
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &bestcols, pricerdata->npricingprobs) );
@@ -3257,7 +3278,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    for( i=0; i<nbranchmastercuts; ++i )
    {
       assert(GCGmastercutIsActive(branchmastercutdata[i]));
-
       SCIP_CALL( GCGmastercutApplyPricingModifications(scip_, branchmastercutdata[i]) );
    }
 
@@ -3296,6 +3316,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
       /* set the objective function */
       SCIP_CALL( freePricingProblems() );
+
       SCIP_CALL( setPricingObjs(pricetype, stabilized) );
 
       /* call update method of pricing solvers to update objectives;

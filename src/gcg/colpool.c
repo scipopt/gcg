@@ -398,7 +398,7 @@ SCIP_RETCODE GCGcolpoolPrice(
          SCIPdebugMessage(" -> col %p from the col pool (redcost: %g)\n",
             (void*)col, redcost );
 
-         SCIP_CALL( GCGpricestoreAddCol(colpool->scip, pricestore, col, FALSE) );
+         SCIP_CALL( GCGpricestoreAddCol(colpool->scip, pricestore, col, FALSE, TRUE) );
 
          SCIP_CALL( colpoolDelCol(colpool, col, FALSE) );
 
