@@ -405,10 +405,8 @@ SCIP_RETCODE GCGpricestoreAddCol(
 
       if( SCIPgetStage(col->pricingprob) <= SCIP_STAGE_SOLVING && checkcol )
       {
-         SCIP_RETCODE setsol;
-
          SCIPcreateSol(col->pricingprob, &sol, NULL);
-         setsol = SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals);
+         SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals);
          SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE);
 
          /* column is from column pool and does not fulfill current requirements */
@@ -440,12 +438,8 @@ SCIP_RETCODE GCGpricestoreAddCol(
             SCIPcreateSol(col->pricingprob, &sol, NULL);
             SCIP_CALL( SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals) );
             SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE);
-            assert(feasible);
          }
-         else
-         {
-            assert(feasible);
-         }
+         assert(feasible);
 
          SCIPfreeSol(col->pricingprob, &sol);
 
