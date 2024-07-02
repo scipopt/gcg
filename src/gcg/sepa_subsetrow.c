@@ -823,9 +823,10 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
    SCIP_VAR** pricingconsvars;
    SCIP_Bool success;
    SCIP_Real* pricingconscoeffs;
+   SCIP_Real* pricingvals;
    int npricingconsvars;
-   int j;
-   int k;
+   int npricingvars;
+   int i;
 
    assert(scip != NULL);
    assert(GCGisMaster(scip));
@@ -840,7 +841,7 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
    /* no pricing modification for this problem */
    if( pricingmod == NULL )
    {
-      SCIPdebugMessage("no pricing mode for pp%i --> variable coeff %f\n", probnr, *coef);
+      SCIPdebugMessage("no pricing modification for pp%i --> variable coefficient %f\n", probnr, *coef);
       *coef = 0.0;
       return SCIP_OKAY;
    }
@@ -859,24 +860,41 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
    SCIP_CALL( SCIPgetConsVals(pricingscip, pricingconss[0], pricingconscoeffs, npricingconsvars, &success) );
    assert(success);
 
+   /* transfer the values of the given variables to the position of the array which corresponds to their variable index */
+   npricingvars = SCIPgetNOrigVars(pricingscip);
+   SCIPallocCleanBufferArray(scip, &pricingvals, npricingvars);
+
+   for( i = 0; i < nvars; i++ )
+   {
+        int varindex;
+
+        varindex = SCIPvarGetProbindex(vars[i]);
+        assert(varindex <= npricingvars);
+
+        pricingvals[varindex] = vals[i];
+   }
+
    /* compute w^TAx using the pricing constraint */
    *coef = 0.0;
-   for( j = 0; j < npricingconsvars; j++ )
+   for( i = 0; i < npricingconsvars; i++ )
    {
-      if( GCGvarIsInferredPricing(pricingconsvars[j]) )
+      int varindex;
+
+      if( GCGvarIsInferredPricing(pricingconsvars[i]) )
          continue;
 
-      for( k = 0; k < nvars; k++ )
-      {
-         if( pricingconsvars[j] == vars[k] )
-            *coef += pricingconscoeffs[j] * vals[k];
-      }
+      varindex = SCIPvarGetProbindex(pricingconsvars[i]);
+      assert(varindex <= npricingvars);
+
+      *coef += pricingconscoeffs[i] * pricingvals[varindex];
+
    }
 
    /* finally, we round down w^TAx */
-   SCIPdebugMessage("variable coeff %f for row %s\n", *coef, SCIProwGetName(cut->cut.row));
+   SCIPdebugMessage("variable coefficient %f for row %s\n", *coef, SCIProwGetName(cut->cut.row));
    *coef = SCIPfeasFloor(scip, *coef);
 
+   SCIPfreeCleanBufferArray(scip, &pricingvals);
    SCIPfreeBufferArray(scip, &pricingconsvars);
    SCIPfreeBufferArray(scip, &pricingconscoeffs);
 
