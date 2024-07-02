@@ -2187,7 +2187,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
                    SCIPnodeGetType(consdata->node), consdata->name);
 #endif
    /* node is deactivated without any of its children being activated: store added cuts*/
-   if( !consdata->addedcutsinit && consdata->firstnewcut != NULL )
+   if( !consdata->addedcutsinit )
    {
       SCIP_CALL( initializeAddedCuts(scip, consdata, conshdlrdata) );
    }
@@ -2204,11 +2204,11 @@ static
 SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 {
    SCIP* origscip;
+   SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_CONSDATA* parentconsdata;
    SCIP_CONSDATA** childconsdatas;
    SCIP_CONS** childconss;
    int nchildconss;
-   int nsepas;
    int i;
    int j;
 
@@ -2346,19 +2346,21 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
       SCIPfreeBlockMemoryArray(scip, &(*consdata)->name, strlen((*consdata)->name)+1);
    }
 
-   nsepas = GCGrelaxGetNSeparators(scip);
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
 #ifndef MASTERSEP_DEBUG
    SCIPinfoMessage(scip, NULL, "---------> current stage: %i\n", SCIPgetStage(scip));
 
 #endif
-   if( nsepas > 0 && (*consdata)->addedcutsinit )
+   if( conshdlrdata->nsepas > 0 && (*consdata)->addedcutsinit )
    {
 #ifndef MASTERSEP_DEBUG
       SCIPinfoMessage(scip, NULL, "delete master: node stored cuts %i\n", (*consdata)->nodestoredcuts);
 #endif
       if( (*consdata)->nodestoredcuts )
       {
-         for( i = 0; i < nsepas; i++ )
+         for( i = 0; i < conshdlrdata->nsepas; i++ )
          {
 #ifndef MASTERSEP_DEBUG
             SCIPinfoMessage(scip, NULL, "delete master: release and free addedcuts[%i] with naddedcuts %i\n", i, (*consdata)->naddedcuts[i]);
@@ -2372,14 +2374,14 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 #ifndef MASTERSEP_DEBUG
          SCIPinfoMessage(scip, NULL, "delete master: free addedcuts with naddedcuts \n");
 #endif
-         SCIPfreeBlockMemoryArray(scip, &((*consdata)->addedcuts), nsepas);
-         SCIPfreeBlockMemoryArray(scip, &((*consdata)->naddedcuts), nsepas);
+         SCIPfreeBlockMemoryArray(scip, &((*consdata)->addedcuts), conshdlrdata->nsepas);
+         SCIPfreeBlockMemoryArray(scip, &((*consdata)->naddedcuts), conshdlrdata->nsepas);
       }
 #ifndef MASTERSEP_DEBUG
       SCIPinfoMessage(scip, NULL, "delete master: free firstnewcut \n");
 #endif
       // should probably be deleted even if not init ?????
-      SCIPfreeBlockMemoryArray(scip, &((*consdata)->firstnewcut), nsepas);
+      SCIPfreeBlockMemoryArray(scip, &((*consdata)->firstnewcut), conshdlrdata->nsepas);
    }
 
    SCIPfreeBlockMemoryNull(scip, consdata);
@@ -3365,11 +3367,9 @@ SCIP_RETCODE GCGdeleteNode(
             SCIPfreeBlockMemoryArray(scip, &(consdata->addedcuts), conshdlrdata->nsepas);
             SCIPfreeBlockMemoryArray(scip, &(consdata->naddedcuts), conshdlrdata->nsepas);
          }
-         SCIPfreeBlockMemoryArray(scip, &(consdata->firstnewcut), conshdlrdata->nsepas);
-         consdata->firstnewcut = NULL;
       }
       consdata->nodestoredcuts = FALSE;
-      consdata->addedcutsinit = FALSE;
+      consdata->addedcutsinit = TRUE;
       SCIP_CALL( SCIPhashmapRemove(conshdlrdata->mapnodetocons, node) );
    }
 
