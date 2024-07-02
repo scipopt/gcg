@@ -1589,6 +1589,8 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
          if( !SCIProwIsInLP(row) )
             continue;
 
+         /*  update the variable history of the cut */
+         SCIP_CALL( GCGvarhistoryJumpToLatest(scip_, &(activecuts[i][j]->knownvarhistory)) );
          /* compute the coefficient for the cut */
          coeff = 0.0;
          SCIP_CALL( sepas[i]->gcgsepagetvarcoefficient(scip_, sepas[i], mastercutdata, solvars,
