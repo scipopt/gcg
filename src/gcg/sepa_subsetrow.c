@@ -64,7 +64,7 @@
 #define DEFAULT_MAXROUNDS             1 /**< maximal number of subsetrow separation rounds per non-root node (-1: unlimited) */
 #define DEFAULT_MAXROUNDSROOT         1 /**< maximal number of subsetrow separation calls in the root node (-1: unlimited) */
 #define DEFAULT_MAXSEPACUTS         200 /**< maximal number of subsetrow cuts separated per call in non-root nodes */
-#define DEFAULT_MAXSEPACUTSROOT    1000 /**< maximal number of subsetrow cuts separated per call in root node */
+#define DEFAULT_MAXSEPACUTSROOT    1000/**< maximal number of subsetrow cuts separated per call in root node */
 #define DEFAULT_MAXCUTCANDS        5000 /**< maximal number of subsetrow cuts in total */
 #define DEFAULT_INITSEED         0x5EED /**< default initial seed used for random tie-breaking in cut selection */
 #define DEFAULT_ONLYROOT           TRUE /**< only apply separator in root node */
@@ -205,54 +205,62 @@ SCIP_RETCODE selectRandomRows(
 
 /** create a new row for master problem and fill it with the variables (and their coefficients) stored in the map */
 static
-SCIP_RETCODE createSubsetRowCut(
-   SCIP*          masterscip,
-   SCIP_ROW**     ssrc,
-   SCIP_HASHMAP*  mapmastervarxcoeff,
-   SCIP_Real      rhs_ssrc,
-   SCIP_SEPA*     sepa
-   )
+SCIP_RETCODE createSubsetRowCut_alt(
+   SCIP*          masterscip,                   /**< SCIP data structure (master problem) */
+   SCIP_ROW**     ssrc,                         /**< pointer to store subset row cut */
+   SCIP_Real*     ssrccoeffs,                   /**< coefficients of variables in subset row cut */
+   int*           nonzerossrccoeffsindices,     /**< indices of variables with non-zero coefficient in subset row cut */
+   int            nnonzerossrccoeffsindices,    /**< number of variables with non-zero coefficient in subset row cut */
+   SCIP_Real      rhs_ssrc,                     /**< right hand side of subset row cut */
+   SCIP_SEPA*     sepa                          /**< separator which creates subset row cut */
+)
 {
    SCIP_SEPADATA* sepadata;
+   SCIP_VAR** mastervars;
    char name[SCIP_MAXSTRLEN]; // name of the ssrc
-   int nssrcvars;
    int i;
+   int nmastervar;
 
    assert(GCGisMaster(masterscip));
    assert(sepa != NULL);
+
    sepadata = SCIPsepaGetData(sepa);
+   nmastervar = SCIPgetNVars(masterscip);
+   mastervars = SCIPgetVars(masterscip);
 
    SCIPdebugMessage("create subset row cut\n");
    /* create 'empty' subset row cut of form -inf <= ... <= rhs_ssrc
     * - local, removable, modifiable */
+   rhs_ssrc = rhs_ssrc / sepadata->k;
+   rhs_ssrc = SCIPfeasFloor(masterscip, rhs_ssrc);
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "ssrc_%i", sepadata->ngeneratedcut);
-   SCIP_CALL( SCIPcreateEmptyRowSepa(masterscip, &(*ssrc), sepa, name, -SCIPinfinity(masterscip), SCIPfeasFloor(masterscip, rhs_ssrc), TRUE, TRUE, TRUE) );
+   SCIP_CALL( SCIPcreateEmptyRowSepa(masterscip, &(*ssrc), sepa, name, -SCIPinfinity(masterscip), rhs_ssrc, TRUE, TRUE, TRUE) );
    assert(ssrc != NULL);
    assert(*ssrc != NULL);
 
    /* fill the row with master variables and their coefficients */
    SCIP_CALL( SCIPcacheRowExtensions(masterscip, *ssrc) );
-   nssrcvars = SCIPhashmapGetNEntries(mapmastervarxcoeff);
-   for( i = 0; i < nssrcvars; i++ )
-   {
-      SCIP_HASHMAPENTRY* entry;
-      SCIP_VAR* mastervar;
-      SCIP_Real ssrc_coeff;
 
-      entry = SCIPhashmapGetEntry(mapmastervarxcoeff, i);
-      if( entry == NULL )
-      {
+   for( i = 0; i < nnonzerossrccoeffsindices; i++ )
+   {
+      SCIP_Real varcoeff;
+      SCIP_VAR* mastervar;
+      int varindex;
+
+      varindex = nonzerossrccoeffsindices[i];
+      assert(varindex <= nmastervar);
+
+      varcoeff = ssrccoeffs[varindex] / sepadata->k;
+      varcoeff = SCIPfeasFloor(masterscip, varcoeff);
+      ssrccoeffs[varindex] = 0.0; // have to reset it to zero, re-allocating a clean buffer array does not set them back to zero?????
+      if( varcoeff == 0.0 )
          continue;
-      }
-      mastervar = (SCIP_VAR*) SCIPhashmapEntryGetOrigin(entry);
-      assert(GCGvarIsMaster(mastervar));
-      ssrc_coeff = SCIPhashmapEntryGetImageReal(entry);
-      ssrc_coeff = SCIPfeasFloor(masterscip, ssrc_coeff);
-      if( !SCIPisZero(masterscip, ssrc_coeff) )
-      {
-         //SCIPdebugMessage("Add master variable %s with coefficient %f to subset row cut\n", SCIPvarGetName(mastervar), ssrc_coeff);
-         SCIP_CALL( SCIPaddVarToRow(masterscip, *ssrc, mastervar, ssrc_coeff) );
-      }
+
+      mastervar = mastervars[varindex];
+      assert(SCIPvarGetProbindex(mastervar) == varindex);
+      SCIPdebugMessage("add var %s with coeff %f\n", SCIPvarGetName(mastervar), varcoeff);
+      SCIP_CALL( SCIPaddVarToRow(masterscip, *ssrc, mastervar, varcoeff) );
+
    }
 
    SCIP_CALL( SCIPflushRowExtensions(masterscip, *ssrc) );
@@ -262,28 +270,30 @@ SCIP_RETCODE createSubsetRowCut(
 
 /** computes the rhs (w^Tb) and the coefficient for each variable (w^Ta_p) in the cut (still non-rounded) */
 static
-SCIP_RETCODE computeSubsetRowCoefficientsAndRHS(
-   SCIP*          masterscip,             /**< SCIP data structure of master problem */
-   SCIP_CONS**    masterconss,            /**< constraints of the master problem */
-   int*           selectedconssidx,       /**< indices of the selected constraints */
-   int            nselectedconss,         /**< number of selected constraints */
-   int            k,                      /**< defines the weights: 1/k or -1/k */
-   SCIP_Real**    weights,                /**< pointer to store weights of the selected constraints */
-   SCIP_HASHMAP*  mapmastervarxcoeff,     /**< map to store the computed subsetrow cut coefficient for each master variable */
-   SCIP_Real*     rhs_ssrc                /**< pointer to store rhs of subsetrow cut */
-   )
+SCIP_RETCODE computeSubsetRowCoefficientsAndRHS_alt(
+   SCIP*          masterscip,                 /**< SCIP data structure of master problem */
+   SCIP_CONS**    masterconss,                /**< constraints of the master problem */
+   int*           selectedconssidx,           /**< indices of the selected constraints */
+   int            nselectedconss,             /**< number of selected constraints */
+   SCIP_Real**    weights,                    /**< pointer to store weights of the selected constraints */
+   SCIP_Real*     rhs_ssrc,                   /**< pointer to store rhs of subset row cut */
+   SCIP_Real**    mastervarcoeffs,            /**< pointer to store subset row cut variable coefficients */
+   int**          nonzeromastervardindices,   /**< pointer to store indices of master variables with non-zero coefficients */
+   int*           nnonzeromastervardindices   /**< pointer to store number of master variables with non-zero coefficients */
+)
 {
-   SCIP_Real  coeff_ssrc;
    SCIP_Bool  success;
+   int        nmastervars;
    int        nmasterconsvars;
    int        i;
    int        j;
 
    assert(masterscip != NULL);
-   assert(mapmastervarxcoeff != NULL);
-   assert(k != 0);
 
+   nmastervars = SCIPgetNVars(masterscip);
+   *nnonzeromastervardindices = 0;
    *rhs_ssrc = 0;
+
    for( i = 0; i < nselectedconss; i++ )
    {
       SCIP_CONS* mastercons = NULL;
@@ -305,24 +315,23 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS(
        * - if constraint has form b <= ax: weight is -1/k (to transform it to -ax <= -b) */
       if( SCIPisInfinity(masterscip, -lhs_mastercons ) ) // lhs = -inf --> constraint has form: ax <= b
       {
-         (*weights)[i] = 1.0 / k;
+         (*weights)[i] = 1.0;
          (*rhs_ssrc) += (*weights)[i] * rhs_mastercons;
          SCIPdebugMessage("master constraint %s (ax <= %f) with weight %f\n", SCIPconsGetName(mastercons), rhs_mastercons, (*weights)[i]);
       }
       else if( SCIPisInfinity(masterscip, rhs_mastercons ) ) // lhs != -inf & rhs = inf --> constraint has form: b <= ax
       {
-         (*weights)[i] = -1.0 / k;
+         (*weights)[i] = -1.0;
          (*rhs_ssrc) += (*weights)[i] * lhs_mastercons;
          SCIPdebugMessage("master constraint %s (%f <= ax) with weight %f\n", SCIPconsGetName(mastercons), lhs_mastercons, (*weights)[i]);
       }
       else // lhs != -inf & rhs != inf --> constraint has form: b_l <= ax <= b_r
       {
          /* we use the right side: ax <= b_r */
-         (*weights)[i] = 1.0 / k;
+         (*weights)[i] = 1.0;
          (*rhs_ssrc) += (*weights)[i] * rhs_mastercons;
          SCIPdebugMessage("master constraint %s (%f <= ax <= %f) with weight %f\n", SCIPconsGetName(mastercons), lhs_mastercons, rhs_mastercons, (*weights)[i]);
       }
-
 
       /* get all variables and their corresponding coefficients in the master constraint */
       SCIP_CALL( SCIPgetConsNVars(masterscip, mastercons, &nmasterconsvars, &success) );
@@ -339,24 +348,40 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS(
       assert(success);
       SCIP_CALL( SCIPgetConsVals(masterscip, mastercons, masterconscoeffs, nmasterconsvars, &success) );
       assert(success);
-      /* for each variable add its weighted coefficient in this constraint to its coefficient for the subsetrow cut */
+
+      /* for each variable add its weighted coefficient in this constraint to its coefficient for the subset row cut */
       for( j = 0; j < nmasterconsvars; j++ )
       {
+         int varindex;
+
          assert(GCGvarIsMaster(masterconsvars[j]));
-         coeff_ssrc = SCIPhashmapGetImageReal(mapmastervarxcoeff, masterconsvars[j]);
-         if( coeff_ssrc == SCIP_INVALID )
+
+         varindex = SCIPvarGetProbindex(masterconsvars[j]);
+         assert(varindex <= nmastervars);
+
+         if( masterconscoeffs[j] != 0.0 )
          {
-            SCIPhashmapSetImageReal(mapmastervarxcoeff, masterconsvars[j], (*weights)[i] * masterconscoeffs[j]);
-         }
-         else
-         {
-            SCIPhashmapSetImageReal(mapmastervarxcoeff, masterconsvars[j], coeff_ssrc + (*weights)[i] * masterconscoeffs[j]);
+            SCIP_Real varcoeff;
+            varcoeff = (*mastervarcoeffs)[varindex];
+
+            /* new non-zero variable coefficient */
+            if( varcoeff == 0.0 )
+            {
+               (*nonzeromastervardindices)[*nnonzeromastervardindices] = varindex;
+               (*nnonzeromastervardindices)++;
+            }
+
+
+            varcoeff += (*weights)[i] * masterconscoeffs[j];
+            (*mastervarcoeffs)[varindex] = varcoeff;
+            SCIPdebugMessage("increase %s-coeff to %f\n", SCIPvarGetName(masterconsvars[j]), varcoeff);
          }
       }
 
       SCIPfreeBufferArray(masterscip, &masterconsvars);
       SCIPfreeBufferArray(masterscip, &masterconscoeffs);
    }
+
    SCIPdebugMessage("rhs of subset row cut: %f\n", *rhs_ssrc);
 
    return SCIP_OKAY;
@@ -455,21 +480,20 @@ SCIP_RETCODE computePricingConssCoefficients(
 static
 SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
 {
-   SCIP*                      origscip;            // original problem
+   SCIP*                      origscip;                     // original problem
    SCIP_SEPADATA*             sepadata;
-   SCIP_HASHMAP*              mapmastervarxcoeff = NULL;  // maps master variable to its coefficient in the subset row
-   SCIP_HASHMAP*              mappricingvarxcoeff = NULL; // maps pricing variable to its coefficient in its pricing constraint
-   SCIP_CONS**                masterconss;         // a              : constraints in master problem
-   SCIP_CONS**                originalconss;       // A              : constraints in original problem
+   SCIP_HASHMAP*              mappricingvarxcoeff = NULL;   // maps pricing variable to its coefficient in its pricing constraint
+   SCIP_CONS**                masterconss;                  // a              : constraints in master problem
+   SCIP_CONS**                originalconss;                // A              : constraints in original problem
    SCIP_Bool                  success;
-   SCIP_Real*                 weights = NULL;      // w in {-1/k, 1/k}^n: vector of weights for selected constraints
-   int*                       selectedconssidx = NULL;    // indices of constraints used to construct subset row (weights are non-zero)
-   int                        nmasterconss;        // m              : number of constraints in master problem
-   int                        npricingproblems;    // K              : number of pricing problems
+   SCIP_Real*                 weights = NULL;               // w in {-1/k, 1/k}^n: vector of weights for selected constraints
+   int*                       selectedconssidx = NULL;      // indices of constraints used to construct subset row (weights are non-zero)
+   int                        nmasterconss;                 // m              : number of constraints in master problem
+   int                        npricingproblems;             // K              : number of pricing problems
+   int                        nmastervars;
+   int                        maxcuts;                      // number of cuts to be generated in a separation round
    int                        i;
    int                        j;
-   int                        nmastervars;
-   int                        maxcuts;
 
    assert(scip != NULL);
    assert(result != NULL);
@@ -553,14 +577,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       maxcuts = sepadata->maxsepacuts;
    }
 
-   /* alloc memory for structures used to store
-    * - constraint indices
-    * - weights
-    * - coefficients for pricing variables
-    * - coefficients for master variables */
    SCIPallocBufferArray(scip, &selectedconssidx, sepadata->n);
    SCIPallocBufferArray(scip, &weights, sepadata->n);
-   SCIPhashmapCreate(&mapmastervarxcoeff, SCIPblkmem(scip), nmastervars);
    SCIPhashmapCreate(&mappricingvarxcoeff, SCIPblkmem(scip), nmastervars);
 
    for( i = 0; i < maxcuts; i ++ )
@@ -571,30 +589,39 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       SCIP_Real                  rhs_ssrc;                     // rhs of the cut
       int                        npricingmodifications = 0;    // number of pricing modifications associated with cut
       char                       name[SCIP_MAXSTRLEN];
+      SCIP_Real*                 ssrccoeffs;                   // contains (non-rounded) coefficients for cut
+      int*                       nonzerossrccoeffsindices;     // contains indices of variables with non-zero coefficients in cut
+      int                        nnonzerossrccoeffsindices;    // number of variables with non-zero coefficients in cut
 
-      /* select n constraints and store their indices in selectedconssidx */
+      /* select n constraints to  build subset row cut */
       SCIPdebugMessage("cut % i: select %i out of %i constraints\n", i, sepadata->n, nmasterconss);
       if( sepadata->strategy == 0 )
          SCIP_CALL( selectRandomRows(sepadata, nmasterconss, selectedconssidx, sepadata->n) );
 
-      /* determine the master variables, their coefficients and rhs for subset row */
-      SCIP_CALL( computeSubsetRowCoefficientsAndRHS(scip, masterconss, selectedconssidx, sepadata->n,
-                                                    sepadata->k, &weights, mapmastervarxcoeff, &rhs_ssrc) );
+      /* determine the master variables, their coefficients and rhs for subset row (non-rounded) */
+      SCIP_CALL( SCIPallocCleanBufferArray(scip, &ssrccoeffs, nmastervars) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &nonzerossrccoeffsindices, nmastervars) );
+      nnonzerossrccoeffsindices = 0;
+      SCIP_CALL( computeSubsetRowCoefficientsAndRHS_alt(scip, masterconss, selectedconssidx, sepadata->n,
+                                                       &weights, &rhs_ssrc, &ssrccoeffs,
+                                                       &nonzerossrccoeffsindices, &nnonzerossrccoeffsindices) );
 
-      /* create the subsetrow cut */
-      SCIP_CALL( createSubsetRowCut(scip, &ssrc, mapmastervarxcoeff, rhs_ssrc, sepa) );
+      /* create the subset row cut */
+      SCIP_CALL( createSubsetRowCut_alt(scip, &ssrc, ssrccoeffs, nonzerossrccoeffsindices,
+                                        nnonzerossrccoeffsindices, rhs_ssrc, sepa) );
       assert(ssrc != NULL);
+      SCIPfreeCleanBufferArrayNull(scip, &ssrccoeffs);
+      SCIPfreeBufferArrayNull(scip, &nonzerossrccoeffsindices);
 
       /* row is empty --> useless */
       if( SCIProwGetNNonz(ssrc) == 0 )
       {
          SCIPdebugMessage("created an empty row: release row\n");
          SCIPreleaseRow(scip, &ssrc);
-         SCIP_CALL( SCIPhashmapRemoveAll(mapmastervarxcoeff) );
          SCIP_CALL( SCIPhashmapRemoveAll(mappricingvarxcoeff) );
          continue;
       }
-      //SCIPprintRow(scip, ssrc, NULL);
+      // SCIPprintRow(scip, ssrc, NULL);
 
       /* determine the pricing variables and their coefficients for the pricing constraints */
       SCIP_CALL( computePricingConssCoefficients(origscip, originalconss, selectedconssidx, sepadata->n,
@@ -640,6 +667,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
             if( pricingcoeff == SCIP_INVALID )
                continue;
 
+            pricingcoeff = pricingcoeff / sepadata->k;
             if( !SCIPisZero(pricingproblem, pricingcoeff) )
             {
                SCIPdebugMessage("add pricing var %s with coefficient %f to constraint for pricing problem %i\n",
@@ -696,13 +724,11 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       SCIP_CALL( SCIPaddRow(scip, ssrc, FALSE, &success) );
       SCIP_CALL( addSubsetRowCutToGeneratedCuts(scip, mastercutdata, weights, selectedconssidx, sepadata->n, sepadata->sepaidx) );
 
-      /* empty the hashmaps containing the coeffcients for variables */
-      SCIP_CALL( SCIPhashmapRemoveAll(mapmastervarxcoeff) );
+      /* empty the hashmaps containing the coefficients for variables */
       SCIP_CALL( SCIPhashmapRemoveAll(mappricingvarxcoeff) );
    }
 
    /* free data structures */
-   SCIPhashmapFree(&mapmastervarxcoeff);
    SCIPhashmapFree(&mappricingvarxcoeff);
    SCIPfreeBufferArray(scip, &selectedconssidx);
    SCIPfreeBufferArray(scip, &weights);
@@ -719,6 +745,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
 static
 GCG_DECL_SEPAGETCOLCOEFFICIENTS(gcgsepaGetColCoefficientSubsetrow)
 {
+   SCIP_SEPADATA* sepadata;
    SCIP_Real* weights;
    SCIP_Real* mastercoeffs;
    int* conssindices;
@@ -735,16 +762,18 @@ GCG_DECL_SEPAGETCOLCOEFFICIENTS(gcgsepaGetColCoefficientSubsetrow)
    weights = GCGsubsetrowCutGetWeights(cut);
    conssindices = GCGsubsetrowCutGetConssIndices(cut);
    n = GCGsubsetrowCutGetNWeights(cut);
+   sepadata = SCIPsepaGetData(sepa->separator);
 
    assert(mastercoeffs != NULL);
    assert(weights != NULL);
    assert(conssindices != NULL);
+   assert(sepadata != NULL);
 
    /* use the coefficients of the master constraints to compute coefficient for cut */
    *coeff = 0.0;
    for( i = 0; i < n; i++ )
    {
-      *coeff += weights[i] * mastercoeffs[conssindices[i]];
+      *coeff += weights[i] * mastercoeffs[conssindices[i]] / sepadata->k;
    }
 
 #ifdef SCIP_DEBUG
@@ -756,7 +785,7 @@ GCG_DECL_SEPAGETCOLCOEFFICIENTS(gcgsepaGetColCoefficientSubsetrow)
    SCIP_ROW* mastercutrow;
    GCG_MASTERCUTDATA* mastercutdata;
 
-   mastercutdata = GCGsepamastercutGetMastercutData(cut);
+   mastercutdata = GCGmastersepacutGetMasterCutData(cut);
    assert(mastercutdata != NULL);
    SCIP_CALL( GCGmastercutGetRow(mastercutdata, &mastercutrow) );
    assert(mastercutrow != NULL);
@@ -807,8 +836,9 @@ GCG_DECL_SEPAGETCOLCOEFFICIENTS(gcgsepaGetColCoefficientSubsetrow)
       assert(check_coeff == *coeff);
    }
 #endif
-   *coeff = SCIPfeasFloor(scip, *coeff);
 
+   *coeff = SCIPfeasFloor(scip, *coeff);
+   SCIPdebugMessage("variable coefficient: %f\n", *coeff);
    return SCIP_OKAY;
 }
 
@@ -823,9 +853,12 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
    SCIP_VAR** pricingconsvars;
    SCIP_Bool success;
    SCIP_Real* pricingconscoeffs;
-   SCIP_Real* pricingvals;
+   SCIP_Real* pricingvals = NULL;
+   int* nonzeros;
+   int nnonzeros;
    int npricingconsvars;
    int npricingvars;
+   int varindex;
    int i;
 
    assert(scip != NULL);
@@ -850,6 +883,23 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
    pricingscip = GCGgetPricingprob(origscip, probnr);
    pricingconss = GCGpricingmodificationGetAdditionalConss(pricingmod);
 
+   /* transfer the values of the given variables to the position of the array which corresponds to their variable index */
+   npricingvars = SCIPgetNOrigVars(pricingscip);
+   nnonzeros = 0;
+   SCIP_CALL( SCIPallocCleanBufferArray(scip, &pricingvals, npricingvars) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nonzeros, nvars) );
+   for( i = 0; i < nvars; i++ )
+   {
+      varindex = SCIPvarGetProbindex(vars[i]);
+      assert(varindex <= npricingvars);
+      pricingvals[varindex] = vals[i];
+      nonzeros[nnonzeros] = varindex;
+      nnonzeros++;
+      SCIPdebugMessage("%s: %f, ", SCIPvarGetName(vars[i]), vals[i]);
+   }
+   SCIPdebugMessage("\n");
+
+
    /* get all the pricing variables and their coefficients in the constraint */
    SCIP_CALL( SCIPgetConsNVars(pricingscip, pricingconss[0], &npricingconsvars, &success) );
    assert(success);
@@ -860,41 +910,36 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
    SCIP_CALL( SCIPgetConsVals(pricingscip, pricingconss[0], pricingconscoeffs, npricingconsvars, &success) );
    assert(success);
 
-   /* transfer the values of the given variables to the position of the array which corresponds to their variable index */
-   npricingvars = SCIPgetNOrigVars(pricingscip);
-   SCIPallocCleanBufferArray(scip, &pricingvals, npricingvars);
-
-   for( i = 0; i < nvars; i++ )
-   {
-        int varindex;
-
-        varindex = SCIPvarGetProbindex(vars[i]);
-        assert(varindex <= npricingvars);
-
-        pricingvals[varindex] = vals[i];
-   }
 
    /* compute w^TAx using the pricing constraint */
    *coef = 0.0;
    for( i = 0; i < npricingconsvars; i++ )
    {
-      int varindex;
-
+      SCIPdebugMessage("%f * %s", pricingconscoeffs[i], SCIPvarGetName(pricingconsvars[i]));
       if( GCGvarIsInferredPricing(pricingconsvars[i]) )
          continue;
 
       varindex = SCIPvarGetProbindex(pricingconsvars[i]);
       assert(varindex <= npricingvars);
-
+      SCIPdebugMessage(" (%f) + ", pricingvals[varindex]);
       *coef += pricingconscoeffs[i] * pricingvals[varindex];
+   }
+   SCIPdebugMessage("\n");
 
+   /* reset all the non-zero entries back to zero
+    * (otherwise they remain there and interfere with the computation of other coefficients */
+   for( i = 0; i < nnonzeros; i++ )
+   {
+      varindex = nonzeros[i];
+      pricingvals[varindex] = 0.0;
    }
 
    /* finally, we round down w^TAx */
-   SCIPdebugMessage("variable coefficient %f for row %s\n", *coef, SCIProwGetName(cut->cut.row));
+   SCIPdebugMessage("variable coefficient %f\n", *coef);
    *coef = SCIPfeasFloor(scip, *coef);
 
-   SCIPfreeCleanBufferArray(scip, &pricingvals);
+   SCIPfreeCleanBufferArrayNull(scip, &pricingvals);
+   SCIPfreeBufferArray(scip, &nonzeros);
    SCIPfreeBufferArray(scip, &pricingconsvars);
    SCIPfreeBufferArray(scip, &pricingconscoeffs);
 
