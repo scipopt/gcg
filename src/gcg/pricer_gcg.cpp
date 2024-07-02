@@ -2553,14 +2553,14 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       SCIPfreeBufferArray(scip_, &consvars);
    }
 
-   /*for(i = 0; i < nsepas; i++ )
+   for(i = 0; i < nsepas; i++ )
    {
       for( j = 0; j < nactivecuts[i]; j++ )
       {
          SCIP_ROW* mastercutrow = NULL;
          GCG_MASTERCUTDATA* mastercutdata = NULL;
 
-         mastercutdata = GCGsepamastercutGetMastercutData(activecuts[i][j]);
+         mastercutdata = GCGmastersepacutGetMasterCutData(activecuts[i][j]);
          assert(mastercutdata != NULL);
          SCIP_CALL( GCGmastercutGetRow(mastercutdata,  &mastercutrow) );
          assert(mastercutrow != NULL);
@@ -2611,7 +2611,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
          }
          SCIPfreeBufferArray(scip_, &consvars);
       }
-   }*/
+   }
 
    /* add (redcost coefficients * lb/ub) of static variables to *stabdualval */
    for( i = 0; i < nstaticvars; ++i )
