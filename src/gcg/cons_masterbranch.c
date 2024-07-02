@@ -2120,7 +2120,10 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
       SCIP_CALL( addStoredCutsToActiveCuts(scip, consdata, conshdlrdata->nsepas) );
    }
 
-   SCIP_CALL( GCGclearGeneratedCuts(scip) );
+   /* if tree is currently probing, we do not clear generated cuts
+    * - the cuts in generated cuts may not have been separated yet, as sepa store gets switched when probing */
+   if( SCIPnodeGetType(consdata->node) != SCIP_NODETYPE_PROBINGNODE )
+      SCIP_CALL( GCGclearGeneratedCuts(scip) );
 
    return SCIP_OKAY;
 }
