@@ -234,7 +234,7 @@ SCIP_RETCODE createSubsetRowCut_alt(
    rhs_ssrc = rhs_ssrc / sepadata->k;
    rhs_ssrc = SCIPfeasFloor(masterscip, rhs_ssrc);
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "ssrc_%i", sepadata->ngeneratedcut);
-   SCIP_CALL( SCIPcreateEmptyRowSepa(masterscip, &(*ssrc), sepa, name, -SCIPinfinity(masterscip), rhs_ssrc, TRUE, TRUE, TRUE) );
+   SCIP_CALL( SCIPcreateEmptyRowSepa(masterscip, &(*ssrc), sepa, name, -SCIPinfinity(masterscip), rhs_ssrc, TRUE, TRUE, FALSE) );
    assert(ssrc != NULL);
    assert(*ssrc != NULL);
 
