@@ -1556,7 +1556,6 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
    GCG_MASTERSEPACUT*** activecuts;
    SCIP_ROW* row;
    GCG_SEPA** sepas;
-   SCIP_Real** sepamastercutcoeffs;
    SCIP_Real coeff;
    int* nactivecuts;
    int nsepas;
@@ -2298,7 +2297,6 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
    }
 
    /* sepa mastercuts */
-   sepas = GCGrelaxGetSeparators(scip_);
    nsepas = GCGrelaxGetNSeparators(scip_);
    nactivecuts = GCGgetNActiveCuts(scip_);
    activecuts = GCGgetActiveCuts(scip_);
@@ -3294,7 +3292,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    int nbranchmastercuts;
    /* master sepa cuts */
    GCG_MASTERSEPACUT*** activecuts;
-   GCG_SEPA** sepas;
    int* nactivecuts;
    int nsepas;
 
