@@ -658,7 +658,10 @@ SCIP_Bool GCGpricingmodificationIsCoefVar(
 {
    assert(var != NULL);
 
-   return SCIPvarCompare(pricingmodification.coefvar, var) == 0;
+   if( pricingmodification.coefvar == var )
+      return SCIPvarCompare(pricingmodification.coefvar, var) == 0;
+
+   return FALSE;
 }
 
 /** check whether a given variable is a coefficient variable of a given mastercut */
@@ -765,4 +768,14 @@ SCIP_Real GCGmastercutGetConstant(
       SCIP_CALL_ABORT( SCIP_ERROR );
       return SCIP_INVALID;
    }
+}
+
+/** get the block number of the pricing problem the modification belongs to */
+int GCGpricingmodificationGetBlock(
+   GCG_PRICINGMODIFICATION*   pricingmodification /**< pricing modification */
+)
+{
+   assert(pricingmodification != NULL);
+
+   return pricingmodification->blocknr;
 }

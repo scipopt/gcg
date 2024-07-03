@@ -92,7 +92,7 @@ SCIP_RETCODE freeMasterSepaCut(
 
    if( (*mastersepacut)->mastercutdata != NULL )
    {
-      SCIP_CALL( GCGmastercutFreeMaster(masterscip, &((*mastersepacut)->mastercutdata)) );
+      SCIP_CALL( GCGmastercutFree(masterscip, &((*mastersepacut)->mastercutdata)) );
    }
    assert((*mastersepacut)->mastercutdata == NULL);
 

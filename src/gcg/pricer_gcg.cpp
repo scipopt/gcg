@@ -1536,6 +1536,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCutsFromGCGCol(
          GCG_MASTERCUTDATA* mastercutdata;
          mastercutdata = GCGmastersepacutGetMasterCutData(activecuts[i][j]);
          assert(mastercutdata);
+         row = NULL;
          SCIP_CALL( GCGmastercutGetRow(mastercutdata, &row) );
 
          /* skip cuts which are not active */
@@ -1589,6 +1590,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
 
          mastercutdata = GCGmastersepacutGetMasterCutData(activecuts[i][j]);
          assert(mastercutdata);
+         row = NULL;
          SCIP_CALL( GCGmastercutGetRow(mastercutdata, &row) );
 
          /* inactive cuts remain the same */
@@ -2320,6 +2322,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
 
          mastercutdata = GCGmastersepacutGetMasterCutData(activecuts[i][j]);
          assert(mastercutdata != NULL);
+         mastercutrow = NULL;
          SCIP_CALL( GCGmastercutGetRow(mastercutdata,  &mastercutrow) );
 
          SCIP_Real lhs = SCIProwGetLhs(mastercutrow);

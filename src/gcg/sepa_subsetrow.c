@@ -64,7 +64,7 @@
 #define DEFAULT_MAXROUNDS             1 /**< maximal number of subsetrow separation rounds per non-root node (-1: unlimited) */
 #define DEFAULT_MAXROUNDSROOT         1 /**< maximal number of subsetrow separation calls in the root node (-1: unlimited) */
 #define DEFAULT_MAXSEPACUTS         200 /**< maximal number of subsetrow cuts separated per call in non-root nodes */
-#define DEFAULT_MAXSEPACUTSROOT    1000/**< maximal number of subsetrow cuts separated per call in root node */
+#define DEFAULT_MAXSEPACUTSROOT    5000/**< maximal number of subsetrow cuts separated per call in root node */
 #define DEFAULT_MAXCUTCANDS        5000 /**< maximal number of subsetrow cuts in total */
 #define DEFAULT_INITSEED         0x5EED /**< default initial seed used for random tie-breaking in cut selection */
 #define DEFAULT_ONLYROOT           TRUE /**< only apply separator in root node */
@@ -584,7 +584,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    for( i = 0; i < maxcuts; i ++ )
    {
       GCG_MASTERCUTDATA*         mastercutdata = NULL;         // mastercutdata for cut
-      GCG_PRICINGMODIFICATION**  pricingmodifications = NULL;  // pricing modifications associated with cut
+      GCG_PRICINGMODIFICATION*   pricingmodifications = NULL;  // pricing modifications associated with cut
       SCIP_ROW*                  ssrc = NULL;                  // cut
       SCIP_Real                  rhs_ssrc;                     // rhs of the cut
       int                        npricingmodifications = 0;    // number of pricing modifications associated with cut
@@ -631,7 +631,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       for( j = 0; j < npricingproblems; j++ )
       {
          SCIP*                      pricingproblem;
-         GCG_PRICINGMODIFICATION*   pricingmodification = NULL;
+         GCG_PRICINGMODIFICATION    pricingmodification;
          SCIP_CONS**                pricingconss = NULL;
          SCIP_VAR**                 pricingvars;
          SCIP_VAR*                  coeffvar = NULL; // y
@@ -953,7 +953,7 @@ GCG_DECL_SEPASETOBJECTIVE(gcgsepaSetObjectiveSubsetrow)
    SCIP* pricingproblem;
    SCIP* origscip;
    SCIP_VAR* coeffvar;
-   GCG_PRICINGMODIFICATION** pricingmodifications;
+   GCG_PRICINGMODIFICATION* pricingmodifications;
    int npricingmodifications;
    int pricingblocknr;
    int i;
@@ -972,9 +972,9 @@ GCG_DECL_SEPASETOBJECTIVE(gcgsepaSetObjectiveSubsetrow)
    /* set the objective value of each coefficient variable y to dual of the cut it is associated with */
    for( i = 0; i < npricingmodifications; i++ )
    {
-      pricingblocknr = GCGpricingmodificationGetBlock(pricingmodifications[i]);
+      pricingblocknr = GCGpricingmodificationGetBlock(&pricingmodifications[i]);
       pricingproblem = GCGgetPricingprob(origscip, pricingblocknr);
-      coeffvar = GCGpricingmodificationGetCoefVar(pricingmodifications[i]);
+      coeffvar = GCGpricingmodificationGetCoefVar(&pricingmodifications[i]);
       assert(SCIPvarGetProbindex(coeffvar) != -1);
       if( SCIPisZero(scip, dual) )
       {

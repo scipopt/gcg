@@ -142,7 +142,7 @@ SCIP_RETCODE reinsertGlobalMasterSepaCut(
 )
 {
    GCG_MASTERCUTDATA* mastercutdata;
-   SCIP_ROW* row;
+   SCIP_ROW* row = NULL;
 
    assert(masterscip != NULL);
    assert(mastersepacut != NULL);
@@ -173,7 +173,7 @@ SCIP_RETCODE eventRowAddedToLP(
 {
    GCG_MASTERCUTDATA* mastercutdata;
    GCG_MASTERSEPACUT* generatedcut;
-   SCIP_ROW* mastercutrow;
+   SCIP_ROW* mastercutrow = NULL;
    SCIP_ROW* row;
    SCIP_SEPA* sepa;
    int sepaidx;
@@ -203,6 +203,7 @@ SCIP_RETCODE eventRowAddedToLP(
          sepaidx = SCIPhashmapGetImageInt(eventhdlrdata->scipsepaxgcgsepamap, sepa);
          SCIPdebugMessage("row added event: row %s is added to active cuts of separator %s (%i) at index %i\n",
                           SCIProwGetName(row), SCIPsepaGetName(sepa), sepaidx, eventhdlrdata->nactivecuts[sepaidx]);
+         SCIPinfoMessage(scip, NULL, "add row %s\n", SCIProwGetName(row));
 
          /* transfer cut from generated to active */
          generatedidx = SCIPhashmapGetImageInt(eventhdlrdata->rowxgeneratedmap, row);
@@ -513,7 +514,7 @@ SCIP_RETCODE GCGaddCutToGeneratedCuts(
    GCG_MASTERCUTDATA* mastercutdata;
    SCIP_EVENTHDLR* eventhdlr;
    SCIP_EVENTHDLRDATA* eventhdlrdata;
-   SCIP_ROW* row;
+   SCIP_ROW* row = NULL;
 
    assert(mastersepacut != NULL);
    assert(masterscip != NULL);
@@ -605,6 +606,7 @@ SCIP_RETCODE GCGremoveNewInactiveRows(
       {
          mastercutdata = GCGmastersepacutGetMasterCutData(eventhdlrdata->activecuts[i][j]);
          assert(mastercutdata != NULL);
+         row = NULL;
          SCIP_CALL( GCGmastercutGetRow(mastercutdata, &row) );
 
          /* rows still in LP remain relevant */
@@ -656,6 +658,7 @@ SCIP_RETCODE GCGshrinkActiveCuts(
       {
          mastercutdata = GCGmastersepacutGetMasterCutData(eventhdlrdata->activecuts[i][j]);
          assert(mastercutdata != NULL);
+         row = NULL;
          SCIP_CALL( GCGmastercutGetRow(mastercutdata, &row) );
 
          /* global cuts with age zero, are added to the separation storage before initial LP is constructed

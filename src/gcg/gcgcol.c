@@ -906,6 +906,7 @@ SCIP_Real GCGcolComputeDualObjPara(
          if( !GCGmastercutIsActive(activecuts[i][j]->mastercutdata) )
             continue;
 
+         mastercutrow = NULL;
          SCIP_CALL( GCGmastercutGetRow(activecuts[i][j]->mastercutdata, &mastercutrow) );
          lhs = SCIProwGetLhs(mastercutrow);
          rhs = SCIProwGetRhs(mastercutrow);

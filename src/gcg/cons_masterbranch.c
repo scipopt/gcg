@@ -257,7 +257,7 @@ SCIP_RETCODE addMissedVariables(
 
          if( !SCIPisZero(scip, coef) )
          {
-            SCIP_ROW* mastercutrow;
+            SCIP_ROW* mastercutrow = NULL;
 
             SCIP_CALL( GCGmastercutGetRow(mastercutdata, &mastercutrow) );
             assert(mastercutrow != NULL);
@@ -357,6 +357,7 @@ SCIP_RETCODE addStoredCutsToActiveCuts(
             SCIP_CALL( addMissedVariables(scip, consdata->addedcuts[i][j], sepas[i]) );
             mastercutdata = GCGmastersepacutGetMasterCutData(consdata->addedcuts[i][j]);
             assert(mastercutdata != NULL);
+            mastercutrow = NULL;
             SCIP_CALL( GCGmastercutGetRow(mastercutdata, &mastercutrow) );
 
 #ifndef MASTERSEP_DEBUG
