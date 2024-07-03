@@ -60,7 +60,7 @@ struct ComponentBound
 {
    SCIP_VAR*             component;          /**< variable to which this bound belongs */
    GCG_COMPBND_SENSE     sense;              /**< sense of the bound */
-   SCIP_Real             bound;              /**< bound value */
+   int                   bound;              /**< bound value */
 };
 typedef struct ComponentBound GCG_COMPBND;
 

@@ -3710,11 +3710,12 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    }
 #endif
 
+   SCIPwriteOrigProblem(GCGgetPricingprob(origprob, 0), "subprob.lp", "lp", FALSE);
+
    /* undo the inferred pricing modifications from the mastercuts */
    for( i=0; i<nbranchmastercuts; ++i )
    {
       assert(GCGmastercutIsActive(branchmastercutdata[i]));
-
       SCIP_CALL( GCGmastercutUndoPricingModifications(scip_, branchmastercutdata[i]) );
    }
 
@@ -3902,7 +3903,7 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
          {
             if( pricerdata->pricingprobs[j] != NULL )
             {
-               SCIP_CALL( GCGsolverUpdate(pricerdata->pricingprobs[j], pricerdata->solvers[i], j, FALSE, TRUE, TRUE) );
+               SCIP_CALL( GCGsolverUpdate(pricerdata->pricingprobs[j], pricerdata->solvers[i], j, TRUE, TRUE, TRUE) );
             }
          }
       }

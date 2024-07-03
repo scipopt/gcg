@@ -1135,7 +1135,7 @@ void Stabilization::calculateSubgradient(
       SCIP_HASHMAPENTRY* hashmapEntry;
       GCG_MASTERCUTDATA* tmpMastercutData;
 
-      hashmapEntry = SCIPhashmapGetEntry(stabcentermastercutvals, i);
+      hashmapEntry = SCIPhashmapGetEntry(subgradientmastercutvals, i);
 
       if( hashmapEntry == NULL )
          continue;
