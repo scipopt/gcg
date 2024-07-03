@@ -64,10 +64,10 @@
 #define DEFAULT_MAXROUNDS             1 /**< maximal number of subsetrow separation rounds per non-root node (-1: unlimited) */
 #define DEFAULT_MAXROUNDSROOT         1 /**< maximal number of subsetrow separation calls in the root node (-1: unlimited) */
 #define DEFAULT_MAXSEPACUTS         200 /**< maximal number of subsetrow cuts separated per call in non-root nodes */
-#define DEFAULT_MAXSEPACUTSROOT    5000/**< maximal number of subsetrow cuts separated per call in root node */
+#define DEFAULT_MAXSEPACUTSROOT    1500 /**< maximal number of subsetrow cuts separated per call in root node */
 #define DEFAULT_MAXCUTCANDS        5000 /**< maximal number of subsetrow cuts in total */
 #define DEFAULT_INITSEED         0x5EED /**< default initial seed used for random tie-breaking in cut selection */
-#define DEFAULT_ONLYROOT           TRUE /**< only apply separator in root node */
+#define DEFAULT_ONLYROOT          FALSE /**< only apply separator in root node */
 #define DEFAULT_STRATEGY              0 /**< strategy which is used to determine which rows to consider for cut computation */
 #define DEFAULT_N                     3 /**< number of rows used to create a new cut */
 #define DEFAULT_K                     2 /**< inverse of weight used for cut generation */
