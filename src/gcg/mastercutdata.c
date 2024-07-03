@@ -779,3 +779,13 @@ int GCGpricingmodificationGetBlock(
 
    return pricingmodification->blocknr;
 }
+
+/** return the type of the mastercut */
+GCG_MASTERCUTTYPE GCGmastercutGetType(
+   GCG_MASTERCUTDATA*   mastercutdata     /**< master cut */
+   )
+{
+   assert(mastercutdata != NULL);
+
+   return mastercutdata->type;
+}

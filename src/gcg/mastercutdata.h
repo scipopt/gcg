@@ -43,6 +43,7 @@
 #include <scip/type_retcode.h>
 #include <scip/type_scip.h>
 
+#include "struct_mastercutdata.h"
 #include "type_mastercutdata.h"
 
 #ifdef __cplusplus
@@ -240,16 +241,11 @@ SCIP_Real GCGmastercutGetConstant(
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
    );
 
-SCIP_RETCODE GCGmastercutFreeMaster(
-   SCIP*                  scip,               /**< SCIP data structure */
-   GCG_MASTERCUTDATA**    mastercutdata        /**< pointer to the mastercut data */
-);
 
-/** apply all pricing modifications */
-SCIP_RETCODE GCGmastercutApplyPricingModificationsIndex(
-   SCIP*                  masterscip,         /**< master scip */
-   GCG_MASTERCUTDATA*     mastercutdata,       /**< mastercut data */
-   int                    index                /**< index of the mastercutdata in active cuts*/
+
+/** return the type of the mastercut */
+GCG_MASTERCUTTYPE GCGmastercutGetType(
+   GCG_MASTERCUTDATA*   mastercutdata     /**< master cut */
 );
 
 /**@} */
