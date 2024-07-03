@@ -975,8 +975,8 @@ GCG_DECL_SEPASETOBJECTIVE(gcgsepaSetObjectiveSubsetrow)
       pricingblocknr = GCGpricingmodificationGetBlock(&pricingmodifications[i]);
       pricingproblem = GCGgetPricingprob(origscip, pricingblocknr);
       coeffvar = GCGpricingmodificationGetCoefVar(&pricingmodifications[i]);
-      assert(SCIPvarGetProbindex(coeffvar) != -1);
-      if( SCIPisZero(scip, dual) )
+      //assert(SCIPvarGetProbindex(coeffvar) != -1);
+      if( dual >= 0.0 ) // theoretically, dual should always be non-positive: 'correct' it to zero
       {
          SCIP_CALL( SCIPchgVarObj(pricingproblem, coeffvar, 0.0) );
       }

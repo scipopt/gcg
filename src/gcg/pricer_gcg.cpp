@@ -1077,12 +1077,8 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
             dualsol = pricetype->mastercutGetDual(scip_, mastercutdata);
          }
 
-         if( !SCIPisZero(scip_, dualsol) )
-         {
-            /* modify the objective of pricing problems affected by this mastercut */
-            SCIP_CALL( sepas[i]->gcgsepasetobjective(scip_, sepas[i], mastercutdata, dualsol) );
-         }
-
+         /* modify the objective of pricing problems affected by this mastercut */
+         SCIP_CALL( sepas[i]->gcgsepasetobjective(scip_, sepas[i], mastercutdata, dualsol) );
       }
    }
 
@@ -1998,13 +1994,27 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
       else
       {
          assert(GCGvarIsInferredPricing(solvars[i]));
-         mastercutdata = solvars[i]->vardata->data.inferredpricingvardata.mastercutdata;
+         mastercutdata = GCGinferredPricingVarGetMastercutData(solvars[i]);
+         assert(mastercutdata != NULL);
          if( GCGmastercutIsCoefVar(mastercutdata, solvars[i]) )
          {
-            SCIP_Real dual;
-            dual = pricetype->mastercutGetDual(scip_, mastercutdata);
-            if( !SCIPisZero(scip_, dual) )
-               objvalue -= solvals[i] * pricetype->mastercutGetDual(scip_, mastercutdata);
+            if( GCGmastercutGetType(mastercutdata)  == GCG_MASTERCUTTYPE_ROW )
+            {
+               SCIP_ROW* row = NULL;
+               SCIP_SEPA* sepa;
+
+               SCIP_CALL( GCGmastercutGetRow(mastercutdata, &row) );
+               assert(row != NULL);
+               sepa = SCIProwGetOriginSepa(row);
+
+               if( sepa != NULL && strcmp(SCIPsepaGetName(sepa), "subsetrow") == 0 )
+               {
+                  // theoretically, dual should always be non-positive:: 'correct' it
+                  if( pricetype->mastercutGetDual(scip_, mastercutdata) >= 0.0 )
+                     continue;
+               }
+            }
+            objvalue -= solvals[i] * pricetype->mastercutGetDual(scip_, mastercutdata);
          }
       }
    }
@@ -3448,9 +3458,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          assert(mastercutdata != NULL);
          if( GCGmastercutIsActive(mastercutdata) )
          {
-            SCIP_Real dual = pricetype->mastercutGetDual(scip_, mastercutdata);
-            if( !SCIPisZero(scip_, dual) )
-               SCIP_CALL( GCGmastercutApplyPricingModifications(scip_, mastercutdata) );
+            SCIP_CALL( GCGmastercutApplyPricingModifications(scip_, mastercutdata) );
          }
       }
    }
@@ -3904,9 +3912,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          {
             /* update the var history of all the cuts still in the LP */
             SCIP_CALL( GCGvarhistoryJumpToLatest(scip_, &(activecuts[i][j]->knownvarhistory)) );
-            SCIP_Real dual = pricetype->mastercutGetDual(scip_, mastercutdata);
-            if( !SCIPisZero(scip_, dual) )
-               SCIP_CALL( GCGmastercutUndoPricingModifications(scip_, mastercutdata) );
+            SCIP_CALL( GCGmastercutUndoPricingModifications(scip_, mastercutdata) );
          }
       }
    }
