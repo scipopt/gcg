@@ -59,7 +59,7 @@ extern "C" {
 GCG_EXPORT
 SCIP_RETCODE GCGpricingmodificationCreate(
    SCIP*                  scip,               /**< SCIP data structure */
-   GCG_PRICINGMODIFICATION** pricingmodification, /**< pointer to store the pricing modification */
+   GCG_PRICINGMODIFICATION* pricingmodification, /**< pointer to store the pricing modification */
    int                    blocknr,             /**< block number of the master cut */
    SCIP_VAR*              coefvar,             /**< variable in the pricing problem inferred from the master cut
                                                   * always has the objective coefficient of the negated dual value of the master cut
@@ -76,7 +76,7 @@ SCIP_RETCODE GCGmastercutCreateFromCons(
    SCIP*                  scip,               /**< SCIP data structure */
    GCG_MASTERCUTDATA**    mastercutdata,       /**< pointer to store the mastercut data */
    SCIP_CONS*             cons,                /**< constraint in the master problem that represents the master cut */
-   GCG_PRICINGMODIFICATION** pricingmodifications, /**< pricing modifications for the master cut */
+   GCG_PRICINGMODIFICATION* pricingmodifications, /**< pricing modifications for the master cut */
    int                    npricingmodifications /**< number of pricing modifications for the master cut */
    );
 
@@ -86,7 +86,7 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
    SCIP*                  scip,               /**< SCIP data structure */
    GCG_MASTERCUTDATA**    mastercutdata,       /**< pointer to store the mastercut data */
    SCIP_ROW*              row,                 /**< row in the master problem that represents the master cut */
-   GCG_PRICINGMODIFICATION** pricingmodifications, /**< pricing modifications for the master cut */
+   GCG_PRICINGMODIFICATION* pricingmodifications, /**< pricing modifications for the master cut */
    int                    npricingmodifications /**< number of pricing modifications for the master cut */
    );
 
@@ -166,7 +166,7 @@ GCG_PRICINGMODIFICATION* GCGmastercutGetPricingModification(
    );
 
 /** get the pricing modifications for the master cut */
-GCG_PRICINGMODIFICATION** GCGmastercutGetPricingModifications(
+GCG_PRICINGMODIFICATION* GCGmastercutGetPricingModifications(
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
    );
 
@@ -178,7 +178,7 @@ int GCGmastercutGetNPricingModifications(
 /** apply a pricing modification */
 SCIP_RETCODE GCGpricingmodificationApply(
    SCIP*                  pricingscip,        /**< pricing scip */
-   GCG_PRICINGMODIFICATION* pricingmodification /**< pricing modification */
+   GCG_PRICINGMODIFICATION pricingmodification /**< pricing modification */
    );
 
 /** apply all pricing modifications */
@@ -190,7 +190,7 @@ SCIP_RETCODE GCGmastercutApplyPricingModifications(
 /** undo a pricing modification */
 SCIP_RETCODE GCGpricingmodificationUndo(
    SCIP*                  pricingscip,        /**< pricing scip */
-   GCG_PRICINGMODIFICATION* pricingmodification /**< pricing modification */
+   GCG_PRICINGMODIFICATION pricingmodification /**< pricing modification */
    );
 
 /** undo all pricing modifications */
@@ -201,7 +201,7 @@ SCIP_RETCODE GCGmastercutUndoPricingModifications(
 
 /** check whether a given variable is a coefficient variable of a given pricing modification */
 SCIP_Bool GCGpricingmodificationIsCoefVar(
-   GCG_PRICINGMODIFICATION* pricingmodification, /**< pricing modification */
+   GCG_PRICINGMODIFICATION pricingmodification, /**< pricing modification */
    SCIP_VAR*              var                 /**< variable to check */
    );
 

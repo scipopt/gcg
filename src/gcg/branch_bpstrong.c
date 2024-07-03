@@ -1534,7 +1534,7 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
 
    SCIP_CALL( GCGrelaxIncludeBranchrule( origprob, branchrule, branchActiveMasterBPStrong,
          branchDeactiveMasterBPStrong, branchPropMasterBPStrong, branchMasterSolvedBPStrong,
-         branchDataDeleteBPStrong, NULL, NULL, NULL) );
+         branchDataDeleteBPStrong, NULL, NULL) );
 
    branchruledata = SCIPbranchruleGetData(branchrule);
 

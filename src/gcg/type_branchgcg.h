@@ -124,15 +124,6 @@ typedef enum GCG_BoundType GCG_BOUNDTYPE;
  */
 #define GCG_DECL_BRANCHNEWCOL(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, SCIP_VAR* mastervar)
 
-/** notify the branching rule that the dual value to its masterconstraint has been determined
- *
- *  input:
- *    scip            : SCIP main data structure of the original problem
- *    branchdata      : the branching data
- *    dual            : the new dual value
- */
-#define GCG_DECL_BRANCHUPDATEDUAL(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, SCIP_Real dual)
-
 /** get the mastercutdata created by this branching rule, if any
  *
  *  input:

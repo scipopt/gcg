@@ -822,7 +822,7 @@ SCIP_DECL_BRANCHINIT(branchInitOrig)
    SCIPdebugMessage("Init orig branching rule\n");
 
    SCIP_CALL( GCGrelaxIncludeBranchrule( origprob, branchrule, branchActiveMasterOrig,
-         branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolvedOrig, branchDataDeleteOrig, NULL, NULL, NULL) );
+         branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolvedOrig, branchDataDeleteOrig, NULL, NULL) );
 
    return SCIP_OKAY;
 }

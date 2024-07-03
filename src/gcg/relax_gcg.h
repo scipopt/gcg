@@ -73,7 +73,6 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
    GCG_DECL_BRANCHMASTERSOLVED((*branchmastersolved)),/**<  master solved method for branchrule */
    GCG_DECL_BRANCHDATADELETE((*branchdatadelete)),/**<  branchdata deletion method for branchrule */
    GCG_DECL_BRANCHNEWCOL((*branchnewcol)),   /**< new column handler method of branching rule */
-   GCG_DECL_BRANCHUPDATEDUAL((*branchupdatedual)),/**< dual value handler method of branching rule */
    GCG_DECL_BRANCHGETMASTERCUT((*branchgetmastercut))/**< mastercut getter of branching rule */
    );
 
@@ -135,24 +134,6 @@ SCIP_RETCODE GCGrelaxBranchNewColWithGCGBranchrule(
    GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
    SCIP_VAR*             mastervar           /**< new mastervariable that was created */
-   );
-
-/** notifies the branching rule that the dual value to its masterconstraint has been determined */
-GCG_EXPORT
-SCIP_RETCODE GCGrelaxBranchUpdateDual(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
-   GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
-   SCIP_Real             dual                /**< the new dual value */
-   );
-
-/** notifies the branching rule that the dual value to its masterconstraint has been determined */
-GCG_EXPORT
-SCIP_RETCODE GCGrelaxBranchUpdateDualWithGCGBranchrule(
-   SCIP*                 scip,               /**< SCIP data structure */
-   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
-   GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
-   SCIP_Real             dual                /**< the new dual value */
    );
 
 /** gets the mastercutdata created by this branching rule, if any */

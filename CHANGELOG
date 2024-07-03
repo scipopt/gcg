@@ -17,15 +17,11 @@ New/modified API functions:
 - Added function 'GCGvarIsInferredPricing'
 - Added function 'GCGmastercutIsActive'
 - Added function 'GCGrelaxBranchNewCol'
-- Added function 'GCGrelaxBranchUpdateDual'
-- Added function 'GCGrelaxBranchUpdateDualWithGCGBranchrule'
 - Added function 'GCGrelaxBranchGetMasterCut'
 - Added function 'GCGrelaxBranchGetAllActiveMasterCuts'
 - Added callback 'GCG_DECL_BRANCHNEWCOL' to 'GCG_BRANCHRULE'
-- Added callback 'GCG_DECL_BRANCHUPDATEDUAL' to 'GCG_BRANCHRULE'
 - Added callback 'GCG_DECL_BRANCHGETMASTERCUT' to 'GCG_BRANCHRULE'
 - Added parameter 'GCG_DECL_BRANCHNEWCOL((*branchnewcol))' to 'GCGrelaxIncludeBranchrule'
-- Added parameter 'GCG_DECL_BRANCHUPDATEDUAL((*branchupdatedual))' to 'GCGrelaxIncludeBranchrule'
 - Added parameter 'GCG_DECL_BRANCHGETMASTERCUT((*branchgetmastercut))' to 'GCGrelaxIncludeBranchrule'
 
 
