@@ -94,6 +94,11 @@ int GCGcountInferredPricingVars(
    int                    nvars               /**< number of variables */
    );
 
+/** return the mastercutdata associated with the inferred pricing variable */
+GCG_MASTERCUTDATA* GCGinferredPricingVarGetMastercutData(
+   SCIP_VAR*   var      /**< SCIP variable structure */
+);
+
 #ifdef NDEBUG
 #define GCGoriginalVarIsLinking(var)         (SCIPvarGetData(var)->blocknr == -2)
 #else

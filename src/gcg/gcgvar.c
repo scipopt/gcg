@@ -213,6 +213,22 @@ int GCGcountInferredPricingVars(
    return count;
 }
 
+/** return the mastercutdata associated with the inferred pricing variable */
+GCG_MASTERCUTDATA* GCGinferredPricingVarGetMastercutData(
+   SCIP_VAR*   var      /**< SCIP variable structure */
+   )
+{
+   SCIP_VARDATA* vardata;
+
+   assert(var != NULL);
+   assert(GCGvarIsInferredPricing(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   return vardata->data.inferredpricingvardata.mastercutdata;
+}
+
 #ifndef NDEBUG
 /** returns TRUE or FALSE whether variable is a original variable or not */
 SCIP_Bool GCGvarIsOriginal(
