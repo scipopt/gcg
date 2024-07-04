@@ -262,7 +262,9 @@ SCIP_RETCODE correctAuxiliaryPricingVariables(
    SCIP_VAR** origsolvars;
    int norigsolvars;
    SCIP_VAR** copysolvars;
+#ifndef NDEBUG
    int ncopysolvars;
+#endif
 
    SCIP_VAR** colvars;
    SCIP_Real* colvals;
@@ -288,9 +290,10 @@ SCIP_RETCODE correctAuxiliaryPricingVariables(
    origsolvars = SCIPgetOrigVars(gcgcol->pricingprob);
    norigsolvars = SCIPgetNOrigVars(gcgcol->pricingprob);
    copysolvars = SCIPgetOrigVars(pricingprob_copy);
+#ifndef NDEBUG
    ncopysolvars = SCIPgetNOrigVars(pricingprob_copy);
-
    assert(norigsolvars == ncopysolvars);
+#endif
 
    /* fixate the known and "original" variables and save their actual lb and ub */
    for( i = 0; i < norigsolvars; i++ )

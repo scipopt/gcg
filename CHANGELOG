@@ -21,7 +21,7 @@ New/modified API functions:
 - Added function 'GCGrelaxBranchGetAllActiveMasterCuts'
 - Added callback 'GCG_DECL_BRANCHNEWCOL' to 'GCG_BRANCHRULE'
 - Added callback 'GCG_DECL_BRANCHGETMASTERCUT' to 'GCG_BRANCHRULE'
-- Added parameter 'GCG_DECL_BRANCHNEWCOL((*branchnewcol))' to 'GCGrelaxIncludeBranchrule'
+- Added parameter 'GCG_DECL_BRANCHNEWCOL ((*branchnewcol));' to 'GCGrelaxIncludeBranchrule'
 - Added parameter 'GCG_DECL_BRANCHGETMASTERCUT((*branchgetmastercut))' to 'GCGrelaxIncludeBranchrule'
 
 

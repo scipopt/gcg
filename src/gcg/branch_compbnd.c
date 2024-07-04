@@ -850,6 +850,7 @@ SCIP_RETCODE initIndexSet(
    return SCIP_OKAY;
 }
 
+#ifndef NDEBUG
 /** get the lower bound of a original variable from the component bound sequence, or the lb */
 static
 SCIP_Real getLowerBound(
@@ -913,6 +914,7 @@ SCIP_Real getUpperBound(
 
    return ub;
 }
+#endif
 
 /** separation algorithm determining a component bound sequence to branch on */
 static
@@ -984,8 +986,6 @@ SCIP_RETCODE separation(
    int indexSetSize = 0;
    SCIP_Real current_min;
    SCIP_Real current_max;
-   SCIP_Real given_min;
-   SCIP_Real given_max;
    SCIP_Real current_diff;
    SCIP_VAR* selected_origvar;
    SCIP_Real largest_diff_min;
@@ -996,14 +996,21 @@ SCIP_RETCODE separation(
    SCIP_Real generatorentry;
    SCIP_Bool found = FALSE;
 
+#ifndef NDEBUG
+   SCIP_Real given_min;
+   SCIP_Real given_max;
+#endif
+
    SCIP_CALL( initIndexSet(masterscip, &indexSet, &indexSetSize, X, Xsize) );
 
    for( j=0; j<indexSetSize; ++j )
    {
       current_origvar = indexSet[j];
+#ifndef NDEBUG
       given_min = getLowerBound(masterscip, current_origvar, *B, *Bsize);
       given_max = getUpperBound(masterscip, current_origvar, *B, *Bsize);
       assert(SCIPisFeasLE(masterscip, given_min, given_max));
+#endif
       current_min = SCIPinfinity(masterscip);
       current_max = -SCIPinfinity(masterscip);
       for( i=0; i<Xsize; ++i )
@@ -1112,7 +1119,7 @@ SCIP_RETCODE separation(
    int x;
    for( x=0; x<Xsize; ++x )
    {
-#ifdef NDEBUG
+#ifndef NDEBUG
       SCIP_Bool inB1 = FALSE;
       SCIP_Bool inB2 = FALSE;
 #endif
@@ -1126,7 +1133,7 @@ SCIP_RETCODE separation(
 
          X1[X1size] = X[x];
          X1size += 1;
-#ifdef NDEBUG
+#ifndef NDEBUG
          inB1 = TRUE;
 #endif
       }
@@ -1140,11 +1147,11 @@ SCIP_RETCODE separation(
 
          X2[X2size] = X[x];
          X2size += 1;
-#ifdef NDEBUG
+#ifndef NDEBUG
          inB2 = TRUE;
 #endif
       }
-#ifdef NDEBUG
+#ifndef NDEBUG
       assert(inB1 + inB2 <= 1);
 #endif
    }
