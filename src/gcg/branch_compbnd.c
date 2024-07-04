@@ -66,7 +66,7 @@
 
 #define BRANCHRULE_NAME            "compbnd"                      /**< name of branching rule */
 #define BRANCHRULE_DESC            "component bound branching"    /**< short description of branching rule */
-#define BRANCHRULE_PRIORITY        -1                             /**< priority of this branching rule */
+#define BRANCHRULE_PRIORITY        -200                           /**< priority of this branching rule */
 #define BRANCHRULE_MAXDEPTH        -1                             /**< maximal depth level of the branching rule */
 #define BRANCHRULE_MAXBOUNDDIST    1.0                            /**< maximal relative distance from current node's
                                                                    dual bound to primal bound compared to best node's
@@ -517,7 +517,7 @@ SCIP_RETCODE createBranchingCons(
       char consname[SCIP_MAXSTRLEN];
       (void) SCIPsnprintf(consname, SCIP_MAXSTRLEN, "c(g(%s))", name);
       SCIP_CALL( SCIPcreateConsLinear(pricingscip, &additionalcons[0], consname, 0, NULL, NULL, (SCIP_Real) (1 - branchdata->Bsize), SCIPinfinity(pricingscip),
-         TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
+            TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
       SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[0], coefvar, 1.0) );
       for( i = 0; i < branchdata->Bsize; ++i)
       {
@@ -538,7 +538,7 @@ SCIP_RETCODE createBranchingCons(
             SCIP_Real lowerbound = SCIPvarGetLbOriginal(pricing_var);
             assert(SCIPisPositive(pricingscip, bound - lowerbound));
             SCIP_CALL( SCIPcreateConsVarbound(pricingscip, &additionalcons[i+1], consname, pricing_var, additionalvars[i], bound - lowerbound, bound, SCIPinfinity(pricingscip),
-               TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
+               TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
          }
          else
          {
@@ -551,7 +551,7 @@ SCIP_RETCODE createBranchingCons(
             SCIP_Real upperbound = SCIPvarGetUbOriginal(pricing_var);
             assert(SCIPisPositive(pricingscip, upperbound - bound));
             SCIP_CALL( SCIPcreateConsVarbound(pricingscip, &additionalcons[i+1], consname, pricing_var, additionalvars[i], bound - upperbound, -SCIPinfinity(pricingscip), bound,
-               TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
+               TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
          }
       }
    }
@@ -561,15 +561,12 @@ SCIP_RETCODE createBranchingCons(
       SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &additionalcons, nadditionalcons) );
 
       /* g_x <= y_j
-         * g_x - y_j <= 0 */
+         * 0 <= y_j - g_y*/
       char consname[SCIP_MAXSTRLEN];
       for( i = 0; i < branchdata->Bsize; ++i )
       {
-         (void) SCIPsnprintf(consname, SCIP_MAXSTRLEN, "c0(g_y(%s,%s_%s_%d))", name, SCIPvarGetName(branchdata->B[i].component), branchdata->B[i].sense == GCG_COMPBND_SENSE_GE ? "GE" : "LE", branchdata->B[i].bound);
-         SCIP_CALL( SCIPcreateConsLinear(pricingscip, &additionalcons[i], consname, 0, NULL, NULL, -SCIPinfinity(pricingscip), 0.0,
-            TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
-         SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i], coefvar, 1.0) );
-         SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i], additionalvars[i], -1.0) );
+         SCIP_CALL( SCIPcreateConsVarbound(pricingscip, &additionalcons[i], consname, additionalvars[i], coefvar, -1.0, 0.0, SCIPinfinity(pricingscip),
+            TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
       }
 
       for( i = 0; i < branchdata->Bsize; ++i )
@@ -586,7 +583,7 @@ SCIP_RETCODE createBranchingCons(
             SCIP_Real upperbound = SCIPvarGetUbOriginal(pricing_var);
             assert(SCIPisPositive(pricingscip, upperbound - bound));
             SCIP_CALL( SCIPcreateConsVarbound(pricingscip, &additionalcons[i+branchdata->Bsize], consname, pricing_var, additionalvars[i], upperbound - bound, -SCIPinfinity(pricingscip), upperbound,
-               TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
+               TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
          }
          else
          {
@@ -599,7 +596,7 @@ SCIP_RETCODE createBranchingCons(
             SCIP_Real lowerbound = SCIPvarGetLbOriginal(pricing_var);
             assert(SCIPisPositive(pricingscip, bound - lowerbound));
             SCIP_CALL( SCIPcreateConsVarbound(pricingscip, &additionalcons[i+branchdata->Bsize], consname, pricing_var, additionalvars[i], lowerbound - bound, lowerbound, SCIPinfinity(pricingscip),
-               TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
+               TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
          }
       }
    }
