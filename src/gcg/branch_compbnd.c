@@ -39,6 +39,7 @@
 #include <assert.h>
 #include <scip/def.h>
 #include <scip/cons_linear.h>
+#include <scip/cons_varbound.h>
 #include <scip/scip.h>
 #include <scip/type_result.h>
 #include <scip/type_retcode.h>
@@ -531,29 +532,26 @@ SCIP_RETCODE createBranchingCons(
          {
             /* y_j >= ((bound + 1) - x_j) / ((bound + 1) - l_j)
                * ((bound + 1) - l_j) * y_j >= (bound + 1) - x_j
-               * (bound + 1) <= ((bound + 1) - l_j) * y_j + x_j */
+               * (bound + 1) <= x_j + ((bound + 1) - l_j) * y_j */
             SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
             SCIP_Real bound = (SCIP_Real) (branchdata->B[i].bound + 1);
             SCIP_Real lowerbound = SCIPvarGetLbOriginal(pricing_var);
             assert(SCIPisPositive(pricingscip, bound - lowerbound));
-            SCIP_CALL( SCIPcreateConsLinear(pricingscip, &additionalcons[i+1], consname, 0, NULL, NULL, bound, SCIPinfinity(pricingscip),
+            SCIP_CALL( SCIPcreateConsVarbound(pricingscip, &additionalcons[i+1], consname, pricing_var, additionalvars[i], bound - lowerbound, bound, SCIPinfinity(pricingscip),
                TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
-            SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i+1], additionalvars[i], bound - lowerbound) );
-            SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i+1], pricing_var, 1.0) );
          }
          else
          {
             /* y_j >= (x_j - (bound - 1)) / (u_j - (bound - 1))
                * (u_j - (bound - 1)) * y_j >= x_j - (bound - 1)
-               * -(bound - 1) <= (u_j - (bound - 1)) * y_j - x_j */
+               * -(bound - 1) <= (u_j - (bound - 1)) * y_j - x_j
+               * x_j + ((bound - 1) - u_j) * y_j <= (bound - 1) */
             SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
             SCIP_Real bound = (SCIP_Real) (branchdata->B[i].bound - 1);
             SCIP_Real upperbound = SCIPvarGetUbOriginal(pricing_var);
             assert(SCIPisPositive(pricingscip, upperbound - bound));
-            SCIP_CALL( SCIPcreateConsLinear(pricingscip, &additionalcons[i+1], consname, 0, NULL, NULL, -bound, SCIPinfinity(pricingscip),
+            SCIP_CALL( SCIPcreateConsVarbound(pricingscip, &additionalcons[i+1], consname, pricing_var, additionalvars[i], bound - upperbound, -SCIPinfinity(pricingscip), bound,
                TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
-            SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i+1], additionalvars[i], upperbound - bound) );
-            SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i+1], pricing_var, -1.0) );
          }
       }
    }
@@ -582,29 +580,26 @@ SCIP_RETCODE createBranchingCons(
          {
             /* y_j <= (u_j - x_j) / (u_j - bound)
                * (u_j - bound) * y_j <= u_j - x_j
-               * (u_j - bound) * y_j + x_j <= u_j */
+               * x_j + (u_j - bound) * y_j <= u_j */
             SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
             SCIP_Real bound = (SCIP_Real) branchdata->B[i].bound;
             SCIP_Real upperbound = SCIPvarGetUbOriginal(pricing_var);
             assert(SCIPisPositive(pricingscip, upperbound - bound));
-            SCIP_CALL( SCIPcreateConsLinear(pricingscip, &additionalcons[i+branchdata->Bsize], consname, 0, NULL, NULL, -SCIPinfinity(pricingscip), upperbound,
+            SCIP_CALL( SCIPcreateConsVarbound(pricingscip, &additionalcons[i+branchdata->Bsize], consname, pricing_var, additionalvars[i], upperbound - bound, -SCIPinfinity(pricingscip), upperbound,
                TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
-            SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i+branchdata->Bsize], additionalvars[i], upperbound - bound) );
-            SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i+branchdata->Bsize], pricing_var, 1.0) );
          }
          else
          {
             /* y_j <= (x_j - l_j) / (bound - l_j)
                * (bound - l_j) * y_j <= x_j - l_j
-               * (bound - l_j) * y_j - x_j <= -l_j */
+               * (bound - l_j) * y_j - x_j <= -l_j
+               * l_j <= x_j + (l_j - bound) * y_j */
             SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
             SCIP_Real bound = (SCIP_Real) branchdata->B[i].bound;
             SCIP_Real lowerbound = SCIPvarGetLbOriginal(pricing_var);
             assert(SCIPisPositive(pricingscip, bound - lowerbound));
-            SCIP_CALL( SCIPcreateConsLinear(pricingscip, &additionalcons[i+branchdata->Bsize], consname, 0, NULL, NULL, -SCIPinfinity(pricingscip), -lowerbound,
+            SCIP_CALL( SCIPcreateConsVarbound(pricingscip, &additionalcons[i+branchdata->Bsize], consname, pricing_var, additionalvars[i], lowerbound - bound, lowerbound, SCIPinfinity(pricingscip),
                TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
-            SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i+branchdata->Bsize], additionalvars[i], bound - lowerbound) );
-            SCIP_CALL( SCIPaddCoefLinear(pricingscip, additionalcons[i+branchdata->Bsize], pricing_var, -1.0) );
          }
       }
    }

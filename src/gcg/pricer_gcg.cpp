@@ -3710,7 +3710,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    }
 #endif
 
-   SCIPwriteOrigProblem(GCGgetPricingprob(origprob, 0), "subprob.lp", "lp", FALSE);
+   //SCIPwriteOrigProblem(GCGgetPricingprob(origprob, 0), "subprob.lp", "lp", FALSE);
 
    /* undo the inferred pricing modifications from the mastercuts */
    for( i=0; i<nbranchmastercuts; ++i )
