@@ -40,7 +40,9 @@
 #include <scip/scip_probing.h>
 #include <scip/scip_sol.h>
 #include <scip/scip_solve.h>
+#include <scip/scip_var.h>
 #include <scip/type_retcode.h>
+#include <scip/type_var.h>
 
 #include "pub_gcgcol.h"
 #include "pub_gcgvar.h"
@@ -286,14 +288,16 @@ SCIP_RETCODE correctAuxiliaryPricingVariables(
    SCIP_CALL( SCIPcopyOrig(gcgcol->pricingprob, pricingprob_copy, NULL, NULL, "", TRUE, FALSE, FALSE, &valid) );
    assert(valid);
 
+   SCIPwriteOrigProblem(pricingprob_copy, "subproblem.lp", "lp", FALSE);
 
    origsolvars = SCIPgetOrigVars(gcgcol->pricingprob);
    norigsolvars = SCIPgetNOrigVars(gcgcol->pricingprob);
-   copysolvars = SCIPgetOrigVars(pricingprob_copy);
 #ifndef NDEBUG
    ncopysolvars = SCIPgetNOrigVars(pricingprob_copy);
    assert(norigsolvars == ncopysolvars);
 #endif
+   SCIP_CALL( SCIPallocMemoryArray(scip, &copysolvars, norigsolvars) );
+   BMScopyMemoryArray(copysolvars, SCIPgetOrigVars(pricingprob_copy), norigsolvars);
 
    /* fixate the known and "original" variables and save their actual lb and ub */
    for( i = 0; i < norigsolvars; i++ )
@@ -301,6 +305,13 @@ SCIP_RETCODE correctAuxiliaryPricingVariables(
       if( GCGcolKnowsSolVar(scip, gcgcol, origsolvars[i]) )
       {
          fixedval = GCGcolGetSolVal(scip, gcgcol, origsolvars[i]);
+
+         if( SCIPvarIsBinary(copysolvars[i]) && (SCIPisLT(scip, fixedval, 0.0) || SCIPisGT(scip, fixedval, 1.0)) )
+         {
+            SCIP_CALL( SCIPchgVarType(pricingprob_copy, copysolvars[i], SCIP_VARTYPE_INTEGER, &infeasible) );
+            assert(!infeasible);
+         }
+
          SCIP_CALL( SCIPfixVar(pricingprob_copy, copysolvars[i], fixedval, &infeasible, &fixed) );
          assert(!infeasible);
          assert(fixed);
@@ -352,6 +363,7 @@ SCIP_RETCODE correctAuxiliaryPricingVariables(
    SCIP_CALL( GCGreinitGcgCol(gcgcol->pricingprob, gcgcol, GCGcolGetProbNr(gcgcol), colvars, colvals, ncolvars, GCGcolIsRay(gcgcol), SCIP_INVALID) );
    SCIPfreeBufferArray(scip, &colvals);
    SCIPfreeBufferArray(scip, &colvars);
+   SCIPfreeMemoryArray(scip, &copysolvars);
    SCIPfree(&pricingprob_copy);
 
    /* update further relevant information */
