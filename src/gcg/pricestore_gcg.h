@@ -109,7 +109,8 @@ SCIP_RETCODE GCGpricestoreAddCol(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_PRICESTORE*       pricestore,         /**< price storage */
    GCG_COL*              col,                /**< priced col */
-   SCIP_Bool             forcecol            /**< should the col be forced to enter the LP? */
+   SCIP_Bool             forcecol,           /**< should the col be forced to enter the LP? */
+   SCIP_Bool             checkduplicate      /**< check whether the column is a duplicate */
    );
 
 /** adds cols to priced vars and clears price storage */

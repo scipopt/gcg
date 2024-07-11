@@ -44,6 +44,7 @@
 //#define SCIP_DEBUG
 
 #include <string.h>
+#include <omp.h>
 
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"
@@ -2398,6 +2399,18 @@ SCIP_RETCODE initRelaxator(
    }
 
    SCIP_CALL( createMaster(scip, relaxdata) );
+
+#ifdef _OPENMP
+   if( relaxdata->mode == GCG_DECMODE_DANTZIGWOLFE && SCIPgetVerbLevel(scip) >= SCIP_VERBLEVEL_NORMAL )
+   {
+      int nthreads = GCGpricerGetNPricingThreads(relaxdata->masterprob);
+      if( nthreads > 0 )
+         nthreads = MIN(nthreads, GCGgetNRelPricingprobs(scip));
+      else
+         nthreads = MIN(omp_get_max_threads(), GCGgetNRelPricingprobs(scip));
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Using up to %d thread(s) to solve the pricing problems.\n", nthreads);
+   }
+#endif
 
    /* for Benders' decomposition, the Benders' plugin must be activated */
    if( relaxdata->mode == GCG_DECMODE_BENDERS )

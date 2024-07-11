@@ -919,5 +919,8 @@ SCIP_Bool GCGisRootNode(
    )
 {
    assert(scip != NULL);
-   return (SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip));
+   if( SCIPgetStage(scip) < SCIP_STAGE_SOLVING )
+      return TRUE;
+   else
+      return (SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip));
 }

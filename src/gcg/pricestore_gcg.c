@@ -244,7 +244,8 @@ SCIP_RETCODE GCGpricestoreAddCol(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_PRICESTORE*       pricestore,         /**< price storage */
    GCG_COL*              col,                /**< priced col */
-   SCIP_Bool             forcecol            /**< should the col be forced to enter the LP? */
+   SCIP_Bool             forcecol,           /**< should the col be forced to enter the LP? */
+   SCIP_Bool             checkduplicate
    )
 {
    SCIP_Real colobjparallelism;
@@ -285,7 +286,10 @@ SCIP_RETCODE GCGpricestoreAddCol(
          colobjparallelism = 0.0; /* no need to calculate it */
    }
 
-   oldpos = pricestoreFindEqualCol(pricestore, col);
+   if( checkduplicate )
+      oldpos = pricestoreFindEqualCol(pricestore, col);
+   else
+      oldpos = -1;
 
    pos = -1;
 

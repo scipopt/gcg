@@ -59,7 +59,6 @@ public:
    SCIP_PRICERDATA*       pricerdata;         /**< pricerdata data structure */
    GCG_COLPOOL*           colpool;            /**< column pool */
    GCG_PRICESTORE*        pricestore;         /**< price storage */
-   static int             threads;
 
    /** default constructor */
    ObjPricerGcg(
@@ -227,11 +226,11 @@ public:
       int*                  nimpcols            /**< pointer to store number of improving columns */
       );
 
-   /** add a new column to the pricing storage */
-   SCIP_RETCODE addColToPricestore(
+   /** add a new column to the pricer's column buffer that will be added to the pricing storage */
+   SCIP_RETCODE addCol(
       GCG_COL*              col                 /**< priced col */
       );
-
+   
    /** for each pricing problem, get the best found column from the pricing storage */
    void getBestCols(
       GCG_COL**             pricingprobcols     /**< array to be filled with best column per pricing problem */
