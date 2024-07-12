@@ -2745,7 +2745,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIP_Bool*            bestredcostvalid    /**< pointer to store if bestredcost are valid (pp solvedoptimal) */
    )
 {
-   GCG_PRICINGJOB* pricingjob = NULL;
    GCG_COL** bestcols = NULL;
    SCIP_LPI* lpi = NULL;
    SCIP_Real* bestobjvals = NULL;
@@ -2766,9 +2765,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    int nfoundvars;
    SCIP_Bool optimal;
    bool probingnode;
-#ifdef _OPENMP
    int nthreads;
-#endif
 
 #ifdef SCIP_STATISTIC
    SCIP_Real** olddualvalues;
@@ -2829,13 +2826,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          }
       }
    }
-
-#ifdef _OPENMP
-   if( pricerdata->npricingthreads > 0 )
-      nthreads = MIN(pricerdata->npricingthreads, GCGgetNRelPricingprobs(origprob));
-   else
-      nthreads = MIN(omp_get_max_threads(), GCGgetNRelPricingprobs(origprob));
-#endif
 
    /* todo: We avoid checking for feasibility of the columns using this hack */
    if( pricerdata->usecolpool && !probingnode )
@@ -2958,112 +2948,143 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
       pricingcontroller->setupPriorityQueue(pricerdata->dualsolconv);
 
+#ifdef _OPENMP
+      if( pricerdata->npricingthreads > 0 )
+         nthreads = MIN(pricerdata->npricingthreads, GCGgetNRelPricingprobs(origprob));
+      else
+         nthreads = MIN(omp_get_max_threads(), GCGgetNRelPricingprobs(origprob));
+#else
+      nthreads = 1;
+#endif
+
       /* actual pricing loop: perform the pricing jobs until none are left or an abortion criterion is met */
-      #pragma omp parallel for ordered firstprivate(pricingjob) shared(retcode, pricetype, nfoundvars, nsuccessfulprobs) schedule(static,1) num_threads(nthreads)
-      for( niters = 0; niters < maxniters; ++niters )
+      niters = 0;
+      #pragma omp parallel default(none) shared(niters, nthreads, maxniters, retcode, pricetype, nfoundvars, nsuccessfulprobs, infeasible, stabilized) num_threads(nthreads)
+      #pragma omp single
+      for( int t = 0; t < nthreads; ++t)
       {
-         GCG_PRICINGPROB* pricingprob;
-         GCG_PRICINGSTATUS status;
-         SCIP_Real problowerbound;
-         SCIP_RETCODE private_retcode;
-         int pricingprobnr;
-         int impcols;
-         int oldimpcols;
-
-         #pragma omp flush(retcode)
-         if( retcode != SCIP_OKAY )
-            continue;
-
-         /* retrieve the next pricing job from the queue */
-         #pragma omp critical (update)
+         #pragma omp task default(none) shared(niters, maxniters, retcode, pricetype, nfoundvars, nsuccessfulprobs, infeasible, stabilized)
+         while( TRUE )
          {
-            pricingjob = pricingcontroller->getNextPricingjob();
-         }
-         if( pricingjob == NULL )
-            continue;
+            GCG_PRICINGJOB* pricingjob;
+            GCG_PRICINGPROB* pricingprob;
+            GCG_PRICINGSTATUS status;
+            SCIP_Real problowerbound;
+            SCIP_RETCODE private_retcode;
+            int pricingprobnr;
+            int impcols;
+            int oldimpcols;
+            int _nfoundvars;
+            int _nsuccessfulprobs;
+            int _niters;
+            SCIP_Bool stop = FALSE;
 
-         #pragma omp flush(nfoundvars, nsuccessfulprobs)
-         if( (pricingcontroller->canPricingloopBeAborted(pricetype, nfoundvars, nsuccessfulprobs) || infeasible) && !stabilized )
-         {
-            SCIPdebugMessage("*** Abort pricing loop, infeasible = %u, stabilized = %u\n", infeasible, stabilized);
-            continue;
-         }
+            #pragma omp atomic read
+            private_retcode = retcode;
+            #pragma omp critical (debug)
+            {
+               if( niters >= maxniters || private_retcode != SCIP_OKAY )
+                  stop = TRUE;
+               ++niters;
+            }
 
-         /* initializations */
-         pricingprob = GCGpricingjobGetPricingprob(pricingjob);
-         pricingprobnr = GCGpricingprobGetProbnr(pricingprob);
-         oldimpcols = pricerdata->nefficaciouscols[pricingprobnr];
-         status = GCG_PRICINGSTATUS_UNKNOWN;
-         problowerbound = -SCIPinfinity(scip_);
+            if( stop )
+               break;
 
-         #pragma omp critical (debug)
-         {
-            SCIPdebugMessage("*** Solve solving pricing problem %d, solver <%s>, stabilized = %u, %s\n",
-               pricingprobnr, GCGsolverGetName(GCGpricingjobGetSolver(pricingjob)), stabilized,
-               GCGpricingjobIsHeuristic(pricingjob) ? "heuristic" : "exact");
-         }
+            #pragma atomic read
+            _nfoundvars = nfoundvars;
+            #pragma atomic read
+            _nsuccessfulprobs = nsuccessfulprobs;
+            if( (pricingcontroller->canPricingloopBeAborted(pricetype, _nfoundvars, _nsuccessfulprobs) || infeasible) && !stabilized )
+            {
+               SCIPdebugMessage("*** Abort pricing loop, infeasible = %u, stabilized = %u\n", infeasible, stabilized);
+               break;
+            }
 
-         /* @todo: this should be done by the pricing solvers */
-         #pragma omp critical (limits)
-         SCIP_CALL_ABORT( pricingcontroller->setPricingjobTimelimit(pricingjob) );
+            /* retrieve the next pricing job from the queue */
+            #pragma omp critical (update)
+            {
+               pricingjob = pricingcontroller->getNextPricingjob();
+            }
+            if( pricingjob == NULL )
+               break;
 
-#ifdef SCIP_STATISTIC
-         /* @todo: this can interfere with parallelization */
-         pricingtime = pricetype->getClockTime();
-#endif
+            /* initializations */
+            pricingprob = GCGpricingjobGetPricingprob(pricingjob);
+            pricingprobnr = GCGpricingprobGetProbnr(pricingprob);
+            oldimpcols = pricerdata->nefficaciouscols[pricingprobnr];
+            status = GCG_PRICINGSTATUS_UNKNOWN;
+            problowerbound = -SCIPinfinity(scip_);
 
-         /* solve the pricing problem */
-         private_retcode = performPricingjob(pricingjob, pricetype, &status, &problowerbound);
+            #pragma omp critical (debug)
+            {
+               SCIPdebugMessage("*** Solve solving pricing problem %d, solver <%s>, stabilized = %u, %s\n",
+                  pricingprobnr, GCGsolverGetName(GCGpricingjobGetSolver(pricingjob)), stabilized,
+                  GCGpricingjobIsHeuristic(pricingjob) ? "heuristic" : "exact");
+            }
 
-#ifdef SCIP_STATISTIC
-         pricingtime = pricetype->getClockTime() - pricingtime;
-#endif
+            /* @todo: this should be done by the pricing solvers */
+            #pragma omp critical (limits)
+            SCIP_CALL_ABORT( pricingcontroller->setPricingjobTimelimit(pricingjob) );
 
-         impcols = pricerdata->nefficaciouscols[pricingprobnr] - oldimpcols;
+   #ifdef SCIP_STATISTIC
+            /* @todo: this can interfere with parallelization */
+            pricingtime = pricetype->getClockTime();
+   #endif
 
-         #pragma omp critical (debug)
-         {
-            SCIPdebugMessage("*** Finished solving pricing problem %d, solver <%s>, stabilized = %u, %s\n",
-               pricingprobnr, GCGsolverGetName(GCGpricingjobGetSolver(pricingjob)), stabilized,
-               GCGpricingjobIsHeuristic(pricingjob) ? "heuristic" : "exact");
-            SCIPdebugMessage("  -> status: %d\n", status);
-            SCIPdebugMessage("  -> problowerbound: %.4g\n", problowerbound);
-            SCIPdebugMessage("  -> #impcols: %d\n", impcols);
-         }
+            /* solve the pricing problem */
+            private_retcode = performPricingjob(pricingjob, pricetype, &status, &problowerbound);
 
-         /* update pricing problem results, store columns */
-         #pragma omp critical (update)
-         {
-            pricingcontroller->updatePricingprob(pricingprob, status, problowerbound, impcols);
-         }
+   #ifdef SCIP_STATISTIC
+            pricingtime = pricetype->getClockTime() - pricingtime;
+   #endif
 
-         /* update solving statistics, needed for checking the abortion criterion */
-         #pragma omp ordered
-         {
-            #pragma omp critical (retcode)
+            impcols = pricerdata->nefficaciouscols[pricingprobnr] - oldimpcols;
+
+            #pragma omp critical (debug)
+            {
+               SCIPdebugMessage("*** Finished solving pricing problem %d, solver <%s>, stabilized = %u, %s\n",
+                  pricingprobnr, GCGsolverGetName(GCGpricingjobGetSolver(pricingjob)), stabilized,
+                  GCGpricingjobIsHeuristic(pricingjob) ? "heuristic" : "exact");
+               SCIPdebugMessage("  -> status: %d\n", status);
+               SCIPdebugMessage("  -> problowerbound: %.4g\n", problowerbound);
+               SCIPdebugMessage("  -> #impcols: %d\n", impcols);
+            }
+
+            /* update pricing problem results, store columns */
+            #pragma omp critical (update)
+            {
+               pricingcontroller->updatePricingprob(pricingprob, status, problowerbound, impcols);
+            }
+
+            /* update solving statistics, needed for checking the abortion criterion */
+            #pragma omp aotmic write
             retcode = private_retcode; // @todo: handle return code correctly
 
-            #pragma omp atomic
+            #pragma omp atomic update
             nfoundvars += impcols;
 
             if( oldimpcols == 0 && impcols > 0 )
             {
-               #pragma omp atomic
+               #pragma omp atomic update
                ++nsuccessfulprobs;
             }
 
-#ifdef SCIP_STATISTIC
-            if( status != GCG_PRICINGSTATUS_NOTAPPLICABLE )
+   #ifdef SCIP_STATISTIC
+            #pragma omp critical (update)
             {
-               SCIPstatisticMessage("P p %d : %d in %g\n",
-                  pricingprobnr, impcols, pricingtime);
+               if( status != GCG_PRICINGSTATUS_NOTAPPLICABLE )
+               {
+                  SCIPstatisticMessage("P p %d : %d in %g\n",
+                     pricingprobnr, impcols, pricingtime);
+               }
             }
-#endif
-         }
+   #endif
 
-         #pragma omp critical (update)
-         {
-            pricingcontroller->evaluatePricingjob(pricingjob, status);
+            #pragma omp critical (update)
+            {
+               pricingcontroller->evaluatePricingjob(pricingjob, status);
+            }
          }
       }
 
