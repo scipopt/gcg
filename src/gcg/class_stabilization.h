@@ -39,6 +39,7 @@
 #include "objscip/objscip.h"
 #include "class_pricingtype.h"
 #include "struct_mastercutdata.h"
+#include "type_mastercutdata.h"
 #include <scip/type_misc.h>
 #include <scip/type_retcode.h>
 
@@ -59,7 +60,10 @@ private:
    SCIP_Real* stabcenteroriginalsepacutvals;
    int stabcenteroriginalsepacutvalssize;
    int nstabcenteroriginalsepacutvals;
-   SCIP_HASHMAP* stabcentermastercutvals;
+   GCG_MASTERCUTDATA** stabcentermastercuts;
+   int nstabcentermastercuts;
+   int stabcentermastercutssize;
+   SCIP_Real* stabcentermastercutvals;
    SCIP_Real* stabcenterlinkingconsvals;
    int nstabcenterlinkingconsvals;
    int stabcenterlinkingconsvalssize;
@@ -72,7 +76,10 @@ private:
    SCIP_Real* subgradientoriginalsepacutvals;
    int subgradientoriginalsepacutvalssize;
    int nsubgradientoriginalsepacutvals;
-   SCIP_HASHMAP* subgradientmastercutvals;
+   GCG_MASTERCUTDATA** subgradientmastercuts;
+   int nsubgradientmastercuts;
+   int subgradientmastercutssize;
+   SCIP_Real* subgradientmastercutvals;
    SCIP_Real* subgradientlinkingconsvals;
    int subgradientlinkingconsvalssize;
    SCIP_Real subgradientnorm;
