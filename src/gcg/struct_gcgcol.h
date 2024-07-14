@@ -66,10 +66,9 @@ struct GCG_Col
    SCIP_Real*           originalsepamastercuts;     /**< array of original seperator cut coefficients in the master problem */
    int                  noriginalsepamastercuts;    /**< number of original seperator cut coefficients in the master problem */
    int                  maxoriginalsepamastercuts;  /**< capacity of originalsepamastercuts */
-   SCIP_Real**          sepamastercutcoeffs;        /**< arrays of master sepa cut coefficients for each sepa */
-   int*                 nsepamastercutcoeffs;       /**< number of master sepa cut coefficients for each sepa */
-   int*                 sepamastercutscoeffssize;   /**< size of array of master sepa cut coefficients for each sepa */
-   int                  nsepas;
+   SCIP_Real*           sepamastercutcoeffs;        /**< arrays of master separator cut coefficients */
+   int                  nsepamastercutcoeffs;       /**< number of master separator cut coefficients */
+   int                  sepamastercutscoeffssize;   /**< size of array of master separator cut coefficients */
    SCIP_Real            norm;                       /**< norm of the coefficients in the master */
    int*                 linkvars;                   /**< array of indices of variables in var-array which are linking variables */
    int                  nlinkvars;                  /**< number of variables in var-array which are linking variables */

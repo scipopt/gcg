@@ -159,6 +159,7 @@ SCIP_RETCODE GCGcreateMasterSepaCut(
    SCIP*                   masterscip,          /**< SCIP data structure (master problem) */
    GCG_MASTERSEPACUT**     mastersepacut,       /**< pointer to store master separator cut */
    GCG_MASTERSEPACUTTYPE   mastersepacuttype,   /**< type of master separator cut */
+   int                     sepaidx,             /**< index of separator creating this cut */
    GCG_MASTERCUTDATA*      mastercutdata,       /**< master cut data */
    GCG_VARHISTORY*         varhistory,          /**< variable history */
    GCG_MASTERSEPACUTDATA*  mastersepacutdata    /**< master separator cut data */
@@ -168,6 +169,7 @@ SCIP_RETCODE GCGcreateMasterSepaCut(
    assert(mastercutdata != NULL);
    assert(mastersepacut != NULL);
    assert(GCGisMaster(masterscip));
+   assert(sepaidx >= 0);
 
    SCIP_CALL( SCIPallocBlockMemory(masterscip, mastersepacut) );
    (*mastersepacut)->mastercutdata = mastercutdata;
@@ -175,6 +177,7 @@ SCIP_RETCODE GCGcreateMasterSepaCut(
    (*mastersepacut)->knownvarhistory = varhistory;
    (*mastersepacut)->cuttype = mastersepacuttype;
    (*mastersepacut)->data = mastersepacutdata;
+   (*mastersepacut)->sepaidx = sepaidx;
 
    SCIP_CALL( GCGcaptureMasterSepaCut(*mastersepacut) );
 
@@ -209,6 +212,16 @@ GCG_MASTERSEPACUTTYPE GCGmastersepacutGetCutType(
    assert(mastersepacut != NULL);
 
    return mastersepacut->cuttype;
+}
+
+/**< return the indexof the separator which created the cut */
+int GCGmastersepacutGetSeparatorIndex(
+   GCG_MASTERSEPACUT*      mastersepacut     /**< master separator cut */
+   )
+{
+   assert(mastersepacut != NULL);
+
+   return mastersepacut->sepaidx;
 }
 
 /**< returns the data of the master separator cut */
@@ -248,6 +261,7 @@ SCIP_RETCODE GCGmastersepacutSetVarHistory(
 SCIP_RETCODE GCGcreateSubsetRowCut(
    SCIP*                   masterscip,            /**< SCIP data structure (master problem) */
    GCG_MASTERSEPACUT**     mastersepacut,         /**< pointer to store master separator cut */
+   int                     sepaidx,               /**< index of separator creating the cut */
    GCG_MASTERCUTDATA*      mastercutdata,         /**< mastercutdata associated with the cut */
    GCG_VARHISTORY*         varhistory,            /**< variables history of subset row cut*/
    SCIP_Real*              weights,               /**< weights which were used to create the cut */
@@ -273,7 +287,7 @@ SCIP_RETCODE GCGcreateSubsetRowCut(
       SCIP_CALL( SCIPduplicateBlockMemoryArray(masterscip, &(data->data.subsetrowcutdata.conssindices), indices, n) );
    }
 
-   SCIP_CALL( GCGcreateMasterSepaCut(masterscip, mastersepacut, GCG_MASTERSEPACUTTYPE_SUBSETROW,
+   SCIP_CALL( GCGcreateMasterSepaCut(masterscip, mastersepacut, GCG_MASTERSEPACUTTYPE_SUBSETROW, sepaidx,
                                      mastercutdata, varhistory, data) );
    return SCIP_OKAY;
 }
