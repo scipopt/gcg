@@ -243,14 +243,14 @@ int pricestoreFindEqualCol(
 
 static
 SCIP_RETCODE correctCoeffVariables(
-   SCIP*          scip,
-   GCG_COL*       gcgcol
+   SCIP*          scip,       /**< SCIP data structure */
+   GCG_COL*       gcgcol      /**< priced col */
 )
 {
-   int j;
-   int nactivecuts;
-   GCG_SEPA** sepas;
-   GCG_MASTERSEPACUT** activecuts;
+   GCG_SEPA**           sepas;
+   GCG_MASTERSEPACUT**  activecuts;
+   int                  nactivecuts;
+   int                  j;
 
    assert(gcgcol != NULL);
 
@@ -260,73 +260,10 @@ SCIP_RETCODE correctCoeffVariables(
 
    for( j = 0; j < nactivecuts; j++ )
    {
-      GCG_PRICINGMODIFICATION* pricemod;
-      GCG_MASTERCUTDATA* mastercutdata;
+      int sepaidx;
 
-      mastercutdata = GCGmastersepacutGetMasterCutData(activecuts[j]);
-      assert(mastercutdata != NULL);
-
-      if( !GCGmastercutIsActive(mastercutdata) )
-         continue;
-
-      pricemod = GCGmastercutGetPricingModification(scip, mastercutdata, gcgcol->probnr);
-
-      if( pricemod != NULL )
-      {
-         SCIP_VAR* coefvar;
-         SCIP_Real coefvarval;
-
-         coefvar = GCGpricingmodificationGetCoefVar(pricemod);
-         assert(coefvar != NULL);
-
-         if( SCIPvarGetIndex(coefvar) == -1 )
-            continue;
-
-         if( gcgcol->initcoefs )
-         {
-            SCIP_CALL( sepas[GCGmastersepacutGetSeparatorIndex(activecuts[j])]->gcgsepagetcolcoefficient(scip, sepas[GCGmastersepacutGetSeparatorIndex(activecuts[j])], activecuts[j], gcgcol, &coefvarval) );
-         }
-         else
-         {
-            SCIP_CALL( sepas[GCGmastersepacutGetSeparatorIndex(activecuts[j])]->gcgsepagetvarcoefficient(scip, sepas[GCGmastersepacutGetSeparatorIndex(activecuts[j])], mastercutdata, gcgcol->vars, gcgcol->vals, gcgcol->nvars, gcgcol->probnr, &coefvarval) );
-         }
-
-         if( !SCIPisZero(gcgcol->pricingprob, coefvarval) )
-         {
-            SCIP_Bool foundvar = FALSE;
-            int k;
-
-            /* find the coeff var in the column and replace its solution value */
-            for( k = 0; k < gcgcol->nvars; k++ )
-            {
-               if( gcgcol->vars[k] == coefvar )
-               {
-                  gcgcol->vals[k] = coefvarval;
-                  foundvar = TRUE;
-                  break;
-               }
-            }
-
-            /* if variable is not already in the column, append it */
-            if( !foundvar )
-            {
-               if( gcgcol->maxvars < gcgcol->nvars + 1 )
-               {
-                  int newmaxvars = SCIPcalcMemGrowSize(gcgcol->pricingprob, gcgcol->nvars + 1);
-                  SCIP_CALL( SCIPreallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->vars), gcgcol->maxvars,
-                                                         newmaxvars) );
-                  SCIP_CALL( SCIPreallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->vals), gcgcol->maxvars,
-                                                         newmaxvars) );
-                  gcgcol->maxvars = newmaxvars;
-               }
-               gcgcol->vars[gcgcol->nvars] = coefvar;
-               gcgcol->vals[gcgcol->nvars] = coefvarval;
-               /* we capture inferred vars */
-               SCIPcaptureVar(gcgcol->pricingprob, gcgcol->vars[gcgcol->nvars]);
-               (gcgcol->nvars)++;
-            }
-         }
-      }
+      sepaidx = GCGmastersepacutGetSeparatorIndex(activecuts[j]);
+      SCIP_CALL( sepas[sepaidx]->gcgsepaadjustcol(scip, sepas[sepaidx], activecuts[j], &gcgcol) );
    }
 
    return SCIP_OKAY;

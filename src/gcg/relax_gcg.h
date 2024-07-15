@@ -158,11 +158,12 @@ SCIP_RETCODE GCGrelaxBranchGetAllActiveMasterCuts(
 /** includes a separator into the relaxator data */
 GCG_EXPORT
 int GCGrelaxIncludeSeparator(
-   SCIP*                            scip,                          /**< SCIP data structure */
-   SCIP_SEPA*                       separator,                     /**< SCIP separator structure*/
-   GCG_DECL_SEPAGETVARCOEFFICIENT   ((*gcgsepagetvarcoefficient)),
-   GCG_DECL_SEPAGETCOLCOEFFICIENTS  ((*gcgsepagetcolcoefficient)), /**< get column coefficient for mastercut */
-   GCG_DECL_SEPASETOBJECTIVE        ((*gcgsepasetobjective))       /**< adapt pricing objective to consider cut */
+   SCIP*                            scip,                              /**< SCIP data structure */
+   SCIP_SEPA*                       separator,                         /**< SCIP separator structure*/
+   GCG_DECL_SEPAGETVARCOEFFICIENT   ((*gcgsepagetvarcoefficient)),     /**< get cut coefficient for a master variable */
+   GCG_DECL_SEPAGETCOLCOEFFICIENTS  ((*gcgsepagetcolcoefficient)),     /**< get cut coefficient for a column */
+   GCG_DECL_SEPASETOBJECTIVE        ((*gcgsepasetobjective)),          /**< adapt pricing objective to respect cut */
+   GCG_DECL_SEPAADJUSTCOL           ((*gcgsepaadjustcol))              /**< adjusts column to respect cut */
 );
 
 GCG_SEPA** GCGrelaxGetSeparators(

@@ -75,7 +75,7 @@ typedef struct GCG_Sepa GCG_SEPA;             /**< separator for master problem*
  *    nvars           :
  *    coef            :
  */
-#define GCG_DECL_SEPAGETVARCOEFFICIENT(x) SCIP_RETCODE x (SCIP* scip, GCG_SEPA* sepa, GCG_MASTERCUTDATA* cut, SCIP_VAR** vars, SCIP_Real* vals, int nvars, int probnr, SCIP_Real* coef)
+#define GCG_DECL_SEPAGETVARCOEFFICIENT(x) SCIP_RETCODE x (SCIP* scip, GCG_SEPA* sepa, GCG_MASTERSEPACUT* cut, SCIP_VAR** vars, SCIP_Real* vals, int nvars, int probnr, SCIP_Real* coef)
 
 
 /** method for modifying the objectives of pricing problems to account for master cut
@@ -86,7 +86,17 @@ typedef struct GCG_Sepa GCG_SEPA;             /**< separator for master problem*
  *    cut             : cut which has to be altered
  *    dual            : dual for objective
  */
-#define GCG_DECL_SEPASETOBJECTIVE(x) SCIP_RETCODE x (SCIP* scip, GCG_SEPA* sepa, GCG_MASTERCUTDATA* cut, SCIP_Real dual)
+#define GCG_DECL_SEPASETOBJECTIVE(x) SCIP_RETCODE x (SCIP* scip, GCG_SEPA* sepa, GCG_MASTERSEPACUT* cut, SCIP_Real dual)
+
+/** method for modifying the outdated values of a gcg column
+ *
+ *  input:
+ *    scip            : SCIP main data structure (of the master problem)
+ *    sepa            : the gcg separator itself
+ *    cut             : cut which has to be altered
+ *    gcgcol          : GCG column
+ */
+#define GCG_DECL_SEPAADJUSTCOL(x) SCIP_RETCODE x (SCIP* scip, GCG_SEPA* sepa, GCG_MASTERSEPACUT* cut, GCG_COL** gcgcol)
 
 #ifdef __cplusplus
 }

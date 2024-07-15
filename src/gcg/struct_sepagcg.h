@@ -52,6 +52,7 @@ struct GCG_Sepa
    GCG_DECL_SEPAGETCOLCOEFFICIENTS        ((*gcgsepagetcolcoefficient)); /**< compute coefficient using gcg column*/
    GCG_DECL_SEPAGETVARCOEFFICIENT         ((*gcgsepagetvarcoefficient)); /**< compute coefficient using variable values */
    GCG_DECL_SEPASETOBJECTIVE              ((*gcgsepasetobjective));      /**< adapt pricing objectives to consider cut */
+   GCG_DECL_SEPAADJUSTCOL                 ((*gcgsepaadjustcol));         /**< modify outdated column to fulfill cut */
 };
 
 #ifdef __cplusplus

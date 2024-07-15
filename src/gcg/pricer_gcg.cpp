@@ -1070,8 +1070,8 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          dualsol = pricetype->mastercutGetDual(scip_, mastercutdata);
       }
 
-      /* modify the objective of pricing problems affected by this mastercut */
-      SCIP_CALL( sepas[GCGmastersepacutGetSeparatorIndex(activecuts[j])]->gcgsepasetobjective(scip_, sepas[GCGmastersepacutGetSeparatorIndex(activecuts[j])], mastercutdata, dualsol) );
+      /* modify the objective of pricing problems affected by this master separator cut */
+      SCIP_CALL( sepas[GCGmastersepacutGetSeparatorIndex(activecuts[j])]->gcgsepasetobjective(scip_, sepas[GCGmastersepacutGetSeparatorIndex(activecuts[j])], activecuts[j], dualsol) );
    }
 
    /* get dual solutions / farkas values of the convexity constraints */
@@ -1580,7 +1580,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
       SCIP_CALL( GCGvarhistoryJumpToLatest(scip_, &(activecuts[j]->knownvarhistory)) );
       /* compute the coefficient for the cut */
       coeff = 0.0;
-      SCIP_CALL( sepas[GCGmastersepacutGetSeparatorIndex(activecuts[j])]->gcgsepagetvarcoefficient(scip_, sepas[GCGmastersepacutGetSeparatorIndex(activecuts[j])], mastercutdata, solvars,
+      SCIP_CALL( sepas[GCGmastersepacutGetSeparatorIndex(activecuts[j])]->gcgsepagetvarcoefficient(scip_, sepas[GCGmastersepacutGetSeparatorIndex(activecuts[j])], activecuts[j], solvars,
                                                     solvals, nsolvars, prob, &coeff) );
 
       /* add master variable to cut with computed coefficient */
@@ -3275,7 +3275,8 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    GCG_BRANCHDATA** branchdata;
    GCG_MASTERCUTDATA** branchmastercutdata;
    int nbranchmastercuts;
-   /* master sepa cuts */
+
+   /* master separator cuts */
    GCG_MASTERSEPACUT** activecuts;
    int nactivecuts;
 
