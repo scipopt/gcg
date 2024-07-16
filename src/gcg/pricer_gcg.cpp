@@ -216,9 +216,6 @@ struct SCIP_PricerData
    SCIP_Real             maxpricecolsfarkas; /**< maximum number of columns per Farkas round */
    GCG_EFFICIACYCHOICE   efficiacychoice;    /**< choice to base efficiacy on */
    int*                  nefficaciouscols;   /**< number of found (efficacious) cols per pricing problem */
-   GCG_COL***            colbuffer;          /**< array of buffers that contains priced cols per pricing problem */
-   int*                  colbuffersize;      /**< sizes of colbuffer */
-   int*                  colbuffercapacity;  /**< capacities of colbuffer */
 
    /* statistics */
    int                   oldvars;            /**< Vars of last pricing iteration */
@@ -1671,56 +1668,31 @@ void ObjPricerGcg::updateRedcosts(
    }
 }
 
-SCIP_RETCODE ObjPricerGcg::addCol(
-   GCG_COL*              col                 /**< priced col */
+SCIP_RETCODE ObjPricerGcg::addColToPricestore(
+   GCG_COL*              col,                /**< priced col */
+   SCIP_Bool*            added
    )
 {
-   SCIP_Bool newcol = TRUE;
-   GCG_COL** buffer = pricerdata->colbuffer[col->probnr];
-   assert(buffer != NULL);
+   SCIP_Bool addedcol;
+   SCIP_Real redcost;
    assert(col != NULL);
-   for( int i = 0; i < pricerdata->colbuffersize[col->probnr]; ++i )
+   redcost = computeRedCostGcgCol(pricingtype, col, NULL);
+   GCGcolUpdateRedcost(col, redcost, FALSE);
+   #pragma omp critical (update)
    {
-      assert(buffer[i] != NULL);
-      if( GCGcolIsEq(col, buffer[i]) )
-      {
-         newcol = FALSE;
-         break;
-      }
+      GCGpricestoreAddCol(scip_, pricestore, col, FALSE, &addedcol);
    }
-   if( newcol )
+   if( addedcol )
    {
-      int pos = pricerdata->colbuffersize[col->probnr];
-      int cap = pricerdata->colbuffercapacity[col->probnr];
-      SCIP_Real redcost = computeRedCostGcgCol(pricingtype, col, NULL);
-      GCGcolUpdateRedcost(col, redcost, FALSE);
       if( SCIPisDualfeasNegative(scip_, GCGcolGetRedcost(col)) )
-      {
          pricerdata->nefficaciouscols[col->probnr]++;
-      }
       #pragma omp critical (debug)
       {
          SCIPdebugMessage("  -> new column <%p>, reduced cost = %g\n", (void*) col, redcost);
       }
-      if( pos >= cap )
-      {
-         int newsize = SCIPcalcMemGrowSize(scip_, pos+1);
-         SCIP_RETCODE retcode;
-         #pragma omp critical (update)
-         {
-            retcode = SCIPreallocBlockMemoryArray(scip_, &buffer, cap, newsize);
-            pricerdata->colbuffer[col->probnr] = buffer;
-         }
-         SCIP_CALL( retcode );
-         pricerdata->colbuffercapacity[col->probnr] = newsize;
-      }
-      buffer[pos] = col;
-      pricerdata->colbuffersize[col->probnr]++;
    }
-   else
-   {
-      GCGfreeGcgCol(&col);
-   }
+   if( added != NULL )
+      *added = addedcol;
    return SCIP_OKAY;
 }
 
@@ -1730,25 +1702,28 @@ void ObjPricerGcg::getBestCols(
    )
 {
    GCG_COL** cols;
+   GCG_COL* col;
    int ncols;
-
    int i;
+   int j;
 
    assert(pricingprobcols != NULL);
 
-   cols = GCGpricestoreGetCols(pricestore);
-   ncols = GCGpricestoreGetNCols(pricestore);
-
    for( i = 0; i < pricerdata->npricingprobs; ++i )
+   {
       pricingprobcols[i] = NULL;
 
-   for( i = 0; i < ncols; ++i )
-   {
-      int probnr = GCGcolGetProbNr(cols[i]);
+      cols = GCGpricestoreGetCols(pricestore, i);
+      ncols = GCGpricestoreGetNCols(pricestore, i);
 
-      if( pricingprobcols[probnr] == NULL
-         || SCIPisDualfeasLT(scip_, GCGcolGetRedcost(cols[i]), GCGcolGetRedcost(pricingprobcols[probnr])) )
-         pricingprobcols[probnr] = cols[i];
+      for( j = 0; j < ncols; ++j )
+      {
+         col = cols[j];
+         assert(i == GCGcolGetProbNr(col));
+
+         if( pricingprobcols[i] == NULL || SCIPisDualfeasLT(scip_, GCGcolGetRedcost(col), GCGcolGetRedcost(pricingprobcols[i])) )
+            pricingprobcols[i] = col;
+      }
    }
 }
 
@@ -2867,7 +2842,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    /* stabilization loop */
    do
    {
-      SCIP_Bool checkduplicates = (GCGpricestoreGetNCols(pricestore) != 0);
       optimal = FALSE;
 #ifndef NDEBUG
       if( nextchunk )
@@ -2929,19 +2903,15 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       /* check if colpool already contains columns with negative reduced cost */
       if( pricerdata->usecolpool && !probingnode )
       {
-         SCIP_Bool foundvarscolpool;
-         int oldnfoundcols;
+         int nfoundvarscolpool;
 
-         foundvarscolpool = FALSE;
-         oldnfoundcols = GCGpricestoreGetNCols(pricestore);
+         SCIP_CALL( GCGcolpoolPrice(colpool, NULL, &nfoundvarscolpool) );
+         SCIPstatisticMessage("cp: %d impr c\n", nfoundvarscolpool);
 
-         SCIP_CALL( GCGcolpoolPrice(colpool, pricestore, NULL, &foundvarscolpool) );
-         SCIPstatisticMessage("cp: %d impr c\n", GCGpricestoreGetNCols(pricestore) - oldnfoundcols);
-
-         if( foundvarscolpool )
+         if( nfoundvarscolpool > 0 )
          {
             SCIPdebugMessage("*** Found column(s) with negative reduced cost in column pool\n");
-            assert(GCGpricestoreGetNCols(pricestore) > 0);
+            assert(GCGpricestoreGetNColsTotal(pricestore) > 0);
             break;
          }
       }
@@ -3089,18 +3059,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       }
 
       SCIP_CALL( retcode );
-
-      for( i = 0; i < pricerdata->npricingprobs; ++i )
-      {
-         GCG_COL** buffer = pricerdata->colbuffer[i];
-         for( j = 0; j < pricerdata->colbuffersize[i]; ++j )
-         {
-            assert(buffer[j] != NULL);
-            SCIP_CALL( GCGpricestoreAddCol(scip_, pricestore, buffer[j], FALSE, checkduplicates) );
-            buffer[j] = NULL;
-         }
-         pricerdata->colbuffersize[i] = 0;
-      }
 
       /* collect results from all performed pricing jobs */
       getBestCols(bestcols);
@@ -3712,9 +3670,6 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->dualsolconv), pricerdata->npricingprobs) );
 
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->nefficaciouscols), pricerdata->npricingprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->colbuffer), pricerdata->npricingprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->colbuffersize), pricerdata->npricingprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->colbuffercapacity), pricerdata->npricingprobs) );
 
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
@@ -3727,8 +3682,6 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
       pricerdata->redcostnodetimedist[i]= 0;
       pricerdata->dualsolconv[i] = -SCIPinfinity(scip_);
       pricerdata->nefficaciouscols[i] = 0;
-      pricerdata->colbuffersize[i] = 0;
-
 
       if( GCGisPricingprobRelevant(origprob, i) )
       {
@@ -3736,15 +3689,11 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
          pricerdata->npricingprobsnotnull++;
          pricerdata->maxrealdualvalues[i] = SCIPcalcMemGrowSize(scip, SCIPgetNVars(pricerdata->pricingprobs[i]));
          SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->realdualvalues[i]), pricerdata->maxrealdualvalues[i]) ); /*lint !e666 !e866*/
-         pricerdata->colbuffercapacity[i] = SCIPcalcMemGrowSize(scip, reducedcostpricing->getMaxcolsprob());
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->colbuffer[i]), pricerdata->colbuffercapacity[i]) );
       }
       else
       {
          pricerdata->realdualvalues[i] = NULL;
          pricerdata->pricingprobs[i] = NULL;
-         pricerdata->colbuffercapacity[i] = 0;
-         pricerdata->colbuffer[i] = NULL;
       }
       pricerdata->npointsprob[i] = 0;
       pricerdata->nraysprob[i] = 0;
@@ -3964,16 +3913,11 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    for( i = 0; i < pricerdata->npricingprobs; ++i )
    {
       SCIPfreeBlockMemoryArrayNull(scip, &(pricerdata->realdualvalues[i]), pricerdata->maxrealdualvalues[i]);
-      assert(pricerdata->colbuffersize[i] == 0);
-      SCIPfreeBlockMemoryArrayNull(scip, &(pricerdata->colbuffer[i]), pricerdata->colbuffercapacity[i]);
    }
    SCIPfreeBlockMemoryArray(scip, &(pricerdata->realdualvalues), pricerdata->maxrealdualvaluescapacity);
    SCIPfreeBlockMemoryArray(scip, &(pricerdata->maxrealdualvalues), pricerdata->maxrealdualvaluescapacity);
 
    SCIPfreeBlockMemoryArray(scip, &(pricerdata->nefficaciouscols), pricerdata->npricingprobs);
-   SCIPfreeBlockMemoryArray(scip, &(pricerdata->colbuffer), pricerdata->npricingprobs);
-   SCIPfreeBlockMemoryArray(scip, &(pricerdata->colbuffersize), pricerdata->npricingprobs);
-   SCIPfreeBlockMemoryArray(scip, &(pricerdata->colbuffercapacity), pricerdata->npricingprobs);
 
    return SCIP_OKAY;
 }
@@ -4307,8 +4251,8 @@ SCIP_RETCODE ObjPricerGcg::createPricestore()
 {
    SCIP_CALL( GCGpricestoreCreate(scip_, &pricestore,
       pricerdata->redcostfac, pricerdata->objparalfac, pricerdata->orthofac,
-      pricerdata->mincolorth,
-      pricerdata->efficiacychoice) );
+      pricerdata->mincolorth, pricerdata->efficiacychoice,
+      1.1 * MAX(reducedcostpricing->getMaxcolsround(), GCGgetNRelPricingprobs(origprob) * reducedcostpricing->getMaxcolsprob())) );
 
    return SCIP_OKAY;
 }
@@ -4984,7 +4928,25 @@ SCIP_RETCODE GCGpricerAddCol(
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
-   SCIP_CALL( pricer->addCol(col) );
+   SCIP_CALL( pricer->addColToPricestore(col, NULL) );
+
+   return SCIP_OKAY;
+}
+
+/** add a new column to the pricing storage */
+extern "C"
+SCIP_RETCODE GCGpricerAddColResult(
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_COL*              col,                /**< priced col */
+   SCIP_Bool*            added
+   )
+{
+   ObjPricerGcg* pricer;
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   SCIP_CALL( pricer->addColToPricestore(col, added) );
 
    return SCIP_OKAY;
 }

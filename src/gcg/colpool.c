@@ -50,80 +50,6 @@
 #define GCG_HASHSIZE_COLPOOLS       500 /**< size of hash table in col pools */
 
 /*
- * Hash functions
- */
-
-/** gets the hash key of a col */
-static
-SCIP_DECL_HASHGETKEY(hashGetKeyCol)
-{  /*lint --e{715}*/
-   GCG_COL* col;
-
-   col = (GCG_COL*)elem;
-   assert(col != NULL);
-
-   /* the key of a col is the col itself */
-   return col;
-}
-
-/** returns TRUE iff both cols are identical */
-static
-SCIP_DECL_HASHKEYEQ(hashKeyEqCol)
-{  /*lint --e{715}*/
-   /* Warning: The comparison of real values is made against default epsilon.
-    *          This is ugly, but we have no settings at hand.
-    */
-   SCIP* scip;
-   GCG_COL* col1;
-   GCG_COL* col2;
-   int i;
-
-   scip = (SCIP*) userptr;
-   col1 = (GCG_COL*)key1;
-   col2 = (GCG_COL*)key2;
-   assert(col1 != NULL);
-   assert(col2 != NULL);
-
-   assert(col1->vars != NULL || col1->nvars == 0);
-   assert(col2->vars != NULL || col2->nvars == 0);
-
-   /* compare the trivial characteristics of the cols */
-   if( col1->probnr != col2->probnr
-      || col1->isray != col2->isray
-      || col1->nvars != col2->nvars
-       )
-      return FALSE;
-
-   /* compare variables and coresponding values in sorted arrays */
-   for( i = 0; i < col1->nvars; ++i )
-   {
-      if( col1->vars[i] != col2->vars[i]
-         || !SCIPisEQ(scip, col1->vals[i], col2->vals[i]))
-         return FALSE;
-   }
-
-   return TRUE;
-}
-
-static
-SCIP_DECL_HASHKEYVAL(hashKeyValCol)
-{  /*lint --e{715}*/
-   GCG_COL* col;
-   unsigned int keyval;
-
-   col = (GCG_COL*)key;
-   assert(col != NULL);
-
-   /* TODO: Improve hash function (but then we would have to store additional values for each col) */
-   keyval = SCIPhashFour(SCIPrealHashCode(col->nvars > 0 ? col->vals[0] : 0.0), col->probnr, col->nvars,
-      col->isray);
-
-   return keyval;
-}
-
-
-
-/*
  * dynamic memory arrays
  */
 
@@ -173,7 +99,7 @@ SCIP_RETCODE GCGcolpoolCreate(
 
    SCIP_CALL( SCIPhashtableCreate(&(*colpool)->hashtable, SCIPblkmem(scip),
          (GCG_USESMALLTABLES ? GCG_HASHSIZE_COLPOOLS_SMALL :  GCG_HASHSIZE_COLPOOLS),
-         hashGetKeyCol, hashKeyEqCol, hashKeyValCol, (void*) scip) );
+         GCGhashGetKeyCol, GCGhashKeyEqCol, GCGhashKeyValCol, (void*) scip) );
 
    (*colpool)->scip = scip;
    (*colpool)->nodenr = -1;
@@ -236,6 +162,7 @@ SCIP_RETCODE colpoolDelCol(
    assert(col != NULL);
 
    pos = col->pos;
+   col->pos = -1;
    assert(0 <= pos && pos < colpool->ncols);
    assert(colpool->cols[pos] == col);
 
@@ -283,20 +210,20 @@ SCIP_RETCODE GCGcolpoolClear(
 SCIP_RETCODE GCGcolpoolAddCol(
    GCG_COLPOOL*          colpool,            /**< col pool */
    GCG_COL*              col,                /**< column to add */
-   SCIP_Bool*            success             /**< pointer to store if col was added */
+   SCIP_Bool             freeduplicate       /**< shouldl the col be freed if it is a duplicate? */
    )
 {
    assert(colpool != NULL);
    assert(col != NULL);
-   assert(success != NULL);
-
-   *success = FALSE;
 
    /* check in hash table, if col already exists in the pool */
    if( SCIPhashtableRetrieve(colpool->hashtable, (void*)col) == NULL )
    {
       SCIP_CALL( GCGcolpoolAddNewCol(colpool, col) );
-      *success = TRUE;
+   }
+   else if( freeduplicate )
+   {
+      GCGfreeGcgCol(&col);
    }
 
    return SCIP_OKAY;
@@ -311,6 +238,7 @@ SCIP_RETCODE GCGcolpoolAddNewCol(
 
    assert(colpool != NULL);
    assert(col != NULL);
+   assert(col->pos == -1);
 
    col->pos = colpool->ncols;
 
@@ -353,9 +281,8 @@ SCIP_RETCODE GCGcolpoolDelCol(
 /** prices cols of the col pool */
 SCIP_RETCODE GCGcolpoolPrice(
    GCG_COLPOOL*          colpool,            /**< col pool */
-   GCG_PRICESTORE*       pricestore,         /**< GCG price storage */
    SCIP_SOL*             sol,                /**< solution to be separated (or NULL for LP-solution) */
-   SCIP_Bool*            foundvars           /**< pointer to store the result of the separation call */
+   int*                  nfoundvars          /**< pointer to store the result of the separation call */
    )
 {
    GCG_COL* col;
@@ -366,7 +293,7 @@ SCIP_RETCODE GCGcolpoolPrice(
    assert(colpool != NULL);
    assert(colpool->firstunprocessed <= colpool->ncols);
    assert(colpool->firstunprocessedsol <= colpool->ncols);
-   assert(foundvars != NULL);
+   assert(nfoundvars != NULL);
    assert(SCIPnodeGetType(SCIPgetCurrentNode(colpool->scip)) != SCIP_NODETYPE_PROBINGNODE);
 
    colpool->ncalls++;
@@ -376,11 +303,8 @@ SCIP_RETCODE GCGcolpoolPrice(
    /* start timing */
    SCIP_CALL( SCIPstartClock(colpool->scip, colpool->poolclock) );
 
-   /* remember the current total number of found cols */
-   oldncols = GCGpricestoreGetNCols(pricestore);
-
    /* process all unprocessed cols in the pool */
-   *foundvars = FALSE;
+   *nfoundvars = 0;
 
    for( c = colpool->ncols - 1; c >= 0; --c )
    {
@@ -394,13 +318,16 @@ SCIP_RETCODE GCGcolpoolPrice(
 
       if( SCIPisDualfeasNegative(colpool->scip, redcost) )
       {
+         SCIP_Bool added;
          /* insert col in separation storage */
          SCIPdebugMessage(" -> col %p from the col pool (redcost: %g)\n",
             (void*)col, redcost );
 
-         SCIP_CALL( GCGpricestoreAddCol(colpool->scip, pricestore, col, FALSE, TRUE) );
-
          SCIP_CALL( colpoolDelCol(colpool, col, FALSE) );
+         SCIP_CALL( GCGpricerAddColResult(colpool->scip, col, &added) );
+
+         if( added )
+            *nfoundvars = *nfoundvars + 1;
 
          col->age = 0;
       }
@@ -415,10 +342,7 @@ SCIP_RETCODE GCGcolpoolPrice(
    }
 
    /* update the number of found cols */
-   colpool->ncolsfound += GCGpricestoreGetNCols(pricestore) - oldncols; /*lint !e776*/
-
-   if( GCGpricestoreGetNCols(pricestore) - oldncols > 0 )
-      *foundvars = TRUE;
+   colpool->ncolsfound += *nfoundvars; /*lint !e776*/
 
    /* stop timing */
    SCIP_CALL( SCIPstopClock(colpool->scip, colpool->poolclock) );

@@ -59,7 +59,7 @@ struct GCG_Col
    SCIP_Real            redcost;            /**< last known reduced cost */
    int                  age;                /**< age of column (number of iterations since it was created;
                                                  each time reduced cost are calculated counts as an interation) */
-   int                  pos;                /**< position in column pool (or -1) */
+   int                  pos;                /**< position in pricestore or column pool (or -1) */
    SCIP_Real*           mastercoefs;        /**< array of master coefficients */
    int                  nmastercoefs;       /**< number of master coefficients */
    int                  maxmastercoefs;     /**< capacity of mastercoefs */

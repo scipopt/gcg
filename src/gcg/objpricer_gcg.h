@@ -227,8 +227,9 @@ public:
       );
 
    /** add a new column to the pricer's column buffer that will be added to the pricing storage */
-   SCIP_RETCODE addCol(
-      GCG_COL*              col                 /**< priced col */
+   SCIP_RETCODE addColToPricestore(
+      GCG_COL*              col,                /**< priced col */
+      SCIP_Bool*            added               /**< pointer to var that indicates whether the col was added */
       );
    
    /** for each pricing problem, get the best found column from the pricing storage */
