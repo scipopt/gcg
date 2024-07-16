@@ -609,8 +609,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
          SCIP_CALL( SCIPhashmapRemoveAll(mappricingvarxcoeff) );
          continue;
       }
-      SCIPinfoMessage(scip, NULL, "created at node %lli\n", SCIPnodeGetNumber(SCIPgetCurrentNode(scip)));
-      SCIPprintRow(scip, ssrc, NULL);
+      //SCIPprintRow(scip, ssrc, NULL);
 
       /* determine the pricing variables and their coefficients for the pricing constraints */
       SCIP_CALL( computePricingConssCoefficients(origscip, originalconss, selectedconssidx, sepadata->n,
@@ -792,7 +791,8 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
    int                        varindex;
    int                        i;
 
-   /* @todo: other (more efficient) way to compute coefficient ???*/
+   /* @todo: other (more efficient) way to compute coefficient ???
+    * pricing vars are sorted: maybe use SCIPsortedvecFindPtr ????*/
    assert(scip != NULL);
    assert(GCGisMaster(scip));
    assert(sepa != NULL);
@@ -982,6 +982,8 @@ GCG_DECL_SEPAADJUSTCOL(gcgsepaAdjustCol)
          }
          (*gcgcol)->vars[(*gcgcol)->nvars] = coefvar;
          (*gcgcol)->vals[(*gcgcol)->nvars] = coefvarval;
+         // ensure that array stays sorted ????
+         //assert( SCIPvarCompare((*gcgcol)->vars[(*gcgcol)->nvars-1], (*gcgcol)->vars[(*gcgcol)->nvars]) != 0 );
 
          /* we capture inferred vars */
          SCIPcaptureVar((*gcgcol)->pricingprob, (*gcgcol)->vars[(*gcgcol)->nvars]);

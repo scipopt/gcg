@@ -283,6 +283,8 @@ SCIP_DECL_EVENTEXIT(eventExitMastercutUpdate)
 
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
+   /* notify SCIP that your event handler wants to drop the event type row added to lp and node deleted found */
+   SCIP_CALL( SCIPdropEvent(scip, (SCIP_EVENTTYPE_ROWADDEDLP | SCIP_EVENTTYPE_NODEDELETE), eventhdlr, NULL, -1) );
 
    /* free all the arrays */
    SCIPdebugMessage("event free: free mem (%i) for activecuts\n", eventhdlrdata->activecutssize);
@@ -344,8 +346,6 @@ SCIP_DECL_EVENTEXITSOL(eventExitSolMastercutUpdate)
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
 
-   /* notify SCIP that your event handler wants to drop the event type row added to lp and node deleted found */
-   SCIP_CALL( SCIPdropEvent(scip, (SCIP_EVENTTYPE_ROWADDEDLP | SCIP_EVENTTYPE_NODEDELETE), eventhdlr, NULL, -1) );
 
    /* release all the remaining cuts from generated cuts and active cuts */
    SCIPdebugMessage("event exit sol: release remaining %i cuts in generatedcuts\n", eventhdlrdata->ngeneratedcuts);

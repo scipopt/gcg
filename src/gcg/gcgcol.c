@@ -116,8 +116,7 @@ SCIP_RETCODE GCGcreateGcgCol(
          continue;
 
       assert((GCGvarIsPricing(origvar) && GCGpricingVarGetNOrigvars(origvar) > 0 && GCGpricingVarGetOrigvars(origvar)[0] != NULL) || GCGvarIsInferredPricing(origvar));
-//      if( GCGvarIsInferredPricing(origvar) )
-//         SCIPinfoMessage(pricingprob, NULL, "%s: %f\n", SCIPvarGetName(origvar), origval);
+
       (*gcgcol)->vars[nnonz] = origvar;
       (*gcgcol)->vals[nnonz] = origval;
 
@@ -482,7 +481,6 @@ void GCGcolComputeNorm(
    int* linkvars;
    int nlinkvars;
 
-   int nsepas;
    int nsepamastercoeffs;
    SCIP_Real* sepamastercoeffs;
 

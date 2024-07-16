@@ -1465,7 +1465,6 @@ SCIP_RETCODE GCGcreateMasterVar(
 
    if( newvardata->data.mastervardata.norigvars > 0 )
    {
-      //SCIPinfoMessage(pricingscip, NULL, "new master var: %s\n", varname);
       newvardata->data.mastervardata.maxorigvars = SCIPcalcMemGrowSize(scip, newvardata->data.mastervardata.norigvars);
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvars), newvardata->data.mastervardata.maxorigvars) );
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(newvardata->data.mastervardata.origvals), newvardata->data.mastervardata.maxorigvars) );
@@ -1480,10 +1479,6 @@ SCIP_RETCODE GCGcreateMasterVar(
 
    /* number of original variables already saved in mastervardata */
    j = 0;
-   if( strcmp("p_5_148", varname) == 0 )
-   {
-      SCIPinfoMessage(scip, NULL, "create p_5_148\n");
-   }
    /* update variable datas */
    for( i = 0; i < nsolvars && !trivialsol; i++ )
    {
@@ -1551,7 +1546,8 @@ SCIP_RETCODE GCGcreateMasterVar(
       }
    }
    assert(j == newvardata->data.mastervardata.norigvars);
-return SCIP_OKAY;
+
+   return SCIP_OKAY;
 }
 
 /** creates initial master variables and the vardata */

@@ -1537,7 +1537,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCutsFromGCGCol(
    return SCIP_OKAY;
 }
 
-/** compute coefficients for new master var and add it to the sepa master cuts */
+/** compute coefficients for new master var and add them to the separator master cuts */
 SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
    SCIP_VAR*             newvar,             /**< the new master variable to add */
    int                   prob,               /**< number of the pricing problem the solution belongs to */
@@ -1578,6 +1578,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
 
       /*  update the variable history of the cut */
       SCIP_CALL( GCGvarhistoryJumpToLatest(scip_, &(activecuts[j]->knownvarhistory)) );
+
       /* compute the coefficient for the cut */
       coeff = 0.0;
       SCIP_CALL( sepas[GCGmastersepacutGetSeparatorIndex(activecuts[j])]->gcgsepagetvarcoefficient(scip_, sepas[GCGmastersepacutGetSeparatorIndex(activecuts[j])], activecuts[j], solvars,
@@ -1695,7 +1696,7 @@ SCIP_RETCODE ObjPricerGcg::computeColOriginalSepaCuts(
    return SCIP_OKAY;
 }
 
-/** compute separator master cut coefficients of column in the master problem and store them in the column */
+/** compute separator master cut coefficients of column and store them in the column */
 SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
    GCG_COL*              gcgcol              /**< GCG column data structure */
 )
