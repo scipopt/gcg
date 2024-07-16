@@ -578,7 +578,7 @@ GCG_COL* pricestoreGetBestCol(
          {
             /* check if col is current best col */
             assert( pricestore->scores[i][pos] != SCIP_INVALID ); /*lint !e777*/
-            if( SCIPisGT(pricestore->scip, pricestore->scores[i][pos], bestscore) )
+            if( pricestore->scores[i][pos] > bestscore )
             {
                bestscore = pricestore->scores[i][pos];
                bestcol = pricestore->cols[i][pos];
