@@ -43,7 +43,7 @@
 #include "mastercutdata.h"
 #include "mastersepacut.h"
 #include "misc_varhistory.h"
-#include "struct_mastersepacutdata.h"
+#include "struct_mastersepacut.h"
 #include "type_sepagcg.h"
 
 
@@ -283,6 +283,7 @@ SCIP_DECL_EVENTEXIT(eventExitMastercutUpdate)
 
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
+
    /* notify SCIP that your event handler wants to drop the event type row added to lp and node deleted found */
    SCIP_CALL( SCIPdropEvent(scip, (SCIP_EVENTTYPE_ROWADDEDLP | SCIP_EVENTTYPE_NODEDELETE), eventhdlr, NULL, -1) );
 

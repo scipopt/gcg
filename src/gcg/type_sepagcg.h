@@ -36,14 +36,15 @@
 #ifndef GCG_TYPE_SEPAGCG_H__
 #define GCG_TYPE_SEPAGCG_H__
 
-#include "scip/def.h"
-#include "scip/type_lp.h"
-#include "scip/type_result.h"
-#include "scip/type_scip.h"
-#include "scip/type_var.h"
-#include "struct_mastercutdata.h"
+#include <scip/def.h>
+#include <scip/type_lp.h>
+#include <scip/type_result.h>
+#include <scip/type_scip.h>
+#include <scip/type_var.h>
+
 #include "type_gcgcol.h"
-#include "event_sepacuts.h"
+#include "type_mastersepacut.h"
+
 
 #ifdef __cplusplus
 extern "C" {

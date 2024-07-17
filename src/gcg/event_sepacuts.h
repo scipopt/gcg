@@ -38,7 +38,7 @@
 
 #include "def.h"
 #include "mastercutdata.h"
-#include "struct_mastersepacutdata.h"
+#include "struct_mastersepacut.h"
 #include "type_varhistory.h"
 
 #ifdef __cplusplus

@@ -317,7 +317,7 @@ set(gcgheaders
     gcg/struct_gcgcol.h
     gcg/struct_gcgpqueue.h
     gcg/struct_mastercutdata.h
-    gcg/struct_mastersepacutdata.h
+        gcg/struct_mastersepacut.h
     gcg/struct_pricestore_gcg.h
     gcg/struct_pricingjob.h
     gcg/struct_pricingprob.h
@@ -335,6 +335,7 @@ set(gcgheaders
     gcg/type_gcgcol.h
     gcg/type_gcgpqueue.h
     gcg/type_mastercutdata.h
+    gcg/type_mastersepacut.h
     gcg/type_masterdiving.h
     gcg/type_origdiving.h
     gcg/type_parameter.h

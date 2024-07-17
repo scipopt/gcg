@@ -489,6 +489,35 @@ int GCGpricingmodificationGetNAdditionalConss(
    return pricingmodification->nadditionalconss;
 }
 
+/** compares the problem block number of two pricing modifications, returns -1 if first is smaller than, and +1 if first is greater than second
+ *  problem block number; returns 0 if both  are equal, which means both pricing modifications are equal
+ */
+int GCGpricingModificationCompare(
+   GCG_PRICINGMODIFICATION*   pricemod1,     /**< first pricing modification */
+   GCG_PRICINGMODIFICATION*   pricemod2      /**< second pricing modification */
+   )
+{
+   assert(pricemod1 != NULL);
+   assert(pricemod2 != NULL);
+
+   if( pricemod1->blocknr < pricemod2->blocknr )
+      return -1;
+   else if( pricemod1->blocknr > pricemod2->blocknr )
+      return +1;
+   else
+   {
+      assert(pricemod1 == pricemod2);
+      return 0;
+   }
+
+}
+
+/** comparison method for sorting pricing modifications */
+SCIP_DECL_SORTPTRCOMP(GCGpricingModificationComp)
+{
+   return GCGpricingModificationCompare((GCG_PRICINGMODIFICATION*)elem1, (GCG_PRICINGMODIFICATION*)elem2);
+}
+
 /** get the pricing modification for a block, if exists, else NULL */
 GCG_PRICINGMODIFICATION* GCGmastercutGetPricingModification(
    SCIP*                  masterscip,         /**< master scip */
@@ -503,7 +532,7 @@ GCG_PRICINGMODIFICATION* GCGmastercutGetPricingModification(
    assert(blocknr >= 0);
 
    assert(blocknr < GCGgetNPricingprobs(GCGgetOriginalprob(masterscip)));
-
+   // @todo: use binary search: SCIPsortedvecFindPtr() (need pc as pointers)
    for( i = 0; i < mastercutdata->npricingmodifications; i++ )
    {
       if( mastercutdata->pricingmodifications[i].blocknr == blocknr )

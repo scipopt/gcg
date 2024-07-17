@@ -3851,7 +3851,7 @@ SCIP_RETCODE ensureSizeSeparators(
 }
 
 /** includes a separator into the relaxator data */
-int GCGrelaxIncludeSeparator(
+SCIP_RETCODE GCGrelaxIncludeSeparator(
    SCIP*                            scip,                              /**< SCIP data structure */
    SCIP_SEPA*                       separator,                         /**< SCIP separator structure*/
    GCG_DECL_SEPAGETVARCOEFFICIENT   ((*gcgsepagetvarcoefficient)),     /**< get cut coefficient for a master variable */
@@ -3876,6 +3876,7 @@ int GCGrelaxIncludeSeparator(
    SCIPdebugMessage("include gcg separator %s in relaxator data of original problem\n", SCIPsepaGetName(separator));
    SCIP_CALL( ensureSizeSeparators(scip, relaxdata) );
    pos = relaxdata->nseparators;
+
    /* store scip separator and callback functions */
    SCIP_CALL( SCIPallocMemory(scip, &(relaxdata->separators[pos])) );
    relaxdata->separators[pos]->separator = separator;
@@ -3883,12 +3884,47 @@ int GCGrelaxIncludeSeparator(
    relaxdata->separators[pos]->gcgsepagetcolcoefficient = gcgsepagetcolcoefficient;
    relaxdata->separators[pos]->gcgsepasetobjective = gcgsepasetobjective;
    relaxdata->separators[pos]->gcgsepaadjustcol = gcgsepaadjustcol;
+   relaxdata->separators[pos]->index = relaxdata->nseparators;
    relaxdata->nseparators++;
 
-   return pos;
+   return SCIP_OKAY;
 }
 
-/** returns the gcg separators registered with the master problem */
+/** returns the gcg separator of the given name */
+GCG_SEPA* GCGrelaxGetSeparator(
+   SCIP*             scip,       /**< SCIP data structure */
+   const char*       name        /**< name of the separator */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   SCIP* origscip;
+   int i;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+
+   origscip = GCGmasterGetOrigprob(scip);
+   assert(origscip != NULL);
+
+   relax = SCIPfindRelax(origscip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   for( i = 0; i < relaxdata->nseparators; i++ )
+   {
+      if( strcmp(SCIPsepaGetName(relaxdata->separators[i]->separator), name) == 0 )
+      {
+         return relaxdata->separators[i];
+      }
+   }
+
+   return NULL;
+}
+
+/** returns the gcg separators registered with the relaxator */
 GCG_SEPA** GCGrelaxGetSeparators(
    SCIP* scip
    )
@@ -3912,7 +3948,7 @@ GCG_SEPA** GCGrelaxGetSeparators(
    return relaxdata->separators;
 }
 
-/** returns the number of gcg separators registered with the master problem */
+/** returns the number of gcg separators registered with the relaxator */
 int GCGrelaxGetNSeparators(
    SCIP* scip
    )

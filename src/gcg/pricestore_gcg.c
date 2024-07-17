@@ -242,28 +242,27 @@ int pricestoreFindEqualCol(
 }
 
 static
-SCIP_RETCODE correctCoeffVariables(
+SCIP_RETCODE adjustGCGCol(
    SCIP*          scip,       /**< SCIP data structure */
    GCG_COL*       gcgcol      /**< priced col */
 )
 {
-   GCG_SEPA**           sepas;
    GCG_MASTERSEPACUT**  activecuts;
    int                  nactivecuts;
    int                  j;
 
    assert(gcgcol != NULL);
 
-   sepas = GCGrelaxGetSeparators(scip);
    nactivecuts = GCGgetNActiveCuts(scip);
    activecuts = GCGgetActiveCuts(scip);
 
    for( j = 0; j < nactivecuts; j++ )
    {
-      int sepaidx;
+      GCG_SEPA* sepa;
 
-      sepaidx = GCGmastersepacutGetSeparatorIndex(activecuts[j]);
-      SCIP_CALL( sepas[sepaidx]->gcgsepaadjustcol(scip, sepas[sepaidx], activecuts[j], &gcgcol) );
+      sepa = GCGmastersepacutGetSeparator(activecuts[j]);
+      if( sepa->gcgsepaadjustcol != NULL )
+         SCIP_CALL( sepa->gcgsepaadjustcol(scip, sepa, activecuts[j], &gcgcol) );
    }
 
    return SCIP_OKAY;
@@ -340,7 +339,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
          SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE);
 
          /* column is from column pool and does not fulfill current requirements */
-         if( !feasible && fromcolpool ) //
+         if( !feasible && fromcolpool )
          {
             SCIP_Real redcost;
 
@@ -349,7 +348,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
             /* auxiliary constraints (and variables) from master cuts might not have been present
              * when column was generated
              * --> compute correct value for those variables */
-            SCIP_CALL( correctCoeffVariables(scip, col) );
+            SCIP_CALL( adjustGCGCol(scip, col) );
 
             /* re-compute reduced cost of column */
             GCGcomputeRedCostGcgCol(scip, pricestore->infarkas, col, &redcost);
@@ -372,7 +371,6 @@ SCIP_RETCODE GCGpricestoreAddCol(
          assert(feasible);
 
          SCIPfreeSol(col->pricingprob, &sol);
-
       }
       for( i = 0; i < col->nvars; ++i )
       {

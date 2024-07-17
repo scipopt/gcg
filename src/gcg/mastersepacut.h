@@ -25,7 +25,7 @@
 #ifndef GCG_MASTERSEPACUT_H__
 #define GCG_MASTERSEPACUT_H__
 
-#include "struct_mastersepacutdata.h"
+#include "struct_mastersepacut.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +47,7 @@ SCIP_RETCODE GCGcreateMasterSepaCut(
    SCIP*                   masterscip,          /**< SCIP data structure (master problem) */
    GCG_MASTERSEPACUT**     mastersepacut,       /**< pointer to store master separator cut */
    GCG_MASTERSEPACUTTYPE   mastersepacuttype,   /**< type of master separator cut */
-   int                     sepaidx,             /**< index of separator creating this cut */
+   GCG_SEPA*               sepa,                /**< separator creating this cut */
    GCG_MASTERCUTDATA*      mastercutdata,       /**< master cut data */
    GCG_VARHISTORY*         varhistory,          /**< variable history */
    GCG_MASTERSEPACUTDATA*  mastersepacutdata    /**< master separator cut data */
@@ -73,6 +73,11 @@ int GCGmastersepacutGetSeparatorIndex(
    GCG_MASTERSEPACUT*      mastersepacut     /**< master separator cut */
 );
 
+/**< return the separator which created the cut */
+GCG_SEPA* GCGmastersepacutGetSeparator(
+   GCG_MASTERSEPACUT*      mastersepacut     /**< master separator cut */
+);
+
 /**< returns the data of the master separator cut */
 GCG_MASTERSEPACUTDATA* GCGmastersepacutGetData(
    GCG_MASTERSEPACUT*      mastersepacut     /**< master separator cut */
@@ -88,7 +93,7 @@ SCIP_RETCODE GCGmastersepacutSetVarHistory(
 SCIP_RETCODE GCGcreateSubsetRowCut(
    SCIP*                   masterscip,            /**< SCIP data structure (master problem) */
    GCG_MASTERSEPACUT**     mastersepacut,         /**< pointer to store master separator cut */
-   int                     sepaidx,               /**< index of separator creating the cut */
+   GCG_SEPA*               sepa,                  /**< separator creating this cut */
    GCG_MASTERCUTDATA*      mastercutdata,         /**< mastercutdata associated with the cut */
    GCG_VARHISTORY*         varhistory,            /**< variables history of subset row cut*/
    SCIP_Real*              weights,               /**< weights which were used to create the cut */

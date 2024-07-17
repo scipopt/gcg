@@ -39,13 +39,14 @@
 #ifndef GCG_RELAX_GCG_H__
 #define GCG_RELAX_GCG_H__
 
-#include "scip/scip.h"
+#include <scip/type_retcode.h>
+#include <scip/scip.h>
+
 #include "def.h"
 #include "type_branchgcg.h"
 #include "type_decomp.h"
 #include "type_parameter.h"
 #include "type_sepagcg.h"
-#include <scip/type_retcode.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -157,7 +158,7 @@ SCIP_RETCODE GCGrelaxBranchGetAllActiveMasterCuts(
 
 /** includes a separator into the relaxator data */
 GCG_EXPORT
-int GCGrelaxIncludeSeparator(
+SCIP_RETCODE GCGrelaxIncludeSeparator(
    SCIP*                            scip,                              /**< SCIP data structure */
    SCIP_SEPA*                       separator,                         /**< SCIP separator structure*/
    GCG_DECL_SEPAGETVARCOEFFICIENT   ((*gcgsepagetvarcoefficient)),     /**< get cut coefficient for a master variable */
@@ -166,21 +167,20 @@ int GCGrelaxIncludeSeparator(
    GCG_DECL_SEPAADJUSTCOL           ((*gcgsepaadjustcol))              /**< adjusts column to respect cut */
 );
 
+/** get all gcg separators registered with the relaxator */
 GCG_SEPA** GCGrelaxGetSeparators(
-   SCIP* scip
+   SCIP* scip        /**< SCIP data structure */
 );
 
+/** returns the gcg separator of the given name */
+GCG_SEPA* GCGrelaxGetSeparator(
+   SCIP*             scip,       /**< SCIP data structure */
+   const char*       name        /**< name of the separator */
+);
+
+/** get number of gcg separators registered with the relaxator */
 int GCGrelaxGetNSeparators(
    SCIP* scip
-);
-
-int GCGrelaxGetNSeparatorcuts(
-   SCIP* scip
-);
-
-GCG_EXPORT
-SCIP_RETCODE GCGrelaxUpdateSeparators(
-   SCIP*                            scip                      /**< SCIP data structure */
 );
 
 /** transformes a constraint of the original problem into the master variable space and

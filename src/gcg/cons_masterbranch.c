@@ -315,7 +315,6 @@ SCIP_RETCODE addStoredCutsToActiveCuts(
    SCIP_CONSDATA*    consdata        /**< consdata of current constraint */
    )
 {
-   GCG_SEPA** sepas;
    int nactivecuts;
    int j;
 
@@ -327,7 +326,6 @@ SCIP_RETCODE addStoredCutsToActiveCuts(
    SCIPinfoMessage(scip, NULL, "add stored cuts: node %lli of type: %i\n", SCIPnodeGetNumber(consdata->node), SCIPnodeGetType(consdata->node));
 #endif
    nactivecuts = GCGgetNActiveCuts(scip);
-   sepas = GCGrelaxGetSeparators(scip);
    assert(consdata->firstnewcut == nactivecuts);
 
    /* store the current number of active cuts */
@@ -343,7 +341,7 @@ SCIP_RETCODE addStoredCutsToActiveCuts(
 
    for( j = 0; j < consdata->naddedcuts; j++ )
    {
-      SCIP_CALL( addMissedVariables(scip, consdata->addedcuts[j], sepas[GCGmastersepacutGetSeparatorIndex(consdata->addedcuts[j])]) );
+      SCIP_CALL( addMissedVariables(scip, consdata->addedcuts[j], GCGmastersepacutGetSeparator(consdata->addedcuts[j])) );
       SCIP_CALL( GCGaddCutActiveCuts(scip, consdata->addedcuts[j]) );
 
 #ifndef MASTERSEP_DEBUG
