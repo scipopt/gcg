@@ -32,7 +32,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-//#define SCIP_DEBUG
+/* #define SCIP_DEBUG */
 
 #include <assert.h>
 
@@ -576,7 +576,6 @@ SCIP_RETCODE solveCliquer(
    SCIP_VAR**        indsetvars;
    SCIP_VAR**        pricingprobvars;
    SCIP_VAR**        linkedvars;
-   SCIP_VAR**        fixedvars;
    SCIP_Real*        solvals;
    SCIP_Real*        consvals;
    SCIP_Real*        aggrobjcoef;
@@ -643,7 +642,6 @@ SCIP_RETCODE solveCliquer(
    {
       SCIP_CALL( SCIPallocBufferArray(pricingprob,&linkmatrix[i],npricingprobvars) );
    }
-   SCIP_CALL( SCIPallocBufferArray(pricingprob, &fixedvars, npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob, &consvarsfixedcount, nconss) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob, &consvarsfixedtozerocount, nconss) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob, &aggrobjcoef, npricingprobvars) );
@@ -681,13 +679,11 @@ SCIP_RETCODE solveCliquer(
       if( SCIPisLT(pricingprob, SCIPvarGetUbLocal(pricingprobvars[i]), 1.0) )
       {
          solvals[i] = 0.0;
-         fixedvars[nfixedvars] = pricingprobvars[i];
          nfixedvars++;
       }
       else if( SCIPisGT(pricingprob, SCIPvarGetLbLocal(pricingprobvars[i]), 0.0) )
       {
          solvals[i] = 1.0;
-         fixedvars[nfixedvars] = pricingprobvars[i];
          nfixedvars++;
       }
       else
@@ -957,8 +953,7 @@ SCIP_RETCODE solveCliquer(
                {
                   /* One variable0 is fixed to 1 -> set variable1 to 0. */
                   solvals[SCIPvarGetProbindex(lconsvars[1])] = 0;
-                  /* Add new fixed variable to fixed variables array. */
-                  fixedvars[nfixedvars] = lconsvars[1];
+                  /* Increment fixed variables counter. */
                   nfixedvars++;
                   consvarsfixedcount[i] = 2;
                }
@@ -966,8 +961,7 @@ SCIP_RETCODE solveCliquer(
                {
                   /* One variable1 is fixed to 1 -> set variable0 to 0. */
                   solvals[SCIPvarGetProbindex(lconsvars[0])] = 0;
-                  /* Add new fixed variable to fixed variables array. */
-                  fixedvars[nfixedvars] = lconsvars[0];
+                  /* Increment fixed variables counter. */
                   nfixedvars++;
                   consvarsfixedcount[i] = 2;
                }
@@ -978,9 +972,8 @@ SCIP_RETCODE solveCliquer(
                   /* The two variables are linked and appear in an IS-constraint, i.e., x = y and x + y <= 1.
                    * -> Both variables must be fixed to 0. Thus calling the setter for one is sufficient */
                   setLinkedSolvals(pricingprob, solvals, linkmatrix, linkedvars, nlinkedvars, vconsvars[0], 0.0);
-                  /* Add new fixed variables to fixed variables array. */
-                  fixedvars[nfixedvars++] = lconsvars[0];
-                  fixedvars[nfixedvars++] = lconsvars[1];
+                  /* Increment fixed variables counter. */
+                  nfixedvars += 2;
                   consvarsfixedcount[i] = 2;
                }
             }
@@ -1037,7 +1030,7 @@ SCIP_RETCODE solveCliquer(
                      if( solvals[SCIPvarGetProbindex(lconsvars[j])] == -1 )
                      {
                         solvals[SCIPvarGetProbindex(lconsvars[j])] = 0;
-                        fixedvars[nfixedvars] = lconsvars[j];
+                        /* Increment fixed variables counter. */
                         nfixedvars++;
                      }
                   }
@@ -1051,7 +1044,7 @@ SCIP_RETCODE solveCliquer(
                   /* We have a coupling constraint with one variable (different from the coupling variable!) fixed to 1.
                    * And the coupling variable is unfixed. Then the coupling variable needs to be fixed to 1 too. */
                   solvals[SCIPvarGetProbindex(lconsvars[couplingcoefindices[i]])] = 1;
-                  fixedvars[nfixedvars] = lconsvars[couplingcoefindices[i]];
+                  /* Increment fixed variables counter. */
                   nfixedvars++;
 
                   /* In case of a clique constraint, we can fix all other variables than the (now 2) fixed ones to 0. */
@@ -1064,7 +1057,7 @@ SCIP_RETCODE solveCliquer(
                         if( solvals[SCIPvarGetProbindex(lconsvars[j])] == -1 )
                         {
                            solvals[SCIPvarGetProbindex(lconsvars[j])] = 0;
-                           fixedvars[nfixedvars] = lconsvars[j];
+                           /* Increment fixed variables counter. */
                            nfixedvars++;
                         }
                      }
@@ -1099,8 +1092,7 @@ SCIP_RETCODE solveCliquer(
                {
                   /* Set (the unset) variable1 to the value of variable0 */
                   solvals[SCIPvarGetProbindex(vconsvars[1])] = solvals[SCIPvarGetProbindex(vconsvars[0])];
-                  /* Add new fixed variable to fixed variables array. */
-                  fixedvars[nfixedvars] = vconsvars[1];
+                  /* Increment fixed variables counter. */
                   nfixedvars++;
                   /* All variables of this constraint are fixed now. */
                   consvarsfixedcount[i] = 2;
@@ -1109,8 +1101,7 @@ SCIP_RETCODE solveCliquer(
                {
                   /* Set (the unset) variable0 to the value of variable1 */
                   solvals[SCIPvarGetProbindex(vconsvars[0])] = solvals[SCIPvarGetProbindex(vconsvars[1])];
-                  /* Add new fixed variable to fixed variables array. */
-                  fixedvars[nfixedvars] = vconsvars[0];
+                  /* Increment fixed variables counter. */
                   nfixedvars++;
                   /* All variables of this constraint are fixed now. */
                   consvarsfixedcount[i] = 2;
@@ -1142,8 +1133,7 @@ SCIP_RETCODE solveCliquer(
                      vartoset = 0;        /* y is fixed to 0 and x is unset -> set x to 0. */
 
                   solvals[SCIPvarGetProbindex(vconsvars[vartoset])] = vartoset;
-                  /* Add new fixed variable to fixed variables array. */
-                  fixedvars[nfixedvars] = vconsvars[vartoset];
+                  /* Increment fixed variables counter. */
                   nfixedvars++;
                   /* All variables of this constraint are fixed now. */
                   consvarsfixedcount[i] = 2;
@@ -1160,8 +1150,7 @@ SCIP_RETCODE solveCliquer(
                      vartoset = 0;        /* y is fixed to 1 and x is unset -> set x to 0. */
 
                   solvals[SCIPvarGetProbindex(vconsvars[vartoset])] = 0;
-                  /* Add new fixed variable to fixed variables array. */
-                  fixedvars[nfixedvars] = vconsvars[vartoset];
+                  /* Increment fixed variables counter. */
                   nfixedvars++;
                   /* All variables of this constraint are fixed now. */
                   consvarsfixedcount[i] = 2;
@@ -1174,9 +1163,8 @@ SCIP_RETCODE solveCliquer(
                   /* The two variables are linked and appear in an IS-constraint, i.e., x = y and x + y <= 1.
                    * -> Both variables must be fixed to 0. Thus calling the setter for one is sufficient */
                   setLinkedSolvals(pricingprob, solvals, linkmatrix, linkedvars, nlinkedvars, vconsvars[0], 0.0);
-                  /* Add new fixed variables to fixed variables array. */
-                  fixedvars[nfixedvars++] = vconsvars[0];
-                  fixedvars[nfixedvars++] = vconsvars[1];
+                  /* Increment fixed variables counter. */
+                  nfixedvars += 2;
                   consvarsfixedcount[i] = 2;
                }
             }
@@ -1588,7 +1576,6 @@ SCIP_RETCODE solveCliquer(
    SCIPfreeBufferArray(pricingprob,&solvals);
    SCIPfreeBufferArray(pricingprob,&indsetvars);
    SCIPfreeBufferArray(pricingprob,&markedconstraints);
-   SCIPfreeBufferArray(pricingprob, &fixedvars);
    SCIPfreeBufferArray(pricingprob, &consvarsfixedcount);
    SCIPfreeBufferArray(pricingprob, &consvarsfixedtozerocount);
    SCIPfreeBufferArray(pricingprob, &aggrobjcoef);
