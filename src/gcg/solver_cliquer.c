@@ -532,19 +532,23 @@ SCIP_Real scaleRelativeToMax(
    return scalingfactor;
 }
 
-/** TODO: comment */
+/**
+ * Determine cliquer constraint type and save it in the cliquerconstype array.
+ * @return SCIP bool that is false in case a constraint is encountered that cannot be handled,
+ *          true if propagation was successful.
+ */
 static
-SCIP_Bool hasInvalidConstraintsAndDetermineTypes(
+SCIP_Bool determineCliquerConsTypes(
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
-   SCIP_CONS**           constraints,
-   SCIP_CONS**           markedconstraints,
-   SCIP_VAR**            linkedvars,
-   int**                 linkmatrix,
-   int*                  couplingcoefindices,
-   int                   nlinkedvars,
-   int                   nconss,
-   int                   markedcount,
-   CLIQUER_CONSTYPE*     cliquerconstypes
+   SCIP_CONS**           constraints,        /**< Array containing pointers to SCIP constraints of pricing problem */
+   SCIP_CONS**           markedconstraints,  /**< Array containing pointers to SCIP constraints to mark them */
+   SCIP_VAR**            linkedvars,         /**< Array of variables that are linked by eq-constraints */
+   int**                 linkmatrix,         /**< Matrix indicating which variables are linked by a node */
+   int*                  couplingcoefindices,/**< Array for coupling coefficient of each constraint (if coupling) */
+   int                   nlinkedvars,        /**< Index of linkedvars array */
+   int                   nconss,             /**< Index of constraints array */
+   int                   markedcount,        /**< Index of markedconstraints array */
+   CLIQUER_CONSTYPE*     cliquerconstypes    /**< Array holding constraint types (specific to this solver) */
    )
 {
    /* Local variables. */
@@ -553,6 +557,7 @@ SCIP_Bool hasInvalidConstraintsAndDetermineTypes(
    SCIP_Real*        consvals;
    SCIP_Bool         retcode;
    int               nvars;
+
    int               i;
    int               j;
 
@@ -600,11 +605,15 @@ SCIP_Bool hasInvalidConstraintsAndDetermineTypes(
                   {
                      /* More than one variable has a coefficient unequal to 1 */
                      SCIPdebugMessage("Exit: More than one coefficient unequal 1 in linear non-IS constraint.\n");
-                     return TRUE;
+                     return FALSE;
 
                      /*
                       * Could handle other types of constraints similar to coupling constraints.
-                      * -> E.g.: One var. coeff. < 0 and this var is fixed to 0: Others must also be fixed to 0. Otherwise, cannot handle!
+                      * -> E.g.: One var. coeff. < 0 and this var is fixed to 0: Others must also be fixed to 0.
+                      *          Otherwise, cannot handle!
+                      * -> To handle those, they must be identified and marked somehow to check if the coeff. is fixed
+                      *    to 0 after propagation.
+                      *    If not, the constraint cannot be handled. -> TERMINATE with GCG_PRICINGSTATUS_NOTAPPLICABLE
                       */
                   }
                }
@@ -630,14 +639,14 @@ SCIP_Bool hasInvalidConstraintsAndDetermineTypes(
                   {
                      /* Coupling coefficient is between 1 and npricingprobvars. */
                      SCIPdebugMessage("Exit: Coupling coefficient unhandled, coef: %g.\n",consvals[couplingcoefindices[i]]);
-                     return TRUE;
+                     return FALSE;
                   }
                }
                else
                {
                   /* Constraint is neither a coupling nor a clique constraint */
                   SCIPdebugMessage("Exit: Unhandled linear constraint.\n");
-                  return TRUE;
+                  return FALSE;
                }
             }
          }
@@ -645,7 +654,7 @@ SCIP_Bool hasInvalidConstraintsAndDetermineTypes(
          {
             /* Constraint is a linear equality constraint */
             SCIPdebugMessage("Exit: Unhandled linear constraint: Equality constraint.\n");
-            return TRUE;
+            return FALSE;
          }
       }
          /* Constraint may be of type varbound: lhs <= x + c*y <= rhs */
@@ -673,7 +682,7 @@ SCIP_Bool hasInvalidConstraintsAndDetermineTypes(
             {
                /* RHS is unequal 0 and unequal 1 */
                SCIPdebugMessage("Exit: Unhandled equality constraint, c: %g, rhs: %g.\n", SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i]));
-               return TRUE;
+               return FALSE;
             }
          }
 
@@ -690,7 +699,7 @@ SCIP_Bool hasInvalidConstraintsAndDetermineTypes(
                {
                   /* Coefficient c of varbound is > -1 and we do not have an IS constraint*/
                   SCIPdebugMessage("Exit: Coefficient of Varbound unhandled Rhs: %g, Coeff: %g.\n",SCIPgetRhsVarbound(pricingprob,constraints[i]),SCIPgetVbdcoefVarbound(pricingprob,constraints[i]));
-                  return TRUE;
+                  return FALSE;
                }
             }
                /*
@@ -709,7 +718,7 @@ SCIP_Bool hasInvalidConstraintsAndDetermineTypes(
             {
                /* Rhs of varbound unequal to 0 and no IS constraint*/
                SCIPdebugMessage("Exit: Rhs of Varbound unhandled, Rhs: %g, Coeff:%g.\n",SCIPgetRhsVarbound(pricingprob,constraints[i]),SCIPgetVbdcoefVarbound(pricingprob,constraints[i]));
-               return TRUE;
+               return FALSE;
             }
          }
             /* We may have a varbound constraint of type x + cy == rhs */
@@ -720,7 +729,7 @@ SCIP_Bool hasInvalidConstraintsAndDetermineTypes(
             {
                /* RHS is unequal 0 and unequal 1 */
                SCIPdebugMessage("Exit: Unhandled equality constraint, c: %g, rhs: %g.\n", SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i]));
-               return TRUE;
+               return FALSE;
             }
          }
          else
@@ -728,22 +737,24 @@ SCIP_Bool hasInvalidConstraintsAndDetermineTypes(
             /* We have a varbound of type lhs <= x + c*y */
             SCIPdebugMessage("Exit: Varbound of type lhs <= x+c*y, c: %g, rhs: %g.\n", SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i]));
             SCIPdebugMessage("Constraint handler: %s\n", SCIPconshdlrGetName(conshdlr));
-            return TRUE;
+            return FALSE;
          }
       }
       else
       {
          /* Constraint handler neither linear nor varbound */
          SCIPdebugMessage("Exit: Unhandled constraint handler: %s \n", SCIPconshdlrGetName(conshdlr));
-         return TRUE;
+         return FALSE;
       }
    }
    /* Has no invalid constraint. */
-   return FALSE;
+   return TRUE;
 }
 
-/** Propagate fixings of variables through constraints until the set of fixed variables is stable.
- *  @returns SCIP bool that is false in case the problem is infeasible, true if propagation was successful. */
+/**
+ * Propagate fixings of variables through constraints until the set of fixed variables is stable.
+ * @return SCIP bool that is false in case the problem is infeasible, true if propagation was successful.
+ */
 static
 SCIP_Bool propagateVariablefixings(
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
@@ -770,16 +781,16 @@ SCIP_Bool propagateVariablefixings(
 
    int               i;
    int               j;
-   int               k;
+   int               prevfixed;
 
    /* Compute implied variable fixings. */
    /* This is done by propagating the fixings already found over the constraints. */
    /* It is stopped once the set of fixed variables becomes stable across one iteration. */
-   k = -1;        /* Need at least one iteration (because it is checked if linked variables appear in IS-constraint, i.e., x = y and x + y <= 1). */
-   while( k < nfixedvars ) {
+   prevfixed = -1;        /* Need at least one iteration (because it is checked if linked variables appear in IS-constraint, i.e., x = y and x + y <= 1). */
+   while( prevfixed < nfixedvars ) {
 
       /* We still have a fixed variable to be processed. Iterate through constraints. */
-      k = nfixedvars;
+      prevfixed = nfixedvars;
       for( i = 0; i < nconss; i++ )
       {
          assert(constraints[i] != NULL);
@@ -1210,8 +1221,9 @@ SCIP_RETCODE solveCliquer(
    }
 
 
-   /* TODO: comment */
-   if( hasInvalidConstraintsAndDetermineTypes(pricingprob,constraints,markedconstraints,linkedvars,linkmatrix,couplingcoefindices,nlinkedvars,nconss,markedcount,cliquerconstypes) )
+   /* Determine constraint types for easier handling later on.
+    * Also, it is checked for constraints that cannot be handled by this solver. */
+   if( !determineCliquerConsTypes(pricingprob,constraints,markedconstraints,linkedvars,linkmatrix,couplingcoefindices,nlinkedvars,nconss,markedcount,cliquerconstypes) )
    {
       /* Encountered constraint that can not be handled. */
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
