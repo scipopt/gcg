@@ -42,6 +42,10 @@
 
 #include <string.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 
 /** compares two solvers w. r. t. their priorities */
 SCIP_DECL_SORTPTRCOMP(GCGsolverComp)
@@ -311,18 +315,22 @@ SCIP_RETCODE GCGsolverSolve(
          else
             clock = solver->heurfarkasclock;
 
-         #pragma omp critical (clock)
-         {
+#ifdef _OPENMP
+         if( omp_get_num_threads() == 1 )
             SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
-         }
+#else
+         SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
+#endif
 
          SCIP_CALL( solver->solversolveheur(scip, pricingprob, solver, probnr, dualsolconv, lowerbound, status) );
          *solved = TRUE;
 
-         #pragma omp critical (clock)
-         {
+#ifdef _OPENMP
+         if( omp_get_num_threads() == 1 )
             SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
-         }
+#else
+         SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
+#endif
       }
    }
    else
@@ -336,19 +344,22 @@ SCIP_RETCODE GCGsolverSolve(
          else
             clock = solver->optfarkasclock;
 
-         #pragma omp critical (clock)
-         {
+#ifdef _OPENMP
+         if( omp_get_num_threads() == 1 )
             SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
-         }
+#else
+         SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
+#endif
 
          SCIP_CALL( solver->solversolve(scip, pricingprob, solver, probnr, dualsolconv, lowerbound, status) );
          *solved = TRUE;
 
-         #pragma omp critical (clock)
-         {
+#ifdef _OPENMP
+         if( omp_get_num_threads() == 1 )
             SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
-         }
-
+#else
+          SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
+#endif
       }
    }
 

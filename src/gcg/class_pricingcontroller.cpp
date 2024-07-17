@@ -254,8 +254,7 @@ SCIP_Bool Pricingcontroller::pricingprobIsDone(
    return GCGpricingprobGetNImpCols(pricingprob) > 0
       || (GCGpricingprobGetStatus(pricingprob) == GCG_PRICINGSTATUS_OPTIMAL && GCGpricingprobGetBranchconsIdx(pricingprob) == 0)
       || GCGpricingprobGetStatus(pricingprob) == GCG_PRICINGSTATUS_INFEASIBLE
-      || GCGpricingprobGetStatus(pricingprob) == GCG_PRICINGSTATUS_UNBOUNDED
-      || SCIPisStopped(scip_);
+      || GCGpricingprobGetStatus(pricingprob) == GCG_PRICINGSTATUS_UNBOUNDED;
 }
 
 /** check whether the next generic branching constraint of a pricing problem must be considered */
@@ -406,6 +405,9 @@ GCG_PRICINGJOB* Pricingcontroller::getNextPricingjob()
 {
    GCG_PRICINGJOB* pricingjob = NULL;
 
+   if( SCIPisStopped(scip_) )
+      return NULL;
+
    do
    {
       pricingjob = (GCG_PRICINGJOB*) GCGpqueueRemove(pqueue);
@@ -423,6 +425,7 @@ SCIP_RETCODE Pricingcontroller::pricingprobNextBranchcons(
    )
 {
    int i;
+   SCIP_RETCODE retcode;
 
    GCGpricingprobNextBranchcons(pricingprob);
 
@@ -433,7 +436,11 @@ SCIP_RETCODE Pricingcontroller::pricingprobNextBranchcons(
             GCGpricingjobResetHeuristic(pricingjobs[i]);
 
    /* re-sort the priority queue */
-   SCIP_CALL( GCGpqueueResort(pqueue) );
+   #pragma omp critical (update)
+   {
+      retcode = GCGpqueueResort(pqueue);
+   }
+   SCIP_CALL( retcode );
 
    return SCIP_OKAY;
 }
@@ -503,7 +510,10 @@ void Pricingcontroller::evaluatePricingjob(
          {
             SCIPdebugMessage("  -> increase a limit\n");
          }
-         SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
+         #pragma omp critical (update)
+         {
+            SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
+         }
 
          return;
       }
@@ -515,7 +525,10 @@ void Pricingcontroller::evaluatePricingjob(
 
          SCIP_CALL_EXC( pricingprobNextBranchcons(pricingprob) );
 
-         SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
+         #pragma omp critical (update)
+         {
+            SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
+         }
 
          return;
       }
@@ -526,11 +539,17 @@ void Pricingcontroller::evaluatePricingjob(
       if( GCGpricingjobGetSolver(pricingjob) != NULL )
       {
          SCIPdebugMessage("  -> use another solver\n");
-         SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
+         #pragma omp critical (update)
+         {
+            SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
+         }
       }
    }
    else
+   {
+      #pragma omp atomic update
       ++nsolvedprobs;
+   }
 }
 
 /** collect solution results from all pricing problems */
@@ -612,17 +631,22 @@ SCIP_Bool Pricingcontroller::canPricingloopBeAborted(
    ) const
 {
    int nrelpricingprobs = GCGgetNRelPricingprobs(GCGmasterGetOrigprob(scip_));
+   int _eagerage;
+   int _nsolvedprobs;
 
-   if( eagerage == eagerfreq )
+   #pragma omp atomic read
+   _eagerage = eagerage;
+
+   if( _eagerage == eagerfreq )
       return FALSE;
 
-   if( SCIPisStopped(scip_) )
-      return TRUE;
+   #pragma omp atomic read
+   _nsolvedprobs = nsolvedprobs;
 
    return !((nfoundcols < pricingtype->getMaxcolsround())
          && nsuccessfulprobs < pricingtype->getMaxsuccessfulprobs()
          && nsuccessfulprobs < pricingtype->getRelmaxsuccessfulprobs() * nrelpricingprobs
-         && (nfoundcols == 0 || nsolvedprobs < pricingtype->getRelmaxprobs() * nrelpricingprobs));
+         && (nfoundcols == 0 || _nsolvedprobs < pricingtype->getRelmaxprobs() * nrelpricingprobs));
 }
 
 void Pricingcontroller::resetEagerage()
@@ -633,7 +657,10 @@ void Pricingcontroller::resetEagerage()
 void Pricingcontroller::increaseEagerage()
 {
    if( eagerfreq > 0 )
+   {
+      #pragma atomic update
       eagerage++;
+   }
 }
 
 /** for a given problem index, get the corresponding pricing problem (or NULL, if it does not exist) */

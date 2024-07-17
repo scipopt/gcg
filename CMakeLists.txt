@@ -40,7 +40,7 @@ endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
-option(OPENMP "should gcg be compiled with openmp" TRUE)
+option(OPENMP "should gcg be compiled with openmp" ON)
 option(STATIC_GMP "prefer static gmp library" OFF)
 option(GSL "should gcg be compiled with GSL" ON)
 option(GMP "should gmp be linked" ON)

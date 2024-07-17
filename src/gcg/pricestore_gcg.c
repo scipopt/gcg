@@ -63,6 +63,7 @@ SCIP_RETCODE pricestoreEnsureColsMem(
    int                   num                  /**< minimal number of slots in array */
    )
 {
+   int retcode;
    assert(pricestore != NULL);
    assert(pricestore->scip != NULL);
 
@@ -71,10 +72,17 @@ SCIP_RETCODE pricestoreEnsureColsMem(
       int newsize;
 
       newsize = SCIPcalcMemGrowSize(pricestore->scip, num);
-      SCIP_CALL( SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->cols[arrayindex], pricestore->colssize[arrayindex], newsize) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->objparallelisms[arrayindex], pricestore->colssize[arrayindex], newsize) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->orthogonalities[arrayindex], pricestore->colssize[arrayindex], newsize) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->scores[arrayindex], pricestore->colssize[arrayindex], newsize) );
+      #pragma omp critical (memory)
+      {
+         retcode = SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->cols[arrayindex], pricestore->colssize[arrayindex], newsize);
+         if( retcode == SCIP_OKAY )
+            retcode = SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->objparallelisms[arrayindex], pricestore->colssize[arrayindex], newsize);
+         if( retcode == SCIP_OKAY )
+            retcode = SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->orthogonalities[arrayindex], pricestore->colssize[arrayindex], newsize);
+         if( retcode == SCIP_OKAY )
+            retcode = SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->scores[arrayindex], pricestore->colssize[arrayindex], newsize);
+      }
+      SCIP_CALL(retcode);
       pricestore->colssize[arrayindex] = newsize;
    }
    assert(num <= pricestore->colssize[arrayindex]);
@@ -111,8 +119,6 @@ SCIP_RETCODE GCGpricestoreCreate(
    assert(pricestore != NULL);
 
    SCIP_CALL( SCIPallocBlockMemory(scip, pricestore) );
-
-   SCIP_CALL( SCIPcreateClock(scip, &(*pricestore)->priceclock) );
 
    (*pricestore)->scip = scip;
    (*pricestore)->ncolstotal = 0;
@@ -167,9 +173,6 @@ SCIP_RETCODE GCGpricestoreFree(
    assert((*pricestore)->ncolstotal == 0);
 
    SCIPdebugMessage("Pricing time in pricestore = %f sec\n", GCGpricestoreGetTime(*pricestore));
-
-   /* free clock */
-   SCIP_CALL( SCIPfreeClock(scip, &(*pricestore)->priceclock) );
 
    SCIPhashtableFree(&(*pricestore)->hashtable);
 
@@ -308,9 +311,6 @@ SCIP_RETCODE GCGpricestoreAddCol(
    assert(col->pos == -1);
    assert(added != NULL);
 
-   /* start timing */
-   SCIP_CALL( SCIPstartClock(pricestore->scip, pricestore->priceclock) );
-
    arrayindex = pricestoreGetArrayIndex(pricestore, col);
    assert(pricestore->nforcedcols[arrayindex] <= pricestore->ncols[arrayindex]);
 
@@ -339,7 +339,10 @@ SCIP_RETCODE GCGpricestoreAddCol(
          colobjparallelism = 0.0; /* no need to calculate it */
    }
 
-   oldpos = pricestoreFindEqualCol(pricestore, col);
+   #pragma omp critical (hashtable)
+   {
+      oldpos = pricestoreFindEqualCol(pricestore, col);
+   }
 
    pos = -1;
 
@@ -390,10 +393,13 @@ SCIP_RETCODE GCGpricestoreAddCol(
          pos = pricestore->ncols[arrayindex];
 
       pricestore->ncols[arrayindex]++;
+      #pragma omp atomic update
       pricestore->ncolstotal++;
 
       /* update statistics of total number of found cols */
+      #pragma omp atomic update
       pricestore->ncolsfound++;
+      #pragma omp atomic update
       pricestore->ncolsfoundround++;
    }
    /* Otherwise, if the new column is forced and the duplicate one is not,
@@ -430,16 +436,17 @@ SCIP_RETCODE GCGpricestoreAddCol(
       pricestore->orthogonalities[arrayindex][pos] = 1.0;
       pricestore->scores[arrayindex][pos] = colscore;
       col->pos = pos;
-      SCIPhashtableInsert(pricestore->hashtable, col);
+      #pragma omp critical (hashtable)
+      {
+         #pragma omp critical (memory)
+         SCIPhashtableInsert(pricestore->hashtable, col);
+      }
       *added = TRUE;
    }
    else
    {
       *added = FALSE;
    }
-
-   /* stop timing */
-   SCIP_CALL( SCIPstopClock(pricestore->scip, pricestore->priceclock) );
 
    return SCIP_OKAY;
 }
@@ -659,9 +666,6 @@ SCIP_RETCODE GCGpricestoreApplyCols(
 
    SCIPdebugMessage("applying %d cols\n", pricestore->ncols);
 
-   /* start timing */
-   SCIP_CALL( SCIPstartClock(scip, pricestore->priceclock) );
-
    /* get maximal number of cols to add to the LP */
    maxpricecols = GCGpricerGetMaxColsRound(scip);
    maxpricecolsprob = GCGpricerGetMaxColsProb(scip);
@@ -780,9 +784,6 @@ SCIP_RETCODE GCGpricestoreApplyCols(
 
    SCIPfreeBufferArray(scip, &ncolsappliedprob);
 
-   /* stop timing */
-   SCIP_CALL( SCIPstopClock(pricestore->scip, pricestore->priceclock) );
-
    return SCIP_OKAY;
 }
 
@@ -891,14 +892,4 @@ int GCGpricestoreGetNColsApplied(
    assert(pricestore != NULL);
 
    return pricestore->ncolsapplied;
-}
-
-/** gets time in seconds used for pricing cols from the pricestore */
-SCIP_Real GCGpricestoreGetTime(
-   GCG_PRICESTORE*       pricestore           /**< price storage */
-   )
-{
-   assert(pricestore != NULL);
-
-   return SCIPgetClockTime(pricestore->scip, pricestore->priceclock);
 }

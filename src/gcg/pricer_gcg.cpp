@@ -109,11 +109,11 @@ using namespace scip;
 #define DEFAULT_USECOLPOOL               TRUE       /**< should the colpool be checked for negative redcost cols before solving the pricing problems? */
 #define DEFAULT_COLPOOL_AGELIMIT         100        /**< default age limit for columns in column pool */
 
-#define DEFAULT_PRICE_ORTHOFAC 0.0
-#define DEFAULT_PRICE_OBJPARALFAC 0.0
-#define DEFAULT_PRICE_REDCOSTFAC 1.0
-#define DEFAULT_PRICE_MINCOLORTH 0.0
-#define DEFAULT_PRICE_EFFICIACYCHOICE 0
+#define DEFAULT_PRICE_ORTHOFAC           0.0
+#define DEFAULT_PRICE_OBJPARALFAC        0.0
+#define DEFAULT_PRICE_REDCOSTFAC         1.0
+#define DEFAULT_PRICE_MINCOLORTH         0.0
+#define DEFAULT_PRICE_EFFICIACYCHOICE    0
 
 #define DEFAULT_USEARTIFICIALVARS        FALSE      /**< add artificial vars to master (instead of using Farkas pricing) */
 #define DEFAULT_USEMAXOBJ                TRUE       /**< default value for using maxobj for big M objective of artificial variables */
@@ -680,7 +680,11 @@ SCIP_RETCODE ObjPricerGcg::setPricingProblemMemorylimit(
 
    if( !SCIPisInfinity(origprob, memlimit) )
    {
-      memlimit -= SCIPgetMemUsed(origprob)/1048576.0 + GCGgetPricingprobsMemUsed(origprob) - SCIPgetMemUsed(pricingscip)/1048576.0;
+      #pragma omp critical (limits)
+      {
+         memlimit -= SCIPgetMemUsed(origprob)/1048576.0 + GCGgetPricingprobsMemUsed(origprob);
+      }
+      memlimit -= SCIPgetMemUsed(pricingscip)/1048576.0;
       if( memlimit < 0 )
          memlimit = 0.0;
       SCIP_CALL( SCIPsetRealParam(pricingscip, "limits/memory", memlimit) );
@@ -1678,18 +1682,18 @@ SCIP_RETCODE ObjPricerGcg::addColToPricestore(
    assert(col != NULL);
    redcost = computeRedCostGcgCol(pricingtype, col, NULL);
    GCGcolUpdateRedcost(col, redcost, FALSE);
-   #pragma omp critical (update)
-   {
-      GCGpricestoreAddCol(scip_, pricestore, col, FALSE, &addedcol);
-   }
+   GCGpricestoreAddCol(scip_, pricestore, col, FALSE, &addedcol);
+
    if( addedcol )
    {
       if( SCIPisDualfeasNegative(scip_, GCGcolGetRedcost(col)) )
          pricerdata->nefficaciouscols[col->probnr]++;
+#ifdef SCIP_DEBUG
       #pragma omp critical (debug)
       {
          SCIPdebugMessage("  -> new column <%p>, reduced cost = %g\n", (void*) col, redcost);
       }
+#endif
    }
    if( added != NULL )
       *added = addedcol;
@@ -2594,7 +2598,6 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
    GCG_SOLVER* solver;
    SCIP_Bool heuristic;
    SCIP_Bool solved;
-   SCIP_RETCODE retcode;
 
    pricingprob = GCGpricingjobGetPricingprob(pricingjob);
    assert(pricingprob != NULL);
@@ -2610,11 +2613,8 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
    heuristic = GCGpricingjobIsHeuristic(pricingjob);
 
    // @todo: this should be done by the pricing solvers
-   #pragma omp critical (limits)
-   {
-      retcode = setPricingProblemMemorylimit(pricingscip);
-   }
-   SCIP_CALL( retcode );
+   // @todo: has to consider #threads
+   SCIP_CALL( setPricingProblemMemorylimit(pricingscip) );
 
    /* add the next generic branching constraint if necessary */
    if( !GCGpricingprobBranchconsIsAdded(pricingprob) )
@@ -2948,15 +2948,15 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             int _nsuccessfulprobs;
             int _niters;
             SCIP_Bool stop = FALSE;
+            int iter;
 
             #pragma omp atomic read
             private_retcode = retcode;
-            #pragma omp critical (debug)
-            {
-               if( niters >= maxniters || private_retcode != SCIP_OKAY )
-                  stop = TRUE;
-               ++niters;
-            }
+            #pragma omp atomic capture
+            iter = niters++;
+
+            if( niters >= maxniters || private_retcode != SCIP_OKAY )
+               stop = TRUE;
 
             if( stop )
                break;
@@ -2967,7 +2967,12 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             _nsuccessfulprobs = nsuccessfulprobs;
             if( (pricingcontroller->canPricingloopBeAborted(pricetype, _nfoundvars, _nsuccessfulprobs) || infeasible) && !stabilized )
             {
-               SCIPdebugMessage("*** Abort pricing loop, infeasible = %u, stabilized = %u\n", infeasible, stabilized);
+#ifdef SCIP_DEBUG
+               #pragma omp critical (debug)
+               {
+                  SCIPdebugMessage("*** Abort pricing loop, infeasible = %u, stabilized = %u\n", infeasible, stabilized);
+               }
+#endif
                break;
             }
 
@@ -2986,12 +2991,14 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             status = GCG_PRICINGSTATUS_UNKNOWN;
             problowerbound = -SCIPinfinity(scip_);
 
+#ifdef SCIP_DEBUG
             #pragma omp critical (debug)
             {
                SCIPdebugMessage("*** Solve solving pricing problem %d, solver <%s>, stabilized = %u, %s\n",
                   pricingprobnr, GCGsolverGetName(GCGpricingjobGetSolver(pricingjob)), stabilized,
                   GCGpricingjobIsHeuristic(pricingjob) ? "heuristic" : "exact");
             }
+#endif
 
             /* @todo: this should be done by the pricing solvers */
             #pragma omp critical (limits)
@@ -3011,6 +3018,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
             impcols = pricerdata->nefficaciouscols[pricingprobnr] - oldimpcols;
 
+#ifdef SCIP_DEBUG
             #pragma omp critical (debug)
             {
                SCIPdebugMessage("*** Finished solving pricing problem %d, solver <%s>, stabilized = %u, %s\n",
@@ -3020,12 +3028,10 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
                SCIPdebugMessage("  -> problowerbound: %.4g\n", problowerbound);
                SCIPdebugMessage("  -> #impcols: %d\n", impcols);
             }
+#endif
 
-            /* update pricing problem results, store columns */
-            #pragma omp critical (update)
-            {
-               pricingcontroller->updatePricingprob(pricingprob, status, problowerbound, impcols);
-            }
+            /* update pricing problem results */
+            pricingcontroller->updatePricingprob(pricingprob, status, problowerbound, impcols);
 
             /* update solving statistics, needed for checking the abortion criterion */
             #pragma omp aotmic write
@@ -3041,7 +3047,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             }
 
    #ifdef SCIP_STATISTIC
-            #pragma omp critical (update)
+            #pragma omp critical (stat)
             {
                if( status != GCG_PRICINGSTATUS_NOTAPPLICABLE )
                {
@@ -3051,10 +3057,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             }
    #endif
 
-            #pragma omp critical (update)
-            {
-               pricingcontroller->evaluatePricingjob(pricingjob, status);
-            }
+            pricingcontroller->evaluatePricingjob(pricingjob, status);
          }
       }
 

@@ -72,7 +72,6 @@ struct GCG_PriceStore
    SCIP_Real             orthofac;           /**< factor of orthogonalities in score function */
    SCIP_Real             mincolorth;         /**< minimal orthogonality of columns to add
                                                   (with respect to columns added in the current round) */
-   SCIP_CLOCK*           priceclock;         /**< pricing time */
    GCG_EFFICIACYCHOICE   efficiacychoice;    /**< choice to base efficiacy on */
 };
 
