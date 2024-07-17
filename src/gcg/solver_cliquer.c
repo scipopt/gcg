@@ -570,7 +570,7 @@ SCIP_Bool determineCliquerConsTypes(
       conshdlr = SCIPconsGetHdlr(constraints[i]);
       assert(conshdlr != NULL);
 
-      /* The constraint may not be of type 'linear' */
+      /* The constraint may be of type 'linear' */
       if( strcmp(SCIPconshdlrGetName(conshdlr),"linear") == 0 )
       {
          consvals = SCIPgetValsLinear(pricingprob,constraints[i]);
@@ -581,7 +581,7 @@ SCIP_Bool determineCliquerConsTypes(
             {
                cliquerconstypes[i] = LINEAR_IS;
             }
-               /* Handle other constraints that behave like IS constraints, i.e. cx+dy<=rhs with c+d>rhs, c>0, d>0 */
+            /* Handle other constraints that behave like IS constraints, i.e. cx+dy<=rhs with c+d>rhs, c>0, d>0 */
             else if( SCIPgetNVarsLinear(pricingprob,constraints[i]) == 2 && consvals[0] > 0 && consvals[1] > 0
                      && SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[0] + consvals[1])
                      && !SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[0])
@@ -622,7 +622,7 @@ SCIP_Bool determineCliquerConsTypes(
                {
                   cliquerconstypes[i] = LINEAR_CLIQUE;
                }
-                  /* Check if we have a coupling constraint (rhs 0) */
+               /* Check if we have a coupling constraint (rhs 0) */
                else if( (couplingcoefindices[i] != -1) && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob, constraints[i]), 0.0) )
                {
                   /* Special case: The coupling constraint is purely decorative (coefficient + 1 of coupling var >= #vars)*/
@@ -630,7 +630,7 @@ SCIP_Bool determineCliquerConsTypes(
                   {
                      cliquerconstypes[i] = LINEAR_COUPLING_DECORATIVE;
                   }
-                     /* Special case: The coefficient is -1, we treat the case like a clique constraint. */
+                  /* Special case: The coefficient is -1, we treat the case like a clique constraint. */
                   else if( abs(consvals[couplingcoefindices[i]]) == 1 )
                   {
                      cliquerconstypes[i] = LINEAR_COUPLING_CLIQUE;
@@ -702,12 +702,12 @@ SCIP_Bool determineCliquerConsTypes(
                   return FALSE;
                }
             }
-               /*
-                * Rhs of varbound unequal to 0.
-                * It may still be the case that we have an IS constraint with a non-linear handler.
-                * The constraint may also be of the form c + 1 > rhs and c < rhs, i.e. a non-standard IS-constraint.
-                * We treat these cases like a regular IS constraint.
-                */
+            /*
+             * Rhs of varbound unequal to 0.
+             * It may still be the case that we have an IS constraint with a non-linear handler.
+             * The constraint may also be of the form c + 1 > rhs and c < rhs, i.e. a non-standard IS-constraint.
+             * We treat these cases like a regular IS constraint.
+             */
             else if( (SCIPisEQ(pricingprob,SCIPgetRhsVarbound(pricingprob,constraints[i]),1) && SCIPisEQ(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]),1))
                      || (SCIPisLT(pricingprob,SCIPgetRhsVarbound(pricingprob,constraints[i]),SCIPgetVbdcoefVarbound(pricingprob,constraints[i]) + 1)
                          && SCIPisLT(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i]))) )
@@ -804,7 +804,7 @@ SCIP_Bool propagateVariablefixings(
 
          /* Check nature of the constraint */
 
-         /* The constraint may not be of type 'linear' */
+         /* The constraint may be of type 'linear' */
          if( strcmp(SCIPconshdlrGetName(conshdlr),"linear") == 0 )
          {
             /* If all variables are fixed, constraint can be skipped */
@@ -824,17 +824,15 @@ SCIP_Bool propagateVariablefixings(
                }
                else if( solvals[SCIPvarGetProbindex(lconsvars[0])] == 1 && solvals[SCIPvarGetProbindex(lconsvars[1])] == -1 )
                {
-                  /* One variable0 is fixed to 1 -> set variable1 to 0. */
+                  /* One variable0 is fixed to 1 -> fix variable1 to 0. */
                   solvals[SCIPvarGetProbindex(lconsvars[1])] = 0;
-                  /* Increment fixed variables counter. */
                   nfixedvars++;
                   consvarsfixedcount[i] = 2;
                }
                else if( solvals[SCIPvarGetProbindex(lconsvars[0])] == -1 && solvals[SCIPvarGetProbindex(lconsvars[1])] == 1 )
                {
-                  /* One variable1 is fixed to 1 -> set variable0 to 0. */
+                  /* One variable1 is fixed to 1 -> fix variable0 to 0. */
                   solvals[SCIPvarGetProbindex(lconsvars[0])] = 0;
-                  /* Increment fixed variables counter. */
                   nfixedvars++;
                   consvarsfixedcount[i] = 2;
                }
@@ -844,7 +842,6 @@ SCIP_Bool propagateVariablefixings(
                   /* The two variables are linked and appear in an IS-constraint, i.e., x = y and x + y <= 1.
                    * -> Both variables must be fixed to 0. Thus calling the setter for one is sufficient */
                   setLinkedSolvals(pricingprob, solvals, linkmatrix, linkedvars, nlinkedvars, vconsvars[0], 0.0);
-                  /* Increment fixed variables counter. */
                   nfixedvars += 2;
                   consvarsfixedcount[i] = 2;
                }
@@ -899,12 +896,10 @@ SCIP_Bool propagateVariablefixings(
                      if( solvals[SCIPvarGetProbindex(lconsvars[j])] == -1 )
                      {
                         solvals[SCIPvarGetProbindex(lconsvars[j])] = 0;
-                        /* Increment fixed variables counter. */
                         nfixedvars++;
                      }
                   }
-                  /* All variables of this constraint are fixed now. */
-                  consvarsfixedcount[i] = nvars;
+                  consvarsfixedcount[i] = nvars; /* All variables of this constraint are fixed now. */
                }
                else if( ((cliquerconstypes[i] == LINEAR_COUPLING_CLIQUE || cliquerconstypes[i] == LINEAR_COUPLING_DECORATIVE)
                          && nvarsfixedtoone == 1
@@ -913,7 +908,6 @@ SCIP_Bool propagateVariablefixings(
                   /* We have a coupling constraint with one variable (different from the coupling variable!) fixed to 1.
                    * And the coupling variable is unfixed. Then the coupling variable needs to be fixed to 1 too. */
                   solvals[SCIPvarGetProbindex(lconsvars[couplingcoefindices[i]])] = 1;
-                  /* Increment fixed variables counter. */
                   nfixedvars++;
 
                   /* In case of a clique constraint, we can fix all other variables than the (now 2) fixed ones to 0. */
@@ -926,22 +920,19 @@ SCIP_Bool propagateVariablefixings(
                         if( solvals[SCIPvarGetProbindex(lconsvars[j])] == -1 )
                         {
                            solvals[SCIPvarGetProbindex(lconsvars[j])] = 0;
-                           /* Increment fixed variables counter. */
                            nfixedvars++;
                         }
                      }
-                     /* All variables of this constraint are fixed now. */
-                     consvarsfixedcount[i] = nvars;
+                     consvarsfixedcount[i] = nvars; /* All variables of this constraint are fixed now. */
                   }
                }
             }
          }
-            /* Constraint may be of type varbound: lhs <= x + c*y <= rhs */
+         /* Constraint may be of type varbound: lhs <= x + c*y <= rhs */
          else if( strcmp(SCIPconshdlrGetName(conshdlr), "varbound") == 0 )
          {
-            /* If all variables are fixed, constraint can be skipped */
             if( consvarsfixedcount[i] == 2 )
-               continue;
+               continue; /* If all variables are fixed, constraint can be skipped */
 
             vconsvars[0] = SCIPgetVarVarbound(pricingprob, constraints[i]);
             vconsvars[1] = SCIPgetVbdvarVarbound(pricingprob, constraints[i]);
@@ -958,24 +949,20 @@ SCIP_Bool propagateVariablefixings(
                }
                else if( solvals[SCIPvarGetProbindex(vconsvars[0])] >= 0 && solvals[SCIPvarGetProbindex(vconsvars[1])] == -1 )
                {
-                  /* Set (the unset) variable1 to the value of variable0 */
+                  /* Fix (the unfixed) variable1 to the value of variable0 */
                   solvals[SCIPvarGetProbindex(vconsvars[1])] = solvals[SCIPvarGetProbindex(vconsvars[0])];
-                  /* Increment fixed variables counter. */
                   nfixedvars++;
-                  /* All variables of this constraint are fixed now. */
-                  consvarsfixedcount[i] = 2;
+                  consvarsfixedcount[i] = 2; /* All variables of this constraint are fixed now. */
                }
                else if( solvals[SCIPvarGetProbindex(vconsvars[0])] == -1 && solvals[SCIPvarGetProbindex(vconsvars[1])] >= 0 )
                {
-                  /* Set (the unset) variable0 to the value of variable1 */
+                  /* Fix (the unfixed) variable0 to the value of variable1 */
                   solvals[SCIPvarGetProbindex(vconsvars[0])] = solvals[SCIPvarGetProbindex(vconsvars[1])];
-                  /* Increment fixed variables counter. */
                   nfixedvars++;
-                  /* All variables of this constraint are fixed now. */
-                  consvarsfixedcount[i] = 2;
+                  consvarsfixedcount[i] = 2; /* All variables of this constraint are fixed now. */
                }
             }
-               /* From here on we have a varbound constraint with x + c*y <= b. */
+            /* From here on we may have a varbound constraint with x + c*y <= b. */
             else
             {
                if( solvals[SCIPvarGetProbindex(vconsvars[0])] == 1
@@ -1000,10 +987,8 @@ SCIP_Bool propagateVariablefixings(
                      vartoset = 0;        /* y is fixed to 0 and x is unset -> set x to 0. */
 
                   solvals[SCIPvarGetProbindex(vconsvars[vartoset])] = vartoset;
-                  /* Increment fixed variables counter. */
                   nfixedvars++;
-                  /* All variables of this constraint are fixed now. */
-                  consvarsfixedcount[i] = 2;
+                  consvarsfixedcount[i] = 2; /* All variables of this constraint are fixed now. */
                }
                else if( cliquerconstypes[i] == VARBND_IS
                         && ((solvals[SCIPvarGetProbindex(vconsvars[0])] == 1 && solvals[SCIPvarGetProbindex(vconsvars[1])] == -1)
@@ -1017,10 +1002,8 @@ SCIP_Bool propagateVariablefixings(
                      vartoset = 0;        /* y is fixed to 1 and x is unset -> set x to 0. */
 
                   solvals[SCIPvarGetProbindex(vconsvars[vartoset])] = 0;
-                  /* Increment fixed variables counter. */
                   nfixedvars++;
-                  /* All variables of this constraint are fixed now. */
-                  consvarsfixedcount[i] = 2;
+                  consvarsfixedcount[i] = 2; /* All variables of this constraint are fixed now. */
                }
                else if( cliquerconstypes[i] == VARBND_IS
                         && (solvals[SCIPvarGetProbindex(vconsvars[0])] == -1 && solvals[SCIPvarGetProbindex(vconsvars[1])] == -1
@@ -1029,9 +1012,8 @@ SCIP_Bool propagateVariablefixings(
                   /* The two variables are linked and appear in an IS-constraint, i.e., x = y and x + y <= 1.
                    * -> Both variables must be fixed to 0. Thus calling the setter for one is sufficient */
                   setLinkedSolvals(pricingprob, solvals, linkmatrix, linkedvars, nlinkedvars, vconsvars[0], 0.0);
-                  /* Increment fixed variables counter. */
                   nfixedvars += 2;
-                  consvarsfixedcount[i] = 2;
+                  consvarsfixedcount[i] = 2; /* All variables of this constraint are fixed now. */
                }
             }
          }
@@ -1511,7 +1493,6 @@ SCIP_RETCODE solveCliquer(
    }
 
    SCIPdebugMessage("Graph size: %d.\n", indexcount);
-   // TODO: REMOVE!
 
    ASSERT( indexcount <= npricingprobvars );
 
