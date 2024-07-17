@@ -532,6 +532,218 @@ SCIP_Real scaleRelativeToMax(
    return scalingfactor;
 }
 
+/** TODO: comment */
+static
+SCIP_Bool hasInvalidConstraintsAndDetermineTypes(
+   SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
+   SCIP_CONS**           constraints,
+   SCIP_CONS**           markedconstraints,
+   SCIP_VAR**            linkedvars,
+   int**                 linkmatrix,
+   int*                  couplingcoefindices,
+   int                   nlinkedvars,
+   int                   nvars,
+   int                   nconss,
+   int                   markedcount,
+   CLIQUER_CONSTYPE*     cliquerconstypes
+   )
+{
+   /* Local variables. */
+   SCIP_CONSHDLR*        conshdlr;
+   SCIP_VAR**            lconsvars;
+   SCIP_VAR**            vconsvars;
+   SCIP_Real*            consvals;
+   SCIP_Bool   retcode;
+   int         i;
+   int         j;
+
+   /* Loop for checking and saving the constraint types. This is done to ease the handling of the cases later on. */
+   /* Also the case of the occurrence of constraints that can not be handled by the solver is covered. */
+   /* Also, the equality graph is built through updating the linkmatrix every time a "same"-constraint is encountered. */
+   for( i = 0; i < nconss; ++i )
+   {
+      assert(constraints[i] != NULL);
+      conshdlr = SCIPconsGetHdlr(constraints[i]);
+      assert(conshdlr != NULL);
+
+      /* The constraint may not be of type 'linear' */
+      if( strcmp(SCIPconshdlrGetName(conshdlr),"linear") == 0 )
+      {
+         lconsvars = SCIPgetVarsLinear(pricingprob,constraints[i]);
+         consvals = SCIPgetValsLinear(pricingprob,constraints[i]);
+         if( !SCIPisEQ(pricingprob,SCIPgetLhsLinear(pricingprob,constraints[i]),SCIPgetRhsLinear(pricingprob,constraints[i])) )
+         {
+            /* Check if we have an IS constraint */
+            if( SCIPgetNVarsLinear(pricingprob,constraints[i]) == 2 && SCIPisEQ(pricingprob,SCIPgetRhsLinear(pricingprob,constraints[i]),1) )
+            {
+               cliquerconstypes[i] = LINEAR_IS;
+            }
+               /* Handle other constraints that behave like IS constraints, i.e. cx+dy<=rhs with c+d>rhs, c>0, d>0 */
+            else if( SCIPgetNVarsLinear(pricingprob,constraints[i]) == 2 && consvals[0] > 0 && consvals[1] > 0
+                     && SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[0] + consvals[1])
+                     && !SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[0])
+                     && !SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[1]) )
+            {
+               cliquerconstypes[i] = LINEAR_IS_LIKE;
+            }
+            else
+            {
+               /* The current constraint is no linear IS constraint */
+               SCIPgetConsNVars(pricingprob,constraints[i],&nvars,&retcode);
+
+               /* Check the coefficients of the variables in the constraint */
+               for( j = 0; j < nvars; ++j )
+               {
+                  if( consvals[j] != 1 && (couplingcoefindices[i] == -1) )
+                  {
+                     couplingcoefindices[i] = j;
+                  }
+                  else if( consvals[j] != 1 && couplingcoefindices[i] != -1 )
+                  {
+                     /* More than one variable has a coefficient unequal to 1 */
+                     SCIPdebugMessage("Exit: More than one coefficient unequal 1 in linear non-IS constraint.\n");
+                     return TRUE;
+
+                     /*
+                      * Could handle other types of constraints similar to coupling constraints.
+                      * -> E.g.: One var. coeff. < 0 and this var is fixed to 0: Others must also be fixed to 0. Otherwise, cannot handle!
+                      */
+                  }
+               }
+               /* Check if we have a clique constraint (rhs 1 and coefficients 1) */
+               if( (couplingcoefindices[i] == -1) && SCIPisEQ(pricingprob,SCIPgetRhsLinear(pricingprob,constraints[i]),1) )
+               {
+                  cliquerconstypes[i] = LINEAR_CLIQUE;
+               }
+                  /* Check if we have a coupling constraint (rhs 0) */
+               else if( (couplingcoefindices[i] != -1) && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob, constraints[i]), 0.0) )
+               {
+                  /* Special case: The coupling constraint is purely decorative (coefficient + 1 of coupling var >= #vars)*/
+                  if( abs(consvals[couplingcoefindices[i]]) + 1 >= nvars )
+                  {
+                     cliquerconstypes[i] = LINEAR_COUPLING_DECORATIVE;
+                  }
+                     /* Special case: The coefficient is -1, we treat the case like a clique constraint. */
+                  else if( abs(consvals[couplingcoefindices[i]]) == 1 )
+                  {
+                     cliquerconstypes[i] = LINEAR_COUPLING_CLIQUE;
+                  }
+                  else
+                  {
+                     /* Coupling coefficient is between 1 and npricingprobvars. */
+                     SCIPdebugMessage("Exit: Coupling coefficient unhandled, coef: %g.\n",consvals[couplingcoefindices[i]]);
+                     return TRUE;
+                  }
+               }
+               else
+               {
+                  /* Constraint is neither a coupling nor a clique constraint */
+                  SCIPdebugMessage("Exit: Unhandled linear constraint.\n");
+                  return TRUE;
+               }
+            }
+         }
+         else
+         {
+            /* Constraint is a linear equality constraint */
+            SCIPdebugMessage("Exit: Unhandled linear constraint: Equality constraint.\n");
+            return TRUE;
+         }
+      }
+         /* Constraint may be of type varbound: lhs <= x + c*y <= rhs */
+      else if( strcmp(SCIPconshdlrGetName(conshdlr), "varbound") == 0 )
+      {
+         vconsvars[0] = SCIPgetVarVarbound(pricingprob,constraints[i]);
+         vconsvars[1] = SCIPgetVbdvarVarbound(pricingprob,constraints[i]);
+
+         /* Check for "same"-constraints present in Ryan-Foster-Branching and save the links between the variables. */
+         /* These are constraints of type: constraint of type x = y (lhs = rhs = 0 and c = -1)*/
+         if( SCIPisEQ(pricingprob, SCIPgetLhsVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i])) )
+         {
+            /* c == -1, thus variables have to become both 0 or both 1 */
+            if( (SCIPgetRhsVarbound(pricingprob,constraints[i]) == 0) && (SCIPgetVbdcoefVarbound(pricingprob,constraints[i]) == -1) )
+            {
+               cliquerconstypes[i] = VARBND_SAME;
+
+               /* Build the equality graph through updating the linkmatrix. */
+               updateVarLinks(pricingprob,linkmatrix,vconsvars[0],vconsvars[1],linkedvars,&nlinkedvars);
+               /* Since the vars may not be part of the graph, we have to be able to set their solval later, thus we save the constraint */
+               markedconstraints[markedcount] = constraints[i];
+               ++markedcount;
+            }
+            else
+            {
+               /* RHS is unequal 0 and unequal 1 */
+               SCIPdebugMessage("Exit: Unhandled equality constraint, c: %g, rhs: %g.\n", SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i]));
+               return TRUE;
+            }
+         }
+
+         /* Check value of rhs to be 0 and of c to be <= -1 */
+         if( SCIPisInfinity(pricingprob, -SCIPgetLhsVarbound(pricingprob,constraints[i])) )
+         {
+            if( SCIPisEQ(pricingprob,SCIPgetRhsVarbound(pricingprob,constraints[i]),0) )
+            {
+               if( SCIPisLT(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]),-1) || SCIPisEQ(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]),-1) )
+               {
+                  cliquerconstypes[i] = VARBND_STD;
+               }
+               else
+               {
+                  /* Coefficient c of varbound is > -1 and we do not have an IS constraint*/
+                  SCIPdebugMessage("Exit: Coefficient of Varbound unhandled Rhs: %g, Coeff: %g.\n",SCIPgetRhsVarbound(pricingprob,constraints[i]),SCIPgetVbdcoefVarbound(pricingprob,constraints[i]));
+                  return TRUE;
+               }
+            }
+               /*
+                * Rhs of varbound unequal to 0.
+                * It may still be the case that we have an IS constraint with a non-linear handler.
+                * The constraint may also be of the form c + 1 > rhs and c < rhs, i.e. a non-standard IS-constraint.
+                * We treat these cases like a regular IS constraint.
+                */
+            else if( (SCIPisEQ(pricingprob,SCIPgetRhsVarbound(pricingprob,constraints[i]),1) && SCIPisEQ(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]),1))
+                     || (SCIPisLT(pricingprob,SCIPgetRhsVarbound(pricingprob,constraints[i]),SCIPgetVbdcoefVarbound(pricingprob,constraints[i]) + 1)
+                         && SCIPisLT(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i]))) )
+            {
+               cliquerconstypes[i] = VARBND_IS;
+            }
+            else
+            {
+               /* Rhs of varbound unequal to 0 and no IS constraint*/
+               SCIPdebugMessage("Exit: Rhs of Varbound unhandled, Rhs: %g, Coeff:%g.\n",SCIPgetRhsVarbound(pricingprob,constraints[i]),SCIPgetVbdcoefVarbound(pricingprob,constraints[i]));
+               return TRUE;
+            }
+         }
+            /* We may have a varbound constraint of type x + cy == rhs */
+         else if( SCIPisEQ(pricingprob, SCIPgetLhsVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i])) )
+         {
+            /* If the rhs is 0 and c == -1, both variables have to be set to 0 or to 1 */
+            if( !((SCIPgetRhsVarbound(pricingprob,constraints[i]) == 0) && (SCIPgetVbdcoefVarbound(pricingprob,constraints[i]) == -1)) )
+            {
+               /* RHS is unequal 0 and unequal 1 */
+               SCIPdebugMessage("Exit: Unhandled equality constraint, c: %g, rhs: %g.\n", SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i]));
+               return TRUE;
+            }
+         }
+         else
+         {
+            /* We have a varbound of type lhs <= x + c*y */
+            SCIPdebugMessage("Exit: Varbound of type lhs <= x+c*y, c: %g, rhs: %g.\n", SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i]));
+            SCIPdebugMessage("Constraint handler: %s\n", SCIPconshdlrGetName(conshdlr));
+            return TRUE;
+         }
+      }
+      else
+      {
+         /* Constraint handler neither linear nor varbound */
+         SCIPdebugMessage("Exit: Unhandled constraint handler: %s \n", SCIPconshdlrGetName(conshdlr));
+         return TRUE;
+      }
+   }
+   /* Has no invalid constraint. */
+   return FALSE;
+}
+
 /* Basic idea of the heuristic solver: The biggest independent set in a graph corresponds to the biggest clique
  * of the complement graph, for which we use the cliquer library to find it. We therefore transform the variables 
  * into graph nodes and delete the edge between two nodes if there is an independent set constraint involving both. 
@@ -712,200 +924,12 @@ SCIP_RETCODE solveCliquer(
    }
 
 
-   /* Loop for checking and saving the constraint types easing the handling of the cases later. */
-   /* Also the case of the occurrence of constraints that can not be handled by the solver is covered. */
-   /* Also, the equality graph is built through updating the linkmatrix every time a "same"-constraint is encountered. */
-   for( i = 0; i < nconss; ++i )
+   /* TODO: comment */
+   if( hasInvalidConstraintsAndDetermineTypes(pricingprob,constraints,markedconstraints,linkedvars,linkmatrix,couplingcoefindices,nlinkedvars,nvars,nconss,markedcount,cliquerconstypes) )
    {
-      assert(constraints[i] != NULL);
-      conshdlr = SCIPconsGetHdlr(constraints[i]);
-      assert(conshdlr != NULL);
-
-      /* The constraint may not be of type 'linear' */
-      if( strcmp(SCIPconshdlrGetName(conshdlr),"linear") == 0 )
-      {
-         lconsvars = SCIPgetVarsLinear(pricingprob,constraints[i]);
-         consvals = SCIPgetValsLinear(pricingprob,constraints[i]);
-         if( !SCIPisEQ(pricingprob,SCIPgetLhsLinear(pricingprob,constraints[i]),SCIPgetRhsLinear(pricingprob,constraints[i])) )
-         {
-            /* Check if we have an IS constraint */
-            if( SCIPgetNVarsLinear(pricingprob,constraints[i]) == 2 && SCIPisEQ(pricingprob,SCIPgetRhsLinear(pricingprob,constraints[i]),1) )
-            {
-               cliquerconstypes[i] = LINEAR_IS;
-            }
-            /* Handle other constraints that behave like IS constraints, i.e. cx+dy<=rhs with c+d>rhs, c>0, d>0 */
-            else if( SCIPgetNVarsLinear(pricingprob,constraints[i]) == 2 && consvals[0] > 0 && consvals[1] > 0
-                     && SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[0] + consvals[1])
-                     && !SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[0])
-                     && !SCIPisLT(pricingprob, SCIPgetRhsLinear(pricingprob,constraints[i]),consvals[1]) )
-            {
-               cliquerconstypes[i] = LINEAR_IS_LIKE;
-            }
-            else
-            {
-               /* The current constraint is no linear IS constraint */
-               SCIPgetConsNVars(pricingprob,constraints[i],&nvars,&retcode);
-
-               /* Check the coefficients of the variables in the constraint */
-               for( j = 0; j < nvars; ++j )
-               {
-                  if( consvals[j] != 1 && (couplingcoefindices[i] == -1) )
-                  {
-                     couplingcoefindices[i] = j;
-                  }
-                  else if( consvals[j] != 1 && couplingcoefindices[i] != -1 )
-                  {
-                     /* More than one variable has a coefficient unequal to 1 */
-                     SCIPdebugMessage("Exit: More than one coefficient unequal 1 in linear non-IS constraint.\n");
-                     *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
-                     goto TERMINATE;
-
-                     /*
-                      * Could handle other types of constraints similar to coupling constraints.
-                      * -> E.g.: One var. coeff. < 0 and this var is fixed to 0: Others must also be fixed to 0. Otherwise, cannot handle!
-                      */
-                  }
-               }
-               /* Check if we have a clique constraint (rhs 1 and coefficients 1) */
-               if( (couplingcoefindices[i] == -1) && SCIPisEQ(pricingprob,SCIPgetRhsLinear(pricingprob,constraints[i]),1) )
-               {
-                  cliquerconstypes[i] = LINEAR_CLIQUE;
-               }
-               /* Check if we have a coupling constraint (rhs 0) */
-               else if( (couplingcoefindices[i] != -1) && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob, constraints[i]), 0.0) )
-               {
-                  /* Special case: The coupling constraint is purely decorative (coefficient + 1 of coupling var >= #vars)*/
-                  if( abs(consvals[couplingcoefindices[i]]) + 1 >= nvars )
-                  {
-                     cliquerconstypes[i] = LINEAR_COUPLING_DECORATIVE;
-                  }
-                  /* Special case: The coefficient is -1, we treat the case like a clique constraint. */
-                  else if( abs(consvals[couplingcoefindices[i]]) == 1 )
-                  {
-                     cliquerconstypes[i] = LINEAR_COUPLING_CLIQUE;
-                  }
-                  else
-                  {
-                     /* Coupling coefficient is between 1 and npricingprobvars. */
-                     SCIPdebugMessage("Exit: Coupling coefficient unhandled, coef: %g.\n",consvals[couplingcoefindices[i]]);
-                     *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
-                     goto TERMINATE;
-                  }
-               }
-               else
-               {
-                  /* Constraint is neither a coupling nor a clique constraint */
-                  SCIPdebugMessage("Exit: Unhandled linear constraint.\n");
-                  *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
-                  goto TERMINATE;
-               }
-            }
-         }
-         else
-         {
-            /* Constraint is a linear equality constraint */
-            SCIPdebugMessage("Exit: Unhandled linear constraint: Equality constraint.\n");
-            *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
-            goto TERMINATE;
-         }
-      }
-      /* Constraint may be of type varbound: lhs <= x + c*y <= rhs */
-      else if( strcmp(SCIPconshdlrGetName(conshdlr), "varbound") == 0 )
-      {
-         vconsvars[0] = SCIPgetVarVarbound(pricingprob,constraints[i]);
-         vconsvars[1] = SCIPgetVbdvarVarbound(pricingprob,constraints[i]);
-
-         /* Check for "same"-constraints present in Ryan-Foster-Branching and save the links between the variables. */
-         /* These are constraints of type: constraint of type x = y (lhs = rhs = 0 and c = -1)*/
-         if( SCIPisEQ(pricingprob, SCIPgetLhsVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i])) )
-         {
-            /* c == -1, thus variables have to become both 0 or both 1 */
-            if( (SCIPgetRhsVarbound(pricingprob,constraints[i]) == 0) && (SCIPgetVbdcoefVarbound(pricingprob,constraints[i]) == -1) )
-            {
-               cliquerconstypes[i] = VARBND_SAME;
-
-               /* Build the equality graph through updating the linkmatrix. */
-               updateVarLinks(pricingprob,linkmatrix,vconsvars[0],vconsvars[1],linkedvars,&nlinkedvars);
-               /* Since the vars may not be part of the graph, we have to be able to set their solval later, thus we save the constraint */
-               markedconstraints[markedcount] = constraints[i];
-               ++markedcount;
-            }
-            else
-            {
-               /* RHS is unequal 0 and unequal 1 */
-               SCIPdebugMessage("Exit: Unhandled equality constraint, c: %g, rhs: %g.\n", SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i]));
-               *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
-               goto TERMINATE;
-            }
-         }
-
-         /* Check value of rhs to be 0 and of c to be <= -1 */
-         if( SCIPisInfinity(pricingprob, -SCIPgetLhsVarbound(pricingprob,constraints[i])) )
-         {
-            if( SCIPisEQ(pricingprob,SCIPgetRhsVarbound(pricingprob,constraints[i]),0) )
-            {
-               if( SCIPisLT(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]),-1) || SCIPisEQ(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]),-1) )
-               {
-                  cliquerconstypes[i] = VARBND_STD;
-               }
-               else
-               {
-                  /* Coefficient c of varbound is > -1 and we do not have an IS constraint*/
-                  SCIPdebugMessage("Exit: Coefficient of Varbound unhandled Rhs: %g, Coeff: %g.\n",SCIPgetRhsVarbound(pricingprob,constraints[i]),SCIPgetVbdcoefVarbound(pricingprob,constraints[i]));
-                  *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
-                  goto TERMINATE;
-               }
-            }
-            /*
-             * Rhs of varbound unequal to 0.
-             * It may still be the case that we have an IS constraint with a non-linear handler.
-             * The constraint may also be of the form c + 1 > rhs and c < rhs, i.e. a non-standard IS-constraint.
-             * We treat these cases like a regular IS constraint.
-             */
-            else if( (SCIPisEQ(pricingprob,SCIPgetRhsVarbound(pricingprob,constraints[i]),1) && SCIPisEQ(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]),1))
-                     || (SCIPisLT(pricingprob,SCIPgetRhsVarbound(pricingprob,constraints[i]),SCIPgetVbdcoefVarbound(pricingprob,constraints[i]) + 1)
-                         && SCIPisLT(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i]))) )
-            {
-               cliquerconstypes[i] = VARBND_IS;
-            }
-            else
-            {
-               /* Rhs of varbound unequal to 0 and no IS constraint*/
-               SCIPdebugMessage("Exit: Rhs of Varbound unhandled, Rhs: %g, Coeff:%g.\n",SCIPgetRhsVarbound(pricingprob,constraints[i]),SCIPgetVbdcoefVarbound(pricingprob,constraints[i]));
-               *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
-               goto TERMINATE;
-            }
-         }
-         /* We may have a varbound constraint of type x + cy == rhs */
-         else if( SCIPisEQ(pricingprob, SCIPgetLhsVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i])) )
-         {
-            /* If the rhs is 0 and c == -1, both variables have to be set to 0 or to 1 */
-            if( !((SCIPgetRhsVarbound(pricingprob,constraints[i]) == 0) && (SCIPgetVbdcoefVarbound(pricingprob,constraints[i]) == -1)) )
-            {
-               /* RHS is unequal 0 and unequal 1 */
-               SCIPdebugMessage("Exit: Unhandled equality constraint, c: %g, rhs: %g.\n", SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i]));
-               *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
-               goto TERMINATE;
-            }
-         }
-         else
-         {
-            /* We have a varbound of type lhs <= x + c*y */
-            SCIPdebugMessage("Exit: Varbound of type lhs <= x+c*y, c: %g, rhs: %g.\n", SCIPgetVbdcoefVarbound(pricingprob,constraints[i]), SCIPgetRhsVarbound(pricingprob,constraints[i]));
-            SCIPdebugMessage("Constraint handler: %s\n", SCIPconshdlrGetName(conshdlr));
-            *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
-            goto TERMINATE;
-         }
-      }
-      else
-      {
-         /* Constraint handler neither linear nor varbound */
-         SCIPdebugMessage("Exit: Unhandled constraint handler: %s \n", SCIPconshdlrGetName(conshdlr));
-         *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
-         goto TERMINATE;
-      }
+      *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
+      goto TERMINATE;
    }
-
 
    /* Compute implied variable fixings. */
    /* This is done by propagating the fixings already found over the constraints. */
