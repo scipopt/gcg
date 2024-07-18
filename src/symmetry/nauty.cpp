@@ -1,4 +1,4 @@
-#include "type_nauty.h"
+#include "symmetry/type_nauty.h"
 
 void struct_graph::add_vertex(
    int id

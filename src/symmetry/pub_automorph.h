@@ -40,7 +40,7 @@
 #ifndef PUB_AUTOMORPHISM_H_
 #define PUB_AUTOMORPHISM_H_
 
-#include "def.h"
+#include "gcg/def.h"
 #include "scip/scip.h"
 
 #ifdef __cplusplus

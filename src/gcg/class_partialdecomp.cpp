@@ -59,8 +59,8 @@
 #include <stdlib.h>
 
 #ifndef NO_AUT_LIB
-#include "automorph.h"
-#include "automorph.hpp"
+#include "symmetry/automorph.h"
+#include "symmetry/automorph.hpp"
 #endif
 
 

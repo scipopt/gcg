@@ -52,10 +52,10 @@
 #include "scip/clock.h"
 
 #ifdef WITH_BLISS
-#include "bliss/type_bliss.h"
+#include "symmetry/type_bliss.h"
 #endif
 #ifdef WITH_NAUTY
-#include "type_nauty.h"
+#include "symmetry/type_nauty.h"
 #endif
 #include "pub_gcgvar.h"
 #include <cstring>
@@ -63,7 +63,7 @@
 #include <algorithm>
 #include <iostream>
 
-#include "pub_automorph.h"
+#include "symmetry/pub_automorph.h"
 
 /* constraint handler properties */
 #define DEC_NAME                  "isomorph"  /**< name of detector */
@@ -1084,7 +1084,7 @@ SCIP_RETCODE detectIsomorph(
       ptrhook->conssperm[i] = -1;
    }
 
-   graph.find_automorphisms(/*fhookForPartialdecs, ptrhook*/);
+   graph.find_automorphisms(ptrhook, fhookForPartialdecs, 0u, 0u);
 
    if( !ptrhook->getBool() )
       detectordata->result = SCIP_DIDNOTFIND;

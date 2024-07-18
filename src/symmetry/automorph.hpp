@@ -36,7 +36,7 @@
 #ifndef GCG_AUTOMORPH_HPP__
 #define GCG_AUTOMORPH_HPP__
 
-#include "class_partialdecomp.h"
+#include "gcg/class_partialdecomp.h"
 
 
 /** compare two graphs w.r.t. automorphism */

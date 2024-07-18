@@ -43,15 +43,15 @@
 #ifdef WITH_NAUTY
 #include "type_nauty.h"
 #endif
-#include "automorph.h"
-#include "scip_misc.h"
+#include "symmetry/automorph.h"
+#include "gcg/scip_misc.h"
 #include "scip/scip.h"
-#include "gcg.h"
+#include "gcg/gcg.h"
 #include "scip/cons_linear.h"
-#include "pub_automorph.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "cons_decomp.hpp"
+#include "symmetry/pub_automorph.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/cons_decomp.hpp"
 
 #include <cstring>
 
@@ -1364,7 +1364,7 @@ SCIP_RETCODE cmpGraphPair(
 
    ptrhook = new AUT_HOOK2(varmap, consmap, (unsigned int) pricingnodes, scips, origscip);
 
-   graph.find_automorphisms();
+   graph.find_automorphisms(ptrhook, &fhook, searchnodelimit, generatorlimit);
 
    SCIPverbMessage(origscip, SCIP_VERBLEVEL_FULL , NULL, "finished calling bliss: number of reporting function calls (=number of generators): %d \n", ptrhook->ncalls);
 
@@ -1429,7 +1429,7 @@ SCIP_RETCODE cmpGraphPair(
    SCIPdebugMessage("finished creating aut hook.\n");
    ptrhook->setNewDetectionStuff(detprobdata, partialdec, &blocks);
 
-   graph.find_automorphisms();
+   graph.find_automorphisms(ptrhook, &fhook, searchnodelimit, generatorlimit);
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL , NULL, "finished calling bliss: number of reporting function calls (=number of generators): %d \n", ptrhook->ncalls);
 

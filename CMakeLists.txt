@@ -116,7 +116,7 @@ if(HMETIS_FOUND)
    add_definitions(-DWITH_HMETIS)
 endif()
 
-set(SYM snauty CACHE STRING "options for symmetry computation")  #create the variable
+set(SYM sbliss CACHE STRING "options for symmetry computation")  #create the variable
 set_property(CACHE SYM PROPERTY STRINGS sbliss bliss nauty snauty none )  #define list of values GUI will offer for the variable
 
 #set the correct rpath for OS X
@@ -218,12 +218,14 @@ endif()
 
 #search the selected symmetry computation program
 if(SYM STREQUAL "bliss" OR SYM STREQUAL "sbliss")
-   if(NOT TARGET Bliss::bliss)
-      find_package(BLISS REQUIRED)
-      include_directories(${BLISS_INCLUDE_DIRS})
-   else()
-      set(BLISS_LIBRARIES libbliss)
+   if(NOT TARGET Bliss::libbliss)
+      find_package(Bliss CONFIG HINTS ${BLISS_DIR})
+      if(NOT TARGET Bliss::libbliss)
+         find_package(Bliss REQUIRED)
+         include_directories(${BLISS_INCLUDE_DIRS})
+      endif()
    endif()
+   set(BLISS_LIBRARIES Bliss::libbliss)
    set(SYM_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
    set(SYM_PIC_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")

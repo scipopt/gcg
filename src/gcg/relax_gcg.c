@@ -70,8 +70,8 @@
 #include "gcg.h"
 
 #ifndef NO_AUT_LIB
-#include "pub_automorph.h"
-#include "automorph.h"
+#include "symmetry/pub_automorph.h"
+#include "symmetry/automorph.h"
 #endif
 
 #define RELAX_NAME             "gcg"

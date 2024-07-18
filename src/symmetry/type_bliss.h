@@ -46,7 +46,12 @@ struct struct_graph
    void add_vertex(int id);
    void add_edge(int v1, int v2);
    unsigned int get_nof_vertices();
-   void find_automorphisms();
+   void find_automorphisms(
+      void* ptrhook,
+      void (*fhook)(void*, unsigned int, const unsigned int*),
+      unsigned int searchnodelimit,                                /**< bliss search node limit (requires patched bliss version) */
+      unsigned int generatorlimit                                  /**< bliss generator limit (requires patched bliss version or version >=0.76) */
+   );
 
    bliss::Graph graph;
    bliss::Stats bstats;
