@@ -916,6 +916,104 @@ SCIP_Real getUpperBound(
 }
 #endif
 
+/** define signature of functions to choose variables to seperate */
+#define CHOOSE_VARS(x) SCIP_RETCODE x (SCIP* masterscip, SCIP_VAR** X, int Xsize, SCIP_VAR** indexSet, int indexSetSize, GCG_COMPBND* B, int Bsize, int blocknr, SCIP_VAR** selected_origvar, SCIP_Real* value)
+
+/** choose to separate on original variable where max-min is maximal */
+static
+CHOOSE_VARS(chooseMaxMin)
+{
+   // Task: Find fractional mastervarMin, mastervarMax, indexed by x1, x2, s.t. for some j, xj1 < xj2
+   SCIP_VAR* current_mastervar;
+   SCIP_Real current_solution_value; // of the currMastervar
+   SCIP_VAR* current_origvar;
+   SCIP_Real current_min;
+   SCIP_Real current_max;
+   SCIP_Real current_diff;
+   SCIP_Real largest_diff_min;
+   SCIP_Real largest_diff_max;
+   SCIP_Real largest_diff = -SCIPinfinity(masterscip);
+   int i;
+   int j;
+   SCIP_Real generatorentry;
+   SCIP_Bool found = FALSE;
+
+#ifndef NDEBUG
+   SCIP_Real given_min;
+   SCIP_Real given_max;
+#endif
+
+   for( j=0; j<indexSetSize; ++j )
+   {
+      current_origvar = indexSet[j];
+#ifndef NDEBUG
+      given_min = getLowerBound(masterscip, current_origvar, B, Bsize);
+      given_max = getUpperBound(masterscip, current_origvar, B, Bsize);
+      assert(SCIPisFeasLE(masterscip, given_min, given_max));
+#endif
+      current_min = SCIPinfinity(masterscip);
+      current_max = -SCIPinfinity(masterscip);
+      for( i=0; i<Xsize; ++i )
+      {
+         current_mastervar = X[i];
+
+         // Current solution value of the master variable must be fractional and > 0
+         current_solution_value = SCIPgetSolVal(masterscip, NULL, current_mastervar);
+         if ( !SCIPisFeasPositive(masterscip, current_solution_value) || SCIPisFeasIntegral(masterscip, current_solution_value) ) {
+            // skip
+            continue;
+         }
+
+         generatorentry = getGeneratorEntry(current_mastervar, current_origvar);
+
+         // first, check if we can update the min and max values
+         if( SCIPisInfinity(masterscip, current_min) )
+         {
+            assert(SCIPisInfinity(masterscip, -current_max));
+            current_min = generatorentry;
+            current_max = generatorentry;
+         }
+         else if( SCIPisLT(masterscip, generatorentry, current_min) )
+            current_min = generatorentry;
+         else if( SCIPisLT(masterscip, current_max, generatorentry) )
+            current_max = generatorentry;
+
+         // now could be that min<max
+         if( SCIPisLT(masterscip, current_min, current_max) )
+         {
+            found = TRUE;
+            current_diff = current_max - current_min;
+            if( SCIPisGT(masterscip, current_diff, largest_diff) )
+            {
+               largest_diff_min = current_min;
+               largest_diff_max = current_max;
+               largest_diff = current_diff;
+               *selected_origvar = current_origvar;
+            }
+         }
+      }
+   }
+
+   SCIPfreeBlockMemoryArray(masterscip, &indexSet, indexSetSize);
+   indexSetSize = 0;
+
+   if( !found ) // should always be able to find - the branching scheme is sound and complete
+   {
+      return SCIP_ERROR;
+   }
+
+   assert(largest_diff_min < largest_diff_max);
+   assert(largest_diff > 0);
+   assert(SCIPisFeasLE(masterscip, SCIPvarGetLbGlobal(*selected_origvar), largest_diff_min));
+   assert(SCIPisFeasLE(masterscip, largest_diff_max, SCIPvarGetUbGlobal(*selected_origvar)));
+   SCIPdebugMessage("Found %d for origvar %s, j=%d, min=%f, max=%f\n", found, SCIPvarGetName(*selected_origvar), j, largest_diff_min, largest_diff_max);
+
+   // j and origivar are still set to the correct values after execution of the loop
+   *value = (largest_diff_min+largest_diff_max)/2;
+
+   return SCIP_OKAY;
+}
+
 /** separation algorithm determining a component bound sequence to branch on */
 static
 SCIP_RETCODE separation(
@@ -930,13 +1028,14 @@ SCIP_RETCODE separation(
    )
 {
    SCIP_Real fractionality;
+   int i;
 
    assert(masterscip != NULL);
    assert(GCGisMaster(masterscip));
 
    // Sanity check: All variables in X must satisfy the component bound sequence
    if( *Bsize > 0 ) {
-      for( int i = 0; i < Xsize; ++i )
+      for( i = 0; i < Xsize; ++i )
       {
          assert(isMasterVarInB(masterscip, X[i], *B, *Bsize, blocknr));
       }
@@ -978,105 +1077,14 @@ SCIP_RETCODE separation(
    }
 
    // the fractionality is integral, we need to impose an additional bound
-   // Task: Find fractional mastervarMin, mastervarMax, indexed by x1, x2, s.t. for some j, xj1 < xj2
-   SCIP_VAR* current_mastervar;
-   SCIP_Real current_solution_value; // of the currMastervar
-   SCIP_VAR* current_origvar;
    SCIP_VAR** indexSet = NULL;
    int indexSetSize = 0;
-   SCIP_Real current_min;
-   SCIP_Real current_max;
-   SCIP_Real current_diff;
-   SCIP_VAR* selected_origvar;
-   SCIP_Real largest_diff_min;
-   SCIP_Real largest_diff_max;
-   SCIP_Real largest_diff = -SCIPinfinity(masterscip);
-   int i;
-   int j;
-   SCIP_Real generatorentry;
-   SCIP_Bool found = FALSE;
-
-#ifndef NDEBUG
-   SCIP_Real given_min;
-   SCIP_Real given_max;
-#endif
-
    SCIP_CALL( initIndexSet(masterscip, &indexSet, &indexSetSize, X, Xsize) );
 
-   for( j=0; j<indexSetSize; ++j )
-   {
-      current_origvar = indexSet[j];
-#ifndef NDEBUG
-      given_min = getLowerBound(masterscip, current_origvar, *B, *Bsize);
-      given_max = getUpperBound(masterscip, current_origvar, *B, *Bsize);
-      assert(SCIPisFeasLE(masterscip, given_min, given_max));
-#endif
-      current_min = SCIPinfinity(masterscip);
-      current_max = -SCIPinfinity(masterscip);
-      for( i=0; i<Xsize; ++i )
-      {
-         current_mastervar = X[i];
-
-         // Current solution value of the master variable must be fractional and > 0
-         current_solution_value = SCIPgetSolVal(masterscip, NULL, current_mastervar);
-         if ( !SCIPisFeasPositive(masterscip, current_solution_value) || SCIPisFeasIntegral(masterscip, current_solution_value) ) {
-            // skip
-            continue;
-         }
-
-         generatorentry = getGeneratorEntry(current_mastervar, current_origvar);
-
-         // first, check if we can update the min and max values
-         if( SCIPisInfinity(masterscip, current_min) )
-         {
-            assert(SCIPisInfinity(masterscip, -current_max));
-            current_min = generatorentry;
-            current_max = generatorentry;
-         }
-         else if( SCIPisLT(masterscip, generatorentry, current_min) )
-            current_min = generatorentry;
-         else if( SCIPisLT(masterscip, current_max, generatorentry) )
-            current_max = generatorentry;
-
-         // now could be that min<max
-         if( SCIPisLT(masterscip, current_min, current_max) )
-         {
-            found = TRUE;
-            current_diff = current_max - current_min;
-            if( SCIPisGT(masterscip, current_diff, largest_diff) )
-            {
-               largest_diff_min = current_min;
-               largest_diff_max = current_max;
-               largest_diff = current_diff;
-               selected_origvar = current_origvar;
-            }
-         }
-      }
-   }
-
-   SCIPfreeBlockMemoryArray(masterscip, &indexSet, indexSetSize);
-   indexSetSize = 0;
-
-   if( !found ) // should always be able to find - the branching scheme is sound and complete
-   {
-      *result = SCIP_DIDNOTFIND;
-
-      *numInitialVars = 0;
-
-      SCIPfreeBlockMemoryArray(masterscip, &X, Xsize);
-      Xsize = 0;
-      assert(X == NULL);
-
-      return SCIP_ERROR;
-   }
-   assert(largest_diff_min < largest_diff_max);
-   assert(largest_diff > 0);
-   assert(SCIPisFeasLE(masterscip, SCIPvarGetLbGlobal(selected_origvar), largest_diff_min));
-   assert(SCIPisFeasLE(masterscip, largest_diff_max, SCIPvarGetUbGlobal(selected_origvar)));
-   SCIPdebugMessage("Found %d for origvar %s, j=%d, min=%f, max=%f\n", found, SCIPvarGetName(selected_origvar), j, largest_diff_min, largest_diff_max);
-
-   // j and origivar are still set to the correct values after execution of the loop
-   SCIP_Real value = (largest_diff_min+largest_diff_max)/2;
+   SCIP_VAR* selected_origvar = NULL;
+   SCIP_Real value = 0.0;
+   SCIP_CALL( chooseMaxMin(masterscip, X, Xsize, indexSet, indexSetSize, *B, *Bsize, blocknr, &selected_origvar, &value) );
+   assert(selected_origvar != NULL);
 
    // create two component bound options, xj <= floor(value) and xj >= floor(value)+1
    GCG_COMPBND* B1;
