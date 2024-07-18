@@ -177,10 +177,11 @@ SCIP_RETCODE Stabilization::updateStabcentermastercutvals()
       stabcentermastercutssize = SCIPcalcMemGrowSize(scip_, nbranchmastercuts);
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &stabcentermastercuts, oldsize, stabcentermastercutssize) );
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &stabcentermastercutvals, oldsize, stabcentermastercutssize) );
-      BMSclearMemoryArray(&stabcentermastercuts[oldsize], (size_t)nbranchmastercuts-oldsize); /*lint !e866*/
+      BMSclearMemoryArray(&stabcentermastercuts[oldsize], (size_t) (nbranchmastercuts - oldsize)); /*lint !e866*/
    }
 
    // update the arrays (mastercuts could have changed, even if size is the same)
+
    // first remove any mastercuts that are not active anymore
    for( write_old_index = 0; write_old_index < nstabcentermastercuts; write_old_index++ )
    {
@@ -199,6 +200,7 @@ SCIP_RETCODE Stabilization::updateStabcentermastercutvals()
          stabcentermastercuts[write_old_index] = NULL;
       }
    }
+
    // now place in the new mastercuts
    for( read_new_index = 0; read_new_index < nbranchmastercuts; read_new_index++ )
    {
@@ -226,7 +228,41 @@ SCIP_RETCODE Stabilization::updateStabcentermastercutvals()
       }
    }
 
-   nstabcentermastercuts = nbranchmastercuts;
+   // update the count of active mastercuts
+   nstabcentermastercuts = 0;
+   for( write_old_index = 0; write_old_index < stabcentermastercutssize; ++write_old_index )
+   {
+      if( stabcentermastercuts[write_old_index] != NULL )
+      {
+         ++nstabcentermastercuts;
+      }
+   }
+
+   // finally, fill in any gaps (NULL elements) from the end
+   int seen = 0;
+   for( write_old_index = 0; write_old_index < stabcentermastercutssize; ++write_old_index )
+   {
+      if( seen == nstabcentermastercuts )
+         break;
+
+      if( stabcentermastercuts[write_old_index] != NULL )
+      {
+         ++seen;
+         continue;
+      }
+
+      assert(stabcentermastercuts[write_old_index] == NULL);
+
+      for( read_new_index = stabcentermastercutssize - 1; read_new_index > write_old_index; --read_new_index )
+      {
+         if( stabcentermastercuts[read_new_index] != NULL )
+         {
+            stabcentermastercuts[write_old_index] = stabcentermastercuts[read_new_index];
+            stabcentermastercuts[read_new_index] = NULL;
+            break;
+         }
+      }
+   }
 
    return SCIP_OKAY;
 }
@@ -350,7 +386,41 @@ SCIP_RETCODE Stabilization::updateSubgradientmastercutvals()
       }
    }
 
-   nsubgradientmastercuts = nbranchmastercuts;
+   // update the count of active mastercuts
+   nsubgradientmastercuts = 0;
+   for( write_old_index = 0; write_old_index < subgradientmastercutssize; ++write_old_index )
+   {
+      if( subgradientmastercuts[write_old_index] != NULL )
+      {
+         ++nsubgradientmastercuts;
+      }
+   }
+
+   // finally, fill in any gaps (NULL elements) from the end
+   int seen = 0;
+   for( write_old_index = 0; write_old_index < subgradientmastercutssize; ++write_old_index )
+   {
+      if( seen == nsubgradientmastercuts )
+         break;
+
+      if( subgradientmastercuts[write_old_index] != NULL )
+      {
+         ++seen;
+         continue;
+      }
+
+      assert(subgradientmastercuts[write_old_index] == NULL);
+
+      for( read_new_index = subgradientmastercutssize - 1; read_new_index > write_old_index; --read_new_index )
+      {
+         if( subgradientmastercuts[read_new_index] != NULL )
+         {
+            subgradientmastercuts[write_old_index] = subgradientmastercuts[read_new_index];
+            subgradientmastercuts[read_new_index] = NULL;
+            break;
+         }
+      }
+   }
 
    return SCIP_OKAY;
 }
