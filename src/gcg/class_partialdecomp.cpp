@@ -49,7 +49,6 @@
 #include "params_visu.h"
 #include "miscvisualization.h"
 #include "reader_gp.h"
-#include "bliss_automorph.hpp"
 
 #include <sstream>
 #include <iostream>
@@ -59,9 +58,9 @@
 #include <utility>
 #include <stdlib.h>
 
-#ifdef WITH_BLISS
-#include "bliss_automorph.h"
-#include "bliss/defs.hh"
+#ifndef NO_AUT_LIB
+#include "automorph.h"
+#include "automorph.hpp"
 #endif
 
 
@@ -1113,7 +1112,7 @@ void PARTIALDECOMP::calcAggregationInformation(
    bool ignoreDetectionLimits
    )
 {
-#ifdef WITH_BLISS
+#ifndef NO_AUT_LIB
    SCIP_Bool tooexpensive;
    SCIP_Bool usebliss;
    int searchnodelimit;
@@ -1131,7 +1130,7 @@ void PARTIALDECOMP::calcAggregationInformation(
    if( !isComplete() )
       return;
 
-#ifdef WITH_BLISS
+#ifndef NO_AUT_LIB
    if(
 #if defined(BLISS_PATCH_PRESENT) || BLISS_VERSION_MAJOR >= 1 || BLISS_VERSION_MINOR >= 76
          !ignoreDetectionLimits &&
@@ -1204,7 +1203,7 @@ void PARTIALDECOMP::calcAggregationInformation(
          {
             checkIdenticalBlocksBrute( b1, b2, varmap, varmap2, &identical);
 
-#ifdef WITH_BLISS
+#ifndef NO_AUT_LIB
             if( usebliss && !tooexpensive && !identical )
                checkIdenticalBlocksBliss(b1, b2, varmap, varmap2, &identical,
                      searchnodelimit >= 0 ? searchnodelimit : 0u, generatorlimit >= 0 ? generatorlimit : 0u);
@@ -1876,7 +1875,7 @@ bool PARTIALDECOMP::checkConsistency(
 }
 
 
-#ifdef WITH_BLISS
+#ifndef NO_AUT_LIB
 void PARTIALDECOMP::checkIdenticalBlocksBliss(
    int                  b1,
    int                  b2,

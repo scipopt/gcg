@@ -116,7 +116,7 @@ if(HMETIS_FOUND)
    add_definitions(-DWITH_HMETIS)
 endif()
 
-set(SYM sbliss CACHE STRING "options for symmetry computation")  #create the variable
+set(SYM snauty CACHE STRING "options for symmetry computation")  #create the variable
 set_property(CACHE SYM PROPERTY STRINGS sbliss bliss nauty snauty none )  #define list of values GUI will offer for the variable
 
 #set the correct rpath for OS X
@@ -228,10 +228,23 @@ if(SYM STREQUAL "bliss" OR SYM STREQUAL "sbliss")
    set(SYM_PIC_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
+elseif(SYM STREQUAL "nauty" OR SYM STREQUAL "snauty")
+   if(NOT GCG_DEV_BUILD)
+      find_package(NAUTY REQUIRED)
+      include_directories(${NAUTY_INCLUDE_DIRS})
+   else()
+      message(STATUS "Using nauty provided by SCIP")
+   endif()
+   set(SYM_LIBRARIES ${NAUTY_LIBRARIES})
+   set(SYM_PIC_LIBRARIES ${NAUTY_LIBRARIES})
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${NAUTY_DEFINITIONS} -DWITH_NAUTY")
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${NAUTY_DEFINITIONS} -DWITH_NAUTY")
 else()
    message(STATUS "GCG will be compiled without symmetry computation")
    set(SYM_LIBRARIES)
    set(SYM_PIC_LIBRARIES)
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DNO_AUT_LIB")
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BLISS_DEFINITIONS} -DNO_AUT_LIB")
 endif()
 
 # TODO: In SCIP, license is in COPYING file and not in LICENSE.

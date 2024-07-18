@@ -69,9 +69,9 @@
 
 #include "gcg.h"
 
-#ifdef WITH_BLISS
-#include "pub_bliss.h"
-#include "bliss_automorph.h"
+#ifndef NO_AUT_LIB
+#include "pub_automorph.h"
+#include "automorph.h"
 #endif
 
 #define RELAX_NAME             "gcg"
@@ -3287,7 +3287,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
             "the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition, "
             "2: no decomposition will be performed)",
             (int*)&(relaxdata->mode), FALSE, (int)DEFAULT_MODE, 0, 2, NULL, NULL) );
-#ifdef WITH_BLISS
+#ifndef NO_AUT_LIB
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/bliss/enabled",
          "should bliss be used to check for identical blocks?",
          &(relaxdata->usebliss), FALSE, DEFAULT_BLISS, NULL, NULL) );

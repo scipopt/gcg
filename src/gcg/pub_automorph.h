@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    pub_bliss.h
+/**@file    pub_automorphism.h
  * @ingroup PUBLICCOREAPI
  * @brief   helper functions for automorphism detection
  *
@@ -37,8 +37,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef PUB_BLISS_H_
-#define PUB_BLISS_H_
+#ifndef PUB_AUTOMORPHISM_H_
+#define PUB_AUTOMORPHISM_H_
 
 #include "def.h"
 #include "scip/scip.h"
@@ -47,19 +47,21 @@
 extern "C" {
 #endif
 
-
+typedef struct struct_graph AUT_GRAPH;
 typedef struct struct_cons AUT_CONS;
 typedef struct struct_var AUT_VAR;
 typedef struct struct_coef AUT_COEF;
 typedef struct struct_colorinformation AUT_COLOR;
 /**
-* @ingroup BLISS
+* @ingroup AUTOMORPHISM
 * @{
   */
 
+#ifdef WITH_BLISS
 /** returns bliss version */
 GCG_EXPORT
 void GCGgetBlissName(char* buffer, int len);
+#endif
 
 #ifdef __cplusplus
 }
@@ -166,4 +168,4 @@ struct struct_colorinformation
 
 #endif
 /** @} */
-#endif /* PUB_BLISS_H_ */
+#endif /* PUB_AUTOMORPHISM_H_ */

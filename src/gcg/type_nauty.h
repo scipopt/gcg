@@ -25,31 +25,27 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    bliss_automorph.hpp
- * @brief   automorphism recognition (C++ interface)
+/**@file    type_nauty.h
+ * @ingroup PUBLICCOREAPI
+ * @brief   types for nauty automorphism detection
  *
  * @author  Erik Muehmer
+ *
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_BLISS_AUTOMORPH_HPP
-#define GCG_BLISS_AUTOMORPH_HPP
+#ifndef GCG_TYPE_NAUTY_H__
+#define GCG_TYPE_NAUTY_H__
 
-#include "class_partialdecomp.h"
+#ifdef __cplusplus
+struct struct_graph
+{
+   void add_vertex(int id);
+   void add_edge(int v1, int v2);
+   unsigned int get_nof_vertices();
+   void find_automorphisms();
+};
+#endif
 
-
-/** compare two graphs w.r.t. automorphism */
-SCIP_RETCODE cmpGraphPair(
-   SCIP*                   scip,               /**< SCIP data structure */
-   gcg::PARTIALDECOMP*     partialdec,         /**< partialdec the graphs should be compared for */
-   int                     block1,             /**< index of first pricing prob */
-   int                     block2,             /**< index of second pricing prob */
-   SCIP_RESULT*            result,             /**< result pointer to indicate success or failure */
-   SCIP_HASHMAP*           varmap,             /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP*           consmap,           /**< hashmap to save permutation of constraints */
-   unsigned int            searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
-   unsigned int            generatorlimit      /**< bliss generator limit (requires patched bliss version) */
-);
-
-#endif //GCG_BLISS_AUTOMORPH_HPP
+#endif /* GCG_TYPE_NAUTY_H__ */
