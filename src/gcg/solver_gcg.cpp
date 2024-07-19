@@ -34,6 +34,7 @@
 
 /* #define SCIP_DEBUG */
 /* #define DEBUG_PRICING_ALL_OUTPUT */
+/* #define DEBUG_PRICING_WRITE_PROBS */
 #define SUBGCG_DEBUG_ITER -1
 
 #include "scip/scip.h"
@@ -208,12 +209,6 @@ SCIP_Bool buildProblem(
    GCG_SOLVER* childsolver;
    SCIP_HASHMAP* varmap;
    SCIP_RESULT decompresult = SCIP_DIDNOTRUN;
-#ifdef SCIP_DEBUG
-   char fname[SCIP_MAXSTRLEN];
-
-   SCIPsnprintf(fname, SCIP_MAXSTRLEN, "%s_subgcg.lp", SCIPgetProbName(pricingprob));
-   SCIPwriteOrigProblem(pricingprob, fname, NULL, FALSE);
-#endif
 
    SCIPstartClock(solverdata->origprob, solverdata->inittime);
    SCIP_CALL( SCIPcreate(&subgcg) );
@@ -449,7 +444,7 @@ SCIP_RETCODE solveProblem(
 
    if( SCIPgetStage(subgcg) == SCIP_STAGE_PROBLEM )
    {
-#ifdef SCIP_DEBUG
+#ifdef DEBUG_PRICING_WRITE_PROBS
       if( SUBGCG_DEBUG_ITER >= 0 && solverdata->count == SUBGCG_DEBUG_ITER )
       {
          SCIPwriteOrigProblem(pricingprob, "pricingprob.lp", NULL, FALSE);
@@ -462,11 +457,12 @@ SCIP_RETCODE solveProblem(
       SCIP_CALL( SCIPpresolve(subgcg) );
       GCGconshdlrDecompTranslateNBestOrigPartialdecs(subgcg, 1, TRUE);
       SCIPstopClock(solverdata->origprob, solverdata->inittime);
-#ifdef SCIP_DEBUG
+#ifdef DEBUG_PRICING_WRITE_PROBS
       if( SUBGCG_DEBUG_ITER >= 0 && solverdata->count == SUBGCG_DEBUG_ITER )
       {
          SCIPwriteTransProblem(subgcg, "subgcg_p.lp", NULL, FALSE);
          SCIPwriteTransProblem(subgcg, "subgcg_p.dec", NULL, FALSE);
+         SCIPdebugMessage("Wrote lp, dec, and param files.\n");
       }
 #endif
    }
@@ -737,7 +733,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveGcg)
 
    *lowerbound = -SCIPinfinity(pricingprob);
 
-   SCIPdebugMessage("GCG Solver %li: solve start, probnr: %i, status: %u\n", solverdata->count, probnr, *status);
+   SCIPdebugMessage("GCG Solver %li: solve start, probnr: %i, status: %u\n", solverdata->count+1, probnr, *status);
 
    subgcg = solverdata->pricingprobs[probnr];
 
@@ -783,7 +779,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurGcg)
 
    *lowerbound = -SCIPinfinity(pricingprob);
 
-   SCIPdebugMessage("GCG Solver %li: solveHeur start, probnr: %i, status: %u\n", solverdata->count, probnr, *status);
+   SCIPdebugMessage("GCG Solver %li: solveHeur start, probnr: %i, status: %u\n", solverdata->count+1, probnr, *status);
 
    subgcg = solverdata->pricingprobs[probnr];
 
