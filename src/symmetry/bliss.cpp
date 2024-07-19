@@ -39,7 +39,8 @@ void struct_graph::find_automorphisms(
    };
 
    auto term = [&]() {
-      return (generatorlimit > 0 && bstats.get_nof_generators() >= (long unsigned int) generatorlimit);
+      return (generatorlimit > 0 && bstats.get_nof_generators() >= (long unsigned int) generatorlimit)
+            || (searchnodelimit > 0 && bstats.get_nof_nodes() >= (long unsigned int) searchnodelimit);
    };
 
    graph.find_automorphisms(bstats, report, term);

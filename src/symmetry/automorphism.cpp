@@ -70,6 +70,7 @@ struct AUT_HOOK2
    std::vector<int>* blocks;                 /**< array of blocks the automporphisms are searched for */
    SCIP* scip;
    int ncalls;
+   int generatorlimit;
 
 
    /** constructor for the hook struct*/
@@ -196,6 +197,7 @@ AUT_HOOK2::AUT_HOOK2(
    blocks = NULL;
 
    ncalls = 0;
+   generatorlimit = 0;
 }
 
 /** hook function to save the permutation of the graph; fhook() is called by metis for every generator,
@@ -235,13 +237,14 @@ void fhook(
    if(hook->getBool())
       return;
 
-   ++hook->ncalls;
-
-   if( hook->ncalls > 100 )
+   // fallback check if library does not support termination
+   if( hook->generatorlimit > 0 && hook->ncalls >= hook->generatorlimit )
    {
       hook->setBool(false);
       return;
    }
+
+   ++hook->ncalls;
 
   // SCIPdebugMessage("Looking for a permutation from [0,%u] bijective to [%u:%u] (N=%u) \n", n/2-1, n/2, n-1, N);
    for( i = 0; i < n / 2; i++ )
@@ -1363,6 +1366,7 @@ SCIP_RETCODE cmpGraphPair(
    SCIP_CALL( freeMemory(origscip, &colorinfo) );
 
    ptrhook = new AUT_HOOK2(varmap, consmap, (unsigned int) pricingnodes, scips, origscip);
+   ptrhook->generatorlimit = generatorlimit;
 
    graph.find_automorphisms(ptrhook, &fhook, searchnodelimit, generatorlimit);
 
@@ -1426,6 +1430,7 @@ SCIP_RETCODE cmpGraphPair(
    SCIP_CALL( freeMemory(scip, &colorinfo) );
    SCIPdebugMessage("finished create graph.\n");
    ptrhook = new AUT_HOOK2(varmap, consmap, (unsigned int) pricingnodes, NULL, detprobdata->getScip());
+   ptrhook->generatorlimit = generatorlimit;
    SCIPdebugMessage("finished creating aut hook.\n");
    ptrhook->setNewDetectionStuff(detprobdata, partialdec, &blocks);
 
