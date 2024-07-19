@@ -59,8 +59,8 @@
 #include <stdlib.h>
 
 #ifndef NO_AUT_LIB
-#include "symmetry/automorph.h"
-#include "symmetry/automorph.hpp"
+#include "symmetry/automorphism.h"
+#include "symmetry/automorphism.hpp"
 #endif
 
 
@@ -1077,8 +1077,8 @@ SCIP_Bool PARTIALDECOMP::isAgginfoTooExpensive()
    if( isagginfoalreadytoexpensive )
       return TRUE;
 
-   SCIPgetIntParam(scip, "detection/aggregation/limitnconssperblock", &limitfornconss);
-   SCIPgetIntParam(scip, "detection/aggregation/limitnvarsperblock", &limitfornvars);
+   SCIPgetIntParam(scip, "relaxing/gcg/aggregation/limitnconssperblock", &limitfornconss);
+   SCIPgetIntParam(scip, "relaxing/gcg/aggregation/limitnvarsperblock", &limitfornvars);
 
    /* check if calculating aggregation information is too expensive */
    for( int b1 = 0; b1 < getNBlocks() ; ++b1 )
@@ -1114,7 +1114,7 @@ void PARTIALDECOMP::calcAggregationInformation(
 {
 #ifndef NO_AUT_LIB
    SCIP_Bool tooexpensive;
-   SCIP_Bool usebliss;
+   SCIP_Bool useautomorphism;
    int searchnodelimit;
    int generatorlimit;
 #endif
@@ -1140,12 +1140,12 @@ void PARTIALDECOMP::calcAggregationInformation(
       tooexpensive = TRUE;
    else
       tooexpensive = FALSE;
-   SCIPgetBoolParam(scip, "relaxing/gcg/bliss/enabled", &usebliss);
-   SCIPgetIntParam(scip, "relaxing/gcg/bliss/searchnodelimit", &searchnodelimit);
-   SCIPgetIntParam(scip, "relaxing/gcg/bliss/generatorlimit", &generatorlimit);
+   SCIPgetBoolParam(scip, "relaxing/gcg/aggregation/usesymmetrylib", &useautomorphism);
+   SCIPgetIntParam(scip, "relaxing/gcg/aggregation/searchnodelimit", &searchnodelimit);
+   SCIPgetIntParam(scip, "relaxing/gcg/aggregation/generatorlimit", &generatorlimit);
 #endif
 
-   SCIPgetBoolParam(scip, "relaxing/gcg/aggregation", &aggregation);
+   SCIPgetBoolParam(scip, "relaxing/gcg/aggregation/enabled", &aggregation);
    SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &discretization);
 
    if( discretization && aggregation )
@@ -1204,8 +1204,8 @@ void PARTIALDECOMP::calcAggregationInformation(
             checkIdenticalBlocksBrute( b1, b2, varmap, varmap2, &identical);
 
 #ifndef NO_AUT_LIB
-            if( usebliss && !tooexpensive && !identical )
-               checkIdenticalBlocksBliss(b1, b2, varmap, varmap2, &identical,
+            if( useautomorphism && !tooexpensive && !identical )
+               checkIdenticalBlocksAutomorphism(b1, b2, varmap, varmap2, &identical,
                      searchnodelimit >= 0 ? searchnodelimit : 0u, generatorlimit >= 0 ? generatorlimit : 0u);
 #endif
          }
@@ -1876,7 +1876,7 @@ bool PARTIALDECOMP::checkConsistency(
 
 
 #ifndef NO_AUT_LIB
-void PARTIALDECOMP::checkIdenticalBlocksBliss(
+void PARTIALDECOMP::checkIdenticalBlocksAutomorphism(
    int                  b1,
    int                  b2,
    std::vector<int>&    varmap,

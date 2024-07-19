@@ -49,8 +49,8 @@ struct struct_graph
    void find_automorphisms(
       void* ptrhook,
       void (*fhook)(void*, unsigned int, const unsigned int*),
-      unsigned int searchnodelimit,                                /**< bliss search node limit (requires patched bliss version) */
-      unsigned int generatorlimit                                  /**< bliss generator limit (requires patched bliss version or version >=0.76) */
+      unsigned int searchnodelimit,                                /**< search node limit (requires patched bliss version) */
+      unsigned int generatorlimit                                  /**< generator limit (requires patched bliss version or version >=0.76) */
    );
 
    bliss::Graph graph;

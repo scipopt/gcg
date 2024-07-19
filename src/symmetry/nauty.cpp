@@ -22,7 +22,11 @@ unsigned int struct_graph::get_nof_vertices(
 }
 
 void struct_graph::find_automorphisms(
+   void* ptrhook,
+   void (*fhook)(void*, unsigned int, const unsigned int*),
+   unsigned int searchnodelimit,
+   unsigned int generatorlimit
    )
 {
-
+   sparsenauty(&graph, lab, ptn, orbits, &options, &stats, NULL);
 }

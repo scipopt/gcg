@@ -357,14 +357,14 @@ set(gcggraphheaders
    )
 
 if(NOT SYM STREQUAL "none")
-   set(gcgsources ${gcgsources}
-      symmetry/automorph.cpp
+   set(gcgsources ${gcgsources} ${symsources}
+      symmetry/automorphism.cpp
       gcg/dec_isomorph.cpp
    )
    set(gcgheaders ${gcgheaders} 
-      symmetry/automorph.h
-      symmetry/automorph.hpp
-      symmetry/pub_automorph.h
+      symmetry/automorphism.h
+      symmetry/automorphism.hpp
+      symmetry/pub_automorphism.h
       gcg/dec_isomorph.h
    )
 endif()

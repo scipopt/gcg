@@ -33,8 +33,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_AUTOMORPH_HPP__
-#define GCG_AUTOMORPH_HPP__
+#ifndef GCG_AUTOMORPHISM_HPP__
+#define GCG_AUTOMORPHISM_HPP__
 
 #include "gcg/class_partialdecomp.h"
 
@@ -52,4 +52,4 @@ SCIP_RETCODE cmpGraphPair(
    unsigned int            generatorlimit      /**< bliss generator limit (requires patched bliss version) */
 );
 
-#endif //GCG_AUTOMORPH_HPP__
+#endif //GCG_AUTOMORPHISM_HPP__

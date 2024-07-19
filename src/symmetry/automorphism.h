@@ -38,8 +38,8 @@
 #include "scip/type_misc.h"
 #include "scip/type_retcode.h"
 
-#ifndef AUTOMORPH_H__
-#define AUTOMORPH_H__
+#ifndef AUTOMORPHISM_H__
+#define AUTOMORPHISM_H__
 
 
 
@@ -64,4 +64,4 @@ SCIP_RETCODE cmpGraphPair(
 #ifdef __cplusplus
 }
 #endif
-#endif /* AUTOMORPH_H__ */
+#endif /* AUTOMORPHISM_H__ */

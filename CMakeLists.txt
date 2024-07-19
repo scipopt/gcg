@@ -213,7 +213,7 @@ if((NOT SCIP_FOUND) AND (EXISTS ${GCG_DEV_BUILD_SCIP_PATH}) AND (EXISTS ${GCG_DE
    add_subdirectory(${GCG_DEV_BUILD_SCIP_PATH})
    set(SCIP_LIBRARIES libscip)
 elseif(GCG_DEV_BUILD)
-   message(WARNING "GCG_DEV_BUILD option is set but could not find SCIP and SoPlex in the lib/ subdirectory. Please specify GCG_DEV_BUILD_SOPLEX_PATH and GCG_DEV_BUILD_SCIP_PATH")
+   message(FATAL_ERROR "GCG_DEV_BUILD option is set but could not find SCIP and SoPlex in the lib/ subdirectory. Please specify GCG_DEV_BUILD_SOPLEX_PATH and GCG_DEV_BUILD_SCIP_PATH")
 endif()
 
 #search the selected symmetry computation program
@@ -236,6 +236,13 @@ elseif(SYM STREQUAL "nauty" OR SYM STREQUAL "snauty")
       include_directories(${NAUTY_INCLUDE_DIRS})
    else()
       message(STATUS "Using nauty provided by SCIP")
+      set(symsources
+         ${GCG_DEV_BUILD_SCIP_PATH}/src/nauty/nauty.c
+         ${GCG_DEV_BUILD_SCIP_PATH}/src/nauty/nautil.c
+         ${GCG_DEV_BUILD_SCIP_PATH}/src/nauty/nausparse.c
+         ${GCG_DEV_BUILD_SCIP_PATH}/src/nauty/schreier.c
+         ${GCG_DEV_BUILD_SCIP_PATH}/src/nauty/naurng.c
+      )
    endif()
    set(SYM_LIBRARIES ${NAUTY_LIBRARIES})
    set(SYM_PIC_LIBRARIES ${NAUTY_LIBRARIES})

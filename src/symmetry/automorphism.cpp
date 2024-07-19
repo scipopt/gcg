@@ -43,12 +43,12 @@
 #ifdef WITH_NAUTY
 #include "type_nauty.h"
 #endif
-#include "symmetry/automorph.h"
+#include "symmetry/automorphism.h"
+#include "symmetry/pub_automorphism.h"
 #include "gcg/scip_misc.h"
 #include "scip/scip.h"
 #include "gcg/gcg.h"
 #include "scip/cons_linear.h"
-#include "symmetry/pub_automorph.h"
 #include "gcg/class_partialdecomp.h"
 #include "gcg/class_detprobdata.h"
 #include "gcg/cons_decomp.hpp"

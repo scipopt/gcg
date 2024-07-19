@@ -38,13 +38,27 @@
 #ifndef GCG_TYPE_NAUTY_H__
 #define GCG_TYPE_NAUTY_H__
 
+#include "nauty/nausparse.h"
+
 #ifdef __cplusplus
 struct struct_graph
 {
    void add_vertex(int id);
    void add_edge(int v1, int v2);
    unsigned int get_nof_vertices();
-   void find_automorphisms();
+   void find_automorphisms(
+      void* ptrhook,
+      void (*fhook)(void*, unsigned int, const unsigned int*),
+      unsigned int searchnodelimit,                                /**< search node limit (requires patched bliss version) */
+      unsigned int generatorlimit                                  /**< generator limit (requires patched bliss version or version >=0.76) */
+      );
+
+   statsblk stats;
+   sparsegraph graph;
+   DEFAULTOPTIONS_SPARSEGRAPH(options);
+   int* lab;
+   int* ptn;
+   int* orbits;
 };
 #endif
 

@@ -63,7 +63,7 @@
 #include <algorithm>
 #include <iostream>
 
-#include "symmetry/pub_automorph.h"
+#include "symmetry/pub_automorphism.h"
 
 /* constraint handler properties */
 #define DEC_NAME                  "isomorph"  /**< name of detector */

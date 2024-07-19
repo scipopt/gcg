@@ -190,7 +190,7 @@ private:
     * Checks blocks for equality by graph automorphism check, done by bliss
     * @note equality is only found if variables are in correct order
     */
-   void checkIdenticalBlocksBliss(
+   void checkIdenticalBlocksAutomorphism(
       int                  b1,         /**< block id of first block */
       int                  b2,         /**< block id of second block */
       std::vector<int>&    varmap,     /**< maps variable indices (corresponding to  detprobdata indices) of block 2 to block 1 */
