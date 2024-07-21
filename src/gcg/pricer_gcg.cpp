@@ -2396,11 +2396,11 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       case GCG_MASTERCUTTYPE_CONS:
          assert(branchmastercutdata[i]->cut.cons != NULL);
          GCGmastercutGetCons(branchmastercutdata[i], &tmpCons);
-         nconsvars = GCGconsGetNVars(origprob, origconss[i]);
+         nconsvars = GCGconsGetNVars(origprob, tmpCons);
          SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
          SCIP_CALL( SCIPallocBufferArray(scip_, &consvals, nconsvars) );
-         GCGconsGetVars(origprob, origconss[i], consvars, nconsvars);
-         GCGconsGetVals(origprob, origconss[i], consvals, nconsvars);
+         GCGconsGetVars(origprob, tmpCons, consvars, nconsvars);
+         GCGconsGetVals(origprob, tmpCons, consvals, nconsvars);
          break;
       case GCG_MASTERCUTTYPE_ROW:
          assert(branchmastercutdata[i]->cut.row != NULL);

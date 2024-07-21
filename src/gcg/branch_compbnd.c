@@ -543,7 +543,7 @@ SCIP_RETCODE createBranchingCons(
                * (bound + 1) <= x_j + ((bound + 1) - l_j) * y_j */
             SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
             SCIP_Real bound = (SCIP_Real) (branchdata->B[i].bound + 1);
-            SCIP_Real lowerbound = SCIPvarGetLbOriginal(pricing_var);
+            SCIP_Real lowerbound = SCIPvarGetLbGlobal(branchdata->B[i].component);
             assert(SCIPisPositive(pricingscip, bound - lowerbound));
             SCIP_CALL( SCIPcreateConsVarbound(pricingscip, &additionalcons[i+1], consname, pricing_var, additionalvars[i], bound - lowerbound, bound, SCIPinfinity(pricingscip),
                TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
@@ -556,7 +556,7 @@ SCIP_RETCODE createBranchingCons(
                * x_j + ((bound - 1) - u_j) * y_j <= (bound - 1) */
             SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
             SCIP_Real bound = (SCIP_Real) (branchdata->B[i].bound - 1);
-            SCIP_Real upperbound = SCIPvarGetUbOriginal(pricing_var);
+            SCIP_Real upperbound = SCIPvarGetUbGlobal(branchdata->B[i].component);
             assert(SCIPisPositive(pricingscip, upperbound - bound));
             SCIP_CALL( SCIPcreateConsVarbound(pricingscip, &additionalcons[i+1], consname, pricing_var, additionalvars[i], bound - upperbound, -SCIPinfinity(pricingscip), bound,
                TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
@@ -588,7 +588,7 @@ SCIP_RETCODE createBranchingCons(
                * x_j + (u_j - bound) * y_j <= u_j */
             SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
             SCIP_Real bound = (SCIP_Real) branchdata->B[i].bound;
-            SCIP_Real upperbound = SCIPvarGetUbOriginal(pricing_var);
+            SCIP_Real upperbound = SCIPvarGetUbGlobal(branchdata->B[i].component);
             assert(SCIPisPositive(pricingscip, upperbound - bound));
             SCIP_CALL( SCIPcreateConsVarbound(pricingscip, &additionalcons[i+branchdata->Bsize], consname, pricing_var, additionalvars[i], upperbound - bound, -SCIPinfinity(pricingscip), upperbound,
                TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
@@ -601,7 +601,7 @@ SCIP_RETCODE createBranchingCons(
                * l_j <= x_j + (l_j - bound) * y_j */
             SCIP_VAR* pricing_var = GCGoriginalVarGetPricingVar(branchdata->B[i].component);
             SCIP_Real bound = (SCIP_Real) branchdata->B[i].bound;
-            SCIP_Real lowerbound = SCIPvarGetLbOriginal(pricing_var);
+            SCIP_Real lowerbound = SCIPvarGetLbGlobal(branchdata->B[i].component);
             assert(SCIPisPositive(pricingscip, bound - lowerbound));
             SCIP_CALL( SCIPcreateConsVarbound(pricingscip, &additionalcons[i+branchdata->Bsize], consname, pricing_var, additionalvars[i], lowerbound - bound, lowerbound, SCIPinfinity(pricingscip),
                TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
@@ -996,6 +996,7 @@ SCIP_RETCODE _separation(
    SCIP_Real value = 0.0;
    SCIP_CALL( chooseCompbnd(masterscip, X, Xsize, indexSet, indexSetSize, B, Bsize, blocknr, &selected_origvar, &value) );
    assert(selected_origvar != NULL);
+   assert(SCIPvarGetLbGlobal(selected_origvar) < value && value < SCIPvarGetUbGlobal(selected_origvar));
 
    SCIPfreeBlockMemoryArray(masterscip, &indexSet, indexSetSize);
    indexSetSize = 0;
@@ -1139,6 +1140,7 @@ SCIP_RETCODE createInitialSetX(
 
    if(*Xsize > 0)
    {
+      assert(*X != NULL);
       SCIPfreeBlockMemoryArray(masterscip, X, *Xsize);
       *Xsize = 0;
    }
@@ -1410,6 +1412,7 @@ CHOOSE_COMPBNDSEQ(chooseClosestToKHalf)
 
    for( i = 0; i < Blistsize; ++i )
    {
+      assert(X == NULL && Xsize == 0);
       createInitialSetX(masterscip, &X, &Xsize, blocknr, Blist[i], Bsizes[i]);
       assert((Xsize > 0) == (X != NULL));
 
@@ -1631,6 +1634,8 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
       fractionality = calcFractionality(masterscip, X, Xsize);
       assert(SCIPisFeasIntegral(masterscip, fractionality));
       SCIPfreeBlockMemoryArray(masterscip, &X, Xsize);
+      Xsize = 0;
+      assert(X == NULL);
       if( SCIPisZero(masterscip, fractionality) )
       {
          SCIPdebugMessage("No fractional integer variables in block %d\n", blocknr);
