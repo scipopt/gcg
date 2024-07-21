@@ -857,7 +857,7 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
    SCIPdebugMessage("\n");
 
    /* reset all the non-zero entries back to zero
-    * (otherwise they remain there and interfere with the computation of other coefficients */
+    * (otherwise they remain there and interfere with the computation of other coefficients) */
    for( i = 0; i < nnonzeros; i++ )
    {
       varindex = nonzeros[i];

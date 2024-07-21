@@ -3422,7 +3422,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       assert(mastercutdata != NULL);
       if( GCGmastercutIsActive(mastercutdata) )
       {
-         SCIP_CALL( GCGmastercutApplyPricingModifications(scip_, mastercutdata) );
+         SCIP_Real dual = pricetype->mastercutGetDual(scip_, mastercutdata);
+         if( dual != 0.0 )
+            SCIP_CALL( GCGmastercutApplyPricingModifications(scip_, mastercutdata) );
       }
    }
 
@@ -3873,7 +3875,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       {
          /* update the var history of all the cuts still in the LP */
          SCIP_CALL( GCGvarhistoryJumpToLatest(scip_, &(activecuts[j]->knownvarhistory)) );
-         SCIP_CALL( GCGmastercutUndoPricingModifications(scip_, mastercutdata) );
+         SCIP_Real dual = pricetype->mastercutGetDual(scip_, mastercutdata);
+         if( dual != 0.0 )
+            SCIP_CALL( GCGmastercutUndoPricingModifications(scip_, mastercutdata) );
       }
    }
 
