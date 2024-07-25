@@ -59,7 +59,7 @@
 #endif
 #endif
 
-#define GCG_VERSION         362 /**< GCG version number (multiplied by 100 to get integer number) */
+#define GCG_VERSION         363 /**< GCG version number (multiplied by 100 to get integer number) */
 #define GCG_SUBVERSION        0 /**< GCG sub version number */
 
 #endif
