@@ -116,7 +116,7 @@ if(HMETIS_FOUND)
    add_definitions(-DWITH_HMETIS)
 endif()
 
-set(SYM sbliss CACHE STRING "options for symmetry computation")  #create the variable
+set(SYM snauty CACHE STRING "options for symmetry computation")  #create the variable
 set_property(CACHE SYM PROPERTY STRINGS sbliss bliss nauty snauty none )  #define list of values GUI will offer for the variable
 
 #set the correct rpath for OS X

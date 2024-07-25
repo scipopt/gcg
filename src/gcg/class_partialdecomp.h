@@ -1961,6 +1961,14 @@ public:
    void buildDecChainString(
       char* buffer /**< will contain string of detector chars in chronological order afterwards*/
       );
+   
+   /**
+    * @brief returns the number of block vars contained in a master constraint
+    */
+   int getNVarsOfBlockInMasterCons(
+      int masterconsindex, /**< index of master constraint */
+      int block /**< block id */
+      );
 
 private:
 
@@ -2155,7 +2163,6 @@ private:
    bool varPartitionUsed(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
-
 };
 
 

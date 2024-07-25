@@ -88,7 +88,7 @@
                                                     1: Benders' decomposition, 2: solve original problem) */
 #define DEFAULT_BLISS TRUE
 #define DEFAULT_BLISS_SEARCH_NODE_LIMIT 0
-#define DEFAULT_BLISS_GENERATOR_LIMIT 0
+#define DEFAULT_BLISS_GENERATOR_LIMIT 100
 #define DEFAULT_AGGREGATIONNCONSSLIMIT 300
 #define DEFAULT_AGGREGATIONNVARSLIMIT 300
 
@@ -3205,6 +3205,14 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
       char name[SCIP_MAXSTRLEN];
       GCGgetBlissName(name, SCIP_MAXSTRLEN);
       SCIP_CALL( SCIPincludeExternalCodeInformation(scip, name, "A Tool for Computing Automorphism Groups of Graphs by T. Junttila and P. Kaski (http://www.tcs.hut.fi/Software/bliss/)") );
+   }
+#endif
+
+#ifdef WITH_NAUTY
+   {
+      char name[SCIP_MAXSTRLEN];
+      GCGgetNautyName(name, SCIP_MAXSTRLEN);
+      SCIP_CALL( SCIPincludeExternalCodeInformation(scip, name, "A Tool for Computing Automorphism Groups of Graphs by B.D. McKay and A. Piperno (https://pallini.di.uniroma1.it/)") );
    }
 #endif
 

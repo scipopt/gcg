@@ -1131,12 +1131,7 @@ void PARTIALDECOMP::calcAggregationInformation(
       return;
 
 #ifndef NO_AUT_LIB
-   if(
-#if defined(BLISS_PATCH_PRESENT) || BLISS_VERSION_MAJOR >= 1 || BLISS_VERSION_MINOR >= 76
-         !ignoreDetectionLimits &&
-#endif
-         isAgginfoTooExpensive()
-         )
+   if( !ignoreDetectionLimits && isAgginfoTooExpensive() )
       tooexpensive = TRUE;
    else
       tooexpensive = FALSE;
@@ -2074,7 +2069,7 @@ void PARTIALDECOMP::calcNCoeffsForBlockForMastercons()
    DETPROBDATA* detprobdata = this->getDetprobdata();
 
    for( int b = 0; b < getNBlocks(); ++b )
-      ncoeffsforblockformastercons[b] = std::vector<int>(getNMasterconss(), 0);
+      ncoeffsforblockformastercons[b].resize(getNMasterconss(), 0);
 
    for( int mc = 0; mc < getNMasterconss(); ++mc )
    {
@@ -5537,6 +5532,16 @@ void PARTIALDECOMP::setTranslatedpartialdecid(
    )
 {
    PARTIALDECOMP::translatedpartialdecid = decid;
+}
+
+int PARTIALDECOMP::getNVarsOfBlockInMasterCons(
+   int masterconsindex,
+   int block
+   )
+{
+   if( ncoeffsforblockformastercons.empty() )
+      calcNCoeffsForBlockForMastercons();
+   return ncoeffsforblockformastercons[block][masterconsindex];
 }
 
 } /* namespace gcg */

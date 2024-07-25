@@ -51,12 +51,6 @@
 #include "class_detprobdata.h"
 #include "scip/clock.h"
 
-#ifdef WITH_BLISS
-#include "symmetry/type_bliss.h"
-#endif
-#ifdef WITH_NAUTY
-#include "symmetry/type_nauty.h"
-#endif
 #include "pub_gcgvar.h"
 #include <cstring>
 #include <cassert>
@@ -422,12 +416,23 @@ SCIP_RETCODE createGraph(
    int curvar;
    int color;
    unsigned int nnodes;
+   unsigned int currentnode;
    SCIP_Bool onlysign;
-   nnodes = 0;
+   unsigned int nconsvarpairs; 
+   currentnode = 0;
    nconss = partialdec->getNOpenconss();
    nvars = partialdec->getNVars();
    z = 0;
    onlysign = colorinfo.getOnlySign();
+   nconsvarpairs = 0;
+
+   for( i = 0; i < nconss; i++ )
+   {
+      nconsvarpairs += detprobdata->getNVarsForCons(partialdec->getOpenconss()[i]);
+   }
+
+   nnodes = nconss + nvars + nconsvarpairs;
+   graph->init(scip, nnodes);
 
    //add a node for every constraint
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
@@ -445,8 +450,8 @@ SCIP_RETCODE createGraph(
       }
 
       assert(color >= 0);
-      graph->add_vertex((unsigned int) color);
-      nnodes++;
+      graph->setColor(currentnode, color);
+      currentnode++;
    }
    //add a node for every variable
    for( i = 0; i < nvars && *result == SCIP_SUCCESS; i++ )
@@ -460,8 +465,8 @@ SCIP_RETCODE createGraph(
          *result = SCIP_DIDNOTFIND;
          break;
       }
-      graph->add_vertex((unsigned int) (colorinfo.getLenCons() + color));
-      nnodes++;
+      graph->setColor(currentnode, colorinfo.getLenCons() + color);
+      currentnode++;
    }
    //connecting the nodes with an additional node in the middle
    //it is necessary, since only nodes have colors
@@ -512,10 +517,10 @@ SCIP_RETCODE createGraph(
          }
 
          curvar = SCIPvarGetProbindex(var);
-         graph->add_vertex((colorinfo.getLenCons() + colorinfo.getLenVar() + color)); /*lint !e864 */
-         nnodes++;
-         graph->add_edge(i, nconss + nvars + z);
-         graph->add_edge(nconss + nvars + z, nconss + curvar);
+         graph->setColor(currentnode, colorinfo.getLenCons() + colorinfo.getLenVar() + color); /*lint !e864 */
+         currentnode++;
+         graph->addEdge(i, nconss + nvars + z);
+         graph->addEdge(nconss + nvars + z, nconss + curvar);
          SCIPdebugMessage(
                "nz: c <%s> (id: %d, colour: %d) -> nz (id: %d) (value: %f, colour: %d) -> var <%s> (id: %d, colour: %d) \n",
                SCIPconsGetName(cons), i, colorinfo.get(scons),
@@ -524,13 +529,10 @@ SCIP_RETCODE createGraph(
                SCIPvarGetName(var), nconss + curvar,
                colorinfo.get(svar) + colorinfo.getLenCons());  /*lint !e864 */
          z++;
-
       }
-
-
    }
-   SCIPdebugMessage("Iteration 1: nnodes = %ud, Cons = %d, Vars = %d\n", nnodes, colorinfo.getLenCons(), colorinfo.getLenVar()); /*lint !e864 */
-   assert(*result == SCIP_SUCCESS && nnodes == graph->get_nof_vertices());
+   SCIPdebugMessage("Iteration 1: currentnode = %ud, Cons = %d, Vars = %d\n", currentnode, colorinfo.getLenCons(), colorinfo.getLenVar()); /*lint !e864 */
+   assert(*result == SCIP_SUCCESS && currentnode == graph->getNVertices());
 
    //free all allocated memory
    freeMemory(scip, &colorinfo);
@@ -1078,13 +1080,13 @@ SCIP_RETCODE detectIsomorph(
    SCIP_CALL( setupArrays(scip, colorinfo, &detectordata->result, partialdec, detprobdata) );
    SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result, partialdec, detprobdata) );
 
-   ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip, partialdec, detprobdata);
+   ptrhook = new AUT_HOOK(FALSE, graph.getNVertices(), scip, partialdec, detprobdata);
    for( i = 0; i < nconss; i++ )
    {
       ptrhook->conssperm[i] = -1;
    }
 
-   graph.find_automorphisms(ptrhook, fhookForPartialdecs, 0u, 0u);
+   graph.findAutomorphisms(ptrhook, fhookForPartialdecs, 0u, 0u);
 
    if( !ptrhook->getBool() )
       detectordata->result = SCIP_DIDNOTFIND;
@@ -1174,6 +1176,7 @@ SCIP_RETCODE detectIsomorph(
 
    delete colorinfo;
    delete ptrhook;
+   graph.destroy();
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
 

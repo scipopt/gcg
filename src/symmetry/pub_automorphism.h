@@ -48,6 +48,7 @@ extern "C" {
 #endif
 
 typedef struct struct_graph AUT_GRAPH;
+typedef struct struct_graph_data AUT_GRAPH_DATA;
 typedef struct struct_cons AUT_CONS;
 typedef struct struct_var AUT_VAR;
 typedef struct struct_coef AUT_COEF;
@@ -63,11 +64,35 @@ GCG_EXPORT
 void GCGgetBlissName(char* buffer, int len);
 #endif
 
+#ifdef WITH_NAUTY
+/** returns nauty version */
+GCG_EXPORT
+void GCGgetNautyName(char* buffer, int len);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
 
 #ifdef __cplusplus
+struct struct_graph
+{
+   SCIP_RETCODE init(SCIP* scip, int nvertices);
+   SCIP_RETCODE destroy();
+   void setColor(int vertex, int color);
+   void addEdge(int v1, int v2);
+   unsigned int getNVertices();
+   SCIP_RETCODE findAutomorphisms(
+      void* ptrhook,
+      void (*fhook)(void*, unsigned int, const unsigned int*),
+      unsigned int searchnodelimit,                                /**< search node limit (requires patched bliss version) */
+      unsigned int generatorlimit                                  /**< generator limit (requires patched bliss version or version >=0.76) */
+      );
+   void terminateSearch();
+
+   AUT_GRAPH_DATA* graphdata;
+};
+
 /** saves a constraint with its corresponding scip */
 struct struct_cons
 {

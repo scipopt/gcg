@@ -371,19 +371,13 @@ endif()
 
 if(SYM STREQUAL "bliss" OR SYM STREQUAL "sbliss")
    set(gcgsources ${gcgsources}
-      symmetry/bliss.cpp
-   )
-   set(gcgheaders ${gcgheaders} 
-   symmetry/type_bliss.h
+      symmetry/automorphism_bliss.cpp
    )
 endif()
 
 if(SYM STREQUAL "nauty" OR SYM STREQUAL "snauty")
    set(gcgsources ${gcgsources}
-      symmetry/nauty.cpp
-   )
-   set(gcgheaders ${gcgheaders} 
-      symmetry/type_nauty.h
+      symmetry/automorphism_nauty.cpp
    )
 endif()
 
