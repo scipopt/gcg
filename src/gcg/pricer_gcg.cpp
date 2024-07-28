@@ -3698,7 +3698,8 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             assert(SCIPisDualfeasEQ(scip_, dualobj, stabdualval + dualconvoffset));
          }
 #endif
-
+         if(!(!optimal || !*bestredcostvalid || stabilized || SCIPisSumEQ(scip_, SCIPgetLPObjval(scip_) + bestredcost, stabdualval + beststabobj)))
+            SCIPinfoMessage(scip_, NULL, "%f != %f\n", SCIPgetLPObjval(scip_) + bestredcost, stabdualval + beststabobj);
          assert(!optimal || !*bestredcostvalid || stabilized || SCIPisSumEQ(scip_, SCIPgetLPObjval(scip_) + bestredcost, stabdualval + beststabobj));
 
          if( stabilized || !optimal || !*bestredcostvalid )
