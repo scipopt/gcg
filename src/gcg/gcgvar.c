@@ -1537,8 +1537,8 @@ SCIP_RETCODE GCGcreateMasterVar(
          assert(newvardata->data.mastervardata.origvals != NULL);
          assert(GCGvarIsOriginal(origvar));
          /* save in the master problem variable's data the quota of the corresponding original variable */
-         newvardata->data.mastervardata.origvars[i] = origvar;
-         newvardata->data.mastervardata.origvals[i] = 0.0;
+         newvardata->data.mastervardata.origvars[j] = origvar;
+         newvardata->data.mastervardata.origvals[j] = 0.0;
          SCIPhashmapInsertReal(newvardata->data.mastervardata.origvar2val, origvar, 0.0);
          /* save the quota in the original variable's data */
          SCIP_CALL( GCGoriginalVarAddMasterVar(origscip, origvar, *newvar, 0.0) );
