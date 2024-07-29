@@ -77,17 +77,39 @@ void GCGgetNautyName(char* buffer, int len);
 #ifdef __cplusplus
 struct struct_graph
 {
-   SCIP_RETCODE init(SCIP* scip, int nvertices);
+   /** initializes the graph */
+   SCIP_RETCODE init(
+      SCIP* scip,                                                  /**< SCIP struct */
+      int nvertices                                                /**< number of vertices */
+      );
+
+   /** destroys the graph */
    SCIP_RETCODE destroy();
-   void setColor(int vertex, int color);
-   void addEdge(int v1, int v2);
+
+   /** sets the color of a vertex */
+   void setColor(
+      int vertex,                                                  /**< vertex */
+      int color                                                    /**< color */
+      );
+
+   /** adds an edge */
+   void addEdge(
+      int v1,                                                      /**< first vertex */
+      int v2                                                       /**< second vertex */
+      );
+
+   /** returns the number of vertices */
    unsigned int getNVertices();
+
+   /** found automorphisms */
    SCIP_RETCODE findAutomorphisms(
-      void* ptrhook,
-      void (*fhook)(void*, unsigned int, const unsigned int*),
+      void* userdata,                                              /**< pointer to user data that will be passed to fhook */
+      void (*fhook)(void*, unsigned int, const unsigned int*),     /**< pointer to function that will be called for each found generator */
       unsigned int searchnodelimit,                                /**< search node limit (requires patched bliss version) */
       unsigned int generatorlimit                                  /**< generator limit (requires patched bliss version or version >=0.76) */
       );
+
+   /** signals that the search should be terminated */
    void terminateSearch();
 
    AUT_GRAPH_DATA* graphdata;

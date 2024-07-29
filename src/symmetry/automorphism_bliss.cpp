@@ -57,7 +57,7 @@ unsigned int struct_graph::getNVertices(
 }
 
 SCIP_RETCODE struct_graph::findAutomorphisms(
-   void* ptrhook,
+   void* userdata,
    void (*fhook)(void*, unsigned int, const unsigned int*),
    unsigned int searchnodelimit,
    unsigned int generatorlimit
@@ -70,7 +70,7 @@ SCIP_RETCODE struct_graph::findAutomorphisms(
 
 #if BLISS_VERSION_MAJOR >= 1 || BLISS_VERSION_MINOR >= 76
    auto report = [&](unsigned int n, const unsigned int* aut) {
-      (*fhook)((void*)ptrhook, n, aut);
+      (*fhook)((void*)userdata, n, aut);
    };
 
    auto term = [&]() {
@@ -81,7 +81,7 @@ SCIP_RETCODE struct_graph::findAutomorphisms(
 
    graphdata->graph->find_automorphisms(graphdata->bstats, report, term);
 #else
-   graphdata->graph->find_automorphisms(graphdata->bstats, fhook, ptrhook);
+   graphdata->graph->find_automorphisms(graphdata->bstats, fhook, userdata);
 #endif
    return SCIP_OKAY;
 }

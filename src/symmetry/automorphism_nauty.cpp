@@ -5,7 +5,7 @@
 
 struct NautyData
 {
-   void* staticptrhook;
+   void* staticuserdata;
    void (*staticfhook)(void*, unsigned int, const unsigned int*);
    statsblk* stats;
    unsigned int searchnodelimit;
@@ -42,7 +42,7 @@ void nautyhook(
       || (nautydata.searchnodelimit > 0 && nautydata.stats->numnodes >= nautydata.searchnodelimit))
       return;
    else
-      (*nautydata.staticfhook)(nautydata.staticptrhook, count, (unsigned int*)perm);
+      (*nautydata.staticfhook)(nautydata.staticuserdata, count, (unsigned int*)perm);
 }
 
 SCIP_RETCODE struct_graph::init(
@@ -102,7 +102,7 @@ unsigned int struct_graph::getNVertices(
 }
 
 SCIP_RETCODE struct_graph::findAutomorphisms(
-   void* ptrhook,
+   void* userdata,
    void (*fhook)(void*, unsigned int, const unsigned int*),
    unsigned int searchnodelimit,
    unsigned int generatorlimit
@@ -144,7 +144,7 @@ SCIP_RETCODE struct_graph::findAutomorphisms(
    SCIP_CALL( SCIPallocBufferArray(graphdata->scip_, &orbits, graphdata->graph.nv) );
 
    nautydata.staticfhook = fhook;
-   nautydata.staticptrhook = ptrhook;
+   nautydata.staticuserdata = userdata;
    nautydata.stats = &graphdata->stats;
    nautydata.terminate = false;
    sparsenauty(&graphdata->graph, lab, graphdata->ptn, orbits, &options, &graphdata->stats, NULL);
