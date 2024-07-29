@@ -513,7 +513,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       return SCIP_OKAY;
    }
 
-   if( (SCIPgetCurrentNode(scip) != SCIPgetRootNode(scip) && sepadata->onlyroot) )
+   if( (SCIPgetCurrentNode(scip) != SCIPgetRootNode(scip) && sepadata->onlyroot) || SCIPgetCurrentNode(scip) != SCIPgetRootNode(scip) && !allowlocal)
    {
       SCIPdebugMessage("subset row separator is only configured to run on root node.\n");
       *result = SCIP_DIDNOTRUN;
@@ -1027,6 +1027,7 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
 {
    SCIP_SEPADATA* sepadata;
    SCIP_SEPA* sepa;
+   SCIP* origscip;
 
    /* create subsetrow separator data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &sepadata) );
@@ -1049,35 +1050,38 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
    SCIP_CALL( SCIPsetSepaInit(scip, sepa, sepaInitSubsetrow) );
    SCIP_CALL( SCIPsetSepaExitsol(scip, sepa, sepaExitSubsetrow) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enable", "enable subsetrow separator",
+   origscip = GCGmasterGetOrigprob(scip);
+   assert(origscip != NULL);
+
+   SCIP_CALL( SCIPaddBoolParam(origscip, "sepa/" SEPA_NAME "/enable", "enable subsetrow separator",
       &(sepadata->enable), FALSE, TRUE, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "sepa/" SEPA_NAME "/maxrounds", "maximal number of subsetrow separation rounds per node (-1: unlimited)",
+   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/maxrounds", "maximal number of subsetrow separation rounds per node (-1: unlimited)",
       &sepadata->maxrounds, FALSE, DEFAULT_MAXROUNDS, -1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "sepa/" SEPA_NAME "/maxroundsroot", "maximal number of subsetrow separation rounds in the root node (-1: unlimited)",
+   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/maxroundsroot", "maximal number of subsetrow separation rounds in the root node (-1: unlimited)",
       &sepadata->maxroundsroot, FALSE, DEFAULT_MAXROUNDSROOT, -1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "sepa/" SEPA_NAME "/maxsepacuts", "maximal number of subsetrow cuts separated per separation round",
+   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/maxsepacuts", "maximal number of subsetrow cuts separated per separation round",
       &sepadata->maxsepacuts, FALSE, DEFAULT_MAXSEPACUTS, 0, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "sepa/" SEPA_NAME "/maxsepacutsroot", "maximal number of subsetrow cuts separated per separation round in the root node",
+   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/maxsepacutsroot", "maximal number of subsetrow cuts separated per separation round in the root node",
       &sepadata->maxsepacutsroot, FALSE, DEFAULT_MAXSEPACUTSROOT, 0, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "sepa/" SEPA_NAME "/maxcutcands", "maximal number of total subsetrow cuts considered",
+   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/maxcutcands", "maximal number of total subsetrow cuts considered",
       &sepadata->maxcutcands, FALSE, DEFAULT_MAXCUTCANDS, 0, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/onlyroot", "apply subsetrow separator only on root",
+   SCIP_CALL( SCIPaddBoolParam(origscip, "sepa/" SEPA_NAME "/onlyroot", "apply subsetrow separator only on root",
       &(sepadata->onlyroot), FALSE, DEFAULT_ONLYROOT, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "sepa/" SEPA_NAME "/strategy", "RANDOM (0)",
+   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/strategy", "RANDOM (0)",
       &sepadata->strategy, FALSE, DEFAULT_STRATEGY, 0, 1, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip,"sepa/" SEPA_NAME "/n", "number of rows used to create a new subset row cut ",
-      &sepadata->n, FALSE, DEFAULT_N, 0, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(origscip,"sepa/" SEPA_NAME "/n", "number of rows used to create a new subset row cut ",
+      &(sepadata->n), FALSE, DEFAULT_N, 0, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "sepa/" SEPA_NAME "/k", "weight used to create new subset row cut",
-      &sepadata->k, FALSE, DEFAULT_K, 1, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/k", "weight used to create new subset row cut",
+      &(sepadata->k), FALSE, DEFAULT_K, 1, INT_MAX, NULL, NULL) );
 
    return SCIP_OKAY;
 }
