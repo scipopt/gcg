@@ -339,21 +339,6 @@ void fhook(
 
 
 /** constructor for colorinfo arrays */
-static SCIP_RETCODE allocMemory(
-   SCIP*                 scip,               /**< SCIP data structure */
-   AUT_COLOR*            colorinfo,          /**< struct to save intermediate information */
-   int                   nconss,             /**< number of constraints */
-   int                   nvars               /**< number of variables */
-   )
-{
-   SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarraycoefs, ((size_t) nconss * nvars)));
-   SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarrayvars, (size_t) nvars));
-   SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarrayconss, (size_t) nconss));
-   colorinfo->alloccoefsarray = nconss * nvars;
-   return SCIP_OKAY;
-}
-
-/** constructor for colorinfo arrays */
 static SCIP_RETCODE allocMemoryNewDetection(
    SCIP*                 scip,               /**< SCIP data structure */
    gcg::DETPROBDATA*     detprobdata,        /**< SCIP data structure */
@@ -367,23 +352,6 @@ static SCIP_RETCODE allocMemoryNewDetection(
    colorinfo->alloccoefsarray = ncoeffs;
    SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarrayvars, (size_t) nvars));
    SCIP_CALL( SCIPallocMemoryArray(scip, &colorinfo->ptrarrayconss, (size_t) nconss));
-   return SCIP_OKAY;
-}
-
-
-
-/** reallocate colorinfo arrays with new size */
-static SCIP_RETCODE reallocMemory(
-   SCIP*                 scip,               /**< problem information */
-   AUT_COLOR*            colorinfo,          /**< struct to save intermediate information */
-   int                   nconss,             /**< number of constraints */
-   int                   nvars               /**< number of variables */
-   )
-{
-   SCIP_CALL(SCIPreallocMemoryArray(scip, &colorinfo->ptrarraycoefs, (size_t) colorinfo->lencoefsarray + ((size_t) nconss * nvars)));
-   colorinfo->alloccoefsarray = colorinfo->lencoefsarray + nconss * nvars;
-   SCIP_CALL( SCIPreallocMemoryArray(scip, &colorinfo->ptrarrayvars, (size_t) colorinfo->lenvarsarray + nvars));
-   SCIP_CALL( SCIPreallocMemoryArray(scip, &colorinfo->ptrarrayconss, (size_t) colorinfo->lenconssarray + nconss));
    return SCIP_OKAY;
 }
 

@@ -230,24 +230,33 @@ if(SYM STREQUAL "bliss" OR SYM STREQUAL "sbliss")
    set(SYM_PIC_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
+   # if sbliss: sassy is a header-only library and is already included by SCIP
 elseif(SYM STREQUAL "nauty" OR SYM STREQUAL "snauty")
-   if(NOT GCG_DEV_BUILD)
+   if(NOT GCG_DEV_BUILD AND NOT SCIPOptSuite_SOURCE_DIR)
       find_package(NAUTY REQUIRED)
       include_directories(${NAUTY_INCLUDE_DIRS})
+      set(SYM_LIBRARIES ${NAUTY_LIBRARIES})
+      set(SYM_PIC_LIBRARIES ${NAUTY_LIBRARIES})
    else()
       message(STATUS "Using nauty provided by SCIP")
+      if(GCG_DEV_BUILD)
+         set(NAUTY_SRC_DIR ${GCG_DEV_BUILD_SCIP_PATH}/src/nauty/)
+      elseif(SCIPOptSuite_SOURCE_DIR)
+         set(NAUTY_SRC_DIR ${SCIPOptSuite_SOURCE_DIR}/scip/src/nauty/)
+      endif()
       set(symsources
-         ${GCG_DEV_BUILD_SCIP_PATH}/src/nauty/nauty.c
-         ${GCG_DEV_BUILD_SCIP_PATH}/src/nauty/nautil.c
-         ${GCG_DEV_BUILD_SCIP_PATH}/src/nauty/nausparse.c
-         ${GCG_DEV_BUILD_SCIP_PATH}/src/nauty/schreier.c
-         ${GCG_DEV_BUILD_SCIP_PATH}/src/nauty/naurng.c
+         ${NAUTY_SRC_DIR}/nauty.c
+         ${NAUTY_SRC_DIR}/nautil.c
+         ${NAUTY_SRC_DIR}/nausparse.c
+         ${NAUTY_SRC_DIR}/schreier.c
+         ${NAUTY_SRC_DIR}/naurng.c
       )
+      set(SYM_LIBRARIES)
+      set(SYM_PIC_LIBRARIES)
    endif()
-   set(SYM_LIBRARIES ${NAUTY_LIBRARIES})
-   set(SYM_PIC_LIBRARIES ${NAUTY_LIBRARIES})
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${NAUTY_DEFINITIONS} -DWITH_NAUTY")
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${NAUTY_DEFINITIONS} -DWITH_NAUTY")
+   # if snauty: sassy is a header-only library and is already included by SCIP
 else()
    message(STATUS "GCG will be compiled without symmetry computation")
    set(SYM_LIBRARIES)

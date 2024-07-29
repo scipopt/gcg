@@ -38,7 +38,7 @@ void nautyhook(
    )
 {
    if( nautydata.terminate
-      || (nautydata.generatorlimit > 0 && count >= nautydata.generatorlimit)
+      || (nautydata.generatorlimit > 0 && (unsigned int)count >= nautydata.generatorlimit)
       || (nautydata.searchnodelimit > 0 && nautydata.stats->numnodes >= nautydata.searchnodelimit))
       return;
    else
