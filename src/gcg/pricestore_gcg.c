@@ -37,7 +37,6 @@
 #include "scip/def.h"
 #include "scip/set.h"
 #include "scip/stat.h"
-#include "scip/clock.h"
 #include "scip/lp.h"
 #include "scip/var.h"
 #include "scip/tree.h"
@@ -171,8 +170,6 @@ SCIP_RETCODE GCGpricestoreFree(
    assert(pricestore != NULL);
    assert(*pricestore != NULL);
    assert((*pricestore)->ncolstotal == 0);
-
-   SCIPdebugMessage("Pricing time in pricestore = %f sec\n", GCGpricestoreGetTime(*pricestore));
 
    SCIPhashtableFree(&(*pricestore)->hashtable);
 
@@ -664,7 +661,7 @@ SCIP_RETCODE GCGpricestoreApplyCols(
 
    scip = pricestore->scip;
 
-   SCIPdebugMessage("applying %d cols\n", pricestore->ncols);
+   SCIPdebugMessage("applying %d cols\n", pricestore->ncolstotal);
 
    /* get maximal number of cols to add to the LP */
    maxpricecols = GCGpricerGetMaxColsRound(scip);

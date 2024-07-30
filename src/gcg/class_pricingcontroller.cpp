@@ -658,7 +658,7 @@ void Pricingcontroller::increaseEagerage()
 {
    if( eagerfreq > 0 )
    {
-      #pragma atomic update
+      #pragma omp atomic update
       eagerage++;
    }
 }

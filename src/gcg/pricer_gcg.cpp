@@ -2946,7 +2946,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             int oldimpcols;
             int _nfoundvars;
             int _nsuccessfulprobs;
-            int _niters;
             SCIP_Bool stop = FALSE;
             int iter;
 
@@ -2961,9 +2960,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             if( stop )
                break;
 
-            #pragma atomic read
+            #pragma omp atomic read
             _nfoundvars = nfoundvars;
-            #pragma atomic read
+            #pragma omp atomic read
             _nsuccessfulprobs = nsuccessfulprobs;
             if( (pricingcontroller->canPricingloopBeAborted(pricetype, _nfoundvars, _nsuccessfulprobs) || infeasible) && !stabilized )
             {

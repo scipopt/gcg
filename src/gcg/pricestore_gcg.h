@@ -167,12 +167,6 @@ int GCGpricestoreGetNColsApplied(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
-/** gets time in seconds used for pricing cols from the pricestore */
-GCG_EXPORT
-SCIP_Real GCGpricestoreGetTime(
-   GCG_PRICESTORE*       pricestore           /**< price storage */
-   );
-
 #ifdef __cplusplus
 }
 #endif
