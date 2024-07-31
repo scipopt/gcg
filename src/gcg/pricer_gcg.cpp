@@ -3409,8 +3409,8 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
     * - clear generated cuts as sepa store has been cleared (only if not in probing)
     *    - the cuts in generated cuts may not have been separated yet, as sepa store gets switched when probing
     * - modify pricing problems for active master cuts*/
-   if( !probingnode )
-      SCIP_CALL( GCGclearGeneratedCuts(scip_) );
+   //if( !probingnode )
+   //   SCIP_CALL( GCGclearGeneratedCuts(scip_) );
    activecuts = GCGgetActiveCuts(scip_);
    nactivecuts = GCGgetNActiveCuts(scip_);
 
