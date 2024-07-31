@@ -1718,7 +1718,18 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
  */
 
 /** destructor of branching rule to free user data (called when SCIP is exiting) */
-#define branchFreeCompBnd NULL
+static
+SCIP_DECL_BRANCHFREE(branchFreeCompBnd)
+{  /*lint --e{715}*/
+   SCIP_BRANCHRULEDATA* branchruledata;
+
+   branchruledata = SCIPbranchruleGetData(branchrule);
+
+   SCIPfreeBlockMemory(scip, &branchruledata);
+   SCIPbranchruleSetData(branchrule, NULL);
+
+   return SCIP_OKAY;
+}
 
 
 /** deinitialization method of branching rule (called before transformed problem is freed) */
