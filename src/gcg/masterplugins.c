@@ -242,8 +242,8 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) );
    SCIP_CALL( SCIPincludeBranchruleGeneric(scip) );
    SCIP_CALL( SCIPincludeBranchruleBPStrong(scip) );
-   SCIP_CALL( SCIPincludeBranchruleCompBnd(scip) );
-   SCIP_CALL( SCIPincludeBranchruleStaticVar(scip) );
+   //SCIP_CALL( SCIPincludeBranchruleCompBnd(scip) );
+   //SCIP_CALL( SCIPincludeBranchruleStaticVar(scip) );
 
 #if USEHEURS
    SCIP_CALL( SCIPincludeHeurActconsdiving(scip) );
