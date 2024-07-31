@@ -5,6 +5,25 @@
 New features:
 -------------
 
+New/changed parameters:
+-----------------------
+
+- renamed parameter 'pricing/masterpricer/threads' to 'pricing/masterpricer/nthreads' and set default value to 1
+
+New/modified/removed API functions:
+---------------------------
+
+- added 'GCGpricerAddColResult', 'GCGpricerGetNPricingThreads', 'GCGpricestoreGetNColsTotal'
+- changed 'GCGpricestoreCreate', 'GCGpricestoreAddCol', 'GCGpricestoreGetCols', 'GCGpricestoreGetNCols'
+- removed 'GCGpricestoreRemoveInefficaciousCols', 'GCGpricestoreGetTime'
+- changed 'GCGcolpoolAddCol', 'GCGcolpoolPrice'
+- added 'GCGhashGetKeyCol', 'GCGhashKeyEqCol', 'GCGhashKeyValCol'
+
+Miscellaneous
+-------------
+
+- enable OpenMP by default
+
 
 @page RN36 Release notes for GCG 3.6
 @section RN361 GCG 3.6.1

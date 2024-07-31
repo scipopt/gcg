@@ -99,7 +99,7 @@ using namespace scip;
 #define DEFAULT_ABORTPRICINGGAP          0.00       /**< gap between dual bound and RMP objective at which pricing is aborted */
 #define DEFAULT_DISPINFOS                FALSE      /**< should additional information be displayed */
 #define DEFAULT_DISABLECUTOFF            2          /**< should the cutoffbound be applied in master LP solving? (0: on, 1:off, 2:auto) */
-#define DEFAULT_THREADS                  1          /**< number of threads (0 is OpenMP default) */
+#define DEFAULT_NTHREADS                 1          /**< number of threads (0 is OpenMP default) */
 #define DEFAULT_STABILIZATION            TRUE       /**< should stabilization be used */
 #define DEFAULT_STABILIZATIONTREE        FALSE      /**< should stabilization be used in nodes other than the root node*/
 #define DEFAULT_HYBRIDASCENT             FALSE      /**< should hybridization of smoothing with an ascent method be enabled */
@@ -4315,9 +4315,9 @@ SCIP_RETCODE SCIPincludePricerGcg(
          &pricerdata->dispinfos, FALSE, DEFAULT_DISPINFOS, NULL, NULL) );
 
 #ifdef _OPENMP
-   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/npricingthreads",
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/nthreads",
             "maximum number of threads used to parallelize pricing (0: automatic)",
-            (int*)&pricerdata->npricingthreads, FALSE, DEFAULT_THREADS, 0, omp_get_max_threads(), NULL, NULL) );
+            (int*)&pricerdata->npricingthreads, FALSE, DEFAULT_NTHREADS, 0, omp_get_max_threads(), NULL, NULL) );
 #endif
 
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/stabilization",
