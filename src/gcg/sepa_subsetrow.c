@@ -513,7 +513,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       return SCIP_OKAY;
    }
 
-   if( (SCIPgetCurrentNode(scip) != SCIPgetRootNode(scip) && sepadata->onlyroot) || SCIPgetCurrentNode(scip) != SCIPgetRootNode(scip) && !allowlocal)
+   if( (SCIPgetCurrentNode(scip) != SCIPgetRootNode(scip) && sepadata->onlyroot) || (SCIPgetCurrentNode(scip) != SCIPgetRootNode(scip) && !allowlocal))
    {
       SCIPdebugMessage("subset row separator is only configured to run on root node.\n");
       *result = SCIP_DIDNOTRUN;
