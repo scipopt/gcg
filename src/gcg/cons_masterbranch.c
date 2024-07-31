@@ -416,7 +416,7 @@ SCIP_RETCODE initializeAddedCuts(
                          consdata->naddedcuts);
 #endif
    /* maps node to its constraint(data) */
-   SCIPhashmapInsert(conshdlrdata->mapnodetocons, consdata->node, consdata);
+   SCIPhashmapInsertInt(conshdlrdata->mapnodetocons, consdata, 1);
 
    /* copy and capture the cuts */
    SCIP_CALL( SCIPduplicateBlockMemoryArray(scip, &(consdata->addedcuts),
@@ -1916,6 +1916,55 @@ SCIP_DECL_CONSINITSOL(consInitsolMasterbranch)
    return SCIP_OKAY;
 }
 
+static
+SCIP_DECL_CONSEXITSOL(consExitSolMasterbranch)
+{
+   SCIP_CONSHDLRDATA* conshdlrdata;
+   int nentries;
+   int i;
+   int j;
+
+   assert(scip != NULL);
+   assert(conshdlr != NULL);
+   assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
+
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+
+   nentries = SCIPhashmapGetNEntries(conshdlrdata->mapnodetocons);
+   for( i = 0; i < nentries; i++ )
+   {
+      SCIP_HASHMAPENTRY* entry;
+      SCIP_CONSDATA* consdata;
+
+      entry = SCIPhashmapGetEntry(conshdlrdata->mapnodetocons, i);
+      if( entry == NULL )
+         continue;
+
+      consdata = (SCIP_CONSDATA*) SCIPhashmapEntryGetOrigin(entry);
+      assert(consdata != NULL);
+
+      if( consdata->addedcutsinit )
+      {
+         if( consdata->nodestoredcuts )
+         {
+            for( j = 0; j < consdata->naddedcuts; j++ )
+            {
+               SCIP_CALL( GCGreleaseMasterSepaCut(scip, &(consdata->addedcuts[j])) );
+            }
+            SCIPfreeBlockMemoryArray(scip, &(consdata->addedcuts), consdata->naddedcuts);
+            consdata->naddedcuts = 0;
+         }
+      }
+      consdata->nodestoredcuts = FALSE;
+      consdata->addedcutsinit = TRUE;
+   }
+
+   SCIPhashmapRemoveAll(conshdlrdata->mapnodetocons);
+
+   return SCIP_OKAY;
+}
+
 
 /** deinitialization method of constraint handler (called before transformed problem is freed) */
 static
@@ -1962,7 +2011,6 @@ SCIP_DECL_CONSEXIT(consExitMasterbranch)
          break;
    }
    SCIPfreeBlockMemoryArrayNull(scip, &(conshdlrdata->linkingvaridxs), conshdlrdata->maxlinkingvaridxs);
-   SCIPhashmapRemoveAll(conshdlrdata->mapnodetocons);
    return SCIP_OKAY;
 }
 
@@ -2324,6 +2372,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
          }
          SCIPfreeBlockMemoryArray(scip, &((*consdata)->addedcuts), (*consdata)->naddedcuts);
          (*consdata)->naddedcuts = 0;
+         SCIP_CALL( SCIPhashmapRemove(conshdlrdata->mapnodetocons, (*consdata)) );
       }
    }
 
@@ -2688,6 +2737,7 @@ SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
    SCIP_CALL( SCIPsetConshdlrInit(scip, conshdlr, consInitMasterbranch) );
    SCIP_CALL( SCIPsetConshdlrExit(scip, conshdlr, consExitMasterbranch) );
    SCIP_CALL( SCIPsetConshdlrInitsol(scip, conshdlr, consInitsolMasterbranch) );
+   SCIP_CALL(SCIPsetConshdlrExitsol(scip, conshdlr, consExitSolMasterbranch) );
    SCIP_CALL( SCIPsetConshdlrDelete(scip, conshdlr, consDeleteMasterbranch) );
    SCIP_CALL( SCIPsetConshdlrActive(scip, conshdlr, consActiveMasterbranch) );
    SCIP_CALL( SCIPsetConshdlrDeactive(scip, conshdlr, consDeactiveMasterbranch) );
@@ -3253,60 +3303,3 @@ void GCGconsMasterbranchCheckConsistency(
    SCIPdebugMessage("checked consistency of %d masterbranch constraints, all ok!\n", nconss);
 }
 
-/**< delete the cuts stored at node */
-SCIP_RETCODE GCGdeleteNode(
-   SCIP*       scip,    /**< SCIP data structure */
-   SCIP_NODE*  node     /**< node whose cuts should be deleted */
-)
-{
-   SCIP_CONSDATA* consdata;
-   SCIP_CONSHDLR* conshdlr;
-   SCIP_CONSHDLRDATA* conshdlrdata;
-   int i;
-   int j;
-
-   assert(scip != NULL);
-   assert(GCGisMaster(scip));
-
-   /* get constraint handler */
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
-   assert(conshdlr != NULL);
-
-   /* get constraint handler data */
-   conshdlrdata = SCIPconshdlrGetData(conshdlr);
-   assert(conshdlrdata != NULL);
-
-   /* get constraint data */
-   if( SCIPhashmapExists(conshdlrdata->mapnodetocons, node) )
-   {
-      consdata = (SCIP_CONSDATA*) SCIPhashmapGetImage(conshdlrdata->mapnodetocons, node);
-      assert(consdata != NULL);
-      assert(consdata->node == node);
-#ifndef MASTERSEP_DEBUG
-      SCIPinfoMessage(scip, NULL, "delete node: node %lli  nsepas = %i\n", SCIPnodeGetNumber(consdata->node), conshdlrdata->nsepas);
-#endif
-      if( consdata->addedcutsinit )
-      {
-#ifndef MASTERSEP_DEBUG
-         SCIPinfoMessage(scip, NULL, "delete node: node stored cuts %i\n", consdata->nodestoredcuts);
-#endif
-         if( consdata->nodestoredcuts )
-         {
-#ifndef MASTERSEP_DEBUG
-            SCIPinfoMessage(scip, NULL, "delete node: release %i cuts and free added cuts\n", consdata->naddedcuts);
-#endif
-            for( j = 0; j < consdata->naddedcuts; j++ )
-            {
-               SCIP_CALL( GCGreleaseMasterSepaCut(scip, &(consdata->addedcuts[j])) );
-            }
-            SCIPfreeBlockMemoryArray(scip, &(consdata->addedcuts), consdata->naddedcuts);
-            consdata->naddedcuts = 0;
-         }
-      }
-      consdata->nodestoredcuts = FALSE;
-      consdata->addedcutsinit = TRUE;
-      SCIP_CALL( SCIPhashmapRemove(conshdlrdata->mapnodetocons, node) );
-   }
-
-   return SCIP_OKAY;
-}

@@ -222,27 +222,6 @@ SCIP_RETCODE eventRowAddedToLP(
    return SCIP_OKAY;
 }
 
-/**< deletes the cuts stored in the consdata associated with a node upon the nodes deletion */
-static
-SCIP_RETCODE eventNodeDeleted(
-   SCIP*                   scip,             /**< SCIP data structure */
-   SCIP_EVENTHDLRDATA*     eventhdlrdata,    /**< data of eventhandler */
-   SCIP_EVENT*             event             /**< node deleted event */
-)
-{
-   SCIP_NODE* node;
-
-   assert(scip != NULL);
-   assert(eventhdlrdata != NULL);
-   assert(event != NULL);
-   assert(SCIPeventGetType(event) == SCIP_EVENTTYPE_NODEDELETE);
-
-   node = SCIPeventGetNode(event);
-
-   SCIP_CALL( GCGdeleteNode(scip, node) );
-
-   return SCIP_OKAY;
-}
 
 
 /*
@@ -285,7 +264,7 @@ SCIP_DECL_EVENTEXIT(eventExitMastercutUpdate)
    assert(eventhdlrdata != NULL);
 
    /* notify SCIP that your event handler wants to drop the event type row added to lp and node deleted found */
-   SCIP_CALL( SCIPdropEvent(scip, (SCIP_EVENTTYPE_ROWADDEDLP | SCIP_EVENTTYPE_NODEDELETE), eventhdlr, NULL, -1) );
+   SCIP_CALL( SCIPdropEvent(scip, SCIP_EVENTTYPE_ROWADDEDLP, eventhdlr, NULL, -1) );
 
    /* free all the arrays */
    SCIPdebugMessage("event free: free mem (%i) for activecuts\n", eventhdlrdata->activecutssize);
@@ -326,7 +305,7 @@ SCIP_DECL_EVENTINIT(eventInitMastercutUpdate)
    eventhdlrdata->generatedcutssize = initialsize;
 
    /* notify SCIP that event handler wants to react on the event types row added to LP and node deleted */
-   SCIP_CALL( SCIPcatchEvent(scip, (SCIP_EVENTTYPE_ROWADDEDLP | SCIP_EVENTTYPE_NODEDELETE), eventhdlr, NULL, NULL) );
+   SCIP_CALL( SCIPcatchEvent(scip, SCIP_EVENTTYPE_ROWADDEDLP, eventhdlr, NULL, NULL) );
 
    return SCIP_OKAY;
 }
@@ -384,7 +363,7 @@ SCIP_DECL_EVENTEXEC(eventExecEvent)
    assert(eventhdlr != NULL);
    assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
    assert(event != NULL);
-   assert(SCIPeventGetType(event) == SCIP_EVENTTYPE_ROWADDEDLP | SCIPeventGetType(event) == SCIP_EVENTTYPE_NODEDELETE);
+   assert(SCIPeventGetType(event) == SCIP_EVENTTYPE_ROWADDEDLP);
 
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert( eventhdlrdata != NULL );
@@ -393,9 +372,6 @@ SCIP_DECL_EVENTEXEC(eventExecEvent)
    {
       case SCIP_EVENTTYPE_ROWADDEDLP:
          SCIP_CALL( eventRowAddedToLP(scip, eventhdlrdata, event) );
-         break;
-      case SCIP_EVENTTYPE_NODEDELETE:
-         SCIP_CALL( eventNodeDeleted(scip, eventhdlrdata, event) );
          break;
       default:
          SCIPerrorMessage("Encountered Event not listened to.\n");
