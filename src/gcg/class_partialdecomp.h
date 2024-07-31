@@ -208,7 +208,7 @@ private:
     * Checks blocks for equality by graph automorphism check, done by bliss
     * @note equality is only found if variables are in correct order
     */
-   void checkIdenticalBlocksBliss(
+   void checkIdenticalBlocksAutomorphism(
       int                  b1,         /**< block id of first block */
       int                  b2,         /**< block id of second block */
       std::vector<int>&    varmap,     /**< maps variable indices (corresponding to  detprobdata indices) of block 2 to block 1 */
@@ -2015,6 +2015,14 @@ public:
    void buildDecChainString(
       char* buffer /**< will contain string of detector chars in chronological order afterwards*/
       );
+   
+   /**
+    * @brief returns the number of block vars contained in a master constraint
+    */
+   int getNVarsOfBlockInMasterCons(
+      int masterconsindex, /**< index of master constraint */
+      int block /**< block id */
+      );
 
    /**
    * @brief creates a detector chain short string for this partialdec, is built from detector chain
@@ -2234,7 +2242,6 @@ private:
    bool varPartitionUsed(
       int detectorchainindex /**< index of the detector in the detectorchain */
       );
-
 };
 
 

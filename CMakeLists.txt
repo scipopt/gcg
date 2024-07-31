@@ -130,7 +130,7 @@ else()
    set(JANSSON_PIC_LIBRARIES)
 endif()
 
-set(SYM sbliss CACHE STRING "options for symmetry computation")  #create the variable
+set(SYM snauty CACHE STRING "options for symmetry computation")  #create the variable
 set_property(CACHE SYM PROPERTY STRINGS sbliss bliss nauty snauty none )  #define list of values GUI will offer for the variable
 
 #set the correct rpath for OS X
@@ -227,25 +227,56 @@ if((NOT SCIP_FOUND) AND (EXISTS ${GCG_DEV_BUILD_SCIP_PATH}) AND (EXISTS ${GCG_DE
    add_subdirectory(${GCG_DEV_BUILD_SCIP_PATH})
    set(SCIP_LIBRARIES libscip)
 elseif(GCG_DEV_BUILD)
-   message(WARNING "GCG_DEV_BUILD option is set but could not find SCIP and SoPlex in the lib/ subdirectory. Please specify GCG_DEV_BUILD_SOPLEX_PATH and GCG_DEV_BUILD_SCIP_PATH")
+   message(FATAL_ERROR "GCG_DEV_BUILD option is set but could not find SCIP and SoPlex in the lib/ subdirectory. Please specify GCG_DEV_BUILD_SOPLEX_PATH and GCG_DEV_BUILD_SCIP_PATH")
 endif()
 
 #search the selected symmetry computation program
 if(SYM STREQUAL "bliss" OR SYM STREQUAL "sbliss")
-   if(NOT TARGET Bliss::bliss)
-      find_package(BLISS REQUIRED)
-      include_directories(${BLISS_INCLUDE_DIRS})
-   else()
-      set(BLISS_LIBRARIES libbliss)
+   if(NOT TARGET Bliss::libbliss)
+      find_package(Bliss CONFIG HINTS ${BLISS_DIR})
+      if(NOT TARGET Bliss::libbliss)
+         find_package(Bliss REQUIRED)
+         include_directories(${BLISS_INCLUDE_DIRS})
+      endif()
    endif()
+   set(BLISS_LIBRARIES Bliss::libbliss)
    set(SYM_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
    set(SYM_PIC_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
+   # if sbliss: sassy is a header-only library and is already included by SCIP
+elseif(SYM STREQUAL "nauty" OR SYM STREQUAL "snauty")
+   if(NOT GCG_DEV_BUILD AND NOT SCIPOptSuite_SOURCE_DIR)
+      find_package(NAUTY REQUIRED)
+      include_directories(${NAUTY_INCLUDE_DIRS})
+      set(SYM_LIBRARIES ${NAUTY_LIBRARIES})
+      set(SYM_PIC_LIBRARIES ${NAUTY_LIBRARIES})
+   else()
+      message(STATUS "Using nauty provided by SCIP")
+      if(GCG_DEV_BUILD)
+         set(NAUTY_SRC_DIR ${GCG_DEV_BUILD_SCIP_PATH}/src/nauty/)
+      elseif(SCIPOptSuite_SOURCE_DIR)
+         set(NAUTY_SRC_DIR ${SCIPOptSuite_SOURCE_DIR}/scip/src/nauty/)
+      endif()
+      set(symsources
+         ${NAUTY_SRC_DIR}/nauty.c
+         ${NAUTY_SRC_DIR}/nautil.c
+         ${NAUTY_SRC_DIR}/nausparse.c
+         ${NAUTY_SRC_DIR}/schreier.c
+         ${NAUTY_SRC_DIR}/naurng.c
+      )
+      set(SYM_LIBRARIES)
+      set(SYM_PIC_LIBRARIES)
+   endif()
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${NAUTY_DEFINITIONS} -DWITH_NAUTY")
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${NAUTY_DEFINITIONS} -DWITH_NAUTY")
+   # if snauty: sassy is a header-only library and is already included by SCIP
 else()
    message(STATUS "GCG will be compiled without symmetry computation")
    set(SYM_LIBRARIES)
    set(SYM_PIC_LIBRARIES)
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DNO_AUT_LIB")
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BLISS_DEFINITIONS} -DNO_AUT_LIB")
 endif()
 
 # TODO: In SCIP, license is in COPYING file and not in LICENSE.

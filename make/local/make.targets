@@ -127,14 +127,12 @@ googletest:
 
 .PHONY: bliss
 bliss:
-ifneq ("$(wildcard lib/scip-git/src/bliss/Makefile-manual)","")
-		-mkdir -p lib/scip-git/src/bliss/build
-		@$(MAKE) -C lib/scip-git/src/bliss -f Makefile-manual
+ifneq ("$(wildcard lib/bliss-git/Makefile-manual)","")
+		-mkdir -p lib/bliss-git/bliss/build
+		@$(MAKE) -C lib/bliss-git -f Makefile-manual
 else
-		@$(MAKE) -C lib/scip-git/src/bliss
+		@$(MAKE) -C lib/bliss-git
 endif
-		-ln -sfn ../scip-git/src/bliss/include/bliss lib/include/
-		-ln -sfn ../scip-git/src/bliss/libbliss_static.a lib/static/libbliss.a
 
 .PHONY: cliquer
 cliquer: cliquerobj cliquerlib
@@ -156,7 +154,7 @@ endif
 soplex:
 		@$(MAKE) -C lib/soplex-git OPT=opt
 
-ifeq ($(BLISS),true)
+ifeq ($(SYM),bliss)
 DEPS += bliss
 endif
 ifeq ($(CLIQUER),true)
