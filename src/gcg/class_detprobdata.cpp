@@ -56,6 +56,7 @@
 #include "pub_decomp.h"
 #include "struct_decomp.h"
 #include "cons_decomp.h"
+#include "cons_decomp.hpp"
 #include "decomp.h"
 #include "miscvisualization.h"
 #include "scip_misc.h"
@@ -231,6 +232,15 @@ void DETPROBDATA::getTranslatedPartialdecs(
    SCIP_Bool translatesymmetry
    )
 {
+   DETPROBDATA* origdetprobdata = NULL;
+   if( translatesymmetry )
+   {
+      // even if presolving is disabled some vars might be fixed to 0
+      // @todo: we could check if symmetry is still valid
+      origdetprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      if( origdetprobdata->getNConss() != getNConss() || origdetprobdata->getNVars() != getNVars() )
+         translatesymmetry = FALSE;
+   }
    for( auto otherpartialdec : origpartialdecs )
    {
       PARTIALDECOMP* newpartialdec;

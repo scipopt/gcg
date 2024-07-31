@@ -190,6 +190,10 @@ SCIP_RETCODE adjustSettings(SCIP* pricingprob, SCIP* subgcg)
    // we disable presolving by default (can be enabled using a settings file)
    SCIP_CALL( SCIPsetIntParam(subgcg, "presolving/maxrounds", 0) );
 
+#ifndef NO_AUT_LIB
+   SCIP_CALL( SCIPsetBoolParam(subgcg, "relaxing/gcg/aggregation/usesymmetrylib", FALSE) );
+#endif
+
    return SCIP_OKAY;
 }
 
