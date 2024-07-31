@@ -36,6 +36,7 @@
 #include <gcg/pricer_gcg.h>
 #include <scip/pub_message.h>
 #include <scip/pub_var.h>
+#include <scip/type_branch.h>
 #include <scip/type_misc.h>
 #include <assert.h>
 #include <scip/def.h>
@@ -76,6 +77,13 @@
 /*
  * Data structures
  */
+
+/** branching rule data */
+struct SCIP_BranchruleData
+{
+   SCIP_Bool             useMaxRangeMidrangeHeuristic; /** should the MaxRangeMidrangeHeuristic be used */
+   SCIP_Bool             useMostDistinctMedianHeuristic; /** should the MostDistinctMedianHeuristic be used */
+};
 
 /** branching data */
 struct GCG_BranchData
@@ -1508,6 +1516,7 @@ CHOOSE_COMPBNDSEQ(chooseSmallestSize)
 static
 SCIP_RETCODE separation(
    SCIP*                 masterscip,              /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,              /**< branching rule */
    GCG_COMPBND**         B,                       /**< Component Bound Sequence defining the nodes */
    int*                  Bsize,                   /**< size of B */
    int                   blocknr,                 /**< number of the block */
@@ -1518,6 +1527,10 @@ SCIP_RETCODE separation(
    GCG_COMPBND** Blist;
    int* Bsizes;
    int Blistsize;
+
+   SCIP_BRANCHRULEDATA* branchruledata;
+   branchruledata = SCIPbranchruleGetData(branchrule);
+   assert(branchruledata != NULL);
 
    SCIP_VAR** X;
    int Xsize;
@@ -1538,19 +1551,27 @@ SCIP_RETCODE separation(
 #endif
 
    // call the separation algorithm with all chooseVars functions
-   SCIP_CALL( _separation(masterscip, X, Xsize, NULL, 0, blocknr, chooseMaxMin, &Blist, &Bsizes, &Blistsize, result) );
-#ifndef NDEBUG
-   assert(Xsize == XsizeCopy);
-   assert(Blistsize > BlistsizeCopy);
-   BlistsizeCopy = Blistsize;
-#endif
+   assert(branchruledata->useMaxRangeMidrangeHeuristic || branchruledata->useMostDistinctMedianHeuristic);
 
-   SCIP_CALL( _separation(masterscip, X, Xsize, NULL, 0, blocknr, chooseMostDistinctValuesMedian, &Blist, &Bsizes, &Blistsize, result) );
+   if( branchruledata->useMaxRangeMidrangeHeuristic )
+   {
+      SCIP_CALL( _separation(masterscip, X, Xsize, NULL, 0, blocknr, chooseMaxMin, &Blist, &Bsizes, &Blistsize, result) );
 #ifndef NDEBUG
-   assert(Xsize == XsizeCopy);
-   assert(Blistsize > BlistsizeCopy);
-   BlistsizeCopy = Blistsize;
+      assert(Xsize == XsizeCopy);
+      assert(Blistsize > BlistsizeCopy);
+      BlistsizeCopy = Blistsize;
 #endif
+   }
+
+   if( branchruledata->useMostDistinctMedianHeuristic )
+   {
+      SCIP_CALL( _separation(masterscip, X, Xsize, NULL, 0, blocknr, chooseMostDistinctValuesMedian, &Blist, &Bsizes, &Blistsize, result) );
+#ifndef NDEBUG
+      assert(Xsize == XsizeCopy);
+      assert(Blistsize > BlistsizeCopy);
+      BlistsizeCopy = Blistsize;
+#endif
+   }
 
    SCIPfreeBlockMemoryArray(masterscip, &X, Xsize);
    Xsize = 0;
@@ -1643,7 +1664,7 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
       }
 
       /* 3. Call to separation algorithm to find a suitable B to branch on in the current block. */
-      SCIP_CALL( separation(masterscip, &B, &Bsize, blocknr, result) );
+      SCIP_CALL( separation(masterscip, branchrule, &B, &Bsize, blocknr, result) );
 
       if( *result == SCIP_BRANCHED )
       {
@@ -1953,11 +1974,16 @@ SCIP_RETCODE SCIPincludeBranchruleCompBnd(
    SCIP*                 scip                /**< SCIP data structure */
 )
 {
+   SCIP* origscip;
    SCIP_BRANCHRULEDATA* branchruledata;
    SCIP_BRANCHRULE* branchrule;
 
+   /* get original problem */
+   origscip = GCGmasterGetOrigprob(scip);
+   assert(origscip != NULL);
+
    /* create compbnd branching rule data */
-   branchruledata = NULL;
+   SCIP_CALL( SCIPallocBlockMemory(scip, &branchruledata) );
 
    SCIPdebugMessage("Include method of component bound branching\n");
 
@@ -1967,6 +1993,12 @@ SCIP_RETCODE SCIPincludeBranchruleCompBnd(
          branchCopyCompBnd, branchFreeCompBnd, branchInitCompBnd, branchExitCompBnd, branchInitsolCompBnd, branchExitsolCompBnd,
          branchExeclpCompBnd, branchExecextCompBnd, branchExecpsCompBnd,
          branchruledata) );
+
+   /* add compbnd branching rule parameters */
+   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/compbnd/useMRMH",
+      "should the max range midrange heuristic be used?", &branchruledata->useMaxRangeMidrangeHeuristic, FALSE, TRUE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/compbnd/useMDMH",
+      "should the most distinct median heuristic be used?", &branchruledata->useMostDistinctMedianHeuristic, FALSE, TRUE, NULL, NULL) );
 
    branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
    assert(branchrule != NULL);
