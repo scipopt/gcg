@@ -194,6 +194,10 @@ SCIP_RETCODE adjustSettings(SCIP* pricingprob, SCIP* subgcg)
    SCIP_CALL( SCIPsetBoolParam(subgcg, "relaxing/gcg/aggregation/usesymmetrylib", FALSE) );
 #endif
 
+#ifdef _OPENMP
+   SCIP_CALL( SCIPsetIntParam(subgcg, "pricing/masterpricer/nthreads", 1) );
+#endif
+
    return SCIP_OKAY;
 }
 

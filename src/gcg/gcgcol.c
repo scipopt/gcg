@@ -62,12 +62,20 @@ SCIP_RETCODE GCGcreateGcgCol(
 {
    int i;
    int nnonz;
+   int size;
+   int retcode;
 
-   SCIP_CALL( SCIPallocBlockMemory(pricingprob, gcgcol) );
+   size = SCIPcalcMemGrowSize(pricingprob, nvars);
+   #pragma omp critical (memory)
+   {
+      retcode = SCIPallocBlockMemory(pricingprob, gcgcol);
+      if( retcode == SCIP_OKAY )
+         retcode = SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vars), size);
+      if( retcode == SCIP_OKAY )
+         retcode =  SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vals), size);
+   }
 
-   (*gcgcol)->maxvars = SCIPcalcMemGrowSize(pricingprob, nvars);
-   SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vars), (*gcgcol)->maxvars) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vals), (*gcgcol)->maxvars) );
+   SCIP_CALL( retcode );
 
    (*gcgcol)->pricingprob = pricingprob;
    (*gcgcol)->probnr = probnr;
@@ -83,6 +91,8 @@ SCIP_RETCODE GCGcreateGcgCol(
    (*gcgcol)->maxmastercuts = 0;
    (*gcgcol)->nlinkvars = 0;
    (*gcgcol)->initcoefs = FALSE;
+   (*gcgcol)->pos = -1;
+   (*gcgcol)->maxvars = size;
 
 
    nnonz = 0;
@@ -127,7 +137,7 @@ SCIP_RETCODE GCGcreateGcgCol(
 #ifndef NDEBUG
    for( i = 1 ; i < (*gcgcol)->nvars; ++i )
    {
-      assert( SCIPvarCompare((*gcgcol)->vars[i-1], (*gcgcol)->vars[i]) != 0 );
+      assert( SCIPvarCompare((*gcgcol)->vars[i-1], (*gcgcol)->vars[i]) < 0 );
    }
 #endif
    return SCIP_OKAY;
@@ -142,14 +152,18 @@ void GCGfreeGcgCol(
    assert(*gcgcol != NULL);
 
    /* todo: release vars? */
+   assert((*gcgcol)->pos == -1);
    assert((*gcgcol)->nvars == 0 || (*gcgcol)->vars != NULL);
-   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vars, (*gcgcol)->maxvars);
-   assert((*gcgcol)->nvars == 0 || (*gcgcol)->vals != NULL);
-   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vals, (*gcgcol)->maxvars);
-   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercoefs, (*gcgcol)->maxmastercoefs);
-   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->linkvars, (*gcgcol)->maxlinkvars);
-   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercuts, (*gcgcol)->maxmastercuts);
-   SCIPfreeBlockMemory((*gcgcol)->pricingprob, gcgcol);
+   #pragma omp critical (memory)
+   {
+      SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vars, (*gcgcol)->maxvars);
+      assert((*gcgcol)->nvars == 0 || (*gcgcol)->vals != NULL);
+      SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vals, (*gcgcol)->maxvars);
+      SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercoefs, (*gcgcol)->maxmastercoefs);
+      SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->linkvars, (*gcgcol)->maxlinkvars);
+      SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercuts, (*gcgcol)->maxmastercuts);
+      SCIPfreeBlockMemory((*gcgcol)->pricingprob, gcgcol);
+   }
 }
 
 /** create a gcg column from a solution to a pricing problem */
@@ -298,19 +312,7 @@ SCIP_Bool GCGcolIsEq(
 
    for( i = 0; i < nvars1; ++i )
    {
-      SCIP_VAR* var1;
-      SCIP_VAR* var2;
-
-      SCIP_Real val1;
-      SCIP_Real val2;
-
-      var1 = vars1[i];
-      var2 = vars2[i];
-
-      val1 = vals1[i];
-      val2 = vals2[i];
-
-      if( SCIPvarCompare(var1, var2) != 0 || !SCIPisEQ(pricingprob, val1, val2) )
+      if( vars1[i] != vars2[i] || !SCIPisEQ(pricingprob, vals1[i], vals2[i]) )
       {
          return FALSE;
       }
@@ -894,4 +896,47 @@ SCIP_Real GCGcolComputeOrth(
    para = para/(norm1*norm2);
 
    return 1.0 - para;
+}
+
+SCIP_DECL_HASHGETKEY(GCGhashGetKeyCol)
+{  /*lint --e{715}*/
+   assert(elem != NULL);
+
+   /* the key of a col is the col itself */
+   return elem;
+}
+
+SCIP_DECL_HASHKEYEQ(GCGhashKeyEqCol)
+{  /*lint --e{715}*/
+   return GCGcolIsEq((GCG_COL*)key1, (GCG_COL*)key2);
+}
+
+SCIP_DECL_HASHKEYVAL(GCGhashKeyValCol)
+{  /*lint --e{715}*/
+   GCG_COL* col;
+   unsigned int keyval;
+   int minindex;
+   int maxindex;
+
+   col = (GCG_COL*)key;
+   assert(col != NULL);
+
+   /* TODO: this hash function does not respect tolerances (except the hard coded of SCIPrealHashCode)
+    * but it seems that SCIP does it the same way */
+   if( col->nvars > 0 )
+   {
+      minindex = SCIPvarGetIndex(col->vars[0]);
+      maxindex = SCIPvarGetIndex(col->vars[col->nvars-1]);
+   }
+   else
+   {
+      minindex = INT_MAX;
+      maxindex = INT_MAX;
+   }
+   assert(minindex <= maxindex);
+   keyval = SCIPhashSeven(col->probnr, col->nvars, col->isray,
+         SCIPrealHashCode(col->nvars > 0 ? col->vals[0] : 0.0), minindex,
+         SCIPrealHashCode(col->nvars > 0 ? col->vals[col->nvars-1] : 0.0), maxindex);
+
+   return keyval;
 }

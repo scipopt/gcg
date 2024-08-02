@@ -52,17 +52,19 @@ extern "C" {
 struct GCG_PriceStore
 {
    SCIP*                 scip;               /**< SCIP data structure */
-   GCG_COL**             cols;               /**< array with priced cols sorted by score */
-   SCIP_Real*            objparallelisms;    /**< parallelism of col to the objective function */
-   SCIP_Real*            orthogonalities;    /**< minimal orthogonality of col with all other cols of larger score */
-   SCIP_Real*            scores;             /**< score for each priced col: weighted sum of efficacy and orthogonality */
-   int                   colssize;           /**< size of cols and score arrays */
-   int                   ncols;              /**< number of priced cols (max. is set->price_maxcols) */
-   int                   nforcedcols;        /**< number of forced priced cols (first positions in cols array) */
-   int                   nefficaciouscols;   /**< number of improving priced cols */
+   GCG_COL***            cols;               /**< array with priced cols sorted by score */
+   SCIP_HASHTABLE*       hashtable;          /**< hashtable that maps the cols to their indices in the cols array */
+   SCIP_Real**           objparallelisms;    /**< parallelism of col to the objective function */
+   SCIP_Real**           orthogonalities;    /**< minimal orthogonality of col with all other cols of larger score */
+   SCIP_Real**           scores;             /**< score for each priced col: weighted sum of efficacy and orthogonality */
+   int*                  colssize;           /**< size of cols and score arrays */
+   int*                  ncols;              /**< number of priced cols per problem */
+   int*                  nforcedcols;        /**< number of forced priced cols (first positions in cols array) */
+   int                   ncolstotal;         /**< number of priced cols (max. is set->price_maxcols) */
    int                   ncolsfound;         /**< total number of cols found so far */
    int                   ncolsfoundround;    /**< number of cols found so far in this pricing round */
    int                   ncolsapplied;       /**< total number of cols applied to the LPs */
+   int                   narrays;            /**< number of allocated arrays (i.e., size of cols, scores, etc.) */
    SCIP_Bool             infarkas;           /**< is the price storage currently being filled with the columns from farkas pricing? */
    SCIP_Bool             forcecols;          /**< should the cols be used despite the number of cols parameter limit? */
    SCIP_Real             efficiacyfac;       /**< factor of efficiacy in score function */
@@ -70,7 +72,6 @@ struct GCG_PriceStore
    SCIP_Real             orthofac;           /**< factor of orthogonalities in score function */
    SCIP_Real             mincolorth;         /**< minimal orthogonality of columns to add
                                                   (with respect to columns added in the current round) */
-   SCIP_CLOCK*           priceclock;         /**< pricing time */
    GCG_EFFICIACYCHOICE   efficiacychoice;    /**< choice to base efficiacy on */
 };
 

@@ -67,7 +67,8 @@ SCIP_RETCODE GCGpricestoreCreate(
    SCIP_Real             orthofac,            /**< factor of orthogonalities in score function */
    SCIP_Real             mincolorth,          /**< minimal orthogonality of columns to add
                                                   (with respect to columns added in the current round) */
-   GCG_EFFICIACYCHOICE   efficiacychoice      /**< choice to base efficiacy on */
+   GCG_EFFICIACYCHOICE   efficiacychoice,     /**< choice to base efficiacy on */
+   int                   hashtablesize        /**< size of hashtable */
    );
 
 /** frees price storage */
@@ -109,7 +110,8 @@ SCIP_RETCODE GCGpricestoreAddCol(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_PRICESTORE*       pricestore,         /**< price storage */
    GCG_COL*              col,                /**< priced col */
-   SCIP_Bool             forcecol            /**< should the col be forced to enter the LP? */
+   SCIP_Bool             forcecol,           /**< should the col be forced to enter the LP? */
+   SCIP_Bool*            added               /**< pointer to var that indicates whether the col was added */
    );
 
 /** adds cols to priced vars and clears price storage */
@@ -127,27 +129,23 @@ void GCGpricestoreClearCols(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
-/** removes cols that are inefficacious w.r.t. the current LP solution from price storage without adding the cols to the LP */
-GCG_EXPORT
-void GCGpricestoreRemoveInefficaciousCols(
-   GCG_PRICESTORE*       pricestore          /**< price storage */
-   );
-
 /** get cols in the price storage */
 GCG_EXPORT
 GCG_COL** GCGpricestoreGetCols(
-   GCG_PRICESTORE*       pricestore           /**< price storage */
+   GCG_PRICESTORE*       pricestore,          /**< price storage */
+   int                   arrayindex           /**< index of the arrays */
    );
 
 /** get number of cols in the price storage */
 GCG_EXPORT
 int GCGpricestoreGetNCols(
-   GCG_PRICESTORE*       pricestore           /**< price storage */
+   GCG_PRICESTORE*       pricestore,          /**< price storage */
+   int                   arrayindex           /**< index of the arrays */
    );
 
-/** get number of efficacious cols in the price storage */
+/** get number of cols in the price storage */
 GCG_EXPORT
-int GCGpricestoreGetNEfficaciousCols(
+int GCGpricestoreGetNColsTotal(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
@@ -166,12 +164,6 @@ int GCGpricestoreGetNColsFoundRound(
 /** get total number of cols applied to the LPs */
 GCG_EXPORT
 int GCGpricestoreGetNColsApplied(
-   GCG_PRICESTORE*       pricestore           /**< price storage */
-   );
-
-/** gets time in seconds used for pricing cols from the pricestore */
-GCG_EXPORT
-SCIP_Real GCGpricestoreGetTime(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 

@@ -44,11 +44,10 @@ Code cleanup:
 - the explore dialog accesses (partial) decompositions now directly using pointers instead of their ids
 - symmetry information stored for a decomposition is now used by the relaxator without creating intermediate varmaps
 
-Bug fixes
----------
+New/changed parameters:
+-----------------------
 
-- fix (global) bound propagation bugs
-- remove columns from colpool that violate global bounds
+- renamed parameter 'pricing/masterpricer/threads' to 'pricing/masterpricer/nthreads' and set default value to 1
 
 
 @page RN37 Release notes for GCG 3.7
@@ -81,6 +80,7 @@ Miscellaneous
 
 - moved files related to symmetry detection to src/symmetry/
 - renamed 'pub_bliss.h' to 'pub_automorphism.h'
+- enable OpenMP by default
 
 
 @page RN36 Release notes for GCG 3.6
