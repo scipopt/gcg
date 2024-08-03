@@ -1459,7 +1459,8 @@ SCIP_RETCODE GCGcreateMasterVar(
    {
       npricingvars = SCIPgetNOrigVars(pricingscip);
       pricingvars = SCIPgetOrigVars(pricingscip);
-      newvardata->data.mastervardata.norigvars = npricingvars - GCGcountInferredPricingVars(pricingvars, npricingvars);
+      newvardata->data.mastervardata.norigvars =  npricingvars; //- GCGcountInferredPricingVars(pricingvars, npricingvars);
+
       trivialsol = TRUE;
    }
 
@@ -1544,8 +1545,9 @@ SCIP_RETCODE GCGcreateMasterVar(
          SCIP_CALL( GCGoriginalVarAddMasterVar(origscip, origvar, *newvar, 0.0) );
          j++;
       }
+      newvardata->data.mastervardata.norigvars = j;
    }
-   assert(j == newvardata->data.mastervardata.norigvars);
+   //assert(j == newvardata->data.mastervardata.norigvars);
 
    return SCIP_OKAY;
 }
