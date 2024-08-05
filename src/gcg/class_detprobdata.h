@@ -712,7 +712,8 @@ public:
    GCG_EXPORT
    std::vector<PARTIALDECOMP*> translatePartialdecs(
       DETPROBDATA* otherdata,                       /**< old detprobdata */
-      std::vector<PARTIALDECOMP*> otherpartialdecs  /**< partialdecs to be translated */
+      std::vector<PARTIALDECOMP*> otherpartialdecs, /**< partialdecs to be translated */
+      SCIP_Bool translateSymmetry                   /**< translate symmetry information? */
       );
 
    /**
@@ -721,7 +722,8 @@ public:
     */
    GCG_EXPORT
    std::vector<PARTIALDECOMP*> translatePartialdecs(
-      DETPROBDATA* otherdata                        /**< old detprobdata */
+      DETPROBDATA* otherdata,                       /**< old detprobdata */
+      SCIP_Bool translateSymmetry                   /**< translate symmetry information? */
    );
 
 

@@ -106,11 +106,12 @@ struct GCG_SolverData
    int*                    cursollimit;         /**< current solution limit per pricing problem */
 
 
-   SCIP_Clock* inittime;
-   SCIP_Clock* updatetime;
-   SCIP_Clock* solvingtime;
-   SCIP_Clock* postprocessingtime;
-   int64_t count;
+   SCIP_Clock*             inittime;
+   SCIP_Clock*             updatetime;
+   SCIP_Clock*             solvingtime;
+   SCIP_Clock*             postprocessingtime;
+   int64_t                 count;
+   SCIP_Bool*              translatesymmetry;
 
    SCIP_Bool               checksols;           /**< should solutions be checked extensively */
 };
@@ -217,6 +218,7 @@ SCIP_Bool buildProblem(
    GCG_SOLVER* childsolver;
    SCIP_HASHMAP* varmap;
    SCIP_RESULT decompresult = SCIP_DIDNOTRUN;
+   int npresolvrounds;
 
    SCIPstartClock(solverdata->origprob, solverdata->inittime);
    SCIP_CALL( SCIPcreate(&subgcg) );
@@ -238,6 +240,9 @@ SCIP_Bool buildProblem(
    {
       SCIP_CALL( SCIPreadParams(subgcg, solverdata->settingsfile) );
    }
+   SCIP_CALL( SCIPgetIntParam(subgcg, "presolving/maxrounds", &npresolvrounds) );
+   if( npresolvrounds != 0 )
+      solverdata->translatesymmetry[probnr] = FALSE;
 
    // TODO: setting needed parameters (also user specified ones)
 
@@ -351,8 +356,17 @@ SCIP_RETCODE updateVars(
 
       if (varbndschanged)
       {
-         SCIPchgVarLb(subgcg, subvar, SCIPvarGetLbGlobal(var));
-         SCIPchgVarUb(subgcg, subvar, SCIPvarGetUbGlobal(var));
+         if( !SCIPisEQ(subgcg, SCIPvarGetLbGlobal(var), SCIPvarGetLbGlobal(subvar)) )
+         {
+            SCIPchgVarLb(subgcg, subvar, SCIPvarGetLbGlobal(var));
+            solverdata->translatesymmetry[probnr] = FALSE;
+         }
+         if( !SCIPisEQ(subgcg, SCIPvarGetUbGlobal(var), SCIPvarGetUbGlobal(subvar)) )
+         {
+            SCIPchgVarUb(subgcg, subvar, SCIPvarGetUbGlobal(var));
+            solverdata->translatesymmetry[probnr] = FALSE;
+         }
+         assert(SCIPisFeasLE(subgcg, SCIPvarGetLbGlobal(var), SCIPvarGetUbGlobal(var)));
       }
 
       if (varobjschanged)
@@ -444,6 +458,7 @@ SCIP_RETCODE solveProblem(
    SCIP_Real timelimit;
    SCIP_HASHMAP* varmap = solverdata->varmaps[probnr];
 
+   #pragma omp atomic update
    solverdata->count++;
 
    // set time limit
@@ -463,7 +478,7 @@ SCIP_RETCODE solveProblem(
 #endif
       SCIPstartClock(solverdata->origprob, solverdata->inittime);
       SCIP_CALL( SCIPpresolve(subgcg) );
-      GCGconshdlrDecompTranslateNBestOrigPartialdecs(subgcg, 1, TRUE);
+      GCGconshdlrDecompTranslateNBestOrigPartialdecs(subgcg, 1, TRUE, solverdata->translatesymmetry[probnr]);
       SCIPstopClock(solverdata->origprob, solverdata->inittime);
 #ifdef DEBUG_PRICING_WRITE_PROBS
       if( SUBGCG_DEBUG_ITER >= 0 && solverdata->count == SUBGCG_DEBUG_ITER )
@@ -616,6 +631,8 @@ SCIP_RETCODE freeBlockMemory(
    solverdata->cursollimit = NULL;
    SCIPfreeBlockMemoryArray(scip, &(solverdata->curstallnodelimit), npricingprobs);
    solverdata->curstallnodelimit = NULL;
+   SCIPfreeBlockMemoryArray(scip, &(solverdata->translatesymmetry), npricingprobs);
+   solverdata->translatesymmetry = NULL;
 
    SCIPfreeClock(solverdata->origprob, &solverdata->inittime);
    SCIPfreeClock(solverdata->origprob, &solverdata->updatetime);
@@ -656,6 +673,7 @@ GCG_DECL_SOLVERINITSOL(solverInitsolGcg)
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->curgaplimit), npricingprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->cursollimit), npricingprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->curstallnodelimit), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->translatesymmetry), npricingprobs) );
 
    SCIPcreateClock(scip, &solverdata->inittime);
    SCIPcreateClock(scip, &solverdata->updatetime);
@@ -667,6 +685,7 @@ GCG_DECL_SOLVERINITSOL(solverInitsolGcg)
       solverdata->pricingprobs[i] = NULL;
       solverdata->nbasicpricingconss[i] = 0;
       solverdata->varmaps[i] = NULL;
+      solverdata->translatesymmetry[i] = TRUE;
 
       if (GCGisPricingprobRelevant(solverdata->origprob, i))
       {
@@ -923,6 +942,7 @@ SCIP_RETCODE GCGincludeSolverGcg(
    solverdata->varmaps = NULL;
    solverdata->nbasicpricingconss = NULL;
    solverdata->settingsfile = NULL;
+   solverdata->translatesymmetry = NULL;
 
    /* include pricing problem solver */
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_HEU_ENABLED, SOLVER_ENABLED,

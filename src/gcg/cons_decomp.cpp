@@ -3185,9 +3185,11 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
       /* if detprobdata for presolved problem already exist try to translate partialdec */
       if ( conshdlrdata->detprobdatapres != NULL && partialdec->isAssignedToOrigProb())
       {
+         int nmaxpresolrounds;
          std::vector<PARTIALDECOMP*> partialdectotranslate;
          partialdectotranslate.push_back(partialdec);
-         std::vector<PARTIALDECOMP*> newpartialdecs = conshdlrdata->detprobdatapres->translatePartialdecs(conshdlrdata->detprobdataorig, partialdectotranslate);
+         SCIPgetIntParam(scip, "presolving/maxrounds", &nmaxpresolrounds);
+         std::vector<PARTIALDECOMP*> newpartialdecs = conshdlrdata->detprobdatapres->translatePartialdecs(conshdlrdata->detprobdataorig, partialdectotranslate, nmaxpresolrounds == 0);
          if( !newpartialdecs.empty() )
          {
             addPartialdec(scip, newpartialdecs[0]);
@@ -4619,7 +4621,8 @@ SCIP_RETCODE GCGconshdlrDecompSetDetection(
 SCIP_RETCODE GCGconshdlrDecompTranslateNBestOrigPartialdecs(
    SCIP*                 scip,
    int                   n,
-   SCIP_Bool             completeGreedily
+   SCIP_Bool             completeGreedily,
+   SCIP_Bool             translateSymmetry
 )
 {
    std::vector<std::pair<PARTIALDECOMP*, SCIP_Real> > candidates;
@@ -4651,7 +4654,7 @@ SCIP_RETCODE GCGconshdlrDecompTranslateNBestOrigPartialdecs(
          origpartialdecs[i] = candidates[i].first;
 
       std::vector<PARTIALDECOMP *> partialdecstranslated = conshdlrdata->detprobdatapres->translatePartialdecs(
-         conshdlrdata->detprobdataorig, origpartialdecs);
+         conshdlrdata->detprobdataorig, origpartialdecs, translateSymmetry);
 
       if( !partialdecstranslated.empty())
       {
@@ -4672,6 +4675,7 @@ SCIP_RETCODE GCGconshdlrDecompTranslateOrigPartialdecs(
 {
    std::vector<PARTIALDECOMP*>::iterator partialdeciter;
    std::vector<PARTIALDECOMP*>::iterator partialdeciterend;
+   int nmaxpresolrounds;
 
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    assert(conshdlrdata != NULL);
@@ -4691,7 +4695,8 @@ SCIP_RETCODE GCGconshdlrDecompTranslateOrigPartialdecs(
        return SCIP_OKAY;
    }
 
-   std::vector<PARTIALDECOMP*> partialdecstranslated = conshdlrdata->detprobdatapres->translatePartialdecs(conshdlrdata->detprobdataorig);
+   SCIPgetIntParam(scip, "presolving/maxrounds", &nmaxpresolrounds);
+   std::vector<PARTIALDECOMP*> partialdecstranslated = conshdlrdata->detprobdatapres->translatePartialdecs(conshdlrdata->detprobdataorig, nmaxpresolrounds == 0);
 
    partialdeciter = partialdecstranslated.begin();
    partialdeciterend = partialdecstranslated.end();

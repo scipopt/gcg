@@ -1274,7 +1274,8 @@ void DETPROBDATA::printPartitionInformation(
 
 std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
    DETPROBDATA* origdata,
-   std::vector<PARTIALDECOMP*> origpartialdecs
+   std::vector<PARTIALDECOMP*> origpartialdecs,
+   SCIP_Bool translateSymmetry
    )
 {
    std::vector<int> rowothertothis;
@@ -1283,7 +1284,6 @@ std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
    std::vector<int> colthistoother;
    std::vector<int> missingrowinthis;
    std::vector<PARTIALDECOMP*> newpartialdecs;
-   int nmaxpresolrounds;
 
    calcTranslationMapping(origdata, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis);
 
@@ -1291,13 +1291,13 @@ std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
       " calculated translation; number of missing constraints: %ld; number of other partialdecs: %ld \n", missingrowinthis.size(),
       origpartialdecs.size());
 
-   SCIPgetIntParam(scip, "presolving/maxrounds", &nmaxpresolrounds);
-   getTranslatedPartialdecs(origpartialdecs, rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, nmaxpresolrounds == 0);
+   getTranslatedPartialdecs(origpartialdecs, rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, translateSymmetry);
    return newpartialdecs;
 }
 
 std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
-   DETPROBDATA* origdata
+   DETPROBDATA* origdata,
+   SCIP_Bool translateSymmetry
 )
 {
    std::vector<int> rowothertothis;
@@ -1306,7 +1306,6 @@ std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
    std::vector<int> colthistoother;
    std::vector<int> missingrowinthis;
    std::vector<PARTIALDECOMP*> newpartialdecs;
-   int nmaxpresolrounds;
 
    calcTranslationMapping(origdata, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis);
 
@@ -1314,9 +1313,8 @@ std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
       " calculated translation; number of missing constraints: %ld; number of other partialdecs: %ld \n", missingrowinthis.size(),
       (origdata->getOpenPartialdecs().size() + origdata->getFinishedPartialdecs().size()));
 
-   SCIPgetIntParam(scip, "presolving/maxrounds", &nmaxpresolrounds);
-   getTranslatedPartialdecs(origdata->getOpenPartialdecs(), rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, nmaxpresolrounds == 0);
-   getTranslatedPartialdecs(origdata->getFinishedPartialdecs(), rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, nmaxpresolrounds == 0);
+   getTranslatedPartialdecs(origdata->getOpenPartialdecs(), rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, translateSymmetry);
+   getTranslatedPartialdecs(origdata->getFinishedPartialdecs(), rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, translateSymmetry);
    return newpartialdecs;
 }
 

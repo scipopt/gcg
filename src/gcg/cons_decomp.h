@@ -943,13 +943,15 @@ SCIP_RETCODE GCGconshdlrDecompSetDetection(
  * @param scip SCIP data structure
  * @param n number of partialdecs that should be translated
  * @param completeGreedily whether or not to complete the decomposition greedily
+ * @param translateSymmetry whether or not to translate symmetry information
  * @returns SCIP return code
  */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompTranslateNBestOrigPartialdecs(
    SCIP*                 scip,
    int                   n,
-   SCIP_Bool             completeGreedily
+   SCIP_Bool             completeGreedily,
+   SCIP_Bool             translateSymmetry
 );
 
 /**
