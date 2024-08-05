@@ -518,6 +518,42 @@ SCIP_DECL_SORTPTRCOMP(GCGpricingModificationComp)
    return GCGpricingModificationCompare((GCG_PRICINGMODIFICATION*)elem1, (GCG_PRICINGMODIFICATION*)elem2);
 }
 
+/** use binary search to find pricing modification */
+SCIP_Bool findPricingModificationPosition(
+   GCG_PRICINGMODIFICATION*   pricemods,
+   int                        npricemods,
+   int                        blocknr,
+   int*                       pos
+   )
+{
+   int left;
+   int right;
+
+   left = 0;
+   right = npricemods - 1;
+   while( left <= right )
+   {
+      int middle;
+
+      middle = (left + right) / 2;
+      assert(0 <= middle && middle < npricemods);
+
+      if( blocknr < pricemods[middle].blocknr )
+         right = middle - 1;
+      else if( pricemods[middle].blocknr < blocknr )
+         left = middle + 1;
+      else
+      {
+         *pos = middle;
+         return TRUE;
+      }
+   }
+   assert(left == right + 1);
+
+   *pos = left;
+   return FALSE;
+}
+
 /** get the pricing modification for a block, if exists, else NULL */
 GCG_PRICINGMODIFICATION* GCGmastercutGetPricingModification(
    SCIP*                  masterscip,         /**< master scip */
@@ -525,22 +561,27 @@ GCG_PRICINGMODIFICATION* GCGmastercutGetPricingModification(
    int                    blocknr             /**< block number */
    )
 {
-   int i;
+   GCG_PRICINGMODIFICATION* pricemods;
+   SCIP_Bool found;
+   int npricemods;
+   int pos;
 
    assert(mastercutdata != NULL);
    assert(GCGisMaster(masterscip));
    assert(blocknr >= 0);
-
    assert(blocknr < GCGgetNPricingprobs(GCGgetOriginalprob(masterscip)));
-   // @todo: use binary search: SCIPsortedvecFindPtr() (need pc as pointers)
-   for( i = 0; i < mastercutdata->npricingmodifications; i++ )
-   {
-      if( mastercutdata->pricingmodifications[i].blocknr == blocknr )
-         return &mastercutdata->pricingmodifications[i];
-   }
+
+   pricemods = mastercutdata->pricingmodifications;
+   npricemods = mastercutdata->npricingmodifications;
+   found = findPricingModificationPosition(pricemods, npricemods, blocknr, &pos);
+
+   if( found )
+      return &(mastercutdata->pricingmodifications[pos]);
 
    return NULL;
 }
+
+
 
 /** get the pricing modifications for the master cut */
 GCG_PRICINGMODIFICATION* GCGmastercutGetPricingModifications(
@@ -564,8 +605,8 @@ int GCGmastercutGetNPricingModifications(
 
 /** apply a pricing modification */
 SCIP_RETCODE GCGpricingmodificationApply(
-   SCIP*                  pricingscip,        /**< pricing scip */
-   GCG_PRICINGMODIFICATION pricingmodification /**< pricing modification */
+   SCIP*                      pricingscip,        /**< pricing scip */
+   GCG_PRICINGMODIFICATION   pricingmodification /**< pricing modification */
    )
 {
    int i;
@@ -620,8 +661,8 @@ SCIP_RETCODE GCGmastercutApplyPricingModifications(
 
 /** undo a pricing modification */
 SCIP_RETCODE GCGpricingmodificationUndo(
-   SCIP*                  pricingscip,        /**< pricing scip */
-   GCG_PRICINGMODIFICATION pricingmodification /**< pricing modification */
+   SCIP*                      pricingscip,        /**< pricing scip */
+   GCG_PRICINGMODIFICATION   pricingmodification /**< pricing modification */
    )
 {
    int i;
@@ -681,8 +722,8 @@ SCIP_RETCODE GCGmastercutUndoPricingModifications(
 
 /** check whether a given variable is a coefficient variable of a given pricing modification */
 SCIP_Bool GCGpricingmodificationIsCoefVar(
-   GCG_PRICINGMODIFICATION pricingmodification, /**< pricing modification */
-   SCIP_VAR*              var                 /**< variable to check */
+   GCG_PRICINGMODIFICATION   pricingmodification,     /**< pricing modification */
+   SCIP_VAR*                  var                      /**< variable to check */
    )
 {
    assert(var != NULL);
