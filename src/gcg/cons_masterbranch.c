@@ -449,7 +449,7 @@ SCIP_Bool checkAggregatedGlobalBounds(
          SCIP_Real identbound = bndtype == SCIP_BOUNDTYPE_UPPER ? SCIPvarGetUbGlobal(identvars[i]) : SCIPvarGetLbGlobal(identvars[i]);
          if( !SCIPisEQ(scip, identbound, bound) )
          {
-            SCIPerrorMessage("Var <%s> has new local %s bound %g, but identical var <%s> has %g -- don't know how to handle!\n",
+            SCIPerrorMessage("Var <%s> has new global %s bound %g, but identical var <%s> has %g -- don't know how to handle!\n",
                SCIPvarGetName(bndvar), bndtype == SCIP_BOUNDTYPE_UPPER ? "upper" : "lower",
                   bound, SCIPvarGetName(identvars[i]), identbound);
             identical = FALSE;
