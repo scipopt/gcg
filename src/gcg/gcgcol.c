@@ -152,7 +152,6 @@ void GCGfreeGcgCol(
    assert(*gcgcol != NULL);
 
    /* todo: release vars? */
-   assert((*gcgcol)->pos == -1);
    assert((*gcgcol)->nvars == 0 || (*gcgcol)->vars != NULL);
    #pragma omp critical (memory)
    {
