@@ -352,7 +352,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
             SCIP_CALL( adjustGCGCol(scip, col) );
 
             /* re-compute reduced cost of column */
-            GCGcomputeRedCostGcgCol(scip, pricestore->infarkas, col, &redcost);
+            redcost = GCGcomputeRedCostGcgCol(scip, pricestore->infarkas, col, NULL);
             GCGcolUpdateRedcost(col, redcost, FALSE);
 
             /* reduced cost of modified column is not negative anymore: discard column */
