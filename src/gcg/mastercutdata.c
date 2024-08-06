@@ -489,36 +489,8 @@ int GCGpricingmodificationGetNAdditionalConss(
    return pricingmodification->nadditionalconss;
 }
 
-/** compares the problem block number of two pricing modifications, returns -1 if first is smaller than, and +1 if first is greater than second
- *  problem block number; returns 0 if both  are equal, which means both pricing modifications are equal
- */
-int GCGpricingModificationCompare(
-   GCG_PRICINGMODIFICATION*   pricemod1,     /**< first pricing modification */
-   GCG_PRICINGMODIFICATION*   pricemod2      /**< second pricing modification */
-   )
-{
-   assert(pricemod1 != NULL);
-   assert(pricemod2 != NULL);
-
-   if( pricemod1->blocknr < pricemod2->blocknr )
-      return -1;
-   else if( pricemod1->blocknr > pricemod2->blocknr )
-      return +1;
-   else
-   {
-      assert(pricemod1 == pricemod2);
-      return 0;
-   }
-
-}
-
-/** comparison method for sorting pricing modifications */
-SCIP_DECL_SORTPTRCOMP(GCGpricingModificationComp)
-{
-   return GCGpricingModificationCompare((GCG_PRICINGMODIFICATION*)elem1, (GCG_PRICINGMODIFICATION*)elem2);
-}
-
 /** use binary search to find pricing modification */
+static
 SCIP_Bool findPricingModificationPosition(
    GCG_PRICINGMODIFICATION*   pricemods,
    int                        npricemods,
