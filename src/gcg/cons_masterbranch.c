@@ -1803,12 +1803,16 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
       SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->localbndvars, (*consdata)->maxlocalbndchgs);
    }
 
-   /* delete branchdata if the corresponding origcons has already been deleted;
+   assert((*consdata)->origcons == NULL || GCGconsOrigbranchGetMastercons((*consdata)->origcons) == cons);
+
+   /* delete branchdata if the corresponding origcons has already been deleted or if created by the generic branchrule;
     * otherwise, it will be deleted by the corresponding origbranch constraint
     */
-   if( (*consdata)->origcons == NULL && (*consdata)->branchdata != NULL )
+   if( (*consdata)->branchdata != NULL && ((*consdata)->origcons == NULL || GCGisBranchruleGeneric((*consdata)->branchrule)) )
    {
       SCIP_CALL( GCGrelaxBranchDataDelete(origscip, (*consdata)->branchrule, &(*consdata)->branchdata) );
+      if( (*consdata)->origcons != NULL )
+         GCGconsOrigbranchSetBranchdata((*consdata)->origcons, NULL);
    }
 
    (*consdata)->branchdata = NULL;
@@ -1816,7 +1820,6 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    /* set the mastercons pointer of the corresponding origcons to NULL */
    if( (*consdata)->origcons != NULL )
    {
-      assert(GCGconsOrigbranchGetMastercons((*consdata)->origcons) == cons);
       GCGconsOrigbranchSetMastercons((*consdata)->origcons, NULL);
    }
 
