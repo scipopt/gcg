@@ -62,8 +62,8 @@
 #define DEFAULT_MAXROUNDS             1 /**< maximal number of subset row separation rounds per non-root node */
 #define DEFAULT_MAXROUNDSROOT         1 /**< maximal number of subset row separation calls in the root node */
 #define DEFAULT_MAXSEPACUTS         200 /**< maximal number of subset row cuts separated per call in non-root nodes */
-#define DEFAULT_MAXSEPACUTSROOT    500 /**< maximal number of subset row cuts separated per call in root node */
-#define DEFAULT_MAXCUTCANDS        1000 /**< maximal number of subset row cuts in total */
+#define DEFAULT_MAXSEPACUTSROOT    2000 /**< maximal number of subset row cuts separated per call in root node */
+#define DEFAULT_MAXCUTCANDS        4000 /**< maximal number of subset row cuts in total */
 #define DEFAULT_ONLYROOT          FALSE /**< only apply separator in root node */
 #define DEFAULT_STRATEGY              0 /**< strategy which is used to determine which rows to consider for cut computation */
 #define DEFAULT_N                     3 /**< number of rows used to create a new cut */
@@ -376,6 +376,7 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS_alt(
 }
 
 /** computes the (non-rounded) coefficients for the pricing variables used in the pricing constraints */
+static
 SCIP_RETCODE computePricingConssCoefficients(
    SCIP*             origscip,               /**< SCIP data structure of original problem */
    SCIP_CONS**       originalconss,          /**< constraints in the original problem */
