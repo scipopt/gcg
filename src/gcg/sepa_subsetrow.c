@@ -534,6 +534,13 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       return SCIP_OKAY;
    }
 
+   if( GCGgetNActiveCuts(scip) >= 10 )
+   {
+      SCIPdebugMessage("applied cuts already exceeded limit.\n");
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
    /* ensure to separate current sol */
    SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
 
