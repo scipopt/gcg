@@ -506,7 +506,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       return SCIP_OKAY;
    }
 
-   if( SCIPsepaGetNCallsAtNode(sepa) > sepadata->maxrounds )
+   if( SCIPsepaGetNCallsAtNode(sepa) >= sepadata->maxrounds )
    {
       SCIPdebugMessage("exceeded max rounds for this node.\n");
       *result = SCIP_DIDNOTRUN;
