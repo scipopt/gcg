@@ -223,6 +223,7 @@ SCIP_RETCODE GCGcolpoolAddCol(
    }
    else if( freeduplicate )
    {
+      assert(col->pos == -1);
       GCGfreeGcgCol(&col);
    }
 

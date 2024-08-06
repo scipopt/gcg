@@ -419,6 +419,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
    {
       assert(GCGcolIsEq(pricestore->cols[arrayindex][oldpos], col));
       /* @todo: This is a little dangerous */
+      assert(col->pos == -1);
       GCGfreeGcgCol(&col);
    }
 
@@ -432,6 +433,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
       pricestore->objparallelisms[arrayindex][pos] = colobjparallelism;
       pricestore->orthogonalities[arrayindex][pos] = 1.0;
       pricestore->scores[arrayindex][pos] = colscore;
+      assert(col->pos == -1);
       col->pos = pos;
       #pragma omp critical (hashtable)
       {
