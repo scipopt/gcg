@@ -168,7 +168,7 @@ struct SCIP_ConshdlrData
 
    /* separation handler */
    SCIP_HASHMAP*         mapnodetocons;      /**< maps nodes (which store cuts) to data of the constraint which created it */
-
+   SCIP_EVENTHDLR*       eventhdlr;
 };
 
 /*
@@ -296,14 +296,15 @@ SCIP_RETCODE addMissedVariables(
 static
 SCIP_RETCODE removeStoredCutsFromActiveCuts(
    SCIP* scip,                   /**< SCIP data structure */
-   SCIP_CONSDATA* consdata       /**< data of current constraint */
+   SCIP_CONSDATA* consdata,       /**< data of current constraint */
+   SCIP_CONSHDLRDATA* conshdlrdata
 )
 {
    assert(scip != NULL);
    assert(consdata != NULL);
    //assert(consdata->addedcutsinit);
 
-   SCIP_CALL( GCGshrinkActiveCuts(scip, consdata->firstnewcut) );
+   SCIP_CALL( GCGshrinkActiveCuts_alt(scip, consdata->firstnewcut, conshdlrdata->eventhdlr) );
 
 
    return SCIP_OKAY;
@@ -313,7 +314,8 @@ SCIP_RETCODE removeStoredCutsFromActiveCuts(
 static
 SCIP_RETCODE addStoredCutsToActiveCuts(
    SCIP*             scip,           /**< SCIP data structure */
-   SCIP_CONSDATA*    consdata        /**< consdata of current constraint */
+   SCIP_CONSDATA*    consdata,        /**< consdata of current constraint */
+   SCIP_CONSHDLRDATA* conshdlrdata
    )
 {
    int nactivecuts;
@@ -323,11 +325,12 @@ SCIP_RETCODE addStoredCutsToActiveCuts(
    assert(GCGisMaster(scip));
    assert(consdata != NULL);
    assert(consdata->addedcutsinit);
+   assert(conshdlrdata != NULL);
 #ifndef MASTERSEP_DEBUG
    SCIPinfoMessage(scip, NULL, "add stored cuts: node %lli of type: %i\n", SCIPnodeGetNumber(consdata->node), SCIPnodeGetType(consdata->node));
 #endif
    //SCIPinfoMessage(scip, NULL, "add stored to active cuts\n");
-   nactivecuts = GCGgetNActiveCuts(scip);
+   nactivecuts = GCGgetNActiveCuts_alt(scip, conshdlrdata->eventhdlr);
    assert(consdata->firstnewcut == nactivecuts);
 
    /* store the current number of active cuts */
@@ -344,7 +347,7 @@ SCIP_RETCODE addStoredCutsToActiveCuts(
    for( j = 0; j < consdata->naddedcuts; j++ )
    {
       SCIP_CALL( addMissedVariables(scip, consdata->addedcuts[j], GCGmastersepacutGetSeparator(consdata->addedcuts[j])) );
-      SCIP_CALL( GCGaddCutActiveCuts(scip, consdata->addedcuts[j]) );
+      SCIP_CALL( GCGaddCutActiveCuts_alt(scip, consdata->addedcuts[j], conshdlrdata->eventhdlr) );
 
 #ifndef MASTERSEP_DEBUG
       GCG_MASTERCUTDATA* mastercutdata;
@@ -387,7 +390,7 @@ SCIP_RETCODE initializeAddedCuts(
                       SCIPnodeGetNumber(consdata->node), SCIPnodeGetType(consdata->node));
 #endif
 
-   SCIP_CALL( GCGremoveNewInactiveRows(scip, consdata->firstnewcut) );
+   SCIP_CALL( GCGremoveNewInactiveRows_alt(scip, consdata->firstnewcut, conshdlrdata->eventhdlr) );
    //SCIPinfoMessage(scip, NULL, "init cuts\n");
    /* the only type of nodes which can store rows */
    if( !(SCIPnodeGetType(consdata->node) == SCIP_NODETYPE_FORK
@@ -399,8 +402,8 @@ SCIP_RETCODE initializeAddedCuts(
       return SCIP_OKAY;
    }
 
-   nactivecuts = GCGgetNActiveCuts(scip);
-   activecuts = GCGgetActiveCuts(scip);
+   nactivecuts = GCGgetNActiveCuts_alt(scip, conshdlrdata->eventhdlr);
+   activecuts = GCGgetActiveCuts_alt(scip, conshdlrdata->eventhdlr);
    consdata->naddedcuts = 0;
 
    assert(consdata->firstnewcut <= nactivecuts);
@@ -650,7 +653,7 @@ SCIP_RETCODE initializeConsdata(
    }
 
    /* store the number of active cuts at activation */
-   consdata->firstnewcut = GCGgetNActiveCuts(scip);
+   consdata->firstnewcut = GCGgetNActiveCuts_alt(scip, conshdlrdata->eventhdlr);
 #ifndef MASTERSEP_DEBUG
    SCIPinfoMessage(scip, NULL, "init cons data: firstnewcut %i in node %lli\n", consdata->firstnewcut, SCIPnodeGetNumber(consdata->node));
 #endif
@@ -1915,6 +1918,7 @@ SCIP_DECL_CONSINITSOL(consInitsolMasterbranch)
 
    conshdlrdata->nstack = 1;
    conshdlrdata->stack[0] = cons;
+   conshdlrdata->eventhdlr = SCIPfindEventhdlr(scip, "sepacuts");
 
    return SCIP_OKAY;
 }
@@ -2127,13 +2131,13 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    {
       assert(SCIPnodeGetType(consdata->node) != SCIP_NODETYPE_FOCUSNODE);
       assert(consdata->nactivated >= 1);
-      SCIP_CALL( addStoredCutsToActiveCuts(scip, consdata) );
+      SCIP_CALL( addStoredCutsToActiveCuts(scip, consdata, conshdlrdata) );
    }
 
    /* if tree is currently probing, we do not clear generated cuts
     * - the cuts in generated cuts may not have been separated yet, as separation store gets switched when probing */
    if( SCIPnodeGetType(consdata->node) != SCIP_NODETYPE_PROBINGNODE )
-      SCIP_CALL( GCGclearGeneratedCuts(scip) );
+      SCIP_CALL( GCGclearGeneratedCuts_alt(scip, conshdlrdata->eventhdlr) );
 
    return SCIP_OKAY;
 }
@@ -2203,7 +2207,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    }
 
    //if( consdata->addedcutsinit && consdata->nodestoredcuts )
-   SCIP_CALL( removeStoredCutsFromActiveCuts(scip, consdata) );
+   SCIP_CALL( removeStoredCutsFromActiveCuts(scip, consdata, conshdlrdata) );
 
    return SCIP_OKAY;
 }
@@ -2728,7 +2732,7 @@ SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
    conshdlrdata->nstack = 0;
    conshdlrdata->maxstacksize = 25;
    SCIP_CALL( SCIPhashmapCreate(&(conshdlrdata->mapnodetocons), SCIPblkmem(scip), 25) );
-
+   conshdlrdata->eventhdlr = NULL;
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlrBasic(scip, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,
          CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY, CONSHDLR_EAGERFREQ, CONSHDLR_NEEDSCONS,

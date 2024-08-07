@@ -208,6 +208,7 @@ struct SCIP_PricerData
 
    /* event handler */
    SCIP_EVENTHDLR*       eventhdlr;          /**< event handler */
+   SCIP_EVENTHDLR*       mastersepacuthdlr;
 
    /* parameter values */
    SCIP_VARTYPE          vartype;            /**< vartype of created master variables */
@@ -1059,8 +1060,8 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    GCG_MASTERSEPACUT**  activecuts;
    int                  nactivecuts;
 
-   activecuts = GCGgetActiveCuts(scip_);
-   nactivecuts = GCGgetNActiveCuts(scip_);
+   activecuts = GCGgetActiveCuts_alt(scip_, pricerdata->mastersepacuthdlr);
+   nactivecuts = GCGgetNActiveCuts_alt(scip_, pricerdata->mastersepacuthdlr);
 
    for( j = 0; j < nactivecuts; j++ )
    {
@@ -1529,8 +1530,8 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCutsFromGCGCol(
    /* compute new variable coefficient for each cut */
    SCIP_CALL( computeColSepaMastercutCoeffs(gcgcol) );
    sepamastercutcoeffs = GCGcolGetSepaMastercutCoeffs(gcgcol);
-   activecuts = GCGgetActiveCuts(scip_);
-   nactivecuts = GCGgetNActiveCuts(scip_);
+   activecuts = GCGgetActiveCuts_alt(scip_, pricerdata->mastersepacuthdlr);
+   nactivecuts = GCGgetNActiveCuts_alt(scip_, pricerdata->mastersepacuthdlr);
 
    /* add the variable to the active cuts using the previously computed coefficients */
    for( j = 0; j < nactivecuts; j++ )
@@ -1575,8 +1576,8 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
    assert(solvals != NULL || nsolvars == 0);
 
    /* get sepa master cuts and separators */
-   activecuts = GCGgetActiveCuts(scip_);
-   nactivecuts = GCGgetNActiveCuts(scip_);
+   activecuts = GCGgetActiveCuts_alt(scip_, pricerdata->mastersepacuthdlr);
+   nactivecuts = GCGgetNActiveCuts_alt(scip_, pricerdata->mastersepacuthdlr);
 
    for( j = 0; j < nactivecuts; j++ )
    {
@@ -1727,8 +1728,8 @@ SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
    assert(scip_ != NULL);
    assert(gcgcol != NULL);
 
-   activecuts = GCGgetActiveCuts(scip_);
-   nactivecuts = GCGgetNActiveCuts(scip_);
+   activecuts = GCGgetActiveCuts_alt(scip_, pricerdata->mastersepacuthdlr);
+   nactivecuts = GCGgetNActiveCuts_alt(scip_, pricerdata->mastersepacuthdlr);
 
    /* ensure that the coefficients for the master constraints have been computed */
    if( !GCGcolGetInitializedCoefs(gcgcol) )
@@ -2315,8 +2316,8 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
    }
 
    /* sepa mastercuts */
-   nactivecuts = GCGgetNActiveCuts(scip_);
-   activecuts = GCGgetActiveCuts(scip_);
+   nactivecuts = GCGgetNActiveCuts_alt(scip_, pricerdata->mastersepacuthdlr);
+   activecuts = GCGgetActiveCuts_alt(scip_, pricerdata->mastersepacuthdlr);
 
    for( j = 0; j < nactivecuts; j++ )
    {
@@ -3438,8 +3439,8 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
     * - modify pricing problems for active master cuts*/
    //if( !probingnode )
    //   SCIP_CALL( GCGclearGeneratedCuts(scip_) );
-   activecuts = GCGgetActiveCuts(scip_);
-   nactivecuts = GCGgetNActiveCuts(scip_);
+   activecuts = GCGgetActiveCuts_alt(scip_, pricerdata->mastersepacuthdlr);
+   nactivecuts = GCGgetNActiveCuts_alt(scip_, pricerdata->mastersepacuthdlr);
 
    for( j = 0; j < nactivecuts; j++ )
    {
@@ -3467,6 +3468,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       //SCIPinfoMessage(scip_, NULL, "PP: %i, npricingvars: %i\n", i, npricingvars);
       if( pricerdata->maxrealdualvalues[i] < npricingvars )
       {
+         SCIPinfoMessage(scip_, NULL, "increase pricing var to %i : %i\n", i, npricingvars);
          int newsize = SCIPcalcMemGrowSize(scip_, SCIPgetNVars(pricerdata->pricingprobs[i]));
          SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &(pricerdata->realdualvalues[i]), pricerdata->maxrealdualvalues[i],
                                                 newsize) );
@@ -4318,6 +4320,8 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
       pricerdata->nraysprob[i] = 0;
    }
 
+   pricerdata->mastersepacuthdlr = SCIPfindEventhdlr(scip, "sepacuts");
+
    /* alloc memory for solution values of variables in pricing problems */
    norigvars = SCIPgetNOrigVars(origprob);
    pricerdata->maxsolvals = SCIPcalcMemGrowSize(scip, norigvars);
@@ -4903,6 +4907,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
    pricerdata->artificialvars = NULL;
    pricerdata->nartificialvars = 0;
    pricerdata->maxartificialvars = 0;
+   pricerdata->mastersepacuthdlr = NULL;
 
 #ifdef SCIP_STATISTIC
    pricerdata->nodetimehist = NULL;
