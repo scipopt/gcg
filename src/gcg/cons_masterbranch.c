@@ -233,6 +233,7 @@ SCIP_RETCODE addMissedVariables(
 
          /* get missed master variable */
          mastervar = varhistory->buffer->vars[i];
+         //SCIPinfoMessage(scip, NULL, "missed var %s\n", SCIPvarGetName(mastervar));
          assert(GCGvarIsMaster(mastervar));
 
          /* get the pricing variables corresponding to the original variables which define the master variable */
@@ -300,7 +301,7 @@ SCIP_RETCODE removeStoredCutsFromActiveCuts(
 {
    assert(scip != NULL);
    assert(consdata != NULL);
-   assert(consdata->addedcutsinit);
+   //assert(consdata->addedcutsinit);
 
    SCIP_CALL( GCGshrinkActiveCuts(scip, consdata->firstnewcut) );
 
@@ -325,6 +326,7 @@ SCIP_RETCODE addStoredCutsToActiveCuts(
 #ifndef MASTERSEP_DEBUG
    SCIPinfoMessage(scip, NULL, "add stored cuts: node %lli of type: %i\n", SCIPnodeGetNumber(consdata->node), SCIPnodeGetType(consdata->node));
 #endif
+   //SCIPinfoMessage(scip, NULL, "add stored to active cuts\n");
    nactivecuts = GCGgetNActiveCuts(scip);
    assert(consdata->firstnewcut == nactivecuts);
 
@@ -384,8 +386,9 @@ SCIP_RETCODE initializeAddedCuts(
    SCIPinfoMessage(scip, NULL, "init added cuts: remove and free new inactive rows from node %lli of type %i\n",
                       SCIPnodeGetNumber(consdata->node), SCIPnodeGetType(consdata->node));
 #endif
-   SCIP_CALL( GCGremoveNewInactiveRows(scip, consdata->firstnewcut) );
 
+   SCIP_CALL( GCGremoveNewInactiveRows(scip, consdata->firstnewcut) );
+   //SCIPinfoMessage(scip, NULL, "init cuts\n");
    /* the only type of nodes which can store rows */
    if( !(SCIPnodeGetType(consdata->node) == SCIP_NODETYPE_FORK
          || SCIPnodeGetType(consdata->node) == SCIP_NODETYPE_PSEUDOFORK
@@ -2199,8 +2202,8 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
       SCIP_CALL( initializeAddedCuts(scip, consdata, conshdlrdata) );
    }
 
-   if( consdata->addedcutsinit && consdata->nodestoredcuts )
-      SCIP_CALL( removeStoredCutsFromActiveCuts(scip, consdata) );
+   //if( consdata->addedcutsinit && consdata->nodestoredcuts )
+   SCIP_CALL( removeStoredCutsFromActiveCuts(scip, consdata) );
 
    return SCIP_OKAY;
 }
