@@ -33,6 +33,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
+#define STATS FALSE // will write information about the component bound sequences to a file (slow!)
+
 #include <gcg/pricer_gcg.h>
 #include <scip/pub_message.h>
 #include <scip/pub_var.h>
@@ -83,6 +85,9 @@ struct SCIP_BranchruleData
 {
    SCIP_Bool             useMaxRangeMidrangeHeuristic; /** should the MaxRangeMidrangeHeuristic be used */
    SCIP_Bool             useMostDistinctMedianHeuristic; /** should the MostDistinctMedianHeuristic be used */
+#ifdef STATS
+   FILE*                 statsfile;          /**< file to write statistics to */
+#endif
 };
 
 /** branching data */
@@ -1398,14 +1403,85 @@ CHOOSE_COMPBND(chooseMostDistinctValuesMedian)
    return SCIP_OKAY;
 }
 
+/** calculate sum of component bound sequence */
+static
+SCIP_Real calcSum(
+   SCIP*                 masterscip,              /**< SCIP data structure */
+   GCG_COMPBND*          B,                       /**< Component Bound Sequence defining the nodes */
+   int                   Bsize,                   /**< size of B */
+   int                   blocknr                  /**< number of the block */
+   )
+{
+   int i;
+   SCIP_Real sum = 0.0;
+   SCIP_VAR** X = NULL;
+   int Xsize = 0;
+
+   assert(masterscip != NULL);
+   assert(GCGisMaster(masterscip));
+
+   assert(X == NULL && Xsize == 0);
+   createInitialSetX(masterscip, &X, &Xsize, blocknr, B, Bsize);
+   assert((Xsize > 0) == (X != NULL));
+
+   sum = 0;
+   for( i = 0; i < Xsize; ++i )
+   {
+      sum += SCIPgetSolVal(masterscip, NULL, X[i]);
+   }
+
+   SCIPfreeBlockMemoryArrayNull(masterscip, &X, Xsize);
+
+   return sum;
+}
+
 /** choose the component bound of which the sum is closest to K/2, where K is the number of identical subproblems in the current block */
 static
 CHOOSE_COMPBNDSEQ(chooseClosestToKHalf)
 {
+   SCIP* origscip;
    int i;
-   int j;
-   SCIP_VAR** X = NULL;
-   int Xsize = 0;
+   SCIP_Real sum;
+   SCIP_Real K_half;
+
+   int best_index = -1;
+   SCIP_Real best = SCIPinfinity(masterscip);
+
+   assert(masterscip != NULL);
+   assert(GCGisMaster(masterscip));
+   assert(Blist != NULL);
+   assert(Bsizes != NULL);
+   assert(Blistsize > 0);
+
+   origscip = GCGmasterGetOrigprob(masterscip);
+   assert(origscip != NULL);
+
+   K_half = GCGgetNIdenticalBlocks(origscip, blocknr) * 0.5;
+
+   for( i = 0; i < Blistsize; ++i )
+   {
+      sum = ABS(calcSum(masterscip, Blist[i], Bsizes[i], blocknr) - K_half);
+
+      if( sum < best )
+      {
+         best = sum;
+         best_index = i;
+      }
+   }
+
+   assert(best_index >= 0);
+
+   *selected_B = Blist[best_index];
+   *selected_Bsize = Bsizes[best_index];
+
+   return SCIP_OKAY;
+}
+
+/** choose the component bound of which the sum is most fractional */
+static
+CHOOSE_COMPBNDSEQ(chooseMostFractional)
+{
+   int i;
    SCIP_Real sum;
    SCIP_Real fractionality;
 
@@ -1420,25 +1496,14 @@ CHOOSE_COMPBNDSEQ(chooseClosestToKHalf)
 
    for( i = 0; i < Blistsize; ++i )
    {
-      assert(X == NULL && Xsize == 0);
-      createInitialSetX(masterscip, &X, &Xsize, blocknr, Blist[i], Bsizes[i]);
-      assert((Xsize > 0) == (X != NULL));
-
-      sum = 0;
-      for( j = 0; j < Xsize; ++j )
-      {
-         sum += SCIPgetSolVal(masterscip, NULL, X[j]);
-      }
-
-      SCIPfreeBlockMemoryArrayNull(masterscip, &X, Xsize);
-      Xsize = 0;
-
+      sum = calcSum(masterscip, Blist[i], Bsizes[i], blocknr);
       fractionality = SCIPfrac(masterscip, sum);
-      fractionality = MIN(fractionality, 1 - fractionality);
+
+      fractionality = MIN(fractionality, 1.0 - fractionality);
 
       if( best < fractionality )
       {
-         best = sum;
+         best = fractionality;
          best_index = i;
       }
    }
@@ -1502,8 +1567,9 @@ CHOOSE_COMPBNDSEQ(chooseSmallestSize)
 
    assert(newBlistsize > 0);
 
-   // step 3: select the one closest to K/2
-   SCIP_CALL( chooseClosestToKHalf(masterscip, newBlist, newBsizes, newBlistsize, blocknr, selected_B, selected_Bsize) );
+   // step 3: refine the selection
+   //SCIP_CALL( chooseClosestToKHalf(masterscip, newBlist, newBsizes, newBlistsize, blocknr, selected_B, selected_Bsize) );
+   SCIP_CALL( chooseMostFractional(masterscip, newBlist, newBsizes, newBlistsize, blocknr, selected_B, selected_Bsize) );
 
    // step 4: free memory
    SCIPfreeBlockMemoryArray(masterscip, &newBlist, newBlistsize);
@@ -1609,6 +1675,9 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
    )
 {
    SCIP* origscip;
+#ifdef STATS
+   SCIP_BRANCHRULEDATA* branchruledata;
+#endif
    SCIP_VAR** branchcands;
    int nbranchcands;
    GCG_COMPBND* B;
@@ -1631,6 +1700,10 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
 
    assert(origscip != NULL);
    SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, NULL, NULL, &nbranchcands, NULL, NULL) );
+
+#ifdef STATS
+   branchruledata = SCIPbranchruleGetData(branchrule);
+#endif
 
    /* in case original problem contains continuous variables, there are no branching cands */
    assert(nbranchcands > 0);
@@ -1707,6 +1780,13 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
    assert(Bsize > 0);
    assert(B != NULL);
 
+#ifdef STATS
+   int depth = SCIPgetDepth(masterscip);
+   SCIP_Real sum = calcSum(masterscip, B, Bsize, blocknr);
+   int K = GCGgetNIdenticalBlocks(origscip, blocknr);
+   fprintf(branchruledata->statsfile, "%d,%d,%f,%d\n", depth, Bsize, sum, K);
+#endif
+
    /* 5. Create the child nodes. */
    SCIP_CALL( createChildNodesCompBnd(origscip, branchrule, B, Bsize, blocknr, result) );
 
@@ -1724,6 +1804,14 @@ SCIP_DECL_BRANCHFREE(branchFreeCompBnd)
    SCIP_BRANCHRULEDATA* branchruledata;
 
    branchruledata = SCIPbranchruleGetData(branchrule);
+
+#ifdef STATS
+   if( branchruledata->statsfile != NULL )
+   {
+      fclose(branchruledata->statsfile);
+      branchruledata->statsfile = NULL;
+   }
+#endif
 
    SCIPfreeBlockMemory(scip, &branchruledata);
    SCIPbranchruleSetData(branchrule, NULL);
@@ -1962,16 +2050,52 @@ static
 SCIP_DECL_BRANCHINIT(branchInitCompBnd)
 {
    SCIP* origscip;
+#ifdef STATS
+   SCIP_BRANCHRULEDATA* branchruledata;
+   SCIP_Bool stabilization_tree;
+#endif
 
    origscip = GCGmasterGetOrigprob(scip);
    assert(branchrule != NULL);
    assert(origscip != NULL);
+
+#ifdef STATS
+   branchruledata = SCIPbranchruleGetData(branchrule);
+   assert(branchruledata != NULL);
+   SCIP_CALL( SCIPgetBoolParam(origscip, "pricing/masterpricer/stabilizationtree", &stabilization_tree) );
+#endif
 
    SCIPdebugMessage("Init method of component bound branching\n");
 
    SCIP_CALL( GCGrelaxIncludeBranchrule(origscip, branchrule, branchActiveMasterCompBnd,
          branchDeactiveMasterCompBnd, branchPropMasterCompBnd, branchMasterSolvedCompBnd, branchDataDeleteCompBnd,
          branchNewColCompBnd, branchGetMastercutCompBnd) );
+
+#ifdef STATS
+   /* determine the filename */
+   // "stats_compbnd" + (if useMaxRangeMidrangeHeuristic && useMostDistinctMedianHeuristic ? "" : (if useMaxRangeMidrangeHeuristic ? "-mrm" : "-mdm")) + (if stabilization_tree ? "+dvs" : "") + ".csv"
+
+   char filename[SCIP_MAXSTRLEN];
+   (void) SCIPsnprintf(filename, SCIP_MAXSTRLEN, "stats_compbnd%s%s.csv",
+      branchruledata->useMaxRangeMidrangeHeuristic && branchruledata->useMostDistinctMedianHeuristic ? "" :
+      (branchruledata->useMaxRangeMidrangeHeuristic ? "-mrm" : "-mdm"),
+      stabilization_tree ? "+dvs" : "");
+
+   /* create the file with header, if not exists */
+   branchruledata->statsfile = fopen(filename, "r");
+   if( branchruledata->statsfile == NULL )
+   {
+      branchruledata->statsfile = fopen(filename, "w");
+      assert(branchruledata->statsfile != NULL);
+      fprintf(branchruledata->statsfile, "depth,num_bounds,sum,K\n");
+   }
+   else
+   {
+      fclose(branchruledata->statsfile);
+      branchruledata->statsfile = fopen(filename, "a");
+      assert(branchruledata->statsfile != NULL);
+   }
+#endif
 
    return SCIP_OKAY;
 }
