@@ -2954,7 +2954,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             #pragma omp atomic capture
             iter = niters++;
 
-            if( niters >= maxniters || private_retcode != SCIP_OKAY )
+            if( iter >= maxniters || private_retcode != SCIP_OKAY )
                stop = TRUE;
 
             if( stop )
