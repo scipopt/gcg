@@ -225,7 +225,7 @@ SCIP_RETCODE createSubsetRowCut_alt(
    rhs_ssrc = rhs_ssrc / sepadata->k;
    rhs_ssrc = SCIPfeasFloor(masterscip, rhs_ssrc);
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "ssrc_%i", sepadata->ngeneratedcut);
-   SCIP_CALL( SCIPcreateEmptyRowSepa(masterscip, &(*ssrc), sepa, name, -SCIPinfinity(masterscip), rhs_ssrc, TRUE, TRUE, FALSE) );
+   SCIP_CALL( SCIPcreateEmptyRowSepa(masterscip, &(*ssrc), sepa, name, -SCIPinfinity(masterscip), rhs_ssrc, TRUE, TRUE, TRUE) );
    assert(ssrc != NULL);
    assert(*ssrc != NULL);
 
@@ -293,6 +293,7 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS_alt(
 
       /* lhs <= ax <= rhs */
       mastercons = masterconss[selectedconssidx[i]];
+
       SCIPdebugPrintCons(masterscip, mastercons, NULL);
       lhs_mastercons = SCIPconsGetLhs(masterscip, mastercons, &success);
       assert(success);
