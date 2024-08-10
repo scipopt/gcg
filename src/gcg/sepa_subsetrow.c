@@ -35,6 +35,7 @@
 
 #include <assert.h>
 #include <scip/cutsel_hybrid.h>
+#include <scip/cutsel_dynamic.h>
 #include <scip/cons_linear.h>
 
 #include "gcg.h"
@@ -52,7 +53,7 @@
 
 #define SEPA_NAME           "subsetrow"
 #define SEPA_DESC "subsetrow separator"
-#define SEPA_PRIORITY              1000
+#define SEPA_PRIORITY               500
 #define SEPA_FREQ                     1
 #define SEPA_MAXBOUNDDIST           1.0
 #define SEPA_USESSUBSCIP          FALSE /**< does the separator use a secondary SCIP instance? */
@@ -496,6 +497,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
 
+   SCIP_Bool isroot;
+   isroot = SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip);
+
    *result = SCIP_DIDNOTFIND;
 
    if( !sepadata->enable )
@@ -518,7 +522,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       return SCIP_OKAY;
    }
 
-   if( (SCIPgetCurrentNode(scip) != SCIPgetRootNode(scip) && sepadata->onlyroot) || (SCIPgetCurrentNode(scip) != SCIPgetRootNode(scip) && !allowlocal))
+   if( (isroot && sepadata->onlyroot) || (isroot && !allowlocal))
    {
       SCIPdebugMessage("subset row separator is only configured to run on root node.\n");
       *result = SCIP_DIDNOTRUN;
@@ -564,7 +568,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    }
 
    /* determine the number of cuts to generate based on node type */
-   if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) )
+   if( isroot )
    {
       maxcuts = sepadata->maxsepacutsroot;
    }
@@ -619,6 +623,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
          SCIP_CALL( SCIPhashmapRemoveAll(mappricingvarxcoeff) );
          continue;
       }
+
       //SCIPprintRow(scip, ssrc, NULL);
 
       /* determine the pricing variables and their coefficients for the pricing constraints */
@@ -834,6 +839,12 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
 
    origscip = GCGgetOriginalprob(scip);
    assert(origscip != NULL);
+   *coef = 0.0;
+
+   if( nvars == 0 )
+   {
+      return SCIP_OKAY;
+   }
 
    mastercutdata = GCGmastersepacutGetMasterCutData(cut);
    assert(mastercutdata != NULL);
@@ -852,7 +863,7 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
    pricingconss = GCGpricingmodificationGetAdditionalConss(pricingmod);
 
    /* transfer the values of the given variables to the position of the array which corresponds to their variable index */
-   npricingvars = SCIPgetNOrigVars(pricingscip);
+   npricingvars = SCIPgetNVars(pricingscip); //SCIPgetNOrigVars(pricingscip);
    nnonzeros = 0;
    SCIP_CALL( SCIPallocCleanBufferArray(scip, &pricingvals, npricingvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &nonzeros, nvars) );
@@ -863,9 +874,11 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
       pricingvals[varindex] = vals[i];
       nonzeros[nnonzeros] = varindex;
       nnonzeros++;
+      //SCIPinfoMessage(scip, NULL, "%s: %f, ", SCIPvarGetName(vars[i]), vals[i]);
       SCIPdebugMessage("%s: %f, ", SCIPvarGetName(vars[i]), vals[i]);
    }
    SCIPdebugMessage("\n");
+   //SCIPinfoMessage(scip, NULL, "\n");
 
 
    /* get all the pricing variables and their coefficients in the constraint */
@@ -880,19 +893,22 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
 
 
    /* compute w^TAx using the pricing constraint */
-   *coef = 0.0;
+
    for( i = 0; i < npricingconsvars; i++ )
    {
+      //SCIPinfoMessage(scip, NULL, "%f * %s", pricingconscoeffs[i], SCIPvarGetName(pricingconsvars[i]));
       SCIPdebugMessage("%f * %s", pricingconscoeffs[i], SCIPvarGetName(pricingconsvars[i]));
       if( GCGvarIsInferredPricing(pricingconsvars[i]) )
          continue;
 
       varindex = SCIPvarGetProbindex(pricingconsvars[i]);
       assert(varindex <= npricingvars);
+      //SCIPinfoMessage(scip, NULL, " (%f) + ", pricingvals[varindex]);
       SCIPdebugMessage(" (%f) + ", pricingvals[varindex]);
       *coef += pricingconscoeffs[i] * pricingvals[varindex];
    }
    SCIPdebugMessage("\n");
+   ///SCIPinfoMessage(scip, NULL, "\n");
 
    /* reset all the non-zero entries back to zero
     * (otherwise they remain there and interfere with the computation of other coefficients) */
@@ -904,6 +920,7 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
 
    /* finally, we round down w^TAx */
    SCIPdebugMessage("variable coefficient %f\n", *coef);
+   //SCIPinfoMessage(scip, NULL, "variable coefficient %f\n", *coef);
    *coef = SCIPfeasFloor(scip, *coef);
 
    SCIPfreeCleanBufferArrayNull(scip, &pricingvals);
