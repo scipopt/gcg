@@ -57,7 +57,7 @@
 #define SEPA_FREQ                     1
 #define SEPA_MAXBOUNDDIST           1.0
 #define SEPA_USESSUBSCIP          FALSE /**< does the separator use a secondary SCIP instance? */
-#define SEPA_DELAY                FALSE /**< should separation method be delayed, if other separators found cuts? */
+#define SEPA_DELAY                TRUE /**< should separation method be delayed, if other separators found cuts? */
 
 #define STARTMAXCUTS                 50
 #define DEFAULT_RANDSEED             71
