@@ -241,15 +241,18 @@ SCIP_RETCODE addMissedVariables(
          origvars = GCGmasterVarGetOrigvars(mastervar);
          pricingvals = GCGmasterVarGetOrigvals(mastervar);
          SCIPallocBufferArray(scip, &pricingvars, npricingvars);
+         int nnonzeros = 0;
          for( j = 0; j < npricingvars; j++ )
          {
             pricingvars[j] = GCGoriginalVarGetPricingVar(origvars[j]);
             assert(pricingvars[j] != NULL);
+            if( pricingvals[j] != 0.0 )
+               nnonzeros++;
          }
 
          /* compute the coefficient for this master variable */
          coef = 0.0;
-         if( npricingvars > 0 )
+         if( (npricingvars > 0)  && (nnonzeros > 0) )
          {
             blocknr = GCGvarGetBlock(pricingvars[0]);
             SCIP_CALL( sepa->gcgsepagetvarcoefficient(scip, sepa, mastersepacut, pricingvars, pricingvals, npricingvars,
