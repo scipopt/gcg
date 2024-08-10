@@ -34,6 +34,7 @@
 //#define SCIP_DEBUG
 
 #include <assert.h>
+#include <scip/cutsel_hybrid.h>
 #include <scip/cons_linear.h>
 
 #include "gcg.h"
@@ -481,6 +482,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    int               maxcuts;                      // number of cuts to be generated in a separation round
    int               i;
    int               j;
+   SCIP_ROW**        cuts = NULL;
+   int               ncuts = 0;
 
    assert(scip != NULL);
    assert(result != NULL);
@@ -573,6 +576,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    SCIPallocBufferArray(scip, &selectedconssidx, sepadata->n);
    SCIPallocBufferArray(scip, &weights, sepadata->n);
    SCIPhashmapCreate(&mappricingvarxcoeff, SCIPblkmem(scip), nmastervars);
+   SCIPallocBufferArray(scip, &cuts, maxcuts);
+
 
    for( i = 0; i < maxcuts; i ++ )
    {
@@ -715,17 +720,41 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       sepadata->ngeneratedcut++;
 
       /* add the subset row cut to the sepastore of the master problem and the generated cuts */
-      SCIP_CALL( SCIPaddRow(scip, ssrc, FALSE, &success) );
-      SCIP_CALL( addSubsetRowCutToGeneratedCuts(scip, mastercutdata, weights, selectedconssidx, sepadata->n, sepadata->sepa) );
 
+      SCIP_CALL( addSubsetRowCutToGeneratedCuts(scip, mastercutdata, weights, selectedconssidx, sepadata->n, sepadata->sepa) );
+      cuts[ncuts] = ssrc;
+      ncuts++;
       /* empty the hashmaps containing the coefficients for pricing variables */
       SCIP_CALL( SCIPhashmapRemoveAll(mappricingvarxcoeff) );
+   }
+   if( ncuts > 0 )
+   {
+      int nselectedcuts;
+      SCIP_CALL( SCIPselectCutsHybrid(scip, cuts, NULL, sepadata->randnumgen, 1.0, 0.5,
+                                      0.1, 0.1, 0.0, 1.0, 0.0, 0.0,
+                                      ncuts, 0, 5, &nselectedcuts) );
+
+
+      for( i = 0; i < ncuts; i++ )
+      {
+         if( i < nselectedcuts )
+         {
+            SCIPinfoMessage(scip, NULL, "selected row: %s\n", SCIProwGetName(cuts[i]));
+            SCIP_CALL( SCIPaddRow(scip, cuts[i], FALSE, &success) );
+         }
+         /*else
+         {
+            SCIPreleaseRow(scip, &cuts[i]);
+         }*/
+
+      }
    }
 
    /* free data structures */
    SCIPhashmapFree(&mappricingvarxcoeff);
    SCIPfreeBufferArray(scip, &selectedconssidx);
    SCIPfreeBufferArray(scip, &weights);
+   SCIPfreeBufferArray(scip, &cuts);
 
    return SCIP_OKAY;
 }

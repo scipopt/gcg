@@ -676,7 +676,7 @@ SCIP_RETCODE GCGshrinkActiveCuts_alt(
       assert(mastercutdata != NULL);
       SCIP_CALL( GCGmastercutGetRow(mastercutdata, &row) );
       assert(row != NULL);
-      SCIPinfoMessage(masterscip, NULL, "deactivate %s\n", SCIProwGetName(row));
+      //SCIPinfoMessage(masterscip, NULL, "deactivate %s\n", SCIProwGetName(row));
 
       /* global cuts with age zero are added to the separation storage before initial LP is constructed
        * --> these cuts will be re-added to the next LP */
@@ -788,7 +788,7 @@ SCIP_RETCODE GCGaddCutActiveCuts(
    assert(eventhdlrdata != NULL);
 
    SCIP_CALL( ensureActiveSize(masterscip, eventhdlrdata, eventhdlrdata->nactivecuts + 1) );
-   SCIPinfoMessage(masterscip, NULL, "activate cut\n");
+   //SCIPinfoMessage(masterscip, NULL, "activate cut\n");
    eventhdlrdata->activecuts[eventhdlrdata->nactivecuts] = mastersepacut;
    SCIP_CALL( GCGcaptureMasterSepaCut(mastersepacut) );
    (eventhdlrdata->nactivecuts)++;

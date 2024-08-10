@@ -376,6 +376,7 @@ SCIP_DECL_EVENTEXEC(eventExecVardeleted)
    assert(GCGvarIsMaster(var));
    origvars = GCGmasterVarGetOrigvars(var);
    assert(origvars != NULL);
+   //SCIPinfoMessage(scip, NULL, "del master var: %s\n", SCIPvarGetName(var));
 
    /* remove master variable from corresponding pricing original variables */
    for( i = 0; i < GCGmasterVarGetNOrigvars(var); ++i )
