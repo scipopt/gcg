@@ -53,7 +53,7 @@
 
 #define SEPA_NAME           "subsetrow"
 #define SEPA_DESC "subsetrow separator"
-#define SEPA_PRIORITY               500
+#define SEPA_PRIORITY               100
 #define SEPA_FREQ                     1
 #define SEPA_MAXBOUNDDIST           1.0
 #define SEPA_USESSUBSCIP          FALSE /**< does the separator use a secondary SCIP instance? */
@@ -62,10 +62,10 @@
 #define STARTMAXCUTS                 50
 #define DEFAULT_RANDSEED             71
 #define DEFAULT_MAXROUNDS             1 /**< maximal number of subset row separation rounds per non-root node */
-#define DEFAULT_MAXROUNDSROOT         1 /**< maximal number of subset row separation calls in the root node */
+#define DEFAULT_MAXROUNDSROOT         2 /**< maximal number of subset row separation calls in the root node */
 #define DEFAULT_MAXSEPACUTS         200 /**< maximal number of subset row cuts separated per call in non-root nodes */
-#define DEFAULT_MAXSEPACUTSROOT    2000 /**< maximal number of subset row cuts separated per call in root node */
-#define DEFAULT_MAXCUTCANDS        4000 /**< maximal number of subset row cuts in total */
+#define DEFAULT_MAXSEPACUTSROOT     500 /**< maximal number of subset row cuts separated per call in root node */
+#define DEFAULT_MAXCUTCANDS        3000 /**< maximal number of subset row cuts in total */
 #define DEFAULT_ONLYROOT          FALSE /**< only apply separator in root node */
 #define DEFAULT_STRATEGY              0 /**< strategy which is used to determine which rows to consider for cut computation */
 #define DEFAULT_N                     3 /**< number of rows used to create a new cut */
