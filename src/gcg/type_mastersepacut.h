@@ -34,8 +34,8 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 
-#ifndef GCG_TEST_MASTERSEPACUT_H__
-#define GCG_TEST_MASTERSEPACUT_H__
+#ifndef GCG_TYPE_MASTERSEPACUT_H__
+#define GCG_TYPE_MASTERSEPACUT_H__
 
 
 #ifdef __cplusplus

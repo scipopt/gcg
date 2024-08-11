@@ -362,6 +362,7 @@ LIBOBJ = \
 			gcg/solver_knapsack.o \
 			gcg/solver_mip.o \
 			gcg/stat.o \
+			gcg/zerohalf_selector.o \
 
 ifeq ($(BLISS),true)
 LIBOBJ		+=	gcg/bliss_automorph.o \

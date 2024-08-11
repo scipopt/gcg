@@ -201,7 +201,7 @@ SCIP_RETCODE eventRowAddedToLP(
                           SCIProwGetName(row), SCIPsepaGetName(sepa), sepaidx, eventhdlrdata->nactivecuts);
          SCIPinfoMessage(scip, NULL, "add row %s at node %lli of type %i\n", SCIProwGetName(row), SCIPnodeGetNumber(SCIPgetCurrentNode(scip)),
                          SCIPnodeGetType(SCIPgetCurrentNode(scip)));
-         SCIPprintRow(scip, row, NULL);
+         //SCIPprintRow(scip, row, NULL);
          /* transfer cut from generated to active */
          generatedcut = eventhdlrdata->generatedcuts[generatedidx];
          mastercutdata = GCGmastersepacutGetMasterCutData(generatedcut);
@@ -820,7 +820,7 @@ SCIP_RETCODE GCGaddCutActiveCuts_alt(
    SCIP_CALL( GCGcaptureMasterSepaCut(mastersepacut) );
    masterdata = GCGmastersepacutGetMasterCutData(mastersepacut);
    SCIP_CALL( GCGmastercutGetRow(masterdata, &row) );
-   SCIPinfoMessage(masterscip, NULL, "activate cut %s\n", SCIProwGetName(row));
+   //SCIPinfoMessage(masterscip, NULL, "activate cut %s\n", SCIProwGetName(row));
    (eventhdlrdata->nactivecuts)++;
 
    return SCIP_OKAY;

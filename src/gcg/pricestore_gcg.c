@@ -357,13 +357,13 @@ SCIP_RETCODE GCGpricestoreAddCol(
             GCGcolUpdateRedcost(col, redcost, FALSE);
             //SCIPinfoMessage(scip, NULL, "new redcost: %f\n", redcost);
             /* reduced cost of modified column is not negative anymore: discard column */
-            /*if( !SCIPisDualfeasNegative(scip, redcost) )
+            if( !SCIPisDualfeasNegative(scip, redcost) )
             {
                //SCIPinfoMessage(scip, NULL, "column no longer good enough! discard\n");
                GCGfreeGcgCol(&col);
                SCIP_CALL( SCIPstopClock(pricestore->scip, pricestore->priceclock) );
                return SCIP_OKAY;
-            }*/
+            }
             col->age = 0;
             /* again, we try to create a solution using the updated column and check it */
             sol = NULL;

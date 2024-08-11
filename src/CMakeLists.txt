@@ -156,6 +156,7 @@ set(gcgsources
     gcg/solver_mip.c
     gcg/solver.c
     gcg/stat.c
+    gcg/zerohalf_selector.c
 )
 
 set(gcggraphsources
@@ -349,6 +350,7 @@ set(gcgheaders
     gcg/type_varclassifier.h
     gcg/type_varhistory.h
     gcg/wrapper_partialdecomp.h
+    gcg/zerohalf_selector.h
 )
 
 set(gcggraphheaders
