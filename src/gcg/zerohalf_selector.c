@@ -1960,7 +1960,6 @@ SCIP_RETCODE GCGselectConstraintsZeroHalf(
 {
    int i;
    int k;
-   int maxsepacuts;
 
    SCIP_Real maxslack;
    MOD2_MATRIX mod2matrix;
