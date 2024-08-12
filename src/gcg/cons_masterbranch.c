@@ -378,9 +378,7 @@ SCIP_RETCODE initializeAddedCuts(
    )
 {
    GCG_MASTERSEPACUT** activecuts;
-   SCIP_Bool addedtomap;
    int nactivecuts;
-   int i;
    int j;
 
    assert(scip != NULL);

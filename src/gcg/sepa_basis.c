@@ -46,8 +46,7 @@
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 #include "pub_gcgvar.h"
-#include "event_sepacuts.h"
-#include "mastercutdata.h"
+
 
 
 #ifdef WITH_GSL
@@ -1533,10 +1532,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          SCIP_CALL( SCIPcaptureRow(scip, sepadata->mastercuts[sepadata->nmastercuts]) );
          sepadata->nmastercuts++;
          SCIP_CALL( GCGsepaAddOriginalSepaCuts(scip, origcut, mastercut) );
-         GCG_MASTERCUTDATA* mastercutdata;
-         mastercutdata = NULL;
-         //SCIP_CALL( GCGmastercutCreateFromRow(scip, &mastercutdata, mastercut, NULL, 0) );
-         //SCIP_CALL( GCGaddCutToGeneratedCutsSepa(scip, mastercutdata, sepadata->sepaidx) );
 
          SCIP_CALL( SCIPreleaseRow(scip, &mastercut) );
          SCIPfreeBufferArray(scip, &roworigvars);

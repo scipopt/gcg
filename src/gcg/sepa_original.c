@@ -43,8 +43,7 @@
 #include "gcg.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
-#include "event_sepacuts.h"
-#include "mastercutdata.h"
+
 
 
 #define SEPA_NAME         "original"
@@ -315,7 +314,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
    {
       SCIP_ROW* origcut;
       SCIP_COL** cols;
-      GCG_MASTERCUTDATA* mastercutdata;
       int ncols;
       SCIP_Real* vals;
       SCIP_Real shift;
@@ -358,7 +356,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
       SCIP_CALL( SCIPhashmapInsertInt(sepadata->origcutidxmap, origcut, sepadata->ncuts) );
       SCIP_CALL( SCIPcaptureRow(origscip, origcut) );
       sepadata->ncuts++;
-      mastercutdata = NULL;
 
 
 #ifdef SCIP_DEBUG

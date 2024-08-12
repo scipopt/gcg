@@ -47,25 +47,15 @@ extern "C" {
 
 struct GCG_ZeroHalfData
 {
-   SCIP_RANDNUMGEN*      randnumgen;         /**< random generator for tiebreaking */
    SCIP_Real             minviol;            /**< minimal violation to generate zerohalfcut for */
    SCIP_Real             maxslack;           /**< maximal slack of rows to be used in aggregation */
    SCIP_Real             maxslackroot;       /**< maximal slack of rows to be used in aggregation in the root node */
    SCIP_Real             maxrowdensity;      /**< maximal density of row to be used in aggregation */
-   SCIP_Real             objparalweight;     /**< weight of objective parallelism in cut score calculation */
-   SCIP_Real             efficacyweight;     /**< weight of efficacy in cut score calculation */
-   SCIP_Real             dircutoffdistweight;/**< weight of directed cutoff distance in cut score calculation */
-   SCIP_Real             goodmaxparall;      /**< maximum parallelism for good cuts */
-   SCIP_Real             maxparall;          /**< maximum parallelism for non-good cuts */
    SCIP_Bool             infeasible;         /**< infeasibility was detected after adding a zerohalf cut */
    SCIP_Bool             dynamiccuts;        /**< should generated cuts be removed from the LP if they are no longer tight? */
    int                   maxrounds;          /**< maximal number of zerohalf separation rounds per node (-1: unlimited) */
    int                   maxroundsroot;      /**< maximal number of zerohalf separation rounds in the root node (-1: unlimited) */
-   int                   maxsepacuts;        /**< maximal number of zerohalf cuts separated per separation round */
-   int                   maxsepacutsroot;    /**< maximal number of zerohalf cuts separated per separation round in root node */
-   int                   maxcutcands;        /**< maximal number of zerohalf cuts considered per separation round */
    int                   densityoffset;      /**< additional number of variables allowed in row on top of density */
-   int                   initseed;           /**< initial seed used for random tie-breaking in cut selection */
    int                   nreductions;        /**< number of reductions to the mod 2 system found so far */
 };
 typedef struct GCG_ZeroHalfData GCG_ZEROHALFDATA;

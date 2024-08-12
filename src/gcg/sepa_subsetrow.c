@@ -88,7 +88,7 @@ struct SCIP_SepaData
    int                     maxsepacutsroot;     /**< number of cuts generated per separation call of root node */
    int                     maxsepacuts;         /**< number of cuts generated per separation call at non-root node */
    int                     maxcutcands;         /**< maximal number of cuts generated in total */
-   int                     strategy;            /**< RANDOM (0), */
+   int                     strategy;            /**< RANDOM (0), KOSTER-ET-A (1)*/
    int                     n;                   /**< k > 0          : defines the possible weights 1/k */
    int                     k;                   /**< n = |S| > 0    : number of constraints used to construct subset row */
    GCG_SEPA*               sepa;                /**< gcg master separator instance */
@@ -509,54 +509,43 @@ SCIP_RETCODE selectConstraintsKosterEtAl(
    int                     ncalls,        /**< number of time separator has bin called at current node */
    SCIP_Bool               allowlocal,    /**< local cuts allowed? */
    int                     depth,         /**< depth of current node */
-   int                     maxcuts,        /**< maximum number of cuts to be generated */
-   SCIP_SOL*               sol
+   int                     maxcuts,       /**< maximum number of cuts to be generated */
+   SCIP_SOL*               sol            /**< current best solution, if available (else NULL) */
    )
 {
    GCG_ZEROHALFDATA* zhdata;
    int i;
 
    SCIPallocMemory(masterscip, &zhdata);
-   zhdata->maxroundsroot = 20;
-   zhdata->maxrounds= 5;
-   zhdata->maxsepacuts = 20;
-   zhdata->maxsepacutsroot = 100;
-   zhdata->maxcutcands = 2000;
-   zhdata->maxslack = 0.0;
-   zhdata->maxslackroot = 0.0;
-   zhdata->minviol = 0.1;
-   zhdata->dynamiccuts = TRUE;
-   zhdata->maxrowdensity = 0.05;
-   zhdata->densityoffset = 100;
-   zhdata->initseed = 0x5EED;
-   zhdata->objparalweight = 0.0;
-   zhdata->efficacyweight = 1.0;
-   zhdata->dircutoffdistweight = 0.0;
-   zhdata->goodmaxparall = 0.1;
-   zhdata->maxparall = 0.1;
-   zhdata->infeasible = FALSE;
-   zhdata->nreductions = 0;
-   zhdata->randnumgen = NULL;
+   zhdata->maxroundsroot = 20;         // k
+   zhdata->maxrounds = 5;              // k
+   zhdata->maxslack = 0.0;             // k
+   zhdata->maxslackroot = 0.0;         // k
+   zhdata->minviol = 0.1;              // k
+   zhdata->dynamiccuts = TRUE;         // k
+   zhdata->maxrowdensity = 0.05;       // k
+   zhdata->densityoffset = 100;        // k
+   zhdata->infeasible = FALSE;         // k
+   zhdata->nreductions = 0;            // k
    *ncutindices = 0;
 
-   SCIP_CALL( SCIPcreateRandom(masterscip, &(zhdata->randnumgen), (unsigned int) zhdata->initseed, TRUE) );
    SCIP_CALL( GCGselectConstraintsZeroHalf(masterscip, sol, allowlocal, depth, zhdata, ncalls, maxcuts, cutindices, ncutindices) );
 
-   SCIPfreeRandom(masterscip, &(zhdata->randnumgen));
    SCIPfreeMemory(masterscip, &zhdata);
 
    return SCIP_OKAY;
 }
 
+/** creates a subset row cut */
 static
 SCIP_RETCODE createCut(
-   SCIP*             masterscip,
-   GCG_CUTINDICES*   cutindex,
-   SCIP_SEPA*        sepa,
-   int               nmastervars,
-   SCIP_CONS**       masterconss,
-   SCIP_Real**       weights,
-   SCIP_ROW**        ssrc
+   SCIP*             masterscip,    /**< SCIP data structure (master problem) */
+   GCG_CUTINDICES*   cutindex,      /**< indices of the master constraints to use for the construction of subset row cut */
+   SCIP_SEPA*        sepa,          /**< subset row separator */
+   int               nmastervars,   /**< number of variables in the master problem*/
+   SCIP_CONS**       masterconss,   /**< constraints of the master problem */
+   SCIP_Real**       weights,       /**< sign (1, -1) with which to multiply each selected constraint before adding to cut*/
+   SCIP_ROW**        ssrc           /**< pointer to store subset row cut */
    )
 {
    SCIP_Real* ssrccoeffs;
@@ -586,22 +575,23 @@ SCIP_RETCODE createCut(
    return SCIP_OKAY;
 }
 
+/** creates the master cut data for the subset row cut */
 static
 GCG_MASTERCUTDATA* createMastercutData(
-   SCIP*          masterscip,
-   SCIP*          origscip,
-   SCIP_ROW*      ssrc,
-   int            npricingproblems,
-   SCIP_SEPADATA* sepadata,
-   SCIP_HASHMAP*  mappricingvarxcoeff
+   SCIP*          masterscip,             /**< SCIP data structure (master problem) */
+   SCIP*          origscip,               /**< SCIP data structure (original problem) */
+   SCIP_ROW*      ssrc,                   /**< subset row cut */
+   int            npricingproblems,       /**< number of pricing problems */
+   SCIP_SEPADATA* sepadata,               /**< subset row separator data */
+   SCIP_HASHMAP*  mappricingvarxcoeff     /**< map storing the coefficients for the pricing constraints for subset row cut */
    )
 {
    GCG_MASTERCUTDATA*         mastercutdata = NULL;         // master cut data for subset row cut
    GCG_PRICINGMODIFICATION*   pricingmodifications = NULL;  // pricing modifications associated with cut
-   SCIP_Bool success;
-   char                       name[SCIP_MAXSTRLEN];
-   int npricingmodifications = 0;
-   int j;
+   SCIP_Bool                  success;
+   char                       name[SCIP_MAXSTRLEN];         // name of the subset row cut
+   int                        npricingmodifications = 0;    // counter for number of pricing modifications
+   int                        j;
 
 
    /* create the pricing modification for every (relevant) pricing problem */
@@ -658,6 +648,7 @@ GCG_MASTERCUTDATA* createMastercutData(
          SCIPdebugMessage("constraint was empty --> release\n");
          SCIPreleaseCons(pricingproblem, &pricingconss[0]);
          SCIPfreeBlockMemoryArray(pricingproblem, &pricingconss, 1);
+
          continue;
       }
 
@@ -672,7 +663,7 @@ GCG_MASTERCUTDATA* createMastercutData(
       SCIPaddCoefLinear(pricingproblem, pricingconss[0], coeffvar, -1.0);
       SCIPdebugPrintCons(pricingproblem, pricingconss[0], NULL);
 
-      /* create pricing modifications containing y as the coeffvar and a single constraint */
+      /* create pricing modifications containing y as the coeffvar and the single constraint we created */
       GCGpricingmodificationCreate(masterscip, &pricingmodification, j, coeffvar, NULL, 0, pricingconss, 1); // released in GCGpricingmodificationFree
 
       /* ensure we have enough memory for all the pricing modifications */
@@ -856,6 +847,7 @@ SCIP_DECL_SEPAEXECSOL(sepaExecsolSubsetrow)
    SCIPfreeBlockMemoryArrayNull(scip, &cutindices, maxcuts);
    SCIPhashmapFree(&mappricingvarxcoeff);
 
+   *result = SCIP_SEPARATED;
    return SCIP_OKAY;
 }
 
@@ -938,7 +930,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
 
 
    /* ensure to separate current sol */
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
+   //SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
 
    /* get info of master problem */
    originalconss = GCGgetOrigMasterConss(origscip);
@@ -963,6 +955,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &cutindices, maxcuts) );
    SCIPhashmapCreate(&mappricingvarxcoeff, SCIPblkmem(scip), nmastervars);
 
+   /* select which constraints to use for new subset row cuts */
    if( sepadata->strategy == 0 )
    {
       SCIP_CALL( selectConstraintsRandom(scip, &cutindices, &ncutindices, maxcuts, sepadata->n, nmasterconss, sepadata->randnumgen) );
@@ -1005,6 +998,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       // determine the pricing variables and their coefficients for the pricing constraints
       SCIP_CALL( computePricingConssCoefficients(origscip, originalconss, cutindices[i]->indices, cutindices[i]->nindices,
                                                  weights, mappricingvarxcoeff) );
+      // add cut to sepa store and
       mastercutdata = createMastercutData(scip, origscip, ssrc, npricingproblems, sepadata, mappricingvarxcoeff);
       SCIPaddRow(scip, ssrc, FALSE, &success);
       SCIP_CALL( addSubsetRowCutToGeneratedCuts(scip, mastercutdata, weights, cutindices[i]->indices, cutindices[i]->nindices, sepadata->sepa) );
@@ -1018,6 +1012,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    SCIPfreeBlockMemoryArrayNull(scip, &cutindices, maxcuts);
    SCIPhashmapFree(&mappricingvarxcoeff);
 
+   *result = SCIP_SEPARATED;
    return SCIP_OKAY;
 }
 

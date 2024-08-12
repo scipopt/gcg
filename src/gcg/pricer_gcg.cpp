@@ -1521,7 +1521,6 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCutsFromGCGCol(
    GCG_MASTERSEPACUT** activecuts;
    SCIP_Real* sepamastercutcoeffs;
    int nactivecuts;
-   int i;
    int j;
 
    assert(scip_ != NULL);
@@ -1568,7 +1567,6 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
    GCG_MASTERSEPACUT** activecuts;
    SCIP_Real coeff;
    int nactivecuts;
-   int i;
    int j;
 
    assert(scip_ != NULL);
@@ -1721,7 +1719,6 @@ SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
 {
    GCG_MASTERSEPACUT** activecuts = NULL;
    SCIP_Real* coeffs = NULL;
-   int i;
    int j;
    int nactivecuts;
    int ncurrentsepamastercutcoeffs;
@@ -4245,7 +4242,6 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    int nmasterconss;
    int origverblevel;
    int size;
-   int npricingvars;
 
    assert(scip == scip_);
    assert(pricer != NULL);

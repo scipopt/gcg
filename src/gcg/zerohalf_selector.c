@@ -1780,7 +1780,6 @@ SCIP_RETCODE mod2matrixPreprocessRows(
          assert(row->nnonzcols == 0 && row->rhs == 1 && SCIPisLT(scip, row->slack, 1.0));
 
          /* OG: SCIP_CALL( generateZerohalfCut(scip, sol, mod2matrix, sepa, sepadata, allowlocal, row) ); */
-         /* @todo: do not create cut, instead save indices */
          // transfer the indices associated with this cut to cutindices
          SCIP_CALL(GCGcreateCutIndicesFromRowindex(scip, &cutindex, row->nrowinds, row->rowinds) );
          (*cutindices)[*ncutindices] = cutindex;
@@ -1977,7 +1976,6 @@ SCIP_RETCODE GCGselectConstraintsZeroHalf(
           || (depth > 0 && zhdata->maxrounds >= 0 && ncalls >= zhdata->maxrounds) )
          return SCIP_OKAY;
 
-      maxsepacuts = depth == 0 ? zhdata->maxsepacutsroot : zhdata->maxsepacuts;
       maxslack = depth == 0 ? zhdata->maxslackroot : zhdata->maxslack;
       maxslack += 2 * SCIPfeastol(scip);
    }
@@ -2042,7 +2040,7 @@ SCIP_RETCODE GCGselectConstraintsZeroHalf(
          if( SCIPisPositive(scip, row->slack) || row->nnonzcols == 0 )
             continue;
 
-         SCIPdebugMsg(scip, "processing row %i/%i (%i/%i cuts)\n", i, mod2matrix.nrows, *ncutindices, zhdata->maxcutcands);
+         SCIPdebugMsg(scip, "processing row %i/%i (%i/%i cuts)\n", i, mod2matrix.nrows, *ncutindices, maxcuts);
 
          for( j = 0; j < row->nnonzcols; ++j )
          {
@@ -2096,7 +2094,7 @@ SCIP_RETCODE GCGselectConstraintsZeroHalf(
       }
    }
 
-   for( i = 0; i < mod2matrix.nrows && *ncutindices < zhdata->maxcutcands; ++i )
+   for( i = 0; i < mod2matrix.nrows && *ncutindices < maxcuts; ++i )
    {
       GCG_CUTINDICES* cutindex;
       MOD2_ROW* row = mod2matrix.rows[i];
@@ -2108,7 +2106,6 @@ SCIP_RETCODE GCGselectConstraintsZeroHalf(
          continue;
 
       /* OG: SCIP_CALL( generateZerohalfCut(scip, sol, &mod2matrix, sepa, sepadata, allowlocal, row) ); */
-      /* @todo: store selected indices */
       // transfer the indices associated with this cut to cutindices
       SCIP_CALL( GCGcreateCutIndicesFromRowindex(scip, &cutindex, row->nrowinds, row->rowinds) );
       (*cutindices)[*ncutindices] = cutindex;
