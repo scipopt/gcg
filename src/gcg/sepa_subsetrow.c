@@ -871,17 +871,18 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       SCIPfreeBufferArrayNull(scip, &weights);
    }
    SCIPinfoMessage(scip, NULL, "ncutindices: %i, ngenerated: %i, maxcutands: %i\n", ncutindices, sepadata->ngeneratedcut, sepadata->maxcutcands);
+   int nselectedcuts;
    if( ncuts > sepadata->nfilter )
-   {
-      int nselectedcuts;
+      SCIP_CALL( SCIPselectCutsHybrid(scip, cuts, NULL, sepadata->randnumgen, 1.0, 0.5, 0.1, 0.1, 0.0, 1.0, 0.0, 0.0, ncuts, 0, sepadata->nfilter, &nselectedcuts) );
+   else
+      nselectedcuts = ncuts;
 
-      SCIP_CALL(SCIPselectCutsHybrid(scip, cuts, NULL, sepadata->randnumgen, 1.0, 0.5, 0.1, 0.1, 0.0, 1.0, 0.0, 0.0, ncuts, 0, sepadata->nfilter, &nselectedcuts) );
-      for( i = 0; i < nselectedcuts; i++ )
-      {
-         SCIPaddRow(scip, cuts[i], FALSE, &success);
-         sepadata->ngeneratedcut++;
-      }
+   for( i = 0; i < nselectedcuts; i++ )
+   {
+      SCIPaddRow(scip, cuts[i], FALSE, &success);
+      sepadata->ngeneratedcut++;
    }
+
    SCIPfreeBufferArrayNull(scip, &cuts);
    SCIPfreeBlockMemoryArrayNull(scip, &cutindices, maxcuts);
    SCIPhashmapFree(&mappricingvarxcoeff);
