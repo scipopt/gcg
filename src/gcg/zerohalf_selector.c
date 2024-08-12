@@ -1709,7 +1709,8 @@ SCIP_RETCODE mod2matrixPreprocessRows(
    GCG_ZEROHALFDATA*     zhdata,
    SCIP_Bool             allowlocal,          /**< should local cuts be allowed */
    GCG_CUTINDICES***     cutindices,
-   int*                  ncutindices
+   int*                  ncutindices,
+   int                   maxcuts
 )
 {
    int i;
@@ -1781,9 +1782,13 @@ SCIP_RETCODE mod2matrixPreprocessRows(
 
          /* OG: SCIP_CALL( generateZerohalfCut(scip, sol, mod2matrix, sepa, sepadata, allowlocal, row) ); */
          // transfer the indices associated with this cut to cutindices
-         SCIP_CALL(GCGcreateCutIndicesFromRowindex(scip, &cutindex, row->nrowinds, row->rowinds) );
-         (*cutindices)[*ncutindices] = cutindex;
-         (*ncutindices)++;
+         if( *ncutindices < maxcuts )
+         {
+            SCIP_CALL(GCGcreateCutIndicesFromRowindex(scip, &cutindex, row->nrowinds, row->rowinds) );
+            (*cutindices)[*ncutindices] = cutindex;
+            (*ncutindices)++;
+         }
+
 
          if( zhdata->infeasible )
             goto TERMINATE;
@@ -1996,7 +2001,7 @@ SCIP_RETCODE GCGselectConstraintsZeroHalf(
       zhdata->nreductions = 0;
 
       assert(mod2matrix.nzeroslackrows <= mod2matrix.nrows);
-      SCIP_CALL( mod2matrixPreprocessRows(scip, sol, &mod2matrix, zhdata, allowlocal, cutindices, ncutindices) );
+      SCIP_CALL( mod2matrixPreprocessRows(scip, sol, &mod2matrix, zhdata, allowlocal, cutindices, ncutindices, maxcuts) );
       assert(mod2matrix.nzeroslackrows <= mod2matrix.nrows);
 
       SCIPdebugMsg(scip, "preprocessed rows (%i rows, %i cols, %i cuts) \n", mod2matrix.nrows, mod2matrix.ncols,
