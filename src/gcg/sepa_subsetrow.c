@@ -64,14 +64,13 @@
 #define DEFAULT_RANDSEED             71
 #define DEFAULT_MAXROUNDS             1 /**< maximal number of subset row separation rounds per non-root node */
 #define DEFAULT_MAXROUNDSROOT         2 /**< maximal number of subset row separation calls in the root node */
-#define DEFAULT_MAXSEPACUTS         100 /**< maximal number of subset row cuts separated per call in non-root nodes */
-#define DEFAULT_MAXSEPACUTSROOT     200 /**< maximal number of subset row cuts separated per call in root node */
-#define DEFAULT_MAXCUTCANDS          50 /**< maximal number of subset row cuts in total */
+#define DEFAULT_MAXSEPACUTS         10 /**< maximal number of subset row cuts separated per call in non-root nodes */
+#define DEFAULT_MAXSEPACUTSROOT     10 /**< maximal number of subset row cuts separated per call in root node */
+#define DEFAULT_MAXCUTCANDS         50 /**< maximal number of subset row cuts in total */
 #define DEFAULT_ONLYROOT          FALSE /**< only apply separator in root node */
 #define DEFAULT_STRATEGY              1 /**< strategy which is used to determine which rows to consider for cut computation */
 #define DEFAULT_N                     3 /**< number of rows used to create a new cut */
 #define DEFAULT_K                     2 /**< inverse of weight used for cut generation */
-#define DEFAULT_NFILTER              10
 #define MAXAGGRLEN(nvars)           ((int)(0.1*(nvars) + 1000 )) // OG:+ 1000
 /*
  * Data structures
@@ -700,7 +699,7 @@ GCG_MASTERCUTDATA* createMastercutData(
 
    /* create master cut data containing y, ssrc and the pricing modifications */
    GCGmastercutCreateFromRow(masterscip, &mastercutdata, ssrc, pricingmodifications, npricingmodifications); // freed in GCGmastercutFree
-   //sepadata->ngeneratedcut++;
+   sepadata->ngeneratedcut++;
 
    return mastercutdata;
 }
@@ -810,7 +809,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    else
       maxcuts = sepadata->maxsepacuts;
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &cuts, maxcuts) );
+   //SCIP_CALL( SCIPallocBufferArray(scip, &cuts, maxcuts) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &cutindices, maxcuts) );
    SCIPhashmapCreate(&mappricingvarxcoeff, SCIPblkmem(scip), nmastervars);
 
@@ -860,9 +859,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
                                                  weights, mappricingvarxcoeff) );
       // add cut to sepa store and
       mastercutdata = createMastercutData(scip, origscip, ssrc, npricingproblems, sepadata, mappricingvarxcoeff);
-      //SCIPaddRow(scip, ssrc, FALSE, &success);
-      cuts[ncuts] = ssrc;
-      ncuts++;
+      SCIPaddRow(scip, ssrc, FALSE, &success);
       SCIP_CALL( addSubsetRowCutToGeneratedCuts(scip, mastercutdata, weights, cutindices[i]->indices, cutindices[i]->nindices, sepadata->sepa) );
 
       // cleanup
@@ -871,18 +868,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       SCIPfreeBufferArrayNull(scip, &weights);
    }
    SCIPinfoMessage(scip, NULL, "ncutindices: %i, ngenerated: %i, maxcutands: %i\n", ncutindices, sepadata->ngeneratedcut, sepadata->maxcutcands);
-   if( ncuts > sepadata->nfilter )
-   {
-      int nselectedcuts;
 
-      SCIP_CALL(SCIPselectCutsHybrid(scip, cuts, NULL, sepadata->randnumgen, 1.0, 0.5, 0.1, 0.1, 0.0, 1.0, 0.0, 0.0, ncuts, 0, sepadata->nfilter, &nselectedcuts) );
-      for( i = 0; i < nselectedcuts; i++ )
-      {
-         SCIPaddRow(scip, cuts[i], FALSE, &success);
-         sepadata->ngeneratedcut++;
-      }
-   }
-   SCIPfreeBufferArrayNull(scip, &cuts);
+   //SCIPfreeBufferArrayNull(scip, &cuts);
    SCIPfreeBlockMemoryArrayNull(scip, &cutindices, maxcuts);
    SCIPhashmapFree(&mappricingvarxcoeff);
 
@@ -1271,9 +1258,6 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
 
    SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/k", "weight used to create new subset row cut",
       &(sepadata->k), FALSE, DEFAULT_K, 1, INT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/nfilter", "number of cuts filtered out of generated cuts",
-      &(sepadata->nfilter), FALSE, DEFAULT_NFILTER, 1, 100, NULL, NULL) );
 
    return SCIP_OKAY;
 }
