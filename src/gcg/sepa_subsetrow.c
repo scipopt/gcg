@@ -65,8 +65,8 @@
 #define DEFAULT_MAXROUNDS             1 /**< maximal number of subset row separation rounds per non-root node */
 #define DEFAULT_MAXROUNDSROOT         2 /**< maximal number of subset row separation calls in the root node */
 #define DEFAULT_MAXSEPACUTS         10 /**< maximal number of subset row cuts separated per call in non-root nodes */
-#define DEFAULT_MAXSEPACUTSROOT     10 /**< maximal number of subset row cuts separated per call in root node */
-#define DEFAULT_MAXCUTCANDS         50 /**< maximal number of subset row cuts in total */
+#define DEFAULT_MAXSEPACUTSROOT     20 /**< maximal number of subset row cuts separated per call in root node */
+#define DEFAULT_MAXCUTCANDS         100 /**< maximal number of subset row cuts in total */
 #define DEFAULT_ONLYROOT          FALSE /**< only apply separator in root node */
 #define DEFAULT_STRATEGY              1 /**< strategy which is used to determine which rows to consider for cut computation */
 #define DEFAULT_N                     3 /**< number of rows used to create a new cut */
@@ -726,8 +726,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    int               ncalls;
    int               i;
    int               j;
-   SCIP_ROW**        cuts = NULL;
-   int               ncuts = 0;
 
    assert(scip != NULL);
    assert(result != NULL);
@@ -827,6 +825,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
+   int curfound = 0;
    int maxaggrlen = MAXAGGRLEN(SCIPgetNLPCols(scip));
    //SCIPinfoMessage(scip, NULL, "nindices: %i\n", ncutindices);
    for( i = 0; i < ncutindices; i++ )
@@ -861,19 +860,20 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       mastercutdata = createMastercutData(scip, origscip, ssrc, npricingproblems, sepadata, mappricingvarxcoeff);
       SCIPaddRow(scip, ssrc, FALSE, &success);
       SCIP_CALL( addSubsetRowCutToGeneratedCuts(scip, mastercutdata, weights, cutindices[i]->indices, cutindices[i]->nindices, sepadata->sepa) );
-
+      curfound++;
       // cleanup
       SCIP_CALL( GCGfreeCutIndices(scip, &cutindices[i]) );
       SCIP_CALL( SCIPhashmapRemoveAll(mappricingvarxcoeff) );
       SCIPfreeBufferArrayNull(scip, &weights);
    }
    SCIPinfoMessage(scip, NULL, "ncutindices: %i, ngenerated: %i, maxcutands: %i\n", ncutindices, sepadata->ngeneratedcut, sepadata->maxcutcands);
-
-   //SCIPfreeBufferArrayNull(scip, &cuts);
+   
    SCIPfreeBlockMemoryArrayNull(scip, &cutindices, maxcuts);
    SCIPhashmapFree(&mappricingvarxcoeff);
 
-   *result = SCIP_SEPARATED;
+   if( curfound > 0 )
+      *result = SCIP_SEPARATED;
+
    return SCIP_OKAY;
 }
 
