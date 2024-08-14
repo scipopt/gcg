@@ -33,6 +33,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 /* #define SCIP_DEBUG */
+/* #define SUBGCG_DETAILED_CLOCKS */
 /* #define DEBUG_PRICING_ALL_OUTPUT */
 /* #define DEBUG_PRICING_WRITE_PROBS */
 #define SUBGCG_DEBUG_ITER -1
@@ -54,6 +55,10 @@
 #include "scip/scip_timing.h"
 #include "struct_decomp.h"
 #include "class_detprobdata.h"
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #define SOLVER_NAME          "gcg"
 #define SOLVER_DESC          "gcg solver for pricing problems"
@@ -105,11 +110,12 @@ struct GCG_SolverData
    SCIP_Real*              curgaplimit;         /**< current gap limit per pricing problem */
    int*                    cursollimit;         /**< current solution limit per pricing problem */
 
-
+#ifdef SUBGCG_DETAILED_CLOCKS
    SCIP_Clock*             inittime;
    SCIP_Clock*             updatetime;
    SCIP_Clock*             solvingtime;
    SCIP_Clock*             postprocessingtime;
+#endif
    int64_t                 count;
    SCIP_Bool*              translatesymmetry;
 
@@ -220,7 +226,9 @@ SCIP_Bool buildProblem(
    SCIP_RESULT decompresult = SCIP_DIDNOTRUN;
    int npresolvrounds;
 
-   SCIPstartClock(solverdata->origprob, solverdata->inittime);
+#ifdef SUBGCG_DETAILED_CLOCKS
+   SCIP_CALL_ABORT( SCIPstartClock(solverdata->origprob, solverdata->inittime) );
+#endif
    SCIP_CALL( SCIPcreate(&subgcg) );
    solverdata->pricingprobs[probnr] = subgcg;
 
@@ -229,7 +237,7 @@ SCIP_Bool buildProblem(
 
    SCIP_CALL( SCIPincludeGcgPlugins(subgcg, (SCIP_Bool)(solverdata->depth + 1 < solverdata->maxdepth)) );
    (void)SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_subgcg", SCIPgetProbName(pricingprob) );
-   // TODO: check memory leak
+
    SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(subgcg), SCIPgetNOrigVars(pricingprob)) );
    solverdata->varmaps[probnr] = varmap;
    solverdata->nbasicpricingconss[probnr] = SCIPgetNOrigConss(pricingprob);
@@ -243,8 +251,6 @@ SCIP_Bool buildProblem(
    SCIP_CALL( SCIPgetIntParam(subgcg, "presolving/maxrounds", &npresolvrounds) );
    if( npresolvrounds != 0 )
       solverdata->translatesymmetry[probnr] = FALSE;
-
-   // TODO: setting needed parameters (also user specified ones)
 
    SCIPcreateProb(subgcg, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
    SCIP_CALL( SCIPcopyOrigVars(pricingprob, subgcg, varmap, NULL, NULL, NULL, 0) );
@@ -266,12 +272,16 @@ SCIP_Bool buildProblem(
       }
    }
 
-   SCIPstopClock(solverdata->origprob, solverdata->inittime);
+#ifdef SUBGCG_DETAILED_CLOCKS
+   SCIP_CALL_ABORT( SCIPstopClock(solverdata->origprob, solverdata->inittime) );
+#endif
 
    SCIPdebugMessage("SUBGCG Problem %i built, stage: %i\n", probnr, SCIPgetStage(subgcg));
 
    SCIPdebugMessage("SUBGCG Detecting structure of problem %i\n", probnr);
-   SCIPstartClock(solverdata->origprob, solverdata->inittime);
+#ifdef SUBGCG_DETAILED_CLOCKS
+   SCIP_CALL_ABORT( SCIPstartClock(solverdata->origprob, solverdata->inittime) );
+#endif
    GCG_DECOMP* decomp = GCGgetStructDecomp(solverdata->origprob);
    assert(decomp);
    gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(solverdata->origprob, decomp->partialdecid);
@@ -297,7 +307,9 @@ SCIP_Bool buildProblem(
       }
    }
 
-   SCIPstopClock(solverdata->origprob, solverdata->inittime);
+#ifdef SUBGCG_DETAILED_CLOCKS
+   SCIP_CALL_ABORT( SCIPstopClock(solverdata->origprob, solverdata->inittime) );
+#endif
 
    SCIPdebugMessage("SUBGCG Problem %i structure detected, stage: %i\n", probnr, SCIPgetStage(subgcg));
 
@@ -476,11 +488,29 @@ SCIP_RETCODE solveProblem(
          SCIPwriteParams(subgcg, "params.txt", FALSE, FALSE);
       }
 #endif
-      SCIPstartClock(solverdata->origprob, solverdata->inittime);
+
+#ifdef SUBGCG_DETAILED_CLOCKS
+#ifdef _OPENMP
+      if( omp_get_num_threads() == 1 )
+         SCIP_CALL_ABORT( SCIPstartClock(solverdata->origprob, solverdata->inittime) );
+#else
+      SCIP_CALL_ABORT( SCIPstartClock(solverdata->origprob, solverdata->inittime) );
+#endif
+#endif
+
       SCIP_CALL( GCGstashLimitSettings(subgcg) );
       SCIP_CALL( SCIPpresolve(subgcg) );
       GCGconshdlrDecompTranslateNBestOrigPartialdecs(subgcg, 1, TRUE, solverdata->translatesymmetry[probnr]);
-      SCIPstopClock(solverdata->origprob, solverdata->inittime);
+
+#ifdef SUBGCG_DETAILED_CLOCKS
+#ifdef _OPENMP
+      if( omp_get_num_threads() == 1 )
+         SCIP_CALL_ABORT( SCIPstopClock(solverdata->origprob, solverdata->inittime) );
+#else
+      SCIP_CALL_ABORT( SCIPstopClock(solverdata->origprob, solverdata->inittime) );
+#endif
+#endif
+
 #ifdef DEBUG_PRICING_WRITE_PROBS
       if( SUBGCG_DEBUG_ITER >= 0 && solverdata->count == SUBGCG_DEBUG_ITER )
       {
@@ -491,15 +521,39 @@ SCIP_RETCODE solveProblem(
 #endif
    }
 
-   SCIPstartClock(solverdata->origprob, solverdata->solvingtime);
+#ifdef SUBGCG_DETAILED_CLOCKS
+#ifdef _OPENMP
+   if( omp_get_num_threads() == 1 )
+      SCIP_CALL_ABORT( SCIPstartClock(solverdata->origprob, solverdata->solvingtime) );
+#else
+   SCIP_CALL_ABORT( SCIPstartClock(solverdata->origprob, solverdata->solvingtime) );
+#endif
+#endif
+
    retcode = SCIPsolve(subgcg);
-   SCIPstopClock(solverdata->origprob, solverdata->solvingtime);
+
+#ifdef SUBGCG_DETAILED_CLOCKS
+#ifdef _OPENMP
+   if( omp_get_num_threads() == 1 )
+      SCIP_CALL_ABORT( SCIPstopClock(solverdata->origprob, solverdata->solvingtime) );
+#else
+   SCIP_CALL_ABORT( SCIPstopClock(solverdata->origprob, solverdata->solvingtime) );
+#endif
+#endif
+
    SCIPdebugMessage("Problem %i solved\n", probnr);
 
    //solverdata->iters += GCGmasterGetPricingSimplexIters(GCGgetMasterprob(subgcg));
    //solverdata->iters += SCIPgetNLPIterations(GCGgetMasterprob(subgcg));
 
-   SCIPstartClock(solverdata->origprob, solverdata->postprocessingtime);
+#ifdef SUBGCG_DETAILED_CLOCKS
+#ifdef _OPENMP
+   if( omp_get_num_threads() == 1 )
+      SCIP_CALL_ABORT( SCIPstartClock(solverdata->origprob, solverdata->postprocessingtime) );
+#else
+   SCIP_CALL_ABORT( SCIPstartClock(solverdata->origprob, solverdata->postprocessingtime) );
+#endif
+#endif
 
    if (retcode != SCIP_OKAY)
    {
@@ -561,7 +615,15 @@ SCIP_RETCODE solveProblem(
       break;
    }
 
-   SCIPstopClock(solverdata->origprob, solverdata->postprocessingtime);
+#ifdef SUBGCG_DETAILED_CLOCKS
+#ifdef _OPENMP
+   if( omp_get_num_threads() == 1 )
+      SCIP_CALL_ABORT( SCIPstopClock(solverdata->origprob, solverdata->postprocessingtime) );
+#else
+   SCIP_CALL_ABORT( SCIPstopClock(solverdata->origprob, solverdata->postprocessingtime) );
+#endif
+#endif
+
    SCIPdebugMessage("Postprocessing of problem %d finished\n", probnr);
 
    return SCIP_OKAY;
@@ -635,10 +697,12 @@ SCIP_RETCODE freeBlockMemory(
    SCIPfreeBlockMemoryArray(scip, &(solverdata->translatesymmetry), npricingprobs);
    solverdata->translatesymmetry = NULL;
 
+#ifdef SUBGCG_DETAILED_CLOCKS
    SCIPfreeClock(solverdata->origprob, &solverdata->inittime);
    SCIPfreeClock(solverdata->origprob, &solverdata->updatetime);
    SCIPfreeClock(solverdata->origprob, &solverdata->solvingtime);
    SCIPfreeClock(solverdata->origprob, &solverdata->postprocessingtime);
+#endif
 
    return SCIP_OKAY;
 }
@@ -676,10 +740,12 @@ GCG_DECL_SOLVERINITSOL(solverInitsolGcg)
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->curstallnodelimit), npricingprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->translatesymmetry), npricingprobs) );
 
+#ifdef SUBGCG_DETAILED_CLOCKS
    SCIPcreateClock(scip, &solverdata->inittime);
    SCIPcreateClock(scip, &solverdata->updatetime);
    SCIPcreateClock(scip, &solverdata->solvingtime);
    SCIPcreateClock(scip, &solverdata->postprocessingtime);
+#endif
 
    for (i = 0; i < npricingprobs; ++i)
    {
@@ -720,7 +786,9 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolGcg)
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
+#ifdef SUBGCG_DETAILED_CLOCKS
    if( solverdata->depth == 0 && solverdata->inittime )
+   {
       SCIPinfoMessage(
          GCGgetOriginalprob(scip),
          NULL,
@@ -731,6 +799,8 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolGcg)
          SCIPgetClockTime(solverdata->origprob, solverdata->postprocessingtime),
          solverdata->count
       );
+   }
+#endif
 
    SCIP_CALL( freeBlockMemory(scip, solverdata) );
    return SCIP_OKAY;
@@ -895,7 +965,9 @@ GCG_DECL_SOLVERUPDATE(solverUpdateGcg)
    SCIPdebugMessage("GCG solver -- update data for problem %d: varobjschanged = %u, varbndschanged = %u, consschanged = %u\n",
       probnr, varobjschanged, varbndschanged, consschanged);
 
+#ifdef SUBGCG_DETAILED_CLOCKS
    SCIPstartClock(solverdata->origprob, solverdata->updatetime);
+#endif
 
    GCGconshdlrDecompFreeOrigOnExit(solverdata->pricingprobs[probnr], FALSE);
    SCIPfreeTransform(solverdata->pricingprobs[probnr]);
@@ -914,7 +986,10 @@ GCG_DECL_SOLVERUPDATE(solverUpdateGcg)
    solverdata->cursollimit[probnr] = solverdata->startsollimit;
    solverdata->curstallnodelimit[probnr] = solverdata->startstallnodelimit;
 
+#ifdef SUBGCG_DETAILED_CLOCKS
    SCIPstopClock(solverdata->origprob, solverdata->updatetime);
+#endif
+
    SCIPdebugMessage("Updated problem %i\n", probnr);
 
    return SCIP_OKAY;
@@ -932,10 +1007,12 @@ SCIP_RETCODE GCGincludeSolverGcg(
    SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
    solverdata->depth = 0;
    solverdata->npricingprobs = 0;
+#ifdef SUBGCG_DETAILED_CLOCKS
    solverdata->inittime = NULL;
    solverdata->updatetime = NULL;
    solverdata->solvingtime = NULL;
    solverdata->postprocessingtime = NULL;
+#endif
    solverdata->count = 0;
    solverdata->origprob = origprob;
    solverdata->masterprob = scip;
