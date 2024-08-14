@@ -421,6 +421,17 @@ SCIP_RETCODE GCGinitializeMasterProblemSolve(
    SCIP*                 scip               /**< the SCIP data structure */
    );
 
+/** stash limit settings if not already stashed
+ */
+SCIP_RETCODE GCGstashLimitSettings(
+   SCIP*                 scip              /**< SCIP data structure */
+   );
+
+/** restore limit settings if currently stashed
+ */
+SCIP_RETCODE GCGrestoreLimitSettings(
+   SCIP*                 scip              /**< SCIP data structure */
+   );
 #ifdef __cplusplus
 }
 

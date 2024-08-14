@@ -176,6 +176,13 @@ struct SCIP_RelaxData
 
    /* visualization parameter */
    GCG_PARAMDATA*        paramsvisu;         /**< parameters for visualization */
+
+   /* stashed limit settings */
+   SCIP_Bool             limitsettingsstashed;   /**< are limit settings currently stashed? */
+   SCIP_Longint          stashednodelimit;       /**< stashed node limit for heuristic pricing */
+   SCIP_Longint          stashedstallnodelimit;  /**< stashed stalling node limit for heuristic pricing */
+   SCIP_Real             stashedgaplimit;        /**< stashed gap limit for heuristic pricing */
+   int                   stashedsollimit;        /**< stashed solution limit for heuristic pricing */
 };
 
 
@@ -2482,6 +2489,8 @@ void initRelaxdata(
    relaxdata->relaxisinitialized = FALSE;
    relaxdata->simplexiters = 0;
    relaxdata->rootnodetime = NULL;
+
+   relaxdata->limitsettingsstashed = FALSE;
 }
 
 /** resets relaxator data */
@@ -2525,6 +2534,8 @@ void resetRelaxdata(
    assert(relaxdata->relaxisinitialized == FALSE);
    relaxdata->simplexiters = 0;
    assert(relaxdata->rootnodetime == NULL);
+
+   relaxdata->limitsettingsstashed = FALSE;
 }
 
 /*
@@ -2684,7 +2695,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
     * must be swapped with the alternate master problem.
     */
    if( GCGgetMasterDecompMode(relaxdata->masterprob) != GCG_DECMODE_ORIGINAL &&
-      GCGgetMasterDecompMode(relaxdata->masterprob) != GCGgetDecompositionMode(scip) )
+      GCGgetMasterDecompMode(relaxdata->masterprob) != relaxdata->mode )
    {
       SCIP* tmpscip;
 
@@ -2842,7 +2853,7 @@ SCIP_RETCODE solveMasterProblem(
 
 
    /* loop to solve the master problem, this is a workaround and does not fix any problem */
-   while( !SCIPisStopped(scip) )
+   do
    {
       SCIP_Real mastertimelimit = SCIPinfinity(scip);
 
@@ -2894,6 +2905,8 @@ SCIP_RETCODE solveMasterProblem(
       if( !SCIPisInfinity(scip, timelimit) && !SCIPisStopped(scip) )
          SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "time for master problem was too short, extending time by %f.\n", mastertimelimit - SCIPgetSolvingTime(masterprob));
    }
+   while( !SCIPisStopped(scip) );
+
    if( SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT && SCIPisStopped(scip) )
    {
       *result = SCIP_DIDNOTRUN;
@@ -3230,6 +3243,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
     */
    if( GCGgetDecompositionMode(scip) == GCG_DECMODE_ORIGINAL )
    {
+      SCIP_CALL( GCGrestoreLimitSettings(scip) );
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "There are no pricing problems in the decomposition. The original problem will be solved directly.\n");
       SCIP_CALL( relaxExecGcgOriginalProblem(scip, relax, lowerbound, result) );
    }
@@ -3239,6 +3253,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    }
    else if( relaxdata->mode == GCG_DECMODE_BENDERS )
    {
+      SCIP_CALL( GCGrestoreLimitSettings(scip) );
       SCIP_CALL( relaxExecGcgBendersDecomposition(scip, relax, lowerbound, result) );
    }
    else
@@ -5130,6 +5145,10 @@ SCIP_RETCODE GCGpresolve(
 
    case SCIP_STAGE_TRANSFORMED:
    case SCIP_STAGE_PRESOLVING:
+      if( GCGgetDecompositionMode(scip) == GCG_DECMODE_DANTZIGWOLFE )
+      {
+         SCIP_CALL( GCGstashLimitSettings(scip) );
+      }
       SCIP_CALL( SCIPpresolve(scip) );
       SCIP_CALL( GCGconshdlrDecompTranslateOrigPartialdecs(scip) );
       break;
@@ -5290,6 +5309,10 @@ SCIP_RETCODE GCGsolve(
 
          /*lint -fallthrough*/
       case SCIP_STAGE_SOLVING:
+         if( GCGgetDecompositionMode(scip) == GCG_DECMODE_DANTZIGWOLFE && SCIPgetNNodes(scip) == 0 )
+         {
+            SCIP_CALL( GCGstashLimitSettings(scip) );
+         }
          SCIP_CALL( SCIPsolve(scip) );
          exit = TRUE;
          break;
@@ -5421,4 +5444,57 @@ SCIP_RETCODE GCGinitializeMasterProblemSolve(
    assert(relax != NULL);
    assert(SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED);
    return initializeMasterProblemSolve(scip, relax);
+}
+
+SCIP_RETCODE GCGstashLimitSettings(
+   SCIP*                 scip
+   )
+{
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_RELAX* relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+  
+   if( relaxdata->limitsettingsstashed == FALSE )
+   {
+      relaxdata->limitsettingsstashed = TRUE;
+
+      SCIP_CALL( SCIPgetLongintParam(scip, "limits/nodes", &relaxdata->stashednodelimit) );
+      SCIP_CALL( SCIPgetLongintParam(scip, "limits/stallnodes", &relaxdata->stashedstallnodelimit) );
+      SCIP_CALL( SCIPgetRealParam(scip, "limits/gap", &relaxdata->stashedgaplimit) );
+      SCIP_CALL( SCIPgetIntParam(scip, "limits/solutions", &relaxdata->stashedsollimit) );
+
+      SCIPresetParam(scip, "limits/nodes");
+      SCIPresetParam(scip, "limits/stallnodes");
+      SCIPresetParam(scip, "limits/gap");
+      SCIPresetParam(scip, "limits/solutions");
+   }
+
+   return SCIP_OKAY;
+}
+
+SCIP_RETCODE GCGrestoreLimitSettings(
+   SCIP*                 scip
+   )
+{
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_RELAX* relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   if( relaxdata->limitsettingsstashed == TRUE )
+   {
+      relaxdata->limitsettingsstashed = FALSE;
+
+      SCIP_CALL( SCIPsetLongintParam(scip, "limits/nodes", relaxdata->stashednodelimit) );
+      SCIP_CALL( SCIPsetLongintParam(scip, "limits/stallnodes", relaxdata->stashedstallnodelimit) );
+      SCIP_CALL( SCIPsetRealParam(scip, "limits/gap", relaxdata->stashedgaplimit) );
+      SCIP_CALL( SCIPsetIntParam(scip, "limits/solutions", relaxdata->stashedsollimit) );
+   }
+
+   return SCIP_OKAY;
 }

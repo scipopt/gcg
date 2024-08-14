@@ -233,6 +233,8 @@ SCIP_RETCODE createBranchNodesInOrigprob(
 
    *result = SCIP_DIDNOTRUN;
 
+   GCGrestoreLimitSettings(scip);
+
    /* get master problem */
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);

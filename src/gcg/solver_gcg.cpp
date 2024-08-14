@@ -60,7 +60,7 @@
 #define SOLVER_PRIORITY      100
 
 #define SOLVER_ENABLED      TRUE  /**< indicates whether the solver should be enabled */
-#define SOLVER_HEU_ENABLED  FALSE  /**< indicates whether the heuristic solving method of the solver should be enabled */
+#define SOLVER_HEU_ENABLED  TRUE  /**< indicates whether the heuristic solving method of the solver should be enabled */
 
 #define DEFAULT_MAX_RECURSION_DEPTH  0
 #define DEFAULT_CHECKSOLS            TRUE    /**< should solutions be checked extensively */
@@ -477,6 +477,7 @@ SCIP_RETCODE solveProblem(
       }
 #endif
       SCIPstartClock(solverdata->origprob, solverdata->inittime);
+      SCIP_CALL( GCGstashLimitSettings(subgcg) );
       SCIP_CALL( SCIPpresolve(subgcg) );
       GCGconshdlrDecompTranslateNBestOrigPartialdecs(subgcg, 1, TRUE, solverdata->translatesymmetry[probnr]);
       SCIPstopClock(solverdata->origprob, solverdata->inittime);
@@ -816,7 +817,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurGcg)
 
 
    /* setup heuristic solver parameters */
-   if (SCIPgetStage(subgcg) == SCIP_STAGE_PROBLEM)
+   if( SCIPgetStage(subgcg) == SCIP_STAGE_PROBLEM )
    {
       solverdata->curnodelimit[probnr] = solverdata->startnodelimit;
       solverdata->curstallnodelimit[probnr] = solverdata->startstallnodelimit;
