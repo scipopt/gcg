@@ -129,9 +129,8 @@ SCIP_RETCODE GCGmastercutGetCons(
 /** get the row that is the master cut
    * will fail if the master cut is a constraint
    */
-SCIP_RETCODE GCGmastercutGetRow(
-   GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
-   SCIP_ROW**             row                 /**< pointer to store the row */
+SCIP_ROW* GCGmastercutGetRow(
+   GCG_MASTERCUTDATA*     mastercutdata      /**< mastercut data */
    );
 
 /** get the variable that determines the coefficient of a column in the master cut */

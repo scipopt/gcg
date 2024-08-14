@@ -262,9 +262,9 @@ SCIP_RETCODE addMissedVariables(
          /* add variable wiht its coefficient to the cut */
          if( !SCIPisZero(scip, coef) )
          {
-            SCIP_ROW* mastercutrow = NULL;
+            SCIP_ROW* mastercutrow;
 
-            SCIP_CALL( GCGmastercutGetRow(mastercutdata, &mastercutrow) );
+            mastercutrow = GCGmastercutGetRow(mastercutdata);
             assert(mastercutrow != NULL);
             SCIP_CALL( SCIPaddVarToRow(scip, mastercutrow, mastervar, coef) );
          }

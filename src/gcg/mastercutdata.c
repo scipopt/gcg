@@ -421,22 +421,15 @@ SCIP_RETCODE GCGmastercutGetCons(
 /** get the row that is the master cut
    * will fail if the master cut is a constraint
    */
-SCIP_RETCODE GCGmastercutGetRow(
-   GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
-   SCIP_ROW**             row                 /**< pointer to store the row */
+SCIP_ROW* GCGmastercutGetRow(
+   GCG_MASTERCUTDATA*     mastercutdata      /**< mastercut data */
    )
 {
    assert(mastercutdata != NULL);
-   assert(row != NULL);
-   assert(*row == NULL);
-
-   if( mastercutdata->type != GCG_MASTERCUTTYPE_ROW )
-      return SCIP_ERROR;
-
+   assert(mastercutdata->type == GCG_MASTERCUTTYPE_ROW);
    assert(mastercutdata->cut.row != NULL);
-   *row = mastercutdata->cut.row;
 
-   return SCIP_OKAY;
+   return mastercutdata->cut.row;
 }
 
 /** get the variable that determines the coefficient of a column in the master cut */

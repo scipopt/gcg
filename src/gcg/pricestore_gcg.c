@@ -342,7 +342,6 @@ SCIP_RETCODE GCGpricestoreAddCol(
          if( !feasible && fromcolpool )
          {
             SCIP_Real redcost;
-            //SCIPinfoMessage(scip, NULL, "column not feasible!\n");
 
             SCIPfreeSol(col->pricingprob, &sol);
 
@@ -352,14 +351,11 @@ SCIP_RETCODE GCGpricestoreAddCol(
             SCIP_CALL( adjustGCGCol(scip, col) );
 
             /* re-compute reduced cost of column */
-            //SCIPinfoMessage(scip, NULL, "old redcost: %f, ", col->redcost);
             redcost = GCGcomputeRedCostGcgCol(scip, pricestore->infarkas, col, NULL);
             GCGcolUpdateRedcost(col, redcost, FALSE);
-            //SCIPinfoMessage(scip, NULL, "new redcost: %f\n", redcost);
             /* reduced cost of modified column is not negative anymore: discard column */
             if( !SCIPisDualfeasNegative(scip, redcost) )
             {
-               //SCIPinfoMessage(scip, NULL, "column no longer good enough! discard\n");
                GCGfreeGcgCol(&col);
                SCIP_CALL( SCIPstopClock(pricestore->scip, pricestore->priceclock) );
                return SCIP_OKAY;

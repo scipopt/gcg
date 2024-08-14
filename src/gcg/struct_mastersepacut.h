@@ -27,7 +27,7 @@
 
 /**@file   struct_mastersepacutdata.h
  * @ingroup DATASTRUCTURES
- * @brief  data structures for GCG separator cut data
+ * @brief  data structures for GCG separator cuts
  * @author Chantal Reinartz Groba
  */
 
