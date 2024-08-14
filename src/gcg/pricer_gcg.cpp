@@ -193,6 +193,7 @@ struct SCIP_PricerData
    SCIP_Real**           realdualvalues;     /**< real dual values for pricing variables */
    int*                  maxrealdualvalues;  /**< capacities of realdualvalues */
    int                   maxrealdualvaluescapacity;  /**< capacity of maxrealdualvalues */
+   int*                  nnoninferredpricingvars;
 
    /* variables used for statistics */
    SCIP_CLOCK*           freeclock;          /**< time for freeing pricing problems */
@@ -290,43 +291,6 @@ SCIP_DECL_PARAMCHGD(paramChgdDisablecutoff)
    return SCIP_OKAY;
 }
 
-/** get variable index in the problem cleaned of inferred pricing variables */
-static
-int varGetIndexCleaned(
-   SCIP* pricingproblem,
-   SCIP_VAR* var
-   )
-{
-   SCIP_VAR** vars;
-   int nvars;
-   int i;
-   int j;
-
-   assert(pricingproblem != NULL);
-   assert(var != NULL);
-   assert(GCGvarIsPricing(var));
-
-   vars = SCIPgetOrigVars(pricingproblem);
-   nvars = SCIPgetNOrigVars(pricingproblem);
-
-   assert(0 <= SCIPvarGetIndex(var) && SCIPvarGetIndex(var) < nvars);
-
-   j = 0;
-
-   for( i = 0; i < nvars; i++ )
-   {
-      if( !GCGvarIsPricing(vars[i]) )
-         continue;
-
-      if( SCIPvarCompare(var, vars[i]) == 0 )
-         return j;
-
-      j += 1;
-   }
-
-   SCIPABORT();
-   return -1;
-}
 
 
 /*
@@ -812,10 +776,9 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    {
       if( pricerdata->pricingprobs[i] == NULL )
          continue;
+
       probvars = SCIPgetVars(pricerdata->pricingprobs[i]);
       nprobvars = SCIPgetNVars(pricerdata->pricingprobs[i]);
-      //probvars = SCIPgetOrigVars(pricerdata->pricingprobs[i]);
-      //nprobvars = SCIPgetNOrigVars(pricerdata->pricingprobs[i]);
 
 #ifndef NDEBUG
       //maxvarindex = nprobvars - GCGcountInferredPricingVars(probvars, nprobvars);
@@ -1917,8 +1880,6 @@ SCIP_Real ObjPricerGcg::computeRedCost(
    for( i = 0; i < nsolvars; i++ ) {
       assert(GCGvarIsPricing(solvars[i]));
       objvalue += solvals[i] * pricerdata->realdualvalues[probnr][SCIPvarGetProbindex(solvars[i])];
-      //SCIPinfoMessage(scip_, NULL, "%s-ProbIndex: %i < %i\n", SCIPvarGetName(solvars[i]), SCIPvarGetProbindex(solvars[i]), pricerdata->maxrealdualvalues[probnr]);
-      //objvalue += solvals[i] * pricerdata->realdualvalues[probnr][varGetIndexCleaned(pricingscip, solvars[i])];
    }
 
    if( objvalptr != NULL )
@@ -1985,8 +1946,6 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
       if( GCGvarIsPricing(solvars[i]) )
       {
          objvalue += solvals[i] * pricerdata->realdualvalues[probnr][SCIPvarGetProbindex(solvars[i])];
-         //SCIPinfoMessage(scip_, NULL, "%s-ProbIndex: %i < %i\n", SCIPvarGetName(solvars[i]), SCIPvarGetProbindex(solvars[i]), pricerdata->maxrealdualvalues[probnr]);
-         //objvalue += solvals[i] * pricerdata->realdualvalues[probnr][varGetIndexCleaned(pricingprob->pricingscip, solvars[i])];
       }
       else
       {
@@ -2740,7 +2699,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    }
 
    SCIP_CALL( GCGcreateMasterVar(scip, origprob, pricerdata->pricingprobs[prob], &newvar, varname, objcoeff,
-         pricerdata->vartype, solisray, prob, nsolvars, solvals, solvars, FALSE));
+         pricerdata->vartype, solisray, prob, nsolvars, solvals, solvars, FALSE, pricerdata->nnoninferredpricingvars[prob]));
 
    SCIPvarMarkDeletable(newvar);
 
@@ -2900,7 +2859,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
    }
 
    SCIP_CALL( GCGcreateMasterVar(scip, GCGmasterGetOrigprob(scip), pricerdata->pricingprobs[prob], &newvar, varname, objcoeff,
-         pricerdata->vartype, isray, prob, nsolvars, solvals, solvars, FALSE));
+         pricerdata->vartype, isray, prob, nsolvars, solvals, solvars, FALSE, pricerdata->nnoninferredpricingvars[prob]));
 
    SCIPvarMarkDeletable(newvar);
 
@@ -3344,6 +3303,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIP_CALL( GCGrelaxBranchGetAllActiveMasterCuts(scip_, &branchrules, &branchdata, &branchmastercutdata, &nbranchmastercuts) );
    assert(nbranchmastercuts == 0 || (branchrules != NULL && branchdata != NULL && branchmastercutdata != NULL));
 
+   activecuts = GCGgetActiveCuts_alt(scip_, pricerdata->mastersepacuthdlr);
+   nactivecuts = GCGgetNActiveCuts_alt(scip_, pricerdata->mastersepacuthdlr);
+
    // disable colpool while probing mode is active (can be removed after a feasibility check (#586) is implemented)
    probingnode = (SCIPnodeGetType(SCIPgetCurrentNode(scip_)) == SCIP_NODETYPE_PROBINGNODE);
 
@@ -3354,7 +3316,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       && (SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) || pricerdata->stabilizationtree)
       && (pricerdata->stabilization && pricetype->getType() == GCG_PRICETYPE_REDCOST)
       && !GCGisBranchruleGeneric(GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
-   enablestab = FALSE;
+   enablestab = FALSE; //&& (nactivecuts > 0);
 
    /* allocate memory */
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &bestcols, pricerdata->npricingprobs) );
@@ -3437,8 +3399,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
     * - modify pricing problems for active master cuts*/
    //if( !probingnode )
    //   SCIP_CALL( GCGclearGeneratedCuts(scip_) );
-   activecuts = GCGgetActiveCuts_alt(scip_, pricerdata->mastersepacuthdlr);
-   nactivecuts = GCGgetNActiveCuts_alt(scip_, pricerdata->mastersepacuthdlr);
+
 
    for( j = 0; j < nactivecuts; j++ )
    {
@@ -3463,7 +3424,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       int npricingvars;
 
       npricingvars = SCIPgetNVars(pricerdata->pricingprobs[i]);
-      //SCIPinfoMessage(scip_, NULL, "PP: %i, npricingvars: %i\n", i, npricingvars);
+
       if( pricerdata->maxrealdualvalues[i] < npricingvars )
       {
          SCIPinfoMessage(scip_, NULL, "increase pricing var to %i : %i\n", i, npricingvars);
@@ -4276,6 +4237,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    size = SCIPcalcMemGrowSize(scip, pricerdata->npricingprobs);
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->realdualvalues), size) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->maxrealdualvalues), size) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->nnoninferredpricingvars), size) );
    pricerdata->maxrealdualvaluescapacity = size;
 
    pricerdata->oldvars = 0;
@@ -4302,9 +4264,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
          pricerdata->pricingprobs[i] = GCGgetPricingprob(origprob, i);
          pricerdata->npricingprobsnotnull++;
          pricerdata->maxrealdualvalues[i] = SCIPcalcMemGrowSize(scip, SCIPgetNVars(pricerdata->pricingprobs[i]));
-         //npricingvars = SCIPgetNOrigVars(pricerdata->pricingprobs[i]);
-         //npricingvars -= GCGcountInferredPricingVars(SCIPgetOrigVars(pricerdata->pricingprobs[i]), npricingvars);
-         //pricerdata->maxrealdualvalues[i] = SCIPcalcMemGrowSize(scip, npricingvars);
+         pricerdata->nnoninferredpricingvars[i] = SCIPgetNVars(pricerdata->pricingprobs[i]);
          SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->realdualvalues[i]), pricerdata->maxrealdualvalues[i]) ); /*lint !e666 !e866*/
       }
       else
@@ -4312,6 +4272,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
          pricerdata->realdualvalues[i] = NULL;
          pricerdata->maxrealdualvalues[i] = 0;
          pricerdata->pricingprobs[i] = NULL;
+         pricerdata->nnoninferredpricingvars[i] = 0;
       }
       pricerdata->npointsprob[i] = 0;
       pricerdata->nraysprob[i] = 0;
@@ -4543,6 +4504,7 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    }
    SCIPfreeBlockMemoryArray(scip, &(pricerdata->realdualvalues), pricerdata->maxrealdualvaluescapacity);
    SCIPfreeBlockMemoryArray(scip, &(pricerdata->maxrealdualvalues), pricerdata->maxrealdualvaluescapacity);
+   SCIPfreeBlockMemoryArray(scip, &(pricerdata->nnoninferredpricingvars), pricerdata->maxrealdualvaluescapacity);
 
    return SCIP_OKAY;
 }
@@ -4901,6 +4863,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
    pricerdata->solvers = NULL;
    pricerdata->nsolvers = 0;
    pricerdata->realdualvalues = NULL;
+   pricerdata->nnoninferredpricingvars = NULL;
    pricerdata->artificialvars = NULL;
    pricerdata->nartificialvars = 0;
    pricerdata->maxartificialvars = 0;

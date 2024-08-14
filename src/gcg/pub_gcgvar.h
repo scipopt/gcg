@@ -510,19 +510,20 @@ SCIP_RETCODE GCGlinkingVarCreateMasterCons(
 /** creates the master var and initializes the vardata */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateMasterVar(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP*                 origscip,           /**< original SCIP data structure */
-   SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
-   SCIP_VAR**            newvar,             /**< pointer to store new master variable */
-   const char*           varname,            /**< new variable name */
-   SCIP_Real             objcoeff,           /**< new objective coeffient */
-   SCIP_VARTYPE          vartype,            /**< new variable type */
-   SCIP_Bool             solisray,           /**< indicates whether new variable is a ray */
-   int                   prob,               /**< number of pricing problem that created this variable */
-   int                   nsolvars,           /**< number of variables in the solution */
-   SCIP_Real*            solvals,            /**< values of variables in the solution */
-   SCIP_VAR**            solvars,            /**< variables with non zero coefficient in the solution */
-   SCIP_Bool             auxiliaryvar        /**< is new variable an Benders' auxiliary variables? */
+   SCIP*                 scip,                   /**< SCIP data structure */
+   SCIP*                 origscip,               /**< original SCIP data structure */
+   SCIP*                 pricingscip,            /**< pricing problem SCIP data structure */
+   SCIP_VAR**            newvar,                 /**< pointer to store new master variable */
+   const char*           varname,                /**< new variable name */
+   SCIP_Real             objcoeff,               /**< new objective coeffient */
+   SCIP_VARTYPE          vartype,                /**< new variable type */
+   SCIP_Bool             solisray,               /**< indicates whether new variable is a ray */
+   int                   prob,                   /**< number of pricing problem that created this variable */
+   int                   nsolvars,               /**< number of variables in the solution */
+   SCIP_Real*            solvals,                /**< values of variables in the solution */
+   SCIP_VAR**            solvars,                /**< variables with non zero coefficient in the solution */
+   SCIP_Bool             auxiliaryvar,           /**< is new variable an Benders' auxiliary variables? */
+   int                   nnoninferredpricingvars /**< number of non-inferred pricing variables */
    );
 
 /** creates initial master variables and the vardata */

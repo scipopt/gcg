@@ -1375,19 +1375,20 @@ SCIP_RETCODE GCGlinkingVarCreateMasterCons(
 
 /** creates the master var and initializes the vardata */
 SCIP_RETCODE GCGcreateMasterVar(
-   SCIP*                 scip,               /**< master SCIP data structure */
-   SCIP*                 origscip,           /**< original SCIP data structure */
-   SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
-   SCIP_VAR**            newvar,             /**< pointer to store new master variable */
-   const char*           varname,            /**< new variable name */
-   SCIP_Real             objcoeff,           /**< new objective coefficient */
-   SCIP_VARTYPE          vartype,            /**< new variable type */
-   SCIP_Bool             solisray,           /**< indicates whether new variable is a ray */
-   int                   prob,               /**< number of pricing problem that created this variable */
-   int                   nsolvars,           /**< number of variables in the solution */
-   SCIP_Real*            solvals,            /**< values of variables in the solution */
-   SCIP_VAR**            solvars,            /**< variables with non zero coefficient in the solution */
-   SCIP_Bool             auxiliaryvar        /**< is new variable an Benders' auxiliary variables? */
+   SCIP*                 scip,                   /**< master SCIP data structure */
+   SCIP*                 origscip,               /**< original SCIP data structure */
+   SCIP*                 pricingscip,            /**< pricing problem SCIP data structure */
+   SCIP_VAR**            newvar,                 /**< pointer to store new master variable */
+   const char*           varname,                /**< new variable name */
+   SCIP_Real             objcoeff,               /**< new objective coefficient */
+   SCIP_VARTYPE          vartype,                /**< new variable type */
+   SCIP_Bool             solisray,               /**< indicates whether new variable is a ray */
+   int                   prob,                   /**< number of pricing problem that created this variable */
+   int                   nsolvars,               /**< number of variables in the solution */
+   SCIP_Real*            solvals,                /**< values of variables in the solution */
+   SCIP_VAR**            solvars,                /**< variables with non zero coefficient in the solution */
+   SCIP_Bool             auxiliaryvar,           /**< is new variable an Benders' auxiliary variables? */
+   int                   nnoninferredpricingvars /**< number of non-inferred pricing variables */
    )
 {
    SCIP_VARDATA* newvardata;
@@ -1457,9 +1458,8 @@ SCIP_RETCODE GCGcreateMasterVar(
     */
    if( newvardata->data.mastervardata.norigvars == 0 && !auxiliaryvar )
    {
-      npricingvars = SCIPgetNOrigVars(pricingscip);
-      pricingvars = SCIPgetOrigVars(pricingscip);
-      newvardata->data.mastervardata.norigvars =  npricingvars; //- GCGcountInferredPricingVars(pricingvars, npricingvars);
+
+      newvardata->data.mastervardata.norigvars =  nnoninferredpricingvars;
 
       trivialsol = TRUE;
    }
@@ -1522,6 +1522,8 @@ SCIP_RETCODE GCGcreateMasterVar(
    }
    if( trivialsol )
    {
+      pricingvars = SCIPgetOrigVars(pricingscip);
+      npricingvars = SCIPgetNOrigVars(pricingscip);
       j = 0;
       for( i = 0; i < npricingvars; ++i )
       {
@@ -1545,9 +1547,9 @@ SCIP_RETCODE GCGcreateMasterVar(
          SCIP_CALL( GCGoriginalVarAddMasterVar(origscip, origvar, *newvar, 0.0) );
          j++;
       }
-      newvardata->data.mastervardata.norigvars = j;
    }
-   //assert(j == newvardata->data.mastervardata.norigvars);
+
+   assert(j == newvardata->data.mastervardata.norigvars);
 
    return SCIP_OKAY;
 }
