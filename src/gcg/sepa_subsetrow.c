@@ -275,6 +275,9 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS_alt(
    int        nmasterconsvars;
    int        i;
    int        j;
+   int        l;
+
+
 
    assert(masterscip != NULL);
 
@@ -362,6 +365,22 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS_alt(
             }
 
             varcoeff += (*weights)[i] * masterconscoeffs[j];
+
+            /* temp fix: if through the new addition the coefficient is re-set back to zero:
+             * - remove coefficient from non-zero coefficients */
+            if( varcoeff == 0.0 )
+            {
+               SCIPinfoMessage(masterscip, NULL, "var coefficient was re-set to zero: remove from non-zero indices\n");
+               for( l = 0; l < *nnonzeromastervardindices; l++ )
+               {
+                  if( (*nonzeromastervardindices)[l] == varindex )
+                  {
+                     (*nonzeromastervardindices)[l] = (*nonzeromastervardindices)[*nnonzeromastervardindices - 1];
+                     (*nnonzeromastervardindices)--;
+                     break;
+                  }
+               }
+            }
             (*mastervarcoeffs)[varindex] = varcoeff;
             SCIPdebugMessage("increase %s-coefficient to %f\n", SCIPvarGetName(masterconsvars[j]), varcoeff);
          }

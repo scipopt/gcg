@@ -1548,7 +1548,8 @@ SCIP_RETCODE GCGcreateMasterVar(
          j++;
       }
    }
-
+   if( j != newvardata->data.mastervardata.norigvars )
+      SCIPinfoMessage(scip, NULL, "j != norigvars\n");
    assert(j == newvardata->data.mastervardata.norigvars);
 
    return SCIP_OKAY;
