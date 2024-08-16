@@ -599,7 +599,7 @@ GCG_MASTERCUTDATA* createMastercutData(
       /* create (and capture) 'empty' pricing constraint: -inf <= ... <= 1 - EPSILON */
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pp%i_cons_ssrc_%i", j, sepadata->ngeneratedcut);
       SCIPcreateConsBasicLinear(pricingproblem, &pricingconss[0], name, 0, NULL, NULL, -SCIPinfinity(pricingproblem),
-                                1 - 0.00001); // released via GCGpricingmodificationFree
+                                1 - 0.0001); // released via GCGpricingmodificationFree
 
       /* fill constraint such that -inf <= w^TAx <= 1 - EPSILON */
       for( l = 0; l < npricingvars; l++ )
