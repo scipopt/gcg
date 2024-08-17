@@ -179,10 +179,11 @@ struct SCIP_RelaxData
 
    /* stashed limit settings */
    SCIP_Bool             limitsettingsstashed;   /**< are limit settings currently stashed? */
-   SCIP_Longint          stashednodelimit;       /**< stashed node limit for heuristic pricing */
-   SCIP_Longint          stashedstallnodelimit;  /**< stashed stalling node limit for heuristic pricing */
-   SCIP_Real             stashedgaplimit;        /**< stashed gap limit for heuristic pricing */
-   int                   stashedsollimit;        /**< stashed solution limit for heuristic pricing */
+   SCIP_Longint          stashednodelimit;       /**< stashed node limit */
+   SCIP_Longint          stashedstallnodelimit;  /**< stashed stalling node limit */
+   SCIP_Real             stashedgaplimit;        /**< stashed gap limit */
+   int                   stashedsollimit;        /**< stashed solution limit */
+   SCIP_Real             stashedtimelimit;       /**< stashed time limit */
 };
 
 
@@ -2534,8 +2535,6 @@ void resetRelaxdata(
    assert(relaxdata->relaxisinitialized == FALSE);
    relaxdata->simplexiters = 0;
    assert(relaxdata->rootnodetime == NULL);
-
-   relaxdata->limitsettingsstashed = FALSE;
 }
 
 /*
@@ -2634,6 +2633,7 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
 
    relaxdata->nbranchrules = 0;
    relaxdata->relaxisinitialized = FALSE;
+   relaxdata->limitsettingsstashed = FALSE;
 
    return SCIP_OKAY;
 }
@@ -2827,6 +2827,38 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
 }
 
 
+/** sets (time and gap) limits in the master problem based on limits of the original problem */
+static
+SCIP_RETCODE setMasterLimits(
+   SCIP*                 scip,               /**< the SCIP data structure */
+   SCIP*                 masterprob,         /**< the master problem SCIP instance */
+   SCIP_Real             origtimelimit,
+   SCIP_Real             origgaplimit
+   )
+{
+   SCIP_Real mastertimelimit = SCIPinfinity(scip);
+
+   if( masterprob == NULL )
+      masterprob = GCGgetMasterprob(scip);
+
+   if( !SCIPisInfinity(scip, origtimelimit) )
+   {
+      /* give the master 2% more time then the original scip has left */
+      mastertimelimit = (origtimelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(masterprob);
+
+      SCIPdebugMessage("  time limit for master: %f, left: %f, left for original problem: %f\n",
+            mastertimelimit,
+            mastertimelimit - SCIPgetSolvingTime(masterprob),
+            origtimelimit - SCIPgetSolvingTime(scip));
+   }
+   SCIP_CALL( SCIPsetRealParam(masterprob, "limits/time", mastertimelimit) );
+
+   /* set gap limit */
+   SCIP_CALL( SCIPsetRealParam(masterprob, "limits/gap", origgaplimit) );
+   return SCIP_OKAY;
+}
+
+
 /** method to solve the master problem that is used by Dantzig-Wolfe and Benders' decomposition */
 static
 SCIP_RETCODE solveMasterProblem(
@@ -2838,9 +2870,6 @@ SCIP_RETCODE solveMasterProblem(
    SCIP_RESULT*          result              /**< the result of the relaxation call */
    )
 {
-   SCIP_Real timelimit;
-   SCIP_Real memorylimit;
-
    assert(scip != NULL);
    assert(masterprob != NULL);
    assert(relaxdata != NULL);
@@ -2851,11 +2880,12 @@ SCIP_RETCODE solveMasterProblem(
    /* increase the node limit for the master problem by 1 */
    SCIP_CALL( SCIPsetLongintParam(masterprob, "limits/nodes", nodelimit) );
 
-
    /* loop to solve the master problem, this is a workaround and does not fix any problem */
    do
    {
-      SCIP_Real mastertimelimit = SCIPinfinity(scip);
+      SCIP_Real timelimit;
+      SCIP_Real memorylimit;
+      SCIP_Real gaplimit;
 
       /* set memorylimit for master */
       SCIP_CALL( SCIPgetRealParam(scip, "limits/memory", &memorylimit) );
@@ -2865,18 +2895,9 @@ SCIP_RETCODE solveMasterProblem(
       SCIP_CALL( SCIPsetRealParam(masterprob, "limits/memory", memorylimit) );
 
       SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &timelimit) );
-      if( !SCIPisInfinity(scip, timelimit) )
-      {
+      SCIP_CALL( SCIPgetRealParam(scip, "limits/gap", &gaplimit) );
 
-         /* give the master 2% more time then the original scip has left */
-         mastertimelimit = (timelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(masterprob);
-         SCIP_CALL( SCIPsetRealParam(masterprob, "limits/time", mastertimelimit) );
-
-         SCIPdebugMessage("  time limit for master: %f, left: %f, left for original problem: %f\n",
-               mastertimelimit,
-               mastertimelimit - SCIPgetSolvingTime(masterprob),
-               timelimit - SCIPgetSolvingTime(scip));
-      }
+      SCIP_CALL( setMasterLimits(scip, masterprob, timelimit, gaplimit) );
 
       /* if we have a blockdetection, see whether the node is block diagonal. Additionally, the solveDiagonalBlocks can
        * be called when the original problem is solved directly.
@@ -2903,7 +2924,7 @@ SCIP_RETCODE solveMasterProblem(
       }
 
       if( !SCIPisInfinity(scip, timelimit) && !SCIPisStopped(scip) )
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "time for master problem was too short, extending time by %f.\n", mastertimelimit - SCIPgetSolvingTime(masterprob));
+         SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "time for master problem was too short, extending time.\n");
    }
    while( !SCIPisStopped(scip) );
 
@@ -3243,7 +3264,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
     */
    if( GCGgetDecompositionMode(scip) == GCG_DECMODE_ORIGINAL )
    {
-      SCIP_CALL( GCGrestoreLimitSettings(scip) );
+      SCIP_CALL( GCGrestoreLimitSettings(scip, GCGgetMasterprob(scip)) );
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "There are no pricing problems in the decomposition. The original problem will be solved directly.\n");
       SCIP_CALL( relaxExecGcgOriginalProblem(scip, relax, lowerbound, result) );
    }
@@ -3253,7 +3274,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    }
    else if( relaxdata->mode == GCG_DECMODE_BENDERS )
    {
-      SCIP_CALL( GCGrestoreLimitSettings(scip) );
+      SCIP_CALL( GCGrestoreLimitSettings(scip, GCGgetMasterprob(scip)) );
       SCIP_CALL( relaxExecGcgBendersDecomposition(scip, relax, lowerbound, result) );
    }
    else
@@ -5147,7 +5168,7 @@ SCIP_RETCODE GCGpresolve(
    case SCIP_STAGE_PRESOLVING:
       if( GCGgetDecompositionMode(scip) == GCG_DECMODE_DANTZIGWOLFE )
       {
-         SCIP_CALL( GCGstashLimitSettings(scip) );
+         SCIP_CALL( GCGstashLimitSettings(scip, GCGgetMasterprob(scip)) );
       }
       SCIP_CALL( SCIPpresolve(scip) );
       SCIP_CALL( GCGconshdlrDecompTranslateOrigPartialdecs(scip) );
@@ -5311,7 +5332,7 @@ SCIP_RETCODE GCGsolve(
       case SCIP_STAGE_SOLVING:
          if( GCGgetDecompositionMode(scip) == GCG_DECMODE_DANTZIGWOLFE && SCIPgetNNodes(scip) == 0 )
          {
-            SCIP_CALL( GCGstashLimitSettings(scip) );
+            SCIP_CALL( GCGstashLimitSettings(scip, GCGgetMasterprob(scip)) );
          }
          SCIP_CALL( SCIPsolve(scip) );
          exit = TRUE;
@@ -5447,7 +5468,8 @@ SCIP_RETCODE GCGinitializeMasterProblemSolve(
 }
 
 SCIP_RETCODE GCGstashLimitSettings(
-   SCIP*                 scip
+   SCIP*                 scip,
+   SCIP*                 masterprob
    )
 {
    SCIP_RELAXDATA* relaxdata;
@@ -5465,18 +5487,23 @@ SCIP_RETCODE GCGstashLimitSettings(
       SCIP_CALL( SCIPgetLongintParam(scip, "limits/stallnodes", &relaxdata->stashedstallnodelimit) );
       SCIP_CALL( SCIPgetRealParam(scip, "limits/gap", &relaxdata->stashedgaplimit) );
       SCIP_CALL( SCIPgetIntParam(scip, "limits/solutions", &relaxdata->stashedsollimit) );
+      SCIP_CALL( SCIPgetRealParam(scip, "limits/time", &relaxdata->stashedtimelimit) );
 
       SCIPresetParam(scip, "limits/nodes");
       SCIPresetParam(scip, "limits/stallnodes");
       SCIPresetParam(scip, "limits/gap");
       SCIPresetParam(scip, "limits/solutions");
+      SCIPresetParam(scip, "limits/time");
+      SCIPresetParam(masterprob, "limits/gap");
+      SCIPresetParam(masterprob, "limits/time");
    }
 
    return SCIP_OKAY;
 }
 
 SCIP_RETCODE GCGrestoreLimitSettings(
-   SCIP*                 scip
+   SCIP*                 scip,
+   SCIP*                 masterprob
    )
 {
    SCIP_RELAXDATA* relaxdata;
@@ -5494,6 +5521,9 @@ SCIP_RETCODE GCGrestoreLimitSettings(
       SCIP_CALL( SCIPsetLongintParam(scip, "limits/stallnodes", relaxdata->stashedstallnodelimit) );
       SCIP_CALL( SCIPsetRealParam(scip, "limits/gap", relaxdata->stashedgaplimit) );
       SCIP_CALL( SCIPsetIntParam(scip, "limits/solutions", relaxdata->stashedsollimit) );
+      SCIP_CALL( SCIPsetRealParam(scip, "limits/time", relaxdata->stashedtimelimit) );
+
+      SCIP_CALL( setMasterLimits(scip, masterprob, relaxdata->stashedtimelimit, relaxdata->stashedgaplimit) );
    }
 
    return SCIP_OKAY;

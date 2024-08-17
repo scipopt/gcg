@@ -233,8 +233,6 @@ SCIP_RETCODE createBranchNodesInOrigprob(
 
    *result = SCIP_DIDNOTRUN;
 
-   GCGrestoreLimitSettings(scip);
-
    /* get master problem */
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
@@ -244,6 +242,8 @@ SCIP_RETCODE createBranchNodesInOrigprob(
       *result = SCIP_CUTOFF;
       return SCIP_OKAY;
    }
+
+   GCGrestoreLimitSettings(scip, masterscip);
 
    /* get masterbranch constraint at the current node */
    masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);

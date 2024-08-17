@@ -128,13 +128,23 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
       /* check whether the current node is the root node and has no parent */
       if( parentorigcons == NULL )
       {
-         assert(SCIPgetRootNode(origscip) == orignode);
-         assert((GCGconsOrigbranchGetNode(origcons) == SCIPgetRootNode(origscip)) || ( GCGconsOrigbranchGetNode(origcons) == NULL) );
-         assert(GCGconsOrigbranchGetMastercons(origcons) != NULL);
-         assert((GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == SCIPgetRootNode(scip)) || (GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == NULL));
+         if( SCIPgetRootNode(origscip) == orignode )
+         {
+            assert((GCGconsOrigbranchGetNode(origcons) == SCIPgetRootNode(origscip)) || ( GCGconsOrigbranchGetNode(origcons) == NULL) );
+            assert(GCGconsOrigbranchGetMastercons(origcons) != NULL);
+            assert((GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == SCIPgetRootNode(scip)) || (GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == NULL));
 
-         *selnode = SCIPgetRootNode(scip);
-         SCIPdebugMessage("selected root node in the master program\n");
+            *selnode = SCIPgetRootNode(scip);
+            SCIPdebugMessage("selected root node in the master program\n");
+            SCIP_CALL( GCGrestoreLimitSettings(origscip, scip) );
+         }
+         else
+         {
+            SCIP_NODE* child;
+            /* create dummy node that was created by SCIP in the original problem because solving was interrupted */
+            SCIPcreateChild(scip, &child, 0.0, SCIPgetLocalTransEstimate(scip));
+            *selnode = child;
+         }
       }
       else
       {

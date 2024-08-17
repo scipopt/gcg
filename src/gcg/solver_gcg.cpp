@@ -498,7 +498,7 @@ SCIP_RETCODE solveProblem(
 #endif
 #endif
 
-      SCIP_CALL( GCGstashLimitSettings(subgcg) );
+      SCIP_CALL( GCGstashLimitSettings(subgcg, GCGgetMasterprob(subgcg)) );
       SCIP_CALL( SCIPpresolve(subgcg) );
       GCGconshdlrDecompTranslateNBestOrigPartialdecs(subgcg, 1, TRUE, solverdata->translatesymmetry[probnr]);
 
