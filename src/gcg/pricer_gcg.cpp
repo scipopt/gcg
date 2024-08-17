@@ -4267,7 +4267,10 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
          pricerdata->realdualvalues[i] = NULL;
          pricerdata->maxrealdualvalues[i] = 0;
          pricerdata->pricingprobs[i] = NULL;
-         pricerdata->nnoninferredpricingvars[i] = 0;
+         if( GCGisPricingprobRelevant(origprob, i) != NULL )
+            pricerdata->nnoninferredpricingvars[i] = SCIPgetNVars(pricerdata->pricingprobs[i]);
+         else
+            pricerdata->nnoninferredpricingvars[i] = 0;
       }
       pricerdata->npointsprob[i] = 0;
       pricerdata->nraysprob[i] = 0;
