@@ -64,7 +64,7 @@
 #define DEFAULT_MAXROUNDSROOT         2 /**< maximal number of subset row separation calls in the root node */
 #define DEFAULT_MAXSEPACUTS         100 /**< maximal number of subset row cuts separated per call in non-root nodes */
 #define DEFAULT_MAXSEPACUTSROOT     200 /**< maximal number of subset row cuts separated per call in root node */
-#define DEFAULT_MAXCUTCANDS         1500 /**< maximal number of subset row cuts in total */
+#define DEFAULT_MAXCUTCANDS        1500 /**< maximal number of subset row cuts in total */
 #define DEFAULT_ONLYROOT          FALSE /**< only apply separator in root node */
 #define DEFAULT_STRATEGY              0 /**< strategy which is used to determine which rows to consider for cut computation */
 #define DEFAULT_N                     3 /**< number of rows used to create a new cut */
@@ -532,11 +532,12 @@ SCIP_RETCODE createCut(
    int            i;
 
    assert(masterscip != NULL);
-
+   nnonzerocoeffs = 0;
    /* determine the master variables, their coefficients and rhs for subset row (non-rounded) */
    SCIP_CALL( SCIPhashmapCreate(&mapmastervarxcoeff, SCIPblkmem(masterscip), nmastervars) );
    SCIP_CALL( computeSubsetRowCoefficientsAndRHS_alt(masterscip, masterconss, cutindex->indices, cutindex->nindices,
                                                      weights, &rhs_ssrc, mapmastervarxcoeff, &nnonzerocoeffs) );
+   SCIPdebugMessage("nnonzerocoeffs: %i, maxaggr: %i\n", nnonzerocoeffs, maxaggr);
    /* create the subset row cut */
    if( nnonzerocoeffs < maxaggr )
    {
