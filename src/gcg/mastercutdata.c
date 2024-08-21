@@ -26,7 +26,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    mastercutdata.c
- * @ingroup TODO-????
  * @brief   methods for interacting with GCG_MASTERCUTDATA
  * @author  Til Mohr
  */
@@ -53,12 +52,6 @@
 #include <scip/struct_mem.h>
 #include <scip/struct_var.h>
 #include <scip/type_scip.h>
-
-/**
- * @ingroup TODO-????
- *
- * @{
- */
 
 /** free a pricing modification */
 static

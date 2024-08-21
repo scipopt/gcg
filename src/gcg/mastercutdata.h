@@ -26,7 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    mastercutdata.h
- * @ingroup TODO-????
+ * @ingroup PUBLICCOREAPI
  * @brief   methods for interacting with GCG_MASTERCUTDATA
  * @author  Til Mohr
  */
@@ -49,9 +49,8 @@
 extern "C" {
 #endif
 
-/**
- * @ingroup TODO-????
- *
+/**@defgroup GCG_MASTERCUTDATA GCG Generic Mastercut Data
+ * @ingroup DATASTRUCTURES
  * @{
  */
 

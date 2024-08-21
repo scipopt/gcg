@@ -25,10 +25,19 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   branch_compbnd.c
+/**@file    branch_compbnd.h
  *
- * @brief  component bound branching rule
- * @author Til Mohr
+ * @brief   component bound branching rule
+ * @author  Til Mohr
+ *
+ * This is an implementation of the component bound branching rule based on the papers:
+ *
+ * J. Desrosiers, M. L¨ubbecke, G. Desaulniers,
+ * J. B. Gauthier (Juin 2024). Branch-and-Price, Technical report,
+ * Les Cahiers du GERAD G–2024–36, GERAD, HEC Montr´eal, Canada.
+ *
+ * Vanderbeck, François, and Laurence A. Wolsey. "An exact algorithm for IP column generation."
+ * Operations research letters 19.4 (1996): 151-159.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

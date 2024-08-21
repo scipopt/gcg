@@ -26,6 +26,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    misc_varhistory.h
+ * @ingroup INTERNALAPI-GCG
  * @brief   methods for managing variable history
  * @author  Til Mohr
  */
