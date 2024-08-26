@@ -367,17 +367,17 @@ SCIP_RETCODE GCGsolverSolve(
    {
       if( redcost )
          if( heuristic )
-            #pragma omp atomic
+            #pragma omp atomic update
             ++solver->heurredcostcalls;
          else
-            #pragma omp atomic
+            #pragma omp atomic update
             ++solver->optredcostcalls;
       else
          if( heuristic )
-            #pragma omp atomic
+            #pragma omp atomic update
             ++solver->heurfarkascalls;
          else
-            #pragma omp atomic
+            #pragma omp atomic update
             ++solver->optfarkascalls;
    }
 

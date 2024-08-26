@@ -2652,12 +2652,12 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
 
    if( !heuristic )
    {
-      #pragma omp atomic
+      #pragma omp atomic update
       pricerdata->solvedsubmipsoptimal++;
    }
    else
    {
-      #pragma omp atomic
+      #pragma omp atomic update
       pricerdata->solvedsubmipsheur++;
    }
 
@@ -2669,7 +2669,7 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
    /* @todo: This should actually be a MIP solver specific statistic */
    if( SCIPgetStage(pricingscip) > SCIP_STAGE_SOLVING )
    {
-      #pragma omp atomic
+      #pragma omp atomic update
       pricerdata->pricingiters += SCIPgetNLPIterations(pricingscip);
    }
 
@@ -2733,8 +2733,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIP_Bool enableppcuts;
    SCIP_Bool enablestab;
    int nsuccessfulprobs;
-   int maxniters;
-   int niters;
    int i;
    int j;
    int nfoundvars;
@@ -2768,8 +2766,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    optimal = FALSE;
    if( lowerbound != NULL )
       *lowerbound = -SCIPinfinity(scip_);
-
-   maxniters = pricingcontroller->getMaxNIters();
 
    // disable colpool while probing mode is active (can be removed after a feasibility check (#586) is implemented)
    probingnode = (SCIPnodeGetType(SCIPgetCurrentNode(scip_)) == SCIP_NODETYPE_PROBINGNODE);
@@ -2836,8 +2832,8 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    nstabrounds = 0;
 #endif
 
-   SCIPdebugMessage("***** New pricing round at node %" SCIP_LONGINT_FORMAT " (depth = %d), maxniters = %d\n",
-      SCIPgetNNodes(scip_), SCIPnodeGetDepth(SCIPgetCurrentNode(scip_)), maxniters);
+   SCIPdebugMessage("***** New pricing round at node %" SCIP_LONGINT_FORMAT " (depth = %d)\n",
+      SCIPgetNNodes(scip_), SCIPnodeGetDepth(SCIPgetCurrentNode(scip_)));
 
    /* stabilization loop */
    do
@@ -2927,13 +2923,13 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       nthreads = 1;
 #endif
 
+      assert(!infeasible);
       /* actual pricing loop: perform the pricing jobs until none are left or an abortion criterion is met */
-      niters = 0;
-      #pragma omp parallel default(none) shared(niters, nthreads, maxniters, retcode, pricetype, nfoundvars, nsuccessfulprobs, infeasible, stabilized) num_threads(nthreads)
+      #pragma omp parallel default(none) shared(nthreads, retcode, pricetype, nfoundvars, nsuccessfulprobs, stabilized) num_threads(nthreads)
       #pragma omp single
       for( int t = 0; t < nthreads; ++t)
       {
-         #pragma omp task default(none) shared(niters, maxniters, retcode, pricetype, nfoundvars, nsuccessfulprobs, infeasible, stabilized)
+         #pragma omp task default(none) shared(retcode, pricetype, nfoundvars, nsuccessfulprobs, stabilized)
          while( TRUE )
          {
             GCG_PRICINGJOB* pricingjob;
@@ -2946,30 +2942,24 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             int oldimpcols;
             int _nfoundvars;
             int _nsuccessfulprobs;
-            SCIP_Bool stop = FALSE;
             int iter;
 
             #pragma omp atomic read
             private_retcode = retcode;
-            #pragma omp atomic capture
-            iter = niters++;
 
-            if( iter >= maxniters || private_retcode != SCIP_OKAY )
-               stop = TRUE;
-
-            if( stop )
+            if( private_retcode != SCIP_OKAY )
                break;
 
             #pragma omp atomic read
             _nfoundvars = nfoundvars;
             #pragma omp atomic read
             _nsuccessfulprobs = nsuccessfulprobs;
-            if( (pricingcontroller->canPricingloopBeAborted(pricetype, _nfoundvars, _nsuccessfulprobs) || infeasible) && !stabilized )
+            if( pricingcontroller->canPricingloopBeAborted(pricetype, _nfoundvars, _nsuccessfulprobs) && !stabilized )
             {
 #ifdef SCIP_DEBUG
                #pragma omp critical (debug)
                {
-                  SCIPdebugMessage("*** Abort pricing loop, infeasible = %u, stabilized = %u\n", infeasible, stabilized);
+                  SCIPdebugMessage("*** Abort pricing loop, stabilized = %u\n", stabilized);
                }
 #endif
                break;
@@ -3033,8 +3023,11 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             pricingcontroller->updatePricingprob(pricingprob, status, problowerbound, impcols);
 
             /* update solving statistics, needed for checking the abortion criterion */
-            #pragma omp aotmic write
-            retcode = private_retcode; // @todo: handle return code correctly
+            if( private_retcode != SCIP_OKAY )
+            {
+               #pragma omp aotmic write
+               retcode = private_retcode; // @todo: handle return code correctly
+            }
 
             #pragma omp atomic update
             nfoundvars += impcols;
