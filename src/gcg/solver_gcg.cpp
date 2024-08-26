@@ -78,7 +78,7 @@
 #define DEFAULT_GAPLIMITFAC          0.8     /**< factor by which to decrease gap limit for heuristic pricing */
 #define DEFAULT_SOLLIMITFAC          1.5     /**< factor by which to increase solution limit for heuristic pricing */
 #define DEFAULT_SETTINGSFILE         "-"     /**< settings file to be applied in pricing problems */
-#define DEFAULT_PRESOL_MAX_ROUNDS    -1      /**< default maximal number of presolving rounds */
+#define DEFAULT_PRESOL_MAX_ROUNDS    0       /**< default maximal number of presolving rounds */
 
 /*
  * Data structures
