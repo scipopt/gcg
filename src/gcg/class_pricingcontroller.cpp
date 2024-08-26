@@ -631,13 +631,9 @@ SCIP_Bool Pricingcontroller::canPricingloopBeAborted(
    ) const
 {
    int nrelpricingprobs = GCGgetNRelPricingprobs(GCGmasterGetOrigprob(scip_));
-   int _eagerage;
    int _nsolvedprobs;
 
-   #pragma omp atomic read
-   _eagerage = eagerage;
-
-   if( _eagerage == eagerfreq )
+   if( eagerage == eagerfreq )
       return FALSE;
 
    #pragma omp atomic read
@@ -658,7 +654,6 @@ void Pricingcontroller::increaseEagerage()
 {
    if( eagerfreq > 0 )
    {
-      #pragma omp atomic update
       eagerage++;
    }
 }

@@ -64,16 +64,20 @@ SCIP_RETCODE pqueueResize(
    )
 {
    int newsize;
+   SCIP_RETCODE retcode = SCIP_OKAY;
    assert(pqueue != NULL);
 
    if( minsize <= pqueue->size )
-      return SCIP_OKAY;
+      return retcode;
 
    newsize = SCIPcalcMemGrowSize(pqueue->scip, minsize);
-   SCIP_CALL( SCIPreallocBlockMemoryArray(pqueue->scip, &pqueue->slots, pqueue->size, newsize) );
+   #pragma omp critical (memory)
+   {
+      retcode = SCIPreallocBlockMemoryArray(pqueue->scip, &pqueue->slots, pqueue->size, newsize);
+   }
    pqueue->size = newsize;
 
-   return SCIP_OKAY;
+   return retcode;
 }
 
 /** heapifies element at position pos into corresponding subtrees */
