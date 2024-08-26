@@ -44,8 +44,7 @@ extern "C" {
 
 GCG_EXPORT
 SCIP_RETCODE GCGincludeMasterPlugins(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Bool             subgcg
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 #ifdef __cplusplus

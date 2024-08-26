@@ -196,8 +196,7 @@
 
 /** includes default GCG master plugins */
 SCIP_RETCODE GCGincludeMasterPlugins(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Bool             subgcg
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_CALL( SCIPincludeDialogMaster(scip) );
@@ -347,8 +346,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( GCGincludeSolverCplex(scip) );
 #endif
 
-   if (subgcg)
-      SCIP_CALL( GCGincludeSolverGcg(scip) );
+   SCIP_CALL( GCGincludeSolverGcg(scip) );
 
    /* include masterbranch constraint handler */
    SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );

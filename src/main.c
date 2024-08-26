@@ -413,7 +413,7 @@ SCIP_RETCODE SCIPrunGCGShell(
 
 
    /* include coloring plugins */
-   SCIP_CALL( SCIPincludeGcgPlugins(scip, TRUE) );
+   SCIP_CALL( SCIPincludeGcgPlugins(scip) );
 
    /**********************************
     * Process command line arguments *

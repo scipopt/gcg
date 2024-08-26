@@ -46,8 +46,7 @@ extern "C" {
 /** includes default SCIP plugins into SCIP */
 GCG_EXPORT
 SCIP_RETCODE SCIPincludeGcgPlugins(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Bool             subgcg
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 #ifdef __cplusplus

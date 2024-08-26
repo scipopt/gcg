@@ -64,7 +64,7 @@
 #define SOLVER_DESC          "gcg solver for pricing problems"
 #define SOLVER_PRIORITY      100
 
-#define SOLVER_ENABLED      TRUE  /**< indicates whether the solver should be enabled */
+#define SOLVER_ENABLED      TRUE  /**< indicates whether the exact solving method of the solver should be enabled */
 #define SOLVER_HEU_ENABLED  TRUE  /**< indicates whether the heuristic solving method of the solver should be enabled */
 
 #define DEFAULT_MAX_RECURSION_DEPTH  0
@@ -78,6 +78,7 @@
 #define DEFAULT_GAPLIMITFAC          0.8     /**< factor by which to decrease gap limit for heuristic pricing */
 #define DEFAULT_SOLLIMITFAC          1.5     /**< factor by which to increase solution limit for heuristic pricing */
 #define DEFAULT_SETTINGSFILE         "-"     /**< settings file to be applied in pricing problems */
+#define DEFAULT_PRESOL_MAX_ROUNDS    -1      /**< default maximal number of presolving rounds */
 
 /*
  * Data structures
@@ -104,6 +105,7 @@ struct GCG_SolverData
    SCIP_Real               gaplimitfac;         /**< factor by which to decrease gap limit for heuristic pricing */
    SCIP_Real               sollimitfac;         /**< factor by which to increase solution limit for heuristic pricing */
    char*                   settingsfile;        /**< settings file to be applied in pricing problems */
+   int                     presolmaxrounds;     /**< maximal number of presolving rounds */
 
    SCIP_Longint*           curnodelimit;        /**< current node limit per pricing problem */
    SCIP_Longint*           curstallnodelimit;   /**< current stalling node limit per pricing problem */
@@ -128,15 +130,36 @@ struct GCG_SolverData
  */
 
 static
-void solverGcgSetDepth(GCG_SOLVER* solver, int depth)
+void solverGcgPrepareNestedSolver(
+   GCG_SOLVERDATA*       solverdata,         /**< (outer) solver data structure */
+   GCG_SOLVER*           nestedsolver        /**< nested GCG solver */
+   )
 {
-   GCG_SOLVERDATA* solverdata;
-   solverdata = GCGsolverGetData(solver);
-   solverdata->depth = depth;
+   GCG_SOLVERDATA* nestedsolverdata;
+   nestedsolverdata = GCGsolverGetData(nestedsolver);
+   nestedsolverdata->depth = solverdata->depth + 1;
+   nestedsolverdata->maxdepth = solverdata->maxdepth;
+   nestedsolverdata->presolmaxrounds = solverdata->presolmaxrounds;
+   // @todo: maybe we should use SCIP's setParam methods
+   SCIPfreeMemoryArrayNull(nestedsolverdata->origprob, &nestedsolverdata->settingsfile);
+   SCIPduplicateMemoryArray(nestedsolverdata->origprob, &nestedsolverdata->settingsfile, solverdata->settingsfile, strlen(solverdata->settingsfile)+1);
+   nestedsolverdata->checksols = solverdata->checksols;
+   nestedsolverdata->gaplimitfac = solverdata->gaplimitfac;
+   nestedsolverdata->nodelimitfac = solverdata->nodelimitfac;
+   nestedsolverdata->sollimitfac = solverdata->sollimitfac;
+   nestedsolverdata->stallnodelimitfac = solverdata->stallnodelimitfac;
+   nestedsolverdata->startgaplimit = solverdata->startgaplimit;
+   nestedsolverdata->startnodelimit = solverdata->startnodelimit;
+   nestedsolverdata->startsollimit = solverdata->startsollimit;
+   nestedsolverdata->startstallnodelimit = solverdata->startstallnodelimit;
 }
 
 static
-SCIP_RETCODE adjustSettings(SCIP* pricingprob, SCIP* subgcg)
+SCIP_RETCODE adjustSettings(
+   GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
+   SCIP*                 pricingprob,        /**< pricing problem */
+   SCIP*                 subgcg              /**< subgcg data structure */
+   )
 {
    SCIP_Real infinity;
    SCIP_Real epsilon;
@@ -194,15 +217,11 @@ SCIP_RETCODE adjustSettings(SCIP* pricingprob, SCIP* subgcg)
    SCIP_CALL( SCIPsetRealParam(subgcg, "numerics/lpfeastolfactor", lpfeastolfactor) );
    SCIP_CALL( SCIPsetRealParam(subgcg, "numerics/dualfeastol", dualfeastol) );
 
-   // we disable presolving by default (can be enabled using a settings file)
-   SCIP_CALL( SCIPsetIntParam(subgcg, "presolving/maxrounds", 0) );
+   // set presolving param according to settings
+   SCIP_CALL( SCIPsetIntParam(subgcg, "presolving/maxrounds", solverdata->presolmaxrounds) );
 
 #ifndef NO_AUT_LIB
    SCIP_CALL( SCIPsetBoolParam(subgcg, "relaxing/gcg/aggregation/usesymmetrylib", FALSE) );
-#endif
-
-#ifdef _OPENMP
-   SCIP_CALL( SCIPsetIntParam(subgcg, "pricing/masterpricer/nthreads", 1) );
 #endif
 
    return SCIP_OKAY;
@@ -235,14 +254,14 @@ SCIP_Bool buildProblem(
    SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
    SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/printreason", FALSE) );
 
-   SCIP_CALL( SCIPincludeGcgPlugins(subgcg, (SCIP_Bool)(solverdata->depth + 1 < solverdata->maxdepth)) );
+   SCIP_CALL( SCIPincludeGcgPlugins(subgcg) );
    (void)SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_subgcg", SCIPgetProbName(pricingprob) );
 
    SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(subgcg), SCIPgetNOrigVars(pricingprob)) );
    solverdata->varmaps[probnr] = varmap;
    solverdata->nbasicpricingconss[probnr] = SCIPgetNOrigConss(pricingprob);
 
-   SCIP_CALL( adjustSettings(pricingprob, subgcg) );
+   SCIP_CALL( adjustSettings(solverdata, pricingprob, subgcg) );
 
    if( strcmp(solverdata->settingsfile, "-") != 0 )
    {
@@ -267,7 +286,7 @@ SCIP_Bool buildProblem(
       childsolver = pricer->getSolvers()[i];
       if (strcmp(childsolver->name, SOLVER_NAME) == 0)
       {
-          solverGcgSetDepth(childsolver, solverdata->depth + 1);
+          solverGcgPrepareNestedSolver(solverdata, childsolver);
           break;
       }
    }
@@ -472,6 +491,19 @@ SCIP_RETCODE solveProblem(
 
    #pragma omp atomic update
    solverdata->count++;
+
+#ifdef _OPENMP
+   int nthreads = GCGpricerGetNPricingThreads(solverdata->masterprob);
+   if( nthreads == 0 )
+      nthreads = omp_get_max_threads();
+   else
+      nthreads = MIN(nthreads, omp_get_max_threads());
+   nthreads = (int) MAX(nthreads / GCGgetNRelPricingprobs(solverdata->origprob), 1);
+   if( GCGpricerGetNPricingThreads(GCGgetMasterprob(subgcg)) != nthreads )
+   {
+      SCIP_CALL( SCIPsetIntParam(subgcg, "pricing/masterpricer/nthreads", nthreads) );
+   }
+#endif
 
    // set time limit
    SCIP_CALL( SCIPgetRealParam(pricingprob, "limits/time", &timelimit) );
@@ -724,7 +756,10 @@ GCG_DECL_SOLVERINITSOL(solverInitsolGcg)
 
    if (solverdata->depth >= solverdata->maxdepth)
    {
+      assert(solverdata->origprob != NULL);
       SCIPdebugMessage("GCG Solver is disabled (depth %i)!\n", solverdata->depth);
+      SCIP_CALL( SCIPsetBoolParam(solverdata->origprob, "pricingsolver/gcg/exactenabled", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(solverdata->origprob, "pricingsolver/gcg/heurenabled", FALSE) );
       return SCIP_OKAY;
    }
 
@@ -1028,7 +1063,7 @@ SCIP_RETCODE GCGincludeSolverGcg(
          solverInitsolGcg, solverExitsolGcg, solverdata) );
 
    /* add gcg propagator parameters */
-   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/recursivedecomp/maxdepth",
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/gcg/maxdepth",
          "maximal recursive decomposition depth",
          &solverdata->maxdepth, FALSE, DEFAULT_MAX_RECURSION_DEPTH, 0, INT_MAX, NULL, NULL) );
 
@@ -1071,6 +1106,10 @@ SCIP_RETCODE GCGincludeSolverGcg(
    SCIP_CALL( SCIPaddStringParam(origprob, "pricingsolver/gcg/settingsfile",
       "settings file for pricing problems",
       &solverdata->settingsfile, TRUE, DEFAULT_SETTINGSFILE, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/gcg/presolmaxrounds",
+         "maximal number of presolving rounds (-1: unlimited, 0: off, will be overwritten by a settings file)",
+         &solverdata->presolmaxrounds, FALSE, DEFAULT_PRESOL_MAX_ROUNDS, -1, INT_MAX, NULL, NULL) );
 
    return SCIP_OKAY;
 }

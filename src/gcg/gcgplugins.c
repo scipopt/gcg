@@ -310,8 +310,7 @@
 
 /** includes default plugins for generic column generation into SCIP */
 SCIP_RETCODE SCIPincludeGcgPlugins(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Bool             subgcg
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
    SCIP_CALL( SCIPincludeDialogGcg(scip) );
@@ -475,7 +474,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludeCutselHybrid(scip) );
 
-   SCIP_CALL( SCIPincludeRelaxGcg(scip, subgcg) );
+   SCIP_CALL( SCIPincludeRelaxGcg(scip) );
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
    SCIP_CALL( GCGincludeReaderDec(scip) );
    SCIP_CALL( SCIPincludeReaderRef(scip) );
