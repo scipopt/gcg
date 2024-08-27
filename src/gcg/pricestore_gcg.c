@@ -50,6 +50,10 @@
 #include "struct_pricestore_gcg.h"
 #include "pricer_gcg.h"
 
+#ifdef _OPENMP
+#include "struct_locks.h"
+#endif
+
 /*
  * dynamic memory arrays
  */
@@ -71,16 +75,17 @@ SCIP_RETCODE pricestoreEnsureColsMem(
       int newsize;
 
       newsize = SCIPcalcMemGrowSize(pricestore->scip, num);
-      #pragma omp critical (memory)
-      {
-         retcode = SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->cols[arrayindex], pricestore->colssize[arrayindex], newsize);
-         if( retcode == SCIP_OKAY )
-            retcode = SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->objparallelisms[arrayindex], pricestore->colssize[arrayindex], newsize);
-         if( retcode == SCIP_OKAY )
-            retcode = SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->orthogonalities[arrayindex], pricestore->colssize[arrayindex], newsize);
-         if( retcode == SCIP_OKAY )
-            retcode = SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->scores[arrayindex], pricestore->colssize[arrayindex], newsize);
-      }
+
+      GCG_SET_LOCK(&pricestore->locks->memorylock);
+      retcode = SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->cols[arrayindex], pricestore->colssize[arrayindex], newsize);
+      if( retcode == SCIP_OKAY )
+         retcode = SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->objparallelisms[arrayindex], pricestore->colssize[arrayindex], newsize);
+      if( retcode == SCIP_OKAY )
+         retcode = SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->orthogonalities[arrayindex], pricestore->colssize[arrayindex], newsize);
+      if( retcode == SCIP_OKAY )
+         retcode = SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->scores[arrayindex], pricestore->colssize[arrayindex], newsize);
+      GCG_UNSET_LOCK(&pricestore->locks->memorylock);
+
       SCIP_CALL(retcode);
       pricestore->colssize[arrayindex] = newsize;
    }
@@ -103,7 +108,8 @@ int pricestoreGetArrayIndex(
 
 /** creates price storage */
 SCIP_RETCODE GCGpricestoreCreate(
-   SCIP*                 scip,                /**< SCIP data structure */
+   SCIP*                 scip,                /**< SCIP data structure (master problem) */
+   SCIP*                 origscip,            /**< SCIP data structure (original problem) */
    GCG_PRICESTORE**      pricestore,          /**< pointer to store price storage */
    SCIP_Real             efficiacyfac,          /**< factor of -redcost/norm in score function */
    SCIP_Real             objparalfac,         /**< factor of objective parallelism in score function */
@@ -133,6 +139,10 @@ SCIP_RETCODE GCGpricestoreCreate(
    (*pricestore)->mincolorth = mincolorth;       /* minimal orthogonality of columns to add
                                                       (with respect to columns added in the current round) */
    (*pricestore)->efficiacychoice = efficiacychoice;
+
+#ifdef _OPENMP
+   (*pricestore)->locks = GCGgetLocks(origscip);
+#endif
 
    SCIP_CALL( SCIPhashtableCreate(&(*pricestore)->hashtable, SCIPblkmem(scip),
          hashtablesize, GCGhashGetKeyCol, GCGhashKeyEqCol, GCGhashKeyValCol, (void*)pricestore) );
@@ -336,10 +346,9 @@ SCIP_RETCODE GCGpricestoreAddCol(
          colobjparallelism = 0.0; /* no need to calculate it */
    }
 
-   #pragma omp critical (hashtable)
-   {
-      oldpos = pricestoreFindEqualCol(pricestore, col);
-   }
+   GCG_SET_LOCK(&pricestore->locks->pricestorelock);
+   oldpos = pricestoreFindEqualCol(pricestore, col);
+   GCG_UNSET_LOCK(&pricestore->locks->pricestorelock);
 
    pos = -1;
 
@@ -435,11 +444,13 @@ SCIP_RETCODE GCGpricestoreAddCol(
       pricestore->scores[arrayindex][pos] = colscore;
       assert(col->pos == -1);
       col->pos = pos;
-      #pragma omp critical (hashtable)
-      {
-         #pragma omp critical (memory)
-         SCIPhashtableInsert(pricestore->hashtable, col);
-      }
+
+      GCG_SET_LOCK(&pricestore->locks->pricestorelock);
+      GCG_SET_LOCK(&pricestore->locks->memorylock);
+      SCIPhashtableInsert(pricestore->hashtable, col);
+      GCG_UNSET_LOCK(&pricestore->locks->memorylock);
+      GCG_UNSET_LOCK(&pricestore->locks->pricestorelock);
+
       *added = TRUE;
    }
    else

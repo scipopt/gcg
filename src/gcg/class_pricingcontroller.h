@@ -42,6 +42,7 @@
 #include "type_pricingjob.h"
 #include "type_pricingprob.h"
 #include "objscip/objscip.h"
+#include "type_locks.h"
 
 namespace gcg {
 
@@ -55,6 +56,7 @@ class Pricingcontroller
 
 private:
    SCIP*                 scip_;              /**< SCIP instance (master problem) */
+   SCIP*                 origprob;           /**< SCIP instance (original problem) */
    GCG_PRICINGPROB**     pricingprobs;       /**< pricing problems */
    int                   npricingprobs;      /**< number of pricing problems */
    int                   maxpricingprobs;    /**< capacity of pricingprobs */
@@ -83,13 +85,20 @@ private:
    int                   eagerage;           /**< iterations since last eager iteration */
    int                   nsolvedprobs;       /**< number of completely solved pricing problems during the current pricing loop */
 
+#ifdef _OPENMP
+   GCG_LOCKS*            locks;              /**< OpenMP locks */
+#endif
+
 
 public:
    /** default constructor */
    Pricingcontroller();
 
    /** constructor */
-   Pricingcontroller(SCIP* scip);
+   Pricingcontroller(
+      SCIP* scip,
+      SCIP* origprob
+      );
 
    /** destructor */
    virtual ~Pricingcontroller();

@@ -49,6 +49,10 @@
 #include "scip/scip.h"
 #include "objscip/objscip.h"
 
+#ifdef _OPENMP
+#include "struct_locks.h"
+#endif
+
 #include <exception>
 
 #define DEFAULT_HEURPRICINGITERS         1          /**< maximum number of heuristic pricing iterations per pricing call and problem */
@@ -78,10 +82,12 @@
 namespace gcg {
 
 Pricingcontroller::Pricingcontroller(
-   SCIP*                  scip
+   SCIP*                  scip,
+   SCIP*                  origprob
    )
 {
    scip_ = scip;
+   this->origprob = origprob;
    pricingprobs = NULL;
    npricingprobs = 0;
    pricingjobs = NULL;
@@ -101,6 +107,10 @@ Pricingcontroller::Pricingcontroller(
 
    eagerage = 0;
    nsolvedprobs = 0;
+
+#ifdef _OPENMP
+   locks = GCGgetLocks(origprob);
+#endif
 }
 
 Pricingcontroller::~Pricingcontroller()
@@ -109,8 +119,6 @@ Pricingcontroller::~Pricingcontroller()
 
 SCIP_RETCODE Pricingcontroller::addParameters()
 {
-   SCIP* origprob = GCGmasterGetOrigprob(scip_);
-
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/heurpricingiters",
          "maximum number of heuristic pricing iterations per pricing call and problem",
          &heurpricingiters, FALSE, DEFAULT_HEURPRICINGITERS, 0, INT_MAX, NULL, NULL) );
@@ -269,7 +277,6 @@ SCIP_Bool Pricingcontroller::pricingprobNeedsNextBranchingcons(
 
 SCIP_RETCODE Pricingcontroller::initSol()
 {
-   SCIP* origprob = GCGmasterGetOrigprob(scip_);
    int nblocks = GCGgetNPricingprobs(origprob);
    GCG_SOLVER** solvers = GCGpricerGetSolvers(scip_);
    int nsolvers = GCGpricerGetNSolvers(scip_);
@@ -305,7 +312,7 @@ SCIP_RETCODE Pricingcontroller::initSol()
       }
    }
 
-   SCIP_CALL_EXC( GCGpqueueCreate(scip_, &pqueue, npricingjobs, comparePricingjobs) );
+   SCIP_CALL_EXC( GCGpqueueCreate(scip_, &pqueue, npricingjobs, comparePricingjobs, &locks->memorylock) );
 
    return SCIP_OKAY;
 }
@@ -436,10 +443,10 @@ SCIP_RETCODE Pricingcontroller::pricingprobNextBranchcons(
             GCGpricingjobResetHeuristic(pricingjobs[i]);
 
    /* re-sort the priority queue */
-   #pragma omp critical (update)
-   {
-      retcode = GCGpqueueResort(pqueue);
-   }
+   GCG_SET_LOCK(&locks->pricinglock);
+   retcode = GCGpqueueResort(pqueue);
+   GCG_UNSET_LOCK(&locks->pricinglock);
+   
    SCIP_CALL( retcode );
 
    return SCIP_OKAY;
@@ -510,10 +517,10 @@ void Pricingcontroller::evaluatePricingjob(
          {
             SCIPdebugMessage("  -> increase a limit\n");
          }
-         #pragma omp critical (update)
-         {
-            SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
-         }
+         
+         GCG_SET_LOCK(&locks->pricinglock);
+         SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
+         GCG_UNSET_LOCK(&locks->pricinglock);
 
          return;
       }
@@ -525,10 +532,9 @@ void Pricingcontroller::evaluatePricingjob(
 
          SCIP_CALL_EXC( pricingprobNextBranchcons(pricingprob) );
 
-         #pragma omp critical (update)
-         {
-            SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
-         }
+         GCG_SET_LOCK(&locks->pricinglock);
+         SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
+         GCG_UNSET_LOCK(&locks->pricinglock);
 
          return;
       }
@@ -539,10 +545,10 @@ void Pricingcontroller::evaluatePricingjob(
       if( GCGpricingjobGetSolver(pricingjob) != NULL )
       {
          SCIPdebugMessage("  -> use another solver\n");
-         #pragma omp critical (update)
-         {
-            SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
-         }
+         
+         GCG_SET_LOCK(&locks->pricinglock);
+         SCIP_CALL_EXC( GCGpqueueInsert(pqueue, (void*) pricingjob) );
+         GCG_UNSET_LOCK(&locks->pricinglock);
       }
    }
    else
@@ -563,7 +569,6 @@ void Pricingcontroller::collectResults(
    SCIP_Bool*            bestredcostvalid    /**< pointer to store whether best reduced cost is valid */
    )
 {
-   SCIP* origprob = GCGmasterGetOrigprob(scip_);
    int nblocks = GCGgetNPricingprobs(origprob);
    SCIP_Bool foundcols = FALSE;
 
@@ -630,7 +635,7 @@ SCIP_Bool Pricingcontroller::canPricingloopBeAborted(
    int                   nsuccessfulprobs    /**< number of pricing problems solved successfully so far */
    ) const
 {
-   int nrelpricingprobs = GCGgetNRelPricingprobs(GCGmasterGetOrigprob(scip_));
+   int nrelpricingprobs = GCGgetNRelPricingprobs(origprob);
    int _nsolvedprobs;
 
    if( eagerage == eagerfreq )
