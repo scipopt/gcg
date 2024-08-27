@@ -60,7 +60,8 @@ extern "C" {
 /** creates price storage */
 GCG_EXPORT
 SCIP_RETCODE GCGpricestoreCreate(
-   SCIP*                 scip,                /**< SCIP data structure */
+   SCIP*                 scip,                /**< SCIP data structure (master problem) */
+   SCIP*                 origscip,            /**< SCIP data structure (original problem) */
    GCG_PRICESTORE**      pricestore,          /**< pointer to store price storage */
    SCIP_Real             redcostfac,          /**< factor of -redcost/norm in score function */
    SCIP_Real             objparalfac,         /**< factor of objective parallelism in score function */

@@ -43,6 +43,7 @@
 #include "type_pricestore_gcg.h"
 #include "pub_gcgcol.h"
 #include "type_gcgcol.h"
+#include "type_locks.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,6 +74,10 @@ struct GCG_PriceStore
    SCIP_Real             mincolorth;         /**< minimal orthogonality of columns to add
                                                   (with respect to columns added in the current round) */
    GCG_EFFICIACYCHOICE   efficiacychoice;    /**< choice to base efficiacy on */
+
+#ifdef _OPENMP
+   GCG_LOCKS*            locks;              /**< OpenMP locks */
+#endif
 };
 
 #ifdef __cplusplus

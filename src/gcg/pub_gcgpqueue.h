@@ -62,7 +62,8 @@ SCIP_RETCODE GCGpqueueCreate(
    SCIP*                scip,                /** SCIP data structure */
    GCG_PQUEUE**         pqueue,              /**< pointer to a priority queue */
    int                   initsize,           /**< initial number of available element slots */
-   SCIP_DECL_SORTPTRCOMP((*ptrcomp))         /**< data element comparator */
+   SCIP_DECL_SORTPTRCOMP((*ptrcomp)),        /**< data element comparator */
+   GCG_LOCK*             memorylock          /**< memory lock */
    );
 
 /** frees priority queue, but not the data elements themselves */

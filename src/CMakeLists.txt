@@ -317,6 +317,7 @@ set(gcgheaders
     gcg/type_detector.h
     gcg/type_gcgcol.h
     gcg/type_gcgpqueue.h
+    gcg/type_locks.h
     gcg/type_masterdiving.h
     gcg/type_origdiving.h
     gcg/type_parameter.h
@@ -423,6 +424,12 @@ if(JANSSON_FOUND)
         gcg/reader_ndec.h
         gcg/reader_ndec.hpp
     )
+endif()
+
+if(OPENMP_FOUND)
+   set(gcgheaders ${gcgheaders}
+      gcg/struct_locks.h
+   )
 endif()
 
 # all source files should be compiled with a c++ compiler

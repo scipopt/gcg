@@ -44,6 +44,7 @@
 #include "type_branchgcg.h"
 #include "type_decomp.h"
 #include "type_parameter.h"
+#include "type_locks.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -433,6 +434,16 @@ SCIP_RETCODE GCGrestoreLimitSettings(
    SCIP*                 scip,             /**< SCIP data structure */
    SCIP*                 masterprob        /**< master problem */
    );
+
+#ifdef _OPENMP
+/** returns OpenMP locks
+ *  @returns pointer to GCG_LOCKS struct
+ */
+GCG_LOCKS* GCGgetLocks(
+   SCIP*                 scip               /**< the SCIP data structure */
+   );
+#endif
+
 #ifdef __cplusplus
 }
 

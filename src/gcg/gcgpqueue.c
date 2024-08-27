@@ -71,10 +71,11 @@ SCIP_RETCODE pqueueResize(
       return retcode;
 
    newsize = SCIPcalcMemGrowSize(pqueue->scip, minsize);
-   #pragma omp critical (memory)
-   {
-      retcode = SCIPreallocBlockMemoryArray(pqueue->scip, &pqueue->slots, pqueue->size, newsize);
-   }
+
+   GCG_SET_LOCK(pqueue->memorylock);
+   retcode = SCIPreallocBlockMemoryArray(pqueue->scip, &pqueue->slots, pqueue->size, newsize);
+   GCG_UNSET_LOCK(pqueue->memorylock);
+
    pqueue->size = newsize;
 
    return retcode;
@@ -123,7 +124,8 @@ SCIP_RETCODE GCGpqueueCreate(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_PQUEUE**          pqueue,             /**< pointer to a priority queue */
    int                   initsize,           /**< initial number of available element slots */
-   SCIP_DECL_SORTPTRCOMP((*ptrcomp))         /**< data element comparator */
+   SCIP_DECL_SORTPTRCOMP((*ptrcomp)),        /**< data element comparator */
+   GCG_LOCK*             memorylock          /**< memory lock */
    )
 {
    assert(pqueue != NULL);
@@ -137,6 +139,7 @@ SCIP_RETCODE GCGpqueueCreate(
    (*pqueue)->scip = scip;
    (*pqueue)->slots = NULL;
    (*pqueue)->ptrcomp = ptrcomp;
+   (*pqueue)->memorylock = memorylock;
    SCIP_CALL( pqueueResize(*pqueue, initsize) );
 
    return SCIP_OKAY;

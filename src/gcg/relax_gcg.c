@@ -45,7 +45,11 @@
 //#define SCIP_DEBUG
 
 #include <string.h>
+#ifdef _OPENMP
 #include <omp.h>
+#include "struct_locks.h"
+#endif
+#include "type_locks.h"
 
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"
@@ -184,6 +188,10 @@ struct SCIP_RelaxData
    SCIP_Real             stashedgaplimit;        /**< stashed gap limit */
    int                   stashedsollimit;        /**< stashed solution limit */
    SCIP_Real             stashedtimelimit;       /**< stashed time limit */
+
+#ifdef _OPENMP
+   GCG_LOCKS*            locks;                  /** OpenMP locks */
+#endif
 };
 
 
@@ -2438,9 +2446,40 @@ SCIP_RETCODE initRelaxator(
    return SCIP_OKAY;
 }
 
+#ifdef _OPENMP
+/** initializes all OpenMP locks */
+static
+void initLocks(
+   GCG_LOCKS*            locks               /**< OpenMP locks */
+   )
+{
+   assert(locks != NULL);
+   GCG_INIT_LOCK(&locks->memorylock);
+   GCG_INIT_LOCK(&locks->pricinglock);
+   GCG_INIT_LOCK(&locks->pricinglimitslock);
+   GCG_INIT_LOCK(&locks->pricestorelock);
+   GCG_INIT_LOCK(&locks->printlock);
+}
+
+/** destroys all OpenMP locks */
+static
+void destroyLocks(
+   GCG_LOCKS*            locks               /**< OpenMP locks */
+   )
+{
+   assert(locks != NULL);
+   GCG_DESTROY_LOCK(&locks->memorylock);
+   GCG_DESTROY_LOCK(&locks->pricinglock);
+   GCG_DESTROY_LOCK(&locks->pricinglimitslock);
+   GCG_DESTROY_LOCK(&locks->pricestorelock);
+   GCG_DESTROY_LOCK(&locks->printlock);
+}
+#endif
+
 /** initializes relaxator data */
 static
-void initRelaxdata(
+SCIP_RETCODE initRelaxdata(
+   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_RELAXDATA*       relaxdata           /**< relaxdata data structure */
    )
 {
@@ -2492,6 +2531,16 @@ void initRelaxdata(
    relaxdata->rootnodetime = NULL;
 
    relaxdata->limitsettingsstashed = FALSE;
+
+   SCIP_CALL( GCGcreateParamsVisu(scip, &(relaxdata->paramsvisu)) );
+   assert(relaxdata->paramsvisu != NULL);
+
+#ifdef _OPENMP
+   SCIP_CALL( SCIPallocMemory(scip, &relaxdata->locks) );
+   initLocks(relaxdata->locks);
+#endif
+
+return SCIP_OKAY;
 }
 
 /** resets relaxator data */
@@ -2587,6 +2636,15 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
    {
       SCIP_CALL( GCGdecompFree(scip, &relaxdata->decomp) );
    }
+
+#ifdef _OPENMP
+   /* free locks struct */
+   if( relaxdata->locks != NULL )
+   {
+      destroyLocks(relaxdata->locks);
+      SCIPfreeMemory(scip, &relaxdata->locks);
+   }
+#endif
 
    SCIPfreeMemory(scip, &relaxdata);
    return SCIP_OKAY;
@@ -3322,10 +3380,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
 
    /* create GCG relaxator data */
    SCIP_CALL( SCIPallocMemory(scip, &relaxdata) );
-   initRelaxdata(relaxdata);
-
-   GCGcreateParamsVisu(scip, &(relaxdata->paramsvisu));
-   assert(relaxdata->paramsvisu != NULL);
+   SCIP_CALL( initRelaxdata(scip, relaxdata) );
 
    /* include relaxator */
    SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
@@ -5527,3 +5582,19 @@ SCIP_RETCODE GCGrestoreLimitSettings(
 
    return SCIP_OKAY;
 }
+
+#ifdef _OPENMP
+GCG_LOCKS* GCGgetLocks(
+   SCIP*                 scip               /**< the SCIP data structure */
+   )
+{
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_RELAX* relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->locks;
+}
+#endif
