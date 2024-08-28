@@ -114,7 +114,7 @@ SCIP_RETCODE GCGpricingjobSetup(
    }
 
    GCGpricingjobResetSolver(scip, pricingjob);
-   if( heuristic )
+   if( heuristic && pricingjob->solver != NULL && GCGsolverIsHeurEnabled(pricingjob->solver) )
       GCGpricingjobResetHeuristic(pricingjob);
    else
       GCGpricingjobSetExact(pricingjob);
@@ -239,7 +239,7 @@ void GCGpricingjobResetHeuristic(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    )
 {
-   if( GCGsolverIsHeurEnabled(pricingjob->solver) )
+   if( pricingjob->solver != NULL && GCGsolverIsHeurEnabled(pricingjob->solver) )
       pricingjob->heuristic = TRUE;
    else
       pricingjob->heuristic = FALSE;

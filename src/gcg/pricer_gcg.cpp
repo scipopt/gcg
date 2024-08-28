@@ -2835,6 +2835,15 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIPdebugMessage("***** New pricing round at node %" SCIP_LONGINT_FORMAT " (depth = %d)\n",
       SCIPgetNNodes(scip_), SCIPnodeGetDepth(SCIPgetCurrentNode(scip_)));
 
+#ifdef _OPENMP
+   if( pricerdata->npricingthreads > 0 )
+      nthreads = MIN(pricerdata->npricingthreads, GCGgetNRelPricingprobs(origprob));
+   else
+      nthreads = MIN(omp_get_max_threads(), GCGgetNRelPricingprobs(origprob));
+#else
+   nthreads = 1;
+#endif
+
    /* stabilization loop */
    do
    {
@@ -2913,15 +2922,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       }
 
       pricingcontroller->setupPriorityQueue(pricerdata->dualsolconv);
-
-#ifdef _OPENMP
-      if( pricerdata->npricingthreads > 0 )
-         nthreads = MIN(pricerdata->npricingthreads, GCGgetNRelPricingprobs(origprob));
-      else
-         nthreads = MIN(omp_get_max_threads(), GCGgetNRelPricingprobs(origprob));
-#else
-      nthreads = 1;
-#endif
 
       assert(!infeasible);
       /* actual pricing loop: perform the pricing jobs until none are left or an abortion criterion is met */
@@ -3213,7 +3213,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       /** @todo perhaps solve remaining pricing problems, if only few left? */
       /** @todo solve all pricing problems all k iterations? */
    }
-   while( nextchunk || (stabilized && nfoundvars == 0) );
+   while( !SCIPisStopped(scip_) && (nextchunk || (stabilized && nfoundvars == 0)) );
 
    SCIPdebugMessage("*** Pricing loop finished, found %d improving columns.\n", nfoundvars);
 
