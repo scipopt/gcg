@@ -31,7 +31,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-//#define SCIP_DEBUG
+#define SCIP_DEBUG
 
 #include <assert.h>
 #include <scip/cons_linear.h>
@@ -491,7 +491,6 @@ SCIP_RETCODE selectConstraintsKosterEtAl(
    )
 {
    GCG_ZEROHALFDATA* zhdata;
-   int i;
 
    SCIPallocMemory(masterscip, &zhdata);
    zhdata->maxroundsroot = 20;
@@ -681,7 +680,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    int               curfound;
    int               maxaggrlen;
    int               i;
-   int               j;
+   int               nintmastervars;
 
    assert(scip != NULL);
    assert(result != NULL);
@@ -745,10 +744,18 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    nmasterconss = GCGgetNMasterConss(origscip);
    npricingproblems = GCGgetNPricingprobs(origscip);
    nmastervars = SCIPgetNVars(scip);
+   nintmastervars = SCIPgetNContVars(scip);
 
    if( sepadata->n >= nmasterconss )
    {
       SCIPdebugMessage("not enough constraints to build subset row cut: n = %i >= number of master constraints = %i!\n", sepadata->n, nmasterconss);
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
+   if( nintmastervars > 0 )
+   {
+      SCIPinfoMessage(scip, NULL, "master problem contains %i continuous variables\n", nintmastervars);
       *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
