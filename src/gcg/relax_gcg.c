@@ -2901,8 +2901,8 @@ SCIP_RETCODE setMasterLimits(
 
    if( !SCIPisInfinity(scip, origtimelimit) )
    {
-      /* give the master 2% more time then the original scip has left */
-      mastertimelimit = (origtimelimit - SCIPgetSolvingTime(scip)) * 1.02 + SCIPgetSolvingTime(masterprob);
+      /* give the master 0.5 seconds more time than the original scip has left */
+      mastertimelimit = (origtimelimit - SCIPgetSolvingTime(scip)) + 0.5 + SCIPgetSolvingTime(masterprob);
 
       SCIPdebugMessage("  time limit for master: %f, left: %f, left for original problem: %f\n",
             mastertimelimit,
