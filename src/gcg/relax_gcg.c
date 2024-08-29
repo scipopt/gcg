@@ -2988,8 +2988,11 @@ SCIP_RETCODE solveMasterProblem(
 
    if( SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT && SCIPisStopped(scip) )
    {
-      *result = SCIP_DIDNOTRUN;
-      return SCIP_OKAY;
+      if( SCIPgetCurrentNode(masterprob) == NULL || !GCGmasterIsCurrentSolValid(masterprob) || !SCIPisGT(scip, SCIPgetLocalDualbound(masterprob), SCIPgetLocalLowerbound(scip)) )
+      {
+         *result = SCIP_DIDNOTRUN;
+         return SCIP_OKAY;
+      }
    }
 
    /* set the lower bound pointer */
