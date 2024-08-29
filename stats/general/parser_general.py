@@ -197,14 +197,14 @@ def parseOutfiles(outfiles):
                 opstat = True
 
             # get instance lp
-            if line.startswith("read problem") and '.dec' not in line and '.blk' not in line:
+            if line.startswith("read problem") and '.dec' not in line and '.ndec' not in line and '.blk' not in line:
                 if line.split()[2][1:-1].startswith("/") and "/check/" in line.split()[2][1:-1]:
                     data['LP FILE'].append(line.split()[2][1:-1].split("/check/")[1])
                 else:
                     data['LP FILE'].append(line.split()[2][1:-1])
 
             # get instance dec
-            if line.startswith("read problem") and ('.dec' in line or '.blk' in line) and not SCIPlog:
+            if line.startswith("read problem") and ('.dec' in line or '.ndec' in line or '.blk' in line) and not SCIPlog:
                 if line.split()[2][1:-1].startswith("/") and "/check/" in line.split()[2][1:-1]:
                     data['DEC FILE'].append(line.split()[2][1:-1].split("/check/")[1])
                 else:
@@ -433,6 +433,11 @@ def parseOutfiles(outfiles):
                     elif line.lstrip().startswith("mip"):
                         # type: CLIQUER (=4)
                         data['PRICING SOLVER TYPE'][-1].append("MIP")
+                        data['FARKAS TIME'][-1] += sum([float(x) for x in line.split(':')[1].split()[4:6]])
+                        data['PRICING SOLVER TIME'][-1] += sum([float(x) for x in line.split(':')[1].split()[4:]])
+                    elif line.lstrip().startswith("gcg"):
+                        # type: GCG (=5)
+                        data['PRICING SOLVER TYPE'][-1].append("GCG")
                         data['FARKAS TIME'][-1] += sum([float(x) for x in line.split(':')[1].split()[4:6]])
                         data['PRICING SOLVER TIME'][-1] += sum([float(x) for x in line.split(':')[1].split()[4:]])
                     else:
@@ -851,17 +856,16 @@ def parseOutfiles(outfiles):
             d[key] += data[key]
             data[key] = []
 
-        if len(set(datalengths)) == 2:
-            print("One error in input. Possibly unrecoverable.")
-            differentlen = [count(x) for x in set(datalengths)].min()
-            differentlenidx = datalenghts.index(differentlen)
-            for l, key in enumerate(data):
-                print(outfile, data[data.keys[differentlenidx]], datalengths(differentlenidx))
-        elif len(set(datalengths)) > 2:
-            print("Multiple errors in input. Unrecoverable.")
-            for l, key in enumerate(data):
-                print(outfile, key, datalengths[l])
-
+        if len(set(datalengths)) >= 2:
+            print("Error in input. Numbers of values per data key are not consistent.")
+            print("File: " + outfile)
+            datalengthdict = {
+                l: [k for i, k in enumerate(data.keys()) if datalengths[i] == l] for l in set(datalengths)
+            }
+            print("")
+            print("Will print '#values: list of keys' for all #values:")
+            for l in sorted(datalengthdict.keys()):
+                print(f"{l}: {datalengthdict[l]}")
 
         idx += index
         index = []
