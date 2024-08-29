@@ -36,6 +36,9 @@ def parseOutfiles(outfiles):
         'PRESOLVING TIME': [],
         'STATUS': [],
         'ROOT NODE TIME': [],
+        'DUAL BOUND': [],
+        'PRIMAL BOUND': [],
+        'GAP': [],
         'DUAL BOUNDS': [],
         'HEUR TIME ORIG': [],
         'HEUR CALLS ORIG': [],
@@ -101,6 +104,9 @@ def parseOutfiles(outfiles):
         'PRESOLVING TIME': [],
         'STATUS': [],
         'ROOT NODE TIME': [],
+        'DUAL BOUND': [],
+        'PRIMAL BOUND': [],
+        'GAP': [],
         'DUAL BOUNDS': [],
         'HEUR TIME ORIG': [],
         'HEUR CALLS ORIG': [],
@@ -234,7 +240,7 @@ def parseOutfiles(outfiles):
                 continue
 
             # get status
-            if line.startswith("SCIP Status") and not status:
+            if line.startswith("SCIP Status") and opstat and not status:
                 if line.split(':')[1].strip() == "problem is solved [optimal solution found]":
                     data['STATUS'].append(1)
                 elif line.split(':')[1].strip() == "problem is solved [infeasible]":
@@ -557,7 +563,12 @@ def parseOutfiles(outfiles):
                 elif line.lstrip().startswith("First Solution"):
                     data['FIRST SOLUTION TIME'].append(float(line.split(':')[1].split()[7]))
                 elif line.lstrip().startswith("Primal Bound") and data['SOLUTIONS FOUND'][-1] > 0:
+                    data['PRIMAL BOUND'].append(float(line.split(':')[1].split()[0]))
                     data['BEST SOLUTION TIME'].append(float(line.split(':')[1].split()[7]))
+                elif line.lstrip().startswith("Dual Bound"):
+                    data['DUAL BOUND'].append(float(line.split(':')[1].split()[0]))
+                elif line.lstrip().startswith("Gap    "):
+                    data['GAP'].append(float(line.split(':')[1].split()[0]))
                 elif line.lstrip().startswith("Avg. Gap") and data['SOLUTIONS FOUND'][-1] > 0:
                     data['PD INTEGRAL'].append(float(line.split(':')[1].split('%')[1].split()[0][1:]))
                     search = ""
@@ -677,6 +688,12 @@ def parseOutfiles(outfiles):
                 if len(data['ROOT NODE TIME']) < it:
                     data['ROOT NODE TIME'].append(float('NaN'))
 
+                if len(data['DUAL BOUND']) < it:
+                    data['DUAL BOUND'].append(float('NaN'))
+                if len(data['PRIMAL BOUND']) < it:
+                    data['PRIMAL BOUND'].append(float('NaN'))
+                if len(data['GAP']) < it:
+                    data['GAP'].append(float('NaN'))
                 if len(data['DUAL BOUNDS']) < it:
                     data['DUAL BOUNDS'].append([float('NaN')])
 
