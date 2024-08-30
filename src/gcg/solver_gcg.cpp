@@ -94,7 +94,9 @@ struct GCG_SolverData
    int                     depth;
    int                     maxdepth;
    int                     npricingprobs;
+   int                     nrelpricingprobs;
    int*                    nbasicpricingconss;  /**< array storing the basic number of constraints of the pricing problems */
+   int*                    relpricingprobidxs;  /**< indices of the relevant pricing problems (-1 if pp is not relevant) */
 
    SCIP_Longint            startnodelimit;      /**< start node limit for heuristic pricing */
    SCIP_Longint            startstallnodelimit; /**< start stalling node limit for heuristic pricing */
@@ -488,6 +490,7 @@ SCIP_RETCODE solveProblem(
    SCIP_RETCODE retcode;
    SCIP_Real timelimit;
    SCIP_HASHMAP* varmap = solverdata->varmaps[probnr];
+   int nfreethreads;
 
    #pragma omp atomic update
    solverdata->count++;
@@ -498,7 +501,12 @@ SCIP_RETCODE solveProblem(
       nthreads = omp_get_max_threads();
    else
       nthreads = MIN(nthreads, omp_get_max_threads());
-   nthreads = (int) MAX(nthreads / GCGgetNRelPricingprobs(solverdata->origprob), 1);
+   nthreads = (int) MAX(nthreads / solverdata->nrelpricingprobs, 1);
+   nfreethreads = nthreads % solverdata->nrelpricingprobs;
+   assert(solverdata->relpricingprobidxs[probnr] >= 0);
+   if( solverdata->relpricingprobidxs[probnr] + 1 <= nfreethreads )
+      nthreads++;
+
    if( GCGpricerGetNPricingThreads(GCGgetMasterprob(subgcg)) != nthreads )
    {
       SCIP_CALL( SCIPsetIntParam(subgcg, "pricing/masterpricer/nthreads", nthreads) );
@@ -728,6 +736,8 @@ SCIP_RETCODE freeBlockMemory(
    solverdata->curstallnodelimit = NULL;
    SCIPfreeBlockMemoryArray(scip, &(solverdata->translatesymmetry), npricingprobs);
    solverdata->translatesymmetry = NULL;
+   SCIPfreeBlockMemoryArray(scip, &(solverdata->relpricingprobidxs), npricingprobs);
+   solverdata->relpricingprobidxs = NULL;
 
 #ifdef SUBGCG_DETAILED_CLOCKS
    SCIPfreeClock(solverdata->origprob, &solverdata->inittime);
@@ -745,8 +755,8 @@ GCG_DECL_SOLVERINITSOL(solverInitsolGcg)
 {
    GCG_SOLVERDATA* solverdata;
    int npricingprobs;
-
    int i;
+   int j;
 
    assert(scip != NULL);
    assert(solver != NULL);
@@ -774,6 +784,7 @@ GCG_DECL_SOLVERINITSOL(solverInitsolGcg)
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->cursollimit), npricingprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->curstallnodelimit), npricingprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->translatesymmetry), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->relpricingprobidxs), npricingprobs));
 
 #ifdef SUBGCG_DETAILED_CLOCKS
    SCIPcreateClock(scip, &solverdata->inittime);
@@ -782,6 +793,7 @@ GCG_DECL_SOLVERINITSOL(solverInitsolGcg)
    SCIPcreateClock(scip, &solverdata->postprocessingtime);
 #endif
 
+   j = 0;
    for (i = 0; i < npricingprobs; ++i)
    {
       solverdata->pricingprobs[i] = NULL;
@@ -791,6 +803,7 @@ GCG_DECL_SOLVERINITSOL(solverInitsolGcg)
 
       if (GCGisPricingprobRelevant(solverdata->origprob, i))
       {
+         solverdata->relpricingprobidxs[i] = j++;
          if (!buildProblem(solverdata, GCGgetPricingprob(solverdata->origprob, i), i))
          {
             SCIP_CALL( freeBlockMemory(scip, solverdata) );
@@ -804,7 +817,12 @@ GCG_DECL_SOLVERINITSOL(solverInitsolGcg)
             solverdata->curstallnodelimit[i] = solverdata->startstallnodelimit;
          }
       }
+      else
+      {
+         solverdata->relpricingprobidxs[i] = -1;
+      }
    }
+   solverdata->nrelpricingprobs = j;
 
    return SCIP_OKAY;
 }
@@ -1042,6 +1060,7 @@ SCIP_RETCODE GCGincludeSolverGcg(
    SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
    solverdata->depth = 0;
    solverdata->npricingprobs = 0;
+   solverdata->nrelpricingprobs = 0;
 #ifdef SUBGCG_DETAILED_CLOCKS
    solverdata->inittime = NULL;
    solverdata->updatetime = NULL;
@@ -1056,6 +1075,7 @@ SCIP_RETCODE GCGincludeSolverGcg(
    solverdata->nbasicpricingconss = NULL;
    solverdata->settingsfile = NULL;
    solverdata->translatesymmetry = NULL;
+   solverdata->relpricingprobidxs = NULL;
 
    /* include pricing problem solver */
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_HEU_ENABLED, SOLVER_ENABLED,
