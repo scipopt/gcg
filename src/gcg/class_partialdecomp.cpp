@@ -49,7 +49,6 @@
 #include "params_visu.h"
 #include "miscvisualization.h"
 #include "reader_gp.h"
-#include "bliss_automorph.hpp"
 
 #include <sstream>
 #include <iostream>
@@ -59,9 +58,9 @@
 #include <utility>
 #include <stdlib.h>
 
-#ifdef WITH_BLISS
-#include "bliss_automorph.h"
-#include "bliss/defs.hh"
+#ifndef NO_AUT_LIB
+#include "symmetry/automorphism.h"
+#include "symmetry/automorphism.hpp"
 #endif
 
 
@@ -1077,8 +1076,8 @@ SCIP_Bool PARTIALDECOMP::isAgginfoTooExpensive()
    if( isagginfoalreadytoexpensive )
       return TRUE;
 
-   SCIPgetIntParam(scip, "detection/aggregation/limitnconssperblock", &limitfornconss);
-   SCIPgetIntParam(scip, "detection/aggregation/limitnvarsperblock", &limitfornvars);
+   SCIPgetIntParam(scip, "relaxing/gcg/aggregation/limitnconssperblock", &limitfornconss);
+   SCIPgetIntParam(scip, "relaxing/gcg/aggregation/limitnvarsperblock", &limitfornvars);
 
    /* check if calculating aggregation information is too expensive */
    for( int b1 = 0; b1 < getNBlocks() ; ++b1 )
@@ -1112,9 +1111,9 @@ void PARTIALDECOMP::calcAggregationInformation(
    bool ignoreDetectionLimits
    )
 {
-#ifdef WITH_BLISS
+#ifndef NO_AUT_LIB
    SCIP_Bool tooexpensive;
-   SCIP_Bool usebliss;
+   SCIP_Bool useautomorphism;
    int searchnodelimit;
    int generatorlimit;
 #endif
@@ -1130,22 +1129,17 @@ void PARTIALDECOMP::calcAggregationInformation(
    if( !isComplete() )
       return;
 
-#ifdef WITH_BLISS
-   if(
-#if defined(BLISS_PATCH_PRESENT) || BLISS_VERSION_MAJOR >= 1 || BLISS_VERSION_MINOR >= 76
-         !ignoreDetectionLimits &&
-#endif
-         isAgginfoTooExpensive()
-         )
+#ifndef NO_AUT_LIB
+   if( !ignoreDetectionLimits && isAgginfoTooExpensive() )
       tooexpensive = TRUE;
    else
       tooexpensive = FALSE;
-   SCIPgetBoolParam(scip, "relaxing/gcg/bliss/enabled", &usebliss);
-   SCIPgetIntParam(scip, "relaxing/gcg/bliss/searchnodelimit", &searchnodelimit);
-   SCIPgetIntParam(scip, "relaxing/gcg/bliss/generatorlimit", &generatorlimit);
+   SCIPgetBoolParam(scip, "relaxing/gcg/aggregation/usesymmetrylib", &useautomorphism);
+   SCIPgetIntParam(scip, "relaxing/gcg/aggregation/searchnodelimit", &searchnodelimit);
+   SCIPgetIntParam(scip, "relaxing/gcg/aggregation/generatorlimit", &generatorlimit);
 #endif
 
-   SCIPgetBoolParam(scip, "relaxing/gcg/aggregation", &aggregation);
+   SCIPgetBoolParam(scip, "relaxing/gcg/aggregation/enabled", &aggregation);
    SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &discretization);
 
    if( discretization && aggregation )
@@ -1203,9 +1197,9 @@ void PARTIALDECOMP::calcAggregationInformation(
          {
             checkIdenticalBlocksBrute( b1, b2, varmap, varmap2, &identical);
 
-#ifdef WITH_BLISS
-            if( usebliss && !tooexpensive && !identical )
-               checkIdenticalBlocksBliss(b1, b2, varmap, varmap2, &identical,
+#ifndef NO_AUT_LIB
+            if( useautomorphism && !tooexpensive && !identical )
+               checkIdenticalBlocksAutomorphism(b1, b2, varmap, varmap2, &identical,
                      searchnodelimit >= 0 ? searchnodelimit : 0u, generatorlimit >= 0 ? generatorlimit : 0u);
 #endif
          }
@@ -1875,8 +1869,8 @@ bool PARTIALDECOMP::checkConsistency(
 }
 
 
-#ifdef WITH_BLISS
-void PARTIALDECOMP::checkIdenticalBlocksBliss(
+#ifndef NO_AUT_LIB
+void PARTIALDECOMP::checkIdenticalBlocksAutomorphism(
    int                  b1,
    int                  b2,
    std::vector<int>&    varmap,
@@ -2074,7 +2068,7 @@ void PARTIALDECOMP::calcNCoeffsForBlockForMastercons()
    DETPROBDATA* detprobdata = this->getDetprobdata();
 
    for( int b = 0; b < getNBlocks(); ++b )
-      ncoeffsforblockformastercons[b] = std::vector<int>(getNMasterconss(), 0);
+      ncoeffsforblockformastercons[b].resize(getNMasterconss(), 0);
 
    for( int mc = 0; mc < getNMasterconss(); ++mc )
    {
@@ -5587,6 +5581,16 @@ void PARTIALDECOMP::setTranslatedpartialdecid(
    )
 {
    PARTIALDECOMP::translatedpartialdecid = decid;
+}
+
+int PARTIALDECOMP::getNVarsOfBlockInMasterCons(
+   int masterconsindex,
+   int block
+   )
+{
+   if( ncoeffsforblockformastercons.empty() )
+      calcNCoeffsForBlockForMastercons();
+   return ncoeffsforblockformastercons[block][masterconsindex];
 }
 
 } /* namespace gcg */

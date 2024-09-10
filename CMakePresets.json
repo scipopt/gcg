@@ -419,6 +419,24 @@
             }
         },
         {
+            "name": "gcg-windows-ci",
+            "hidden": true,
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error"
+            },
+            "filter": {
+                "include": {
+                    "name": "GCG-.*"
+                },
+                "exclude": {
+                    "name": "GCG-BPP-default-N1C3W1_A.*"
+                }
+            }
+        },
+        {
             "name": "gcg-linux-debug",
             "inherits": "gcg-default",
             "configurePreset": "gcg-linux-debug",
@@ -483,6 +501,22 @@
             "displayName": "GCG Windows RelWithDebInfo Tests",
             "description": "GCG Windows development release with debug info build tests",
             "configuration": "RelWithDebInfo"
+        },
+        {
+            "name": "gcg-windows-ci-debug",
+            "inherits": "gcg-windows-ci",
+            "configurePreset": "gcg-windows-debug",
+            "displayName": "GCG Windows Debug Tests CI",
+            "description": "GCG Windows development debug build tests (CI workaround)",
+            "configuration": "Debug"
+        },
+        {
+            "name": "gcg-windows-ci-release",
+            "inherits": "gcg-windows-ci",
+            "configurePreset": "gcg-windows-release",
+            "displayName": "GCG Windows Release Tests CI",
+            "description": "GCG Windows development release build tests (CI workaround)",
+            "configuration": "Release"
         }
     ],
     "workflowPresets": [
@@ -655,6 +689,44 @@
                     "type": "test",
                     "name": "gcg-windows-relwithdebinfo"
                 }
+            ]
+        },
+        {
+            "name": "gcg-windows-ci-debug",
+            "displayName": "GCG Windows Debug Workflow CI",
+            "description": "GCG Windows development debug build workflow (CI workaround)",
+            "steps": [
+            {
+                "type": "configure",
+                "name": "gcg-windows-debug"
+            },
+            {
+                "type": "build",
+                "name": "gcg-windows-debug"
+            },
+            {
+                "type": "test",
+                "name": "gcg-windows-ci-debug"
+            }
+            ]
+        },
+        {
+            "name": "gcg-windows-ci-release",
+            "displayName": "GCG Windows Release Workflow CI",
+            "description": "GCG Windows development release build workflow (CI workaround)",
+            "steps": [
+            {
+                "type": "configure",
+                "name": "gcg-windows-release"
+            },
+            {
+                "type": "build",
+                "name": "gcg-windows-release"
+            },
+            {
+                "type": "test",
+                "name": "gcg-windows-ci-release"
+            }
             ]
         }
     ]
