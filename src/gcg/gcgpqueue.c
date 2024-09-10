@@ -139,7 +139,9 @@ SCIP_RETCODE GCGpqueueCreate(
    (*pqueue)->scip = scip;
    (*pqueue)->slots = NULL;
    (*pqueue)->ptrcomp = ptrcomp;
+#ifdef _OPENMP
    (*pqueue)->memorylock = memorylock;
+#endif
    SCIP_CALL( pqueueResize(*pqueue, initsize) );
 
    return SCIP_OKAY;
