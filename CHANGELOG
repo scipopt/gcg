@@ -26,6 +26,24 @@ Miscellaneous
 
 
 @page RN36 Release notes for GCG 3.6
+@section RN363 GCG 3.6.3
+*************************
+
+Bug fixes
+---------
+
+- Fixed missing include of <algorithm> in some files.
+
+
+@section RN362 GCG 3.6.2
+*************************
+
+Build system
+------------
+
+- CMake configuration does not fail if value of 'SYM' is not supported
+
+
 @section RN361 GCG 3.6.1
 *************************
 
