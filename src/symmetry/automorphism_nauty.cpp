@@ -109,8 +109,8 @@ SCIP_RETCODE struct_graph::findAutomorphisms(
    )
 {
    int i;
-   int* lab;
-   int* orbits;
+   int* lab = NULL;
+   int* orbits = NULL;
    size_t edgeindex = 0;
 
    // edges
