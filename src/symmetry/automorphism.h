@@ -25,31 +25,29 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    bliss_automorph.hpp
- * @brief   automorphism recognition (C++ interface)
+/**@file    automorph.h
+ * @brief   automorphism recognition of SCIPs
  *
- * @author  Erik Muehmer
+ * @author  Martin Bergner
+ * @author  Daniel Peters
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+#include "scip/type_scip.h"
+#include "scip/type_result.h"
+#include "scip/type_misc.h"
+#include "scip/type_retcode.h"
 
-#ifndef GCG_BLISS_AUTOMORPH_HPP
-#define GCG_BLISS_AUTOMORPH_HPP
-
-#include "class_partialdecomp.h"
+#ifndef AUTOMORPHISM_H__
+#define AUTOMORPHISM_H__
 
 
-/** compare two graphs w.r.t. automorphism */
-SCIP_RETCODE cmpGraphPair(
-   SCIP*                   scip,               /**< SCIP data structure */
-   gcg::PARTIALDECOMP*     partialdec,         /**< partialdec the graphs should be compared for */
-   int                     block1,             /**< index of first pricing prob */
-   int                     block2,             /**< index of second pricing prob */
-   SCIP_RESULT*            result,             /**< result pointer to indicate success or failure */
-   SCIP_HASHMAP*           varmap,             /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP*           consmap,           /**< hashmap to save permutation of constraints */
-   unsigned int            searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
-   unsigned int            generatorlimit      /**< bliss generator limit (requires patched bliss version) */
-);
 
-#endif //GCG_BLISS_AUTOMORPH_HPP
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* AUTOMORPHISM_H__ */

@@ -223,7 +223,7 @@ build:windows_release:
   before_script:
     - echo "on windows"
   script:
-    - cmake --workflow --preset gcg-windows-release
+    - cmake --workflow --preset gcg-windows-ci-release
   artifacts:
     expire_in: 3 days
     paths:
@@ -247,7 +247,7 @@ build:windows_debug:
   before_script:
     - echo "on windows"
   script:
-    - cmake --workflow --preset gcg-windows-debug
+    - cmake --workflow --preset gcg-windows-ci-debug
   artifacts:
     expire_in: 3 days
     paths:

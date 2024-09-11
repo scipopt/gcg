@@ -769,7 +769,12 @@ int DETPROBDATA::getIndexForVar(
    const char* varname
    )
 {
-   return getIndexForVar(SCIPfindVar(scip, varname));
+   SCIP_VAR* var = SCIPfindVar(scip, varname);
+   if( var == NULL)
+   {
+      return -1;
+   }
+   return getIndexForVar(var);
 }
 
 

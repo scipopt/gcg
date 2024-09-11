@@ -256,7 +256,6 @@ set(gcgheaders
     gcg/pricestore_gcg.h
     gcg/pricingjob.h
     gcg/pricingprob.h
-    gcg/pub_bliss.h
     gcg/pub_clscons.h
     gcg/pub_clsvar.h
     gcg/pub_colpool.h
@@ -357,16 +356,28 @@ set(gcggraphheaders
     graph/weights.h
    )
 
-if(SYM STREQUAL "bliss" OR SYM STREQUAL "sbliss")
-   set(gcgsources ${gcgsources}
-      gcg/bliss_automorph.cpp
-      gcg/bliss.cpp
+if(NOT SYM STREQUAL "none")
+   set(gcgsources ${gcgsources} ${symsources}
+      symmetry/automorphism.cpp
       gcg/dec_isomorph.cpp
    )
    set(gcgheaders ${gcgheaders} 
-      gcg/bliss_automorph.h
-      gcg/bliss_automorph.hpp
+      symmetry/automorphism.h
+      symmetry/automorphism.hpp
+      symmetry/pub_automorphism.h
       gcg/dec_isomorph.h
+   )
+endif()
+
+if(SYM STREQUAL "bliss" OR SYM STREQUAL "sbliss")
+   set(gcgsources ${gcgsources}
+      symmetry/automorphism_bliss.cpp
+   )
+endif()
+
+if(SYM STREQUAL "nauty" OR SYM STREQUAL "snauty")
+   set(gcgsources ${gcgsources}
+      symmetry/automorphism_nauty.cpp
    )
 endif()
 
