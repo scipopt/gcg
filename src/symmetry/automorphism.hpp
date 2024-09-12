@@ -25,43 +25,31 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    bliss_automorph.h
- * @brief   automorphism recognition of SCIPs
+/**@file    automorph.hpp
+ * @brief   automorphism recognition (C++ interface)
  *
- * @author  Martin Bergner
- * @author  Daniel Peters
+ * @author  Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-#include "scip/type_scip.h"
-#include "scip/type_result.h"
-#include "scip/type_misc.h"
-#include "scip/type_retcode.h"
 
-#ifndef BLISS_AUTOMORPH_H_
-#define BLISS_AUTOMORPH_H_
+#ifndef GCG_AUTOMORPHISM_HPP__
+#define GCG_AUTOMORPHISM_HPP__
 
+#include "gcg/class_partialdecomp.h"
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /** compare two graphs w.r.t. automorphism */
 SCIP_RETCODE cmpGraphPair(
-   SCIP*                 origscip,           /**< SCIP data structure */
-   SCIP*                 scip1,              /**< first SCIP data structure to compare */
-   SCIP*                 scip2,              /**< second SCIP data structure to compare */
-   int                   prob1,              /**< index of first pricing prob */
-   int                   prob2,              /**< index of second pricing prob */
-   SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
-   SCIP_HASHMAP*         varmap,             /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP*         consmap,            /**< hashmap to save permutation of constraints */
-   unsigned int          searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
-   unsigned int          generatorlimit      /**< bliss generator limit (requires patched bliss version) */
-   );
+   SCIP*                   scip,               /**< SCIP data structure */
+   gcg::PARTIALDECOMP*     partialdec,         /**< partialdec the graphs should be compared for */
+   int                     block1,             /**< index of first pricing prob */
+   int                     block2,             /**< index of second pricing prob */
+   SCIP_RESULT*            result,             /**< result pointer to indicate success or failure */
+   SCIP_HASHMAP*           varmap,             /**< hashmap to save permutation of variables */
+   SCIP_HASHMAP*           consmap,           /**< hashmap to save permutation of constraints */
+   unsigned int            searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
+   unsigned int            generatorlimit      /**< bliss generator limit (requires patched bliss version) */
+);
 
-#ifdef __cplusplus
-}
-#endif
-#endif /* BLISS_AUTOMORPH_H_ */
+#endif //GCG_AUTOMORPHISM_HPP__

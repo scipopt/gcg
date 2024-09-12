@@ -3483,10 +3483,10 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          SCIP_CALL( getStabilizedDualObjectiveValue(pricetype, &stabdualval, stabilized) );
 
          SCIPdebugMessage("lpobjval = %.8g, bestredcost = %.8g, stabdualval = %.8g, beststabobj = %.8g\n",
-            SCIPgetLPObjval(scip_), bestredcost, stabdualval, beststabobj);
+            SCIPgetSolOrigObj(scip_, NULL), bestredcost, stabdualval, beststabobj);
 
 #ifndef NDEBUG
-         if( optimal && *bestredcostvalid && !stabilized && !SCIPisSumEQ(scip_, SCIPgetLPObjval(scip_) + bestredcost, stabdualval + beststabobj) )
+         if( optimal && *bestredcostvalid && !stabilized && !SCIPisSumEQ(scip_, SCIPgetSolOrigObj(scip_, NULL) + bestredcost, stabdualval + beststabobj) )
          {
             SCIP_ROW** rows = SCIPgetLPRows(scip_);
             int nrows = SCIPgetNLPRows(scip_);
@@ -3549,14 +3549,14 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             }
             SCIPdebugMessage("  offset caused by convexity constraints: %g\n", dualconvoffset);
 
-            assert(SCIPisDualfeasEQ(scip_, dualobj, stabdualval + dualconvoffset));
+            assert(SCIPisDualfeasEQ(scip_, SCIPretransformObj(scip_, dualobj), stabdualval + dualconvoffset));
          }
 #endif
 
-         assert(!optimal || !*bestredcostvalid || stabilized || SCIPisSumEQ(scip_, SCIPgetLPObjval(scip_) + bestredcost, stabdualval + beststabobj));
+         assert(!optimal || !*bestredcostvalid || stabilized || SCIPisSumEQ(scip_, SCIPgetSolOrigObj(scip_, NULL) + bestredcost, stabdualval + beststabobj));
 
          if( stabilized || !optimal || !*bestredcostvalid )
-            lowerboundcandidate = stabdualval + beststabobj;
+            lowerboundcandidate = SCIPtransformObj(scip_, stabdualval + beststabobj);
          else
             lowerboundcandidate = SCIPgetLPObjval(scip_) + bestredcost;
 
@@ -4212,11 +4212,14 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
       }
       if( !reliable && pricerdata->onlyreliablebigm )
       {
-         pricerdata->useartificialvars = FALSE;
+         if( pricerdata->useartificialvars )
+         {
+            pricerdata->useartificialvars = FALSE;
+            SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Big M to be used for artificial variables not reliable; use regular Farkas pricing instead.\n");
+         }
          pricerdata->maxobj = SCIPinfinity(origprob);
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Big M to be used for artificial variables not reliable; use regular Farkas pricing instead.\n");
       }
-      else if( !reliable && !pricerdata->onlyreliablebigm )
+      else if( pricerdata->useartificialvars && !reliable && !pricerdata->onlyreliablebigm )
          SCIPwarningMessage(scip, "Big M used for artificial variables not reliable. This might lead to wrong solutions.\n");
    }
    else

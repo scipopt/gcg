@@ -36,7 +36,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/*#define SCIP_DEBUG*/
+/* #define SCIP_DEBUG */
 #include <assert.h>
 #include <scip/def.h>
 #include <scip/scip.h>
@@ -205,12 +205,16 @@ SCIP_RETCODE initializeConsdata(
    origcons = GCGconsOrigbranchGetActiveCons(origscip);
    assert(origcons != NULL);
 
-   /* @fixme: There should be an assertion instead; I guess consdata->origcons should be NULL */
-   if( consdata->origcons != origcons ) /*rootnode?*/
+   if( consdata->origcons == NULL ) /*rootnode?*/
    {
       SCIPdebugMessage("set root origcons\n");
       consdata->origcons = origcons;
       GCGconsOrigbranchSetMastercons(origcons, cons);
+   }
+   else if( consdata->origcons != origcons )
+   {
+      // todo: Check this case.
+      SCIPdebugMessage("B&B trees could be out of sync\n");
    }
 
    /* @fixme: Why should anything else happen? */
@@ -452,7 +456,7 @@ SCIP_Bool checkAggregatedGlobalBounds(
          SCIP_Real identbound = bndtype == SCIP_BOUNDTYPE_UPPER ? SCIPvarGetUbGlobal(identvars[i]) : SCIPvarGetLbGlobal(identvars[i]);
          if( !SCIPisEQ(scip, identbound, bound) )
          {
-            SCIPerrorMessage("Var <%s> has new local %s bound %g, but identical var <%s> has %g -- don't know how to handle!\n",
+            SCIPerrorMessage("Var <%s> has new global %s bound %g, but identical var <%s> has %g -- don't know how to handle!\n",
                SCIPvarGetName(bndvar), bndtype == SCIP_BOUNDTYPE_UPPER ? "upper" : "lower",
                   bound, SCIPvarGetName(identvars[i]), identbound);
             identical = FALSE;
@@ -1714,7 +1718,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    assert(origscip != NULL);
 
 
-   SCIPdebugMessage("Activating ");
+   SCIPdebugMessage("Activating branch master constraint: <%s>[stack size: %d].\n", SCIPconsGetName(cons), conshdlrdata->nstack+1);
    /* If the node is activated the first time, we have to initialize the constraint data first */
    if( consdata->nactivated == 0 )
    {
@@ -1889,12 +1893,16 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
       SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->localbndvars, (*consdata)->maxlocalbndchgs);
    }
 
-   /* delete branchdata if the corresponding origcons has already been deleted;
+   assert((*consdata)->origcons == NULL || GCGconsOrigbranchGetMastercons((*consdata)->origcons) == cons);
+
+   /* delete branchdata if the corresponding origcons has already been deleted or if created by the generic branchrule;
     * otherwise, it will be deleted by the corresponding origbranch constraint
     */
-   if( (*consdata)->origcons == NULL && (*consdata)->branchdata != NULL )
+   if( (*consdata)->branchdata != NULL && ((*consdata)->origcons == NULL || GCGisBranchruleGeneric((*consdata)->branchrule)) )
    {
       SCIP_CALL( GCGrelaxBranchDataDelete(origscip, (*consdata)->branchrule, &(*consdata)->branchdata) );
+      if( (*consdata)->origcons != NULL )
+         GCGconsOrigbranchSetBranchdata((*consdata)->origcons, NULL);
    }
 
    (*consdata)->branchdata = NULL;
@@ -1902,7 +1910,6 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
    /* set the mastercons pointer of the corresponding origcons to NULL */
    if( (*consdata)->origcons != NULL )
    {
-      assert(GCGconsOrigbranchGetMastercons((*consdata)->origcons) == cons);
       GCGconsOrigbranchSetMastercons((*consdata)->origcons, NULL);
    }
 

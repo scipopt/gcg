@@ -246,7 +246,7 @@
 #include "dec_staircase_lsp.h"
 #include "dec_varclass.h"
 
-#ifdef WITH_BLISS
+#ifndef NO_AUT_LIB
 #include "dec_isomorph.h"
 #endif
 

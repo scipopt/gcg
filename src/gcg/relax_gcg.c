@@ -74,9 +74,9 @@
 #include "type_branchgcg.h"
 #include "struct_mastercutdata.h"
 
-#ifdef WITH_BLISS
-#include "pub_bliss.h"
-#include "bliss_automorph.h"
+#ifndef NO_AUT_LIB
+#include "symmetry/pub_automorphism.h"
+#include "symmetry/automorphism.h"
 #endif
 
 #define RELAX_NAME             "gcg"
@@ -93,7 +93,10 @@
                                                     1: Benders' decomposition, 2: solve original problem) */
 #define DEFAULT_BLISS TRUE
 #define DEFAULT_BLISS_SEARCH_NODE_LIMIT 0
-#define DEFAULT_BLISS_GENERATOR_LIMIT 0
+#define DEFAULT_BLISS_GENERATOR_LIMIT 100
+#define DEFAULT_AGGREGATIONNCONSSLIMIT 300
+#define DEFAULT_AGGREGATIONNVARSLIMIT 300
+
 #define DELVARS
 
 /*
@@ -160,9 +163,11 @@ struct SCIP_RelaxData
    SCIP_Bool             dispinfos;          /**< should additional information be displayed? */
    GCG_DECMODE           mode;               /**< the decomposition mode for GCG. 0: Dantzig-Wolfe (default), 1: Benders' decomposition, 2: automatic */
    int                   origverblevel;      /**< the verbosity level of the original problem */
-   SCIP_Bool             usebliss;           /**< should bliss be used to check for identical blocks? */
+   SCIP_Bool             usesymmetrylib;     /**< should symmetry detection lib be used to check for identical blocks? */
    int                   searchnodelimit;    /**< bliss search node limit (requires patched bliss version) */
    int                   generatorlimit;     /**< bliss generator limit (requires patched bliss version) */
+   int                   aggregationnconsslimit;          /**< if this limit on the number of constraints of a block is exceeded the aggregation information for this block is not calculated */
+   int                   aggregationnvarslimit;           /**< if this limit on the number of variables of a block is exceeded the aggregation information for this block is not calculated */
 
    /* data for probing */
    SCIP_Bool             masterinprobing;    /**< is the master problem in probing mode? */
@@ -3301,6 +3306,14 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    }
 #endif
 
+#ifdef WITH_NAUTY
+   {
+      char name[SCIP_MAXSTRLEN];
+      GCGgetNautyName(name, SCIP_MAXSTRLEN);
+      SCIP_CALL( SCIPincludeExternalCodeInformation(scip, name, "A Tool for Computing Automorphism Groups of Graphs by B.D. McKay and A. Piperno (https://pallini.di.uniroma1.it/)") );
+   }
+#endif
+
 #ifdef WITH_CLIQUER
       SCIP_CALL( SCIPincludeExternalCodeInformation(scip, "Cliquer", "A set of C routines for finding cliques in an arbitrary weighted graph by S. Niskanen and P. Ostergard (https://users.aalto.fi/~pat/cliquer.html)") );
 #endif
@@ -3378,9 +3391,30 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/mipdiscretization",
          "should discretization (TRUE) or convexification (FALSE) approach be used in mixed-integer programs?",
          &(relaxdata->mipdiscretization), FALSE, DEFAULT_MIPDISCRETIZATION, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/aggregation",
+   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/aggregation/enabled",
          "should identical blocks be aggregated (only for discretization approach)?",
          &(relaxdata->aggregation), FALSE, DEFAULT_AGGREGATION, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/aggregation/limitnconssperblock",
+         "Limits the number of constraints of a block (aggregation information for block is not calculated when exceeded)",
+         &(relaxdata->aggregationnconsslimit), FALSE, DEFAULT_AGGREGATIONNCONSSLIMIT, 0, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/aggregation/limitnvarsperblock",
+         "Limits the number of variables of a block (aggregation information for block is not calculated when exceeded)",
+         &(relaxdata->aggregationnvarslimit), FALSE, DEFAULT_AGGREGATIONNVARSLIMIT, 0, INT_MAX, NULL, NULL) );
+#ifndef NO_AUT_LIB
+   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/aggregation/usesymmetrylib",
+         "should a symmetry detection library be used to check for identical blocks?",
+         &(relaxdata->usesymmetrylib), FALSE, DEFAULT_BLISS, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/aggregation/searchnodelimit",
+         "search node limit (0: unlimited), requires patched bliss version",
+         &(relaxdata->searchnodelimit), TRUE, (int)DEFAULT_BLISS_SEARCH_NODE_LIMIT, 0, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/aggregation/generatorlimit",
+         "generator limit (0: unlimited), requires patched bliss version or version >= 0.76",
+         &(relaxdata->generatorlimit), TRUE, (int)DEFAULT_BLISS_GENERATOR_LIMIT, 0, INT_MAX, NULL, NULL) );
+#else
+   relaxdata->usesymmetrylib = FALSE;
+   relaxdata->searchnodelimit = 0;
+   relaxdata->generatorlimit = 0;
+#endif
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/dispinfos",
          "should additional information about the blocks be displayed?",
          &(relaxdata->dispinfos), FALSE, DEFAULT_DISPINFOS, NULL, NULL) );
@@ -3388,21 +3422,6 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
             "the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition, "
             "2: no decomposition will be performed)",
             (int*)&(relaxdata->mode), FALSE, (int)DEFAULT_MODE, 0, 2, NULL, NULL) );
-#ifdef WITH_BLISS
-   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/bliss/enabled",
-         "should bliss be used to check for identical blocks?",
-         &(relaxdata->usebliss), FALSE, DEFAULT_BLISS, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/bliss/searchnodelimit",
-         "bliss search node limit (0: unlimited), requires patched bliss version",
-         &(relaxdata->searchnodelimit), TRUE, (int)DEFAULT_BLISS_SEARCH_NODE_LIMIT, 0, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/bliss/generatorlimit",
-         "bliss generator limit (0: unlimited), requires patched bliss version or version >= 0.76",
-         &(relaxdata->generatorlimit), TRUE, (int)DEFAULT_BLISS_GENERATOR_LIMIT, 0, INT_MAX, NULL, NULL) );
-#else
-   relaxdata->usebliss = FALSE;
-   relaxdata->searchnodelimit = 0;
-   relaxdata->generatorlimit = 0;
-#endif
 
    return SCIP_OKAY;
 }
