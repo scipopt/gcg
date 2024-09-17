@@ -553,7 +553,7 @@ def parseOutfiles(outfiles):
                     search = ""
 
             # get solution statistics
-            if line.startswith("Solution") and not opstat:
+            if line.startswith("Solution") and opstat:
                 search = "SOLUTION"
                 continue
 
