@@ -251,6 +251,8 @@ def parseOutfiles(outfiles):
                     data['STATUS'].append(4)
                 elif line.split(':')[1].strip() == "solving was interrupted [node limit reached]":
                     data['STATUS'].append(5)
+                elif line.split(':')[1].strip() == "problem is solved [unbounded]":
+                    data['STATUS'].append(6)
                 else:
                     data['STATUS'].append(0)
                 status = True
