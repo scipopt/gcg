@@ -738,6 +738,13 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       return SCIP_OKAY;
    }
 
+   if( GCGgetNActiveCuts(scip) > 5 )
+   {
+      SCIPinfoMessage(scip, NULL, "at most 5 active cuts\n");
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
    /* get info of master problem */
    originalconss = GCGgetOrigMasterConss(origscip);
    masterconss = GCGgetMasterConss(origscip);
