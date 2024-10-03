@@ -63,7 +63,7 @@
 #define DEFAULT_MAXROUNDS             1 /**< maximal number of subset row separation rounds per non-root node */
 #define DEFAULT_MAXROUNDSROOT         2 /**< maximal number of subset row separation calls in the root node */
 #define DEFAULT_MAXSEPACUTS         100 /**< maximal number of subset row cuts separated per call in non-root nodes */
-#define DEFAULT_MAXSEPACUTSROOT     200 /**< maximal number of subset row cuts separated per call in root node */
+#define DEFAULT_MAXSEPACUTSROOT    1000 /**< maximal number of subset row cuts separated per call in root node */
 #define DEFAULT_MAXCUTCANDS        1000 /**< maximal number of subset row cuts in total */
 #define DEFAULT_ONLYROOT           TRUE /**< only apply separator in root node */
 #define DEFAULT_STRATEGY              0 /**< strategy which is used to determine which rows to consider for cut computation */
@@ -90,6 +90,7 @@ struct SCIP_SepaData
    int                     n;                   /**< k > 0          : defines the possible weights 1/k */
    int                     k;                   /**< n = |S| > 0    : number of constraints used to construct subset row */
    GCG_SEPA*               sepa;                /**< gcg master separator instance */
+   SCIP_CLOCK*             subsetrowclock;
 };
 
 
@@ -102,7 +103,11 @@ struct SCIP_SepaData
 static
 SCIP_DECL_SEPAEXIT(sepaExitSubsetrow)
 {
-   SCIPdebugMessage("exit sgcg sepa subsetrow\n");
+   SCIP_SEPADATA* sepadata;
+   assert(sepa != NULL);
+   sepadata = SCIPsepaGetData(sepa);
+
+   SCIPinfoMessage(scip, NULL, "GCG Subset-Row Separator Time: %f sec\n", SCIPgetClockTime(scip, sepadata->subsetrowclock));
 
    return SCIP_OKAY;
 }
@@ -119,6 +124,7 @@ SCIP_DECL_SEPAFREE(sepaFreeSubsetrow)
    SCIPdebugMessage("free separator data for subset row separator\n");
    sepadata = SCIPsepaGetData(sepa);
    SCIPfreeRandom(scip, &(sepadata->randnumgen));
+   SCIP_CALL( SCIPfreeClock(scip, &(sepadata->subsetrowclock)) );
    SCIPfreeBlockMemory(scip, &sepadata);
 
    return SCIP_OKAY;
@@ -257,8 +263,7 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS_alt(
    int            nselectedconss,             /**< number of selected constraints */
    SCIP_Real**    weights,                    /**< pointer to store weights of the selected constraints */
    SCIP_Real*     rhs_ssrc,                   /**< pointer to store rhs of subset row cut */
-   SCIP_HASHMAP*  mapmastervarxcoeff,
-   int*           nnonzerocoeffs
+   SCIP_HASHMAP*  mapmastervarxcoeff
 )
 {
    SCIP_Bool  success;
@@ -273,9 +278,6 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS_alt(
 
    nmastervars = SCIPgetNVars(masterscip);
    *rhs_ssrc = 0;
-
-
-
 
    for( i = 0; i < nselectedconss; i++ )
    {
@@ -342,7 +344,6 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS_alt(
          if( varcoeff == SCIP_INVALID )
          {
             varcoeff = (*weights)[i] * masterconscoeffs[j];
-            (*nnonzerocoeffs)++;
          }
          else
             varcoeff += (*weights)[i] * masterconscoeffs[j];
@@ -527,22 +528,18 @@ SCIP_RETCODE createCut(
 {
    SCIP_HASHMAP*  mapmastervarxcoeff;
    SCIP_Real      rhs_ssrc;
-   int            nnonzerocoeffs;
    int            i;
 
    assert(masterscip != NULL);
-   nnonzerocoeffs = 0;
    /* determine the master variables, their coefficients and rhs for subset row (non-rounded) */
    SCIP_CALL( SCIPhashmapCreate(&mapmastervarxcoeff, SCIPblkmem(masterscip), nmastervars) );
    SCIP_CALL( computeSubsetRowCoefficientsAndRHS_alt(masterscip, masterconss, cutindex->indices, cutindex->nindices,
-                                                     weights, &rhs_ssrc, mapmastervarxcoeff, &nnonzerocoeffs) );
-   SCIPdebugMessage("nnonzerocoeffs: %i, maxaggr: %i\n", nnonzerocoeffs, maxaggr);
+                                                     weights, &rhs_ssrc, mapmastervarxcoeff) );
+
    /* create the subset row cut */
-   if( nnonzerocoeffs < maxaggr )
-   {
-      SCIP_CALL( createSubsetRowCut_alt(masterscip, ssrc, mapmastervarxcoeff, rhs_ssrc, sepa) );
-      assert(ssrc != NULL);
-   }
+   SCIP_CALL( createSubsetRowCut_alt(masterscip, ssrc, mapmastervarxcoeff, rhs_ssrc, sepa) );
+   assert(ssrc != NULL);
+
 
    SCIPhashmapRemoveAll(mapmastervarxcoeff);
    SCIPhashmapFree(&mapmastervarxcoeff);
@@ -863,16 +860,21 @@ GCG_DECL_SEPAGETCOLCOEFFICIENTS(gcgsepaGetColCoefficientSubsetrow)
    assert(gcgcol != NULL);
    assert(GCGcolGetInitializedCoefs(gcgcol));
 
+   /* start timing */
+   sepadata = SCIPsepaGetData(sepa->separator);
+   assert(sepadata != NULL);
+   SCIP_CALL( SCIPstartClock(scip, sepadata->subsetrowclock) );
+
    mastercoeffs = GCGcolGetMastercoefs(gcgcol);
    weights = GCGsubsetrowCutGetWeights(cut);
    conssindices = GCGsubsetrowCutGetConssIndices(cut);
    n = GCGsubsetrowCutGetNWeights(cut);
-   sepadata = SCIPsepaGetData(sepa->separator);
+
 
    assert(mastercoeffs != NULL);
    assert(weights != NULL);
    assert(conssindices != NULL);
-   assert(sepadata != NULL);
+
 
    /* use the coefficients of the master constraints to compute coefficient for cut */
    *coeff = 0.0;
@@ -884,6 +886,7 @@ GCG_DECL_SEPAGETCOLCOEFFICIENTS(gcgsepaGetColCoefficientSubsetrow)
 
    *coeff = SCIPfeasFloor(scip, *coeff);
    SCIPdebugMessage("column coefficient: %f\n", *coeff);
+   SCIP_CALL( SCIPstopClock(scip, sepadata->subsetrowclock) );
    return SCIP_OKAY;
 }
 
@@ -893,6 +896,7 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
 {
    SCIP*                      origscip;
    SCIP*                      pricingscip;
+   SCIP_SEPADATA*             sepadata;
    GCG_PRICINGMODIFICATION*   pricingmod;
    GCG_MASTERCUTDATA*         mastercutdata;
    SCIP_CONS**                pricingconss;
@@ -912,7 +916,12 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
    assert(scip != NULL);
    assert(GCGisMaster(scip));
    assert(sepa != NULL);
+   assert(sepa->separator != NULL);
    assert(cut != NULL);
+
+   sepadata = SCIPsepaGetData(sepa->separator);
+   assert(sepadata != NULL);
+   SCIP_CALL( SCIPstartClock(scip, sepadata->subsetrowclock) );
 
    origscip = GCGgetOriginalprob(scip);
    assert(origscip != NULL);
@@ -920,6 +929,7 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
 
    if( nvars == 0 )
    {
+      SCIP_CALL( SCIPstopClock(scip, sepadata->subsetrowclock) );
       return SCIP_OKAY;
    }
 
@@ -932,6 +942,7 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
    {
       SCIPdebugMessage("no pricing modification for pp%i --> variable coefficient 0\n", probnr);
       *coef = 0.0;
+      SCIP_CALL( SCIPstopClock(scip, sepadata->subsetrowclock) );
       return SCIP_OKAY;
    }
 
@@ -1007,6 +1018,7 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
    SCIPfreeBufferArray(scip, &pricingconsvars);
    SCIPfreeBufferArray(scip, &pricingconscoeffs);
 
+   SCIP_CALL( SCIPstopClock(scip, sepadata->subsetrowclock) );
    return SCIP_OKAY;
 }
 
@@ -1014,6 +1026,7 @@ GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
 static
 GCG_DECL_SEPASETOBJECTIVE(gcgsepaSetObjectiveSubsetrow)
 {
+   SCIP_SEPADATA*             sepadata;
    SCIP_ROW*                  row;
    SCIP*                      pricingproblem;
    SCIP*                      origscip;
@@ -1028,6 +1041,10 @@ GCG_DECL_SEPASETOBJECTIVE(gcgsepaSetObjectiveSubsetrow)
    assert(GCGisMaster(scip));
    assert(sepa != NULL);
    assert(cut != NULL);
+
+   sepadata = SCIPsepaGetData(sepa->separator);
+   assert(sepadata != NULL);
+   SCIP_CALL( SCIPstartClock(scip, sepadata->subsetrowclock) );
 
    origscip = GCGgetOriginalprob(scip);
    assert(origscip != NULL);
@@ -1050,6 +1067,7 @@ GCG_DECL_SEPASETOBJECTIVE(gcgsepaSetObjectiveSubsetrow)
          SCIP_CALL( SCIPchgVarObj(pricingproblem, coeffvar, -1.0 * dual) );
    }
 
+   SCIP_CALL( SCIPstopClock(scip, sepadata->subsetrowclock) );
    return SCIP_OKAY;
 }
 
@@ -1057,19 +1075,25 @@ GCG_DECL_SEPASETOBJECTIVE(gcgsepaSetObjectiveSubsetrow)
 static
 GCG_DECL_SEPAADJUSTCOL(gcgsepaAdjustCol)
 {
+   GCG_PRICINGMODIFICATION* pricemod;
+   GCG_MASTERCUTDATA* mastercutdata;
+   SCIP_SEPADATA* sepadata;
+
    assert(scip != NULL);
    assert(GCGisMaster(scip));
    assert(sepa != NULL);
+   assert(sepa->separator != NULL);
    assert(cut != NULL);
 
-   GCG_PRICINGMODIFICATION* pricemod;
-   GCG_MASTERCUTDATA* mastercutdata;
+   sepadata = SCIPsepaGetData(sepa->separator);
+   assert(sepadata != NULL);
 
    mastercutdata = GCGmastersepacutGetMasterCutData(cut);
    assert(mastercutdata != NULL);
 
    if( !GCGmastercutIsActive(mastercutdata) )
       return SCIP_OKAY;
+
 
    pricemod = GCGmastercutGetPricingModification(scip, mastercutdata, GCGcolGetProbNr(*gcgcol));
    if( pricemod != NULL )
@@ -1092,7 +1116,8 @@ GCG_DECL_SEPAADJUSTCOL(gcgsepaAdjustCol)
       else
          SCIP_CALL( gcgsepaGetVarCoefficientSubsetrow(scip, sepa, cut, (*gcgcol)->vars, (*gcgcol)->vals, (*gcgcol)->nvars, (*gcgcol)->probnr, &coefvarval) );
 
-      /* 1. variable already in column: replace value
+      SCIP_CALL( SCIPstartClock(scip, sepadata->subsetrowclock) );
+      /* 1. variable already in column: replace value (this indicates that this was not the violating constraint)
        * 2. variable not yet in column:
        *    a. variable can be appended and variable order (based on index) remains correct
        *    b. variable has to be inserted to maintain the correct order */
@@ -1157,7 +1182,10 @@ GCG_DECL_SEPAADJUSTCOL(gcgsepaAdjustCol)
 
          ((*gcgcol)->nvars)++;
       }
+      SCIP_CALL( SCIPstopClock(scip, sepadata->subsetrowclock) );
    }
+   else
+      SCIPinfoMessage(scip, NULL, "pricemod not found!\n");
 
    return SCIP_OKAY;
 }
@@ -1206,6 +1234,7 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
    /* create subsetrow separator data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &sepadata) );
    sepa = NULL;
+   SCIP_CALL( SCIPcreateClock(scip, &(sepadata->subsetrowclock)) );
    sepadata->ngeneratedcut = 0;
    sepadata->randnumgen = NULL;
    sepadata->enable = FALSE;
