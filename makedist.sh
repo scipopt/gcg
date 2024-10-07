@@ -47,6 +47,7 @@ $NAME/src/depend.* \
 $NAME/src/*.c $NAME/src/*.h \
 $NAME/src/gcg/*.c $NAME/src/gcg/*.cpp $NAME/src/gcg/*.h $NAME/src/gcg/*.hpp \
 $NAME/src/graph/*.cpp $NAME/src/graph/*.h \
+$NAME/src/symmetry/*.c $NAME/src/symmetry/*.cpp $NAME/src/symmetry/*.h $NAME/src/symmetry/*.hpp \
 $NAME/check/instances/cpmp/*.lp \
 $NAME/check/instances/bpp/*.lp \
 $NAME/check/instances/gap/*.lp \
