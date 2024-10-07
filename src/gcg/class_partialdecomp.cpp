@@ -49,7 +49,6 @@
 #include "params_visu.h"
 #include "miscvisualization.h"
 #include "reader_gp.h"
-#include "bliss_automorph.hpp"
 
 #include <sstream>
 #include <iostream>
@@ -59,9 +58,9 @@
 #include <utility>
 #include <stdlib.h>
 
-#ifdef WITH_BLISS
-#include "bliss_automorph.h"
-#include "bliss/defs.hh"
+#ifndef NO_AUT_LIB
+#include "symmetry/automorphism.h"
+#include "symmetry/automorphism.hpp"
 #endif
 
 
@@ -777,7 +776,6 @@ void PARTIALDECOMP::assignOpenPartialHittingVarsToMaster(
 {
    int cons;
    int var;
-   std::vector<int> blocksOfBlockvars; /* blocks with blockvars which can be found in the cons */
    std::vector<int> blocksOfOpenvar; /* blocks in which the open var can be found */
    bool hitsOpenCons;
    std::vector<bool> isblockhit;
@@ -1078,8 +1076,8 @@ SCIP_Bool PARTIALDECOMP::isAgginfoTooExpensive()
    if( isagginfoalreadytoexpensive )
       return TRUE;
 
-   SCIPgetIntParam(scip, "detection/aggregation/limitnconssperblock", &limitfornconss);
-   SCIPgetIntParam(scip, "detection/aggregation/limitnvarsperblock", &limitfornvars);
+   SCIPgetIntParam(scip, "relaxing/gcg/aggregation/limitnconssperblock", &limitfornconss);
+   SCIPgetIntParam(scip, "relaxing/gcg/aggregation/limitnvarsperblock", &limitfornvars);
 
    /* check if calculating aggregation information is too expensive */
    for( int b1 = 0; b1 < getNBlocks() ; ++b1 )
@@ -1113,9 +1111,9 @@ void PARTIALDECOMP::calcAggregationInformation(
    bool ignoreDetectionLimits
    )
 {
-#ifdef WITH_BLISS
+#ifndef NO_AUT_LIB
    SCIP_Bool tooexpensive;
-   SCIP_Bool usebliss;
+   SCIP_Bool useautomorphism;
    int searchnodelimit;
    int generatorlimit;
 #endif
@@ -1131,22 +1129,17 @@ void PARTIALDECOMP::calcAggregationInformation(
    if( !isComplete() )
       return;
 
-#ifdef WITH_BLISS
-   if(
-#if defined(BLISS_PATCH_PRESENT) || BLISS_VERSION_MAJOR >= 1 || BLISS_VERSION_MINOR >= 76
-         !ignoreDetectionLimits &&
-#endif
-         isAgginfoTooExpensive()
-         )
+#ifndef NO_AUT_LIB
+   if( !ignoreDetectionLimits && isAgginfoTooExpensive() )
       tooexpensive = TRUE;
    else
       tooexpensive = FALSE;
-   SCIPgetBoolParam(scip, "relaxing/gcg/bliss/enabled", &usebliss);
-   SCIPgetIntParam(scip, "relaxing/gcg/bliss/searchnodelimit", &searchnodelimit);
-   SCIPgetIntParam(scip, "relaxing/gcg/bliss/generatorlimit", &generatorlimit);
+   SCIPgetBoolParam(scip, "relaxing/gcg/aggregation/usesymmetrylib", &useautomorphism);
+   SCIPgetIntParam(scip, "relaxing/gcg/aggregation/searchnodelimit", &searchnodelimit);
+   SCIPgetIntParam(scip, "relaxing/gcg/aggregation/generatorlimit", &generatorlimit);
 #endif
 
-   SCIPgetBoolParam(scip, "relaxing/gcg/aggregation", &aggregation);
+   SCIPgetBoolParam(scip, "relaxing/gcg/aggregation/enabled", &aggregation);
    SCIPgetBoolParam(scip, "relaxing/gcg/discretization", &discretization);
 
    if( discretization && aggregation )
@@ -1204,9 +1197,9 @@ void PARTIALDECOMP::calcAggregationInformation(
          {
             checkIdenticalBlocksBrute( b1, b2, varmap, varmap2, &identical);
 
-#ifdef WITH_BLISS
-            if( usebliss && !tooexpensive && !identical )
-               checkIdenticalBlocksBliss(b1, b2, varmap, varmap2, &identical,
+#ifndef NO_AUT_LIB
+            if( useautomorphism && !tooexpensive && !identical )
+               checkIdenticalBlocksAutomorphism(b1, b2, varmap, varmap2, &identical,
                      searchnodelimit >= 0 ? searchnodelimit : 0u, generatorlimit >= 0 ? generatorlimit : 0u);
 #endif
          }
@@ -1876,8 +1869,8 @@ bool PARTIALDECOMP::checkConsistency(
 }
 
 
-#ifdef WITH_BLISS
-void PARTIALDECOMP::checkIdenticalBlocksBliss(
+#ifndef NO_AUT_LIB
+void PARTIALDECOMP::checkIdenticalBlocksAutomorphism(
    int                  b1,
    int                  b2,
    std::vector<int>&    varmap,
@@ -2075,7 +2068,7 @@ void PARTIALDECOMP::calcNCoeffsForBlockForMastercons()
    DETPROBDATA* detprobdata = this->getDetprobdata();
 
    for( int b = 0; b < getNBlocks(); ++b )
-      ncoeffsforblockformastercons[b] = std::vector<int>(getNMasterconss(), 0);
+      ncoeffsforblockformastercons[b].resize(getNMasterconss(), 0);
 
    for( int mc = 0; mc < getNMasterconss(); ++mc )
    {
@@ -2136,28 +2129,25 @@ void PARTIALDECOMP::complete()
 {
    size_t nopenconss = openconss.size();
    size_t nopenvars = openvars.size();
-   size_t i = 0;
 
    refineToBlocks();
 
    // assign the open components to the master (without removing them to avoid screwing with the vector indices)
    for(auto cons : openconss)
+   {
       setConsToMaster(cons);
+      isconsopen[cons] = false;
+   }
    // remove them from the open lists
    openconss.clear();
-   for(i = 0; i < nopenconss; i++)
-   {
-      isconsopen[i] = false;
-   }
 
    for(auto var: openvars)
+   {
       setVarToMaster(var);
+      isvaropen[var] = false;
+   }
 
    openvars.clear();
-   for(i = 0; i < nopenvars; i++)
-   {
-      isvaropen[i] = false;
-   }
 
    // consider implicits, calc hash, and check whether the partialdec is still consistent
    prepare();
@@ -2167,7 +2157,6 @@ void PARTIALDECOMP::complete()
 void PARTIALDECOMP::completeByConnected()
 {
    /* tools to update openvars */
-   std::vector<int> openvarsToDelete;
    std::vector<int> oldOpenconss;
 
    std::vector<bool> isConsVisited( nconss, false );
@@ -2254,14 +2243,9 @@ void PARTIALDECOMP::completeByConnected()
          setVarToBlock(var, 0);
       else
          setVarToMaster(var);
-      openvarsToDelete.push_back(var);
+      isvaropen[var] = false;
    }
-
-   for( int var : openvarsToDelete )
-   {
-      if( isVarOpenvar(var) )
-         deleteOpenvar(var);
-   }
+   openvars.clear();
 
    assert( getNOpenconss() == 0 );
    assert( getNOpenvars() == 0 );
@@ -2284,10 +2268,6 @@ void PARTIALDECOMP::completeByConnectedConssAdjacency()
 {
    /* tools to check if the openvars can still be found in a constraint yet */
    std::vector<int> varinblocks(nvars, -1); /* stores in which block the variable can be found */
-
-   /* tools to update openvars */
-   std::vector<int> oldOpenconss;
-   std::vector<int> openvarsToDelete;
 
    // note: this should not happen
    if( getNLinkingvars() != 0 )
@@ -2371,14 +2351,9 @@ void PARTIALDECOMP::completeByConnectedConssAdjacency()
          setVarToBlock(var, 0);
       else
          setVarToMaster(var);
-      openvarsToDelete.push_back(var);
+      isvaropen[var] = false;
    }
-
-   for( int var : openvarsToDelete )
-   {
-      if( isVarOpenvar(var) )
-         deleteOpenvar(var);
-   }
+   openvars.clear();
 
    assert( getNOpenconss() == 0 );
    assert( getNOpenvars() == 0 );
@@ -2492,14 +2467,26 @@ void PARTIALDECOMP::completeGreedily(
       }
    }
 
-   /* remove assigned vars from list of open vars */
-   for(auto v : del)
-      deleteOpenvar(v);
-
-   del.clear();
+   if( !del.empty() )
+   {
+      /* remove assigned vars from list of open vars */
+      if( del.size() == openvars.size() )
+      {
+         openvars.clear();
+         for( auto v : del )
+         {
+            assert(isvaropen[v]);
+            isvaropen[v] = false;
+         }
+      }
+      else
+      {
+         for( auto v : del )
+            deleteOpenvar(v);
+      }
+      del.clear();
+   }
    sort();
-
-   std::vector<int> delconss;
 
    /* assign open conss greedily */
    for( int i = 0; i < getNOpenconss(); ++ i )
@@ -2535,7 +2522,7 @@ void PARTIALDECOMP::completeGreedily(
          if( consGotBlockcons ) /* the constraint can be assigned to the current block */
          {
             setConsToBlock( openconss[i], j );
-            delconss.push_back(openconss[i]);
+            del.push_back(openconss[i]);
             for( size_t k = 0; k < vecOpenvarsOfBlock.size(); ++ k ) /* the openvars in the constraint get block vars */
             {
                setVarToBlock( vecOpenvarsOfBlock[k], j );
@@ -2550,14 +2537,29 @@ void PARTIALDECOMP::completeGreedily(
       if( !consGotBlockcons ) /* the constraint can not be assigned to a block, set it to master */
       {
          setConsToMaster( openconss[i] );
-         delconss.push_back(openconss[i]);
+         del.push_back(openconss[i]);
       }
    }
 
-   /* remove assigned conss from list of open conss */
-   for(auto c : delconss)
-      deleteOpencons(c);
-
+   if( !del.empty() )
+   {
+      /* remove assigned conss from list of open conss */
+      if( del.size() == openconss.size() )
+      {
+         openconss.clear();
+         for( auto c : del )
+         {
+            assert(isconsopen[c]);
+            isconsopen[c] = false;
+         }
+      }
+      else
+      {
+         for( auto c : del )
+            deleteOpencons(c);
+      }
+      del.clear();
+   }
    sort();
 
    /* assign open vars greedily */
@@ -2579,10 +2581,24 @@ void PARTIALDECOMP::completeGreedily(
       }
    }
 
-   /* remove assigned vars from list of open vars */
-   for(auto v : del)
-      deleteOpenvar(v);
-
+   if( !del.empty() )
+   {
+      /* remove assigned vars from list of open vars */
+      if( del.size() == openvars.size() )
+      {
+         openvars.clear();
+         for( auto v : del )
+         {
+            assert(isvaropen[v]);
+            isvaropen[v] = false;
+         }
+      }
+      else
+      {
+         for( auto v : del )
+            deleteOpenvar(v);
+      }
+   }
    sort();
 
    /* check if the open conss are all assigned */
@@ -2620,14 +2636,12 @@ void PARTIALDECOMP::considerImplicits(
 {
    int cons;
    int var;
-   std::vector<int> blocksOfBlockvars; /* blocks with blockvars which can be found in the cons */
-   std::vector<int> blocksOfOpenvar; /* blocks in which the open var can be found */
+   std::vector<int> foundblocks;
    bool master;
    bool hitsOpenVar;
    bool hitsOpenCons;
    SCIP_Bool benders;
    std::vector<int> del;
-   std::vector<int> delconss;
 
    DETPROBDATA* detprobdata = this->getDetprobdata();
 
@@ -2639,7 +2653,7 @@ void PARTIALDECOMP::considerImplicits(
    for( size_t c = 0; c < openconss.size(); ++ c )
    {
       std::vector<bool> hitsblock = std::vector<bool>(nblocks, false);
-      blocksOfBlockvars.clear();
+      foundblocks.clear();
       master = false;
       hitsOpenVar = false;
       cons = openconss[c];
@@ -2667,48 +2681,62 @@ void PARTIALDECOMP::considerImplicits(
             if( isVarBlockvarOfBlock( var, b ) && !hitsblock[b] )
             {
                hitsblock[b] = true;
-               blocksOfBlockvars.push_back( b );
+               foundblocks.push_back( b );
                break;
             }
          }
       }
 
-      if ( benders && blocksOfBlockvars.size() == 1 && !master )
+      if ( benders && foundblocks.size() == 1 && !master )
       {
-         setConsToBlock( cons, blocksOfBlockvars[0] );
-         delconss.push_back(cons);
+         setConsToBlock( cons, foundblocks[0] );
+         del.push_back(cons);
       }
 
-      if( !benders && blocksOfBlockvars.size() > 1 )
+      if( !benders && foundblocks.size() > 1 )
       {
          setConsToMaster( cons );
-         delconss.push_back(cons);
+         del.push_back(cons);
       }
 
       /* also assign open constraints that only have vars assigned to one single block and no open vars*/
-      if( blocksOfBlockvars.size() == 1 && ! hitsOpenVar && ! master && ! benders )
+      if( foundblocks.size() == 1 && ! hitsOpenVar && ! master && ! benders )
       {
-         setConsToBlock( cons, blocksOfBlockvars[0] );
-         delconss.push_back(cons);
+         setConsToBlock( cons, foundblocks[0] );
+         del.push_back(cons);
       }
    }
 
-   /* remove assigned conss from list of open conss */
-   for(auto c : delconss)
-      deleteOpencons(c);
-
+   if( !del.empty() )
+   {
+      /* remove assigned conss from list of open conss */
+      if( del.size() == openconss.size() )
+      {
+         openconss.clear();
+         for( auto c : del )
+         {
+            assert(isconsopen[c]);
+            isconsopen[c] = false;
+         }
+      }
+      else
+      {
+         for( auto c : del )
+            deleteOpencons(c);
+      }
+   }
    sort();
+   del.clear();
 
    /* set open var to linking, if it can be found in more than one block 
     * or set it to a block if it has only constraints in that block and no open constraints 
     * or set it to master if it only hits master constraints */
    for( size_t i = 0; i < openvars.size(); ++ i )
    {
-      std::vector<bool> hitsblock = std::vector<bool>(nblocks, false);
       bool hitsmasterconss = false;
       bool hitonlymasterconss = true;
       bool hitonlyblockconss = true;
-      blocksOfOpenvar.clear();
+      foundblocks.clear();
       var = openvars[i];
       hitsOpenCons = false;
 
@@ -2736,32 +2764,32 @@ void PARTIALDECOMP::considerImplicits(
          for( int c = 0; c < detprobdata->getNConssForVar( var ); ++ c )
          {
             cons = detprobdata->getConssForVar( var )[c];
-            if( isConsBlockconsOfBlock( cons, b ) && !hitsblock[b] )
+            if( isConsBlockconsOfBlock( cons, b ) )
             {
-               hitsblock[b] = true;
+               assert(std::find(foundblocks.begin(), foundblocks.end(), b) == foundblocks.end());
                hitonlymasterconss = false;
-               blocksOfOpenvar.push_back( b );
+               foundblocks.push_back( b );
                break;
             }
          }
       }
 
-      if( blocksOfOpenvar.size() > 1 )
+      if( foundblocks.size() > 1 )
       {
          setVarToLinking( var );
          del.push_back(var);
          continue;
       }
 
-      if( benders && blocksOfOpenvar.size() == 1 &&  hitsmasterconss )
+      if( benders && foundblocks.size() == 1 &&  hitsmasterconss )
       {
          setVarToLinking( var );
          del.push_back(var);
       }
 
-      if( benders && hitonlyblockconss && blocksOfOpenvar.size() > 0 )
+      if( benders && hitonlyblockconss && foundblocks.size() > 0 )
       {
-         setVarToBlock( var, blocksOfOpenvar[0] );
+         setVarToBlock( var, foundblocks[0] );
          del.push_back(var);
       }
 
@@ -2771,22 +2799,37 @@ void PARTIALDECOMP::considerImplicits(
          del.push_back(var);
       }
 
-      if( !benders && blocksOfOpenvar.size() == 1 && ! hitsOpenCons )
+      if( !benders && foundblocks.size() == 1 && ! hitsOpenCons )
       {
-         setVarToBlock( var, blocksOfOpenvar[0] );
+         setVarToBlock( var, foundblocks[0] );
          del.push_back(var);
       }
 
-      if( !benders && blocksOfOpenvar.size() == 0 && ! hitsOpenCons )
+      if( !benders && foundblocks.size() == 0 && ! hitsOpenCons )
       {
          setVarToMaster( var );
          del.push_back(var);
       }
    }
 
-   /* remove assigned vars from list of open vars */
-   for(auto v : del)
-      deleteOpenvar(v);
+   if( !del.empty() )
+   {
+      /* remove assigned vars from list of open vars */
+      if( del.size() == openvars.size() )
+      {
+         openvars.clear();
+         for( auto v : del )
+         {
+            assert(isvaropen[v]);
+            isvaropen[v] = false;
+         }
+      }
+      else
+      {
+         for( auto v : del )
+            deleteOpenvar(v);
+      }
+   }
    sort();
 }
 
@@ -5538,6 +5581,16 @@ void PARTIALDECOMP::setTranslatedpartialdecid(
    )
 {
    PARTIALDECOMP::translatedpartialdecid = decid;
+}
+
+int PARTIALDECOMP::getNVarsOfBlockInMasterCons(
+   int masterconsindex,
+   int block
+   )
+{
+   if( ncoeffsforblockformastercons.empty() )
+      calcNCoeffsForBlockForMastercons();
+   return ncoeffsforblockformastercons[block][masterconsindex];
 }
 
 } /* namespace gcg */

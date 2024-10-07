@@ -33,7 +33,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/*#define SCIP_DEBUG*/
+/* #define SCIP_DEBUG */
 #include <assert.h>
 #include <string.h>
 
@@ -120,7 +120,7 @@ SCIP_RETCODE createOrigbranchConstraint(
             GCGconsOrigbranchGetActiveCons(scip), branchrule, branchdata) );
    if( branchdata == NULL )
    {
-      SCIPdebugMessage("origbranch with no branchdata created\n");
+      SCIPdebugMessage("  origbranch with no branchdata created\n");
    }
    SCIP_CALL( SCIPaddConsNode(scip, childnode, origcons, NULL) );
 
@@ -130,11 +130,13 @@ SCIP_RETCODE createOrigbranchConstraint(
    for( i = 0; i < norigbranchconss; ++i )
    {
       SCIP_CALL( SCIPaddConsNode(scip, childnode, origbranchconss[i], NULL) );
+      SCIPdebugMessage("  add cons %s to node\n", SCIPconsGetName(origbranchconss[i]));
    }
 
    /* notify the original and master branching constraint about each other */
    GCGconsOrigbranchSetMastercons(origcons, masterbranchchildcons);
    GCGconsMasterbranchSetOrigcons(masterbranchchildcons, origcons);
+   SCIPdebugMessage("  link branching conss %s <-> %s\n", SCIPconsGetName(masterbranchchildcons), SCIPconsGetName(origcons));
 
    SCIP_CALL( SCIPreleaseCons(scip, &origcons) );
 

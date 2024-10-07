@@ -102,9 +102,6 @@
 #define DEFAULT_CLASSIFY                              TRUE        /**< indicates whether classification is enabled */
 #define DEFAULT_ENABLEORIGCLASSIFICATION              TRUE        /**< indicates whether to start detection for the original problem */
 
-#define DEFAULT_AGGREGATIONLIMITNCONSSPERBLOCK        300         /**< if this limit on the number of constraints of a block is exceeded the aggregation information for this block is not calculated */
-#define DEFAULT_AGGREGATIONLIMITNVARSPERBLOCK         300         /**< if this limit on the number of variables of a block is exceeded the aggregation information for this block is not calculated */
-
 #define DEFAULT_BENDERSONLYCONTSUBPR                  FALSE       /**< indicates whether only decomposition with only continuous variables in the subproblems should be searched*/
 #define DEFAULT_BENDERSONLYBINMASTER                  FALSE       /**< indicates whether only decomposition with only binary variables in the master should be searched */
 
@@ -161,8 +158,6 @@ struct SCIP_ConshdlrData
    int                   maxnclassesperpartition;                /**< maximum number of classes allowed for detectors, partition with more classes are reduced to the maximum number of classes */
    int                   maxnclassesperpartitionforlargeprobs;   /**< maximum number of classes allowed for large (nvars+nconss > 50000) MIPs for detectors, partition with more classes are reduced to the maximum number of classes */
    int                   weightinggpresolvedoriginaldecomps;      /**< weighing method for comparing presolved and original decompositions (see corresponding enum)   */
-   int                   aggregationlimitnconssperblock;          /**< if this limit on the number of constraints of a block is exceeded the aggregation information for this block is not calculated */
-   int                   aggregationlimitnvarsperblock;           /**< if this limit on the number of variables of a block is exceeded the aggregation information for this block is not calculated */
 
    SCIP_Bool             classify;                                /**< indicates whether classification should take place */
    SCIP_Bool             allowpartitionduplicates;               /**< indicates whether partition duplicates are allowed (for statistical reasons) */
@@ -4781,16 +4776,6 @@ SCIP_RETCODE SCIPincludeConshdlrDecomp(
    SCIP_CALL( SCIPaddIntParam(scip, "detection/origprob/weightinggpresolvedoriginaldecomps",
                               "Weighting method when comparing decompositions for presolved and orig problem", &conshdlrdata->weightinggpresolvedoriginaldecomps, TRUE,
                               NO_MODIF, 0, 3, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/aggregation/limitnconssperblock",
-                              "Limits the number of constraints of a block (aggregation information for block is not calculated when exceeded)",
-                              &conshdlrdata->aggregationlimitnconssperblock, FALSE,
-                              DEFAULT_AGGREGATIONLIMITNCONSSPERBLOCK, 0, INT_MAX, NULL, NULL) );
-   
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/aggregation/limitnvarsperblock",
-                              "Limits the number of variables of a block (aggregation information for block is not calculated when exceeded)",
-                              &conshdlrdata->aggregationlimitnvarsperblock, FALSE,
-                              DEFAULT_AGGREGATIONLIMITNVARSPERBLOCK, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/benders/onlycontsubpr", "If enabled only decomposition with only continiuous variables in the subproblems are searched",
                               &conshdlrdata->bendersonlycontsubpr, FALSE, DEFAULT_BENDERSONLYCONTSUBPR, NULL, NULL) );

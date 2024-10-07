@@ -65,6 +65,38 @@ Code cleanup:
 - Moved references of 'sepa_master' to 'sepa_original'
 
 
+@page RN37 Release notes for GCG 3.7
+@section RN370 GCG 3.7.0
+*************************
+
+New features:
+-------------
+
+- nauty support (symmetry detection)
+
+New/modified/removed API functions:
+---------------------------
+
+- add 'GCGgetNautyName'
+
+New/changed parameters:
+-----------------------
+
+- renamed parameter 'relaxing/gcg/aggregation' to 'relaxing/gcg/aggregation/enabled'
+- renamed and moved parameter 'relaxing/gcg/bliss/enabled' to 'relaxing/gcg/aggregation/usesymmetrylib'
+- moved parameter 'relaxing/gcg/bliss/searchnodelimit' to 'relaxing/gcg/aggregation/searchnodelimit'
+- moved parameter 'relaxing/gcg/bliss/generatorlimit' to 'relaxing/gcg/aggregation/generatorlimit'
+- changed default value of 'relaxing/gcg/aggregation/generatorlimit' to 100
+- moved parameter 'detection/aggregation/limitnconssperblock' to 'relaxing/gcg/aggregation/limitnconssperblock'
+- moved parameter 'detection/aggregation/limitnvarsperblock' to 'relaxing/gcg/aggregation/limitnvarsperblock'
+
+Miscellaneous
+-------------
+
+- moved files related to symmetry detection to src/symmetry/
+- renamed 'pub_bliss.h' to 'pub_automorphism.h'
+
+
 @page RN36 Release notes for GCG 3.6
 @section RN363 GCG 3.6.3
 *************************
