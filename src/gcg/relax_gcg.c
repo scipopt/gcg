@@ -2843,13 +2843,21 @@ SCIP_RETCODE solveMasterProblem(
    if( SCIPgetStage(masterprob) == SCIP_STAGE_SOLVING && GCGmasterIsCurrentSolValid(masterprob) )
    {
       *lowerbound = SCIPgetLocalDualbound(masterprob);
+      if( SCIPisInfinity(scip, *lowerbound) )
+      {
+         *result = SCIP_CUTOFF;
+         return SCIP_OKAY;
+      }
    }
    else
    {
       SCIPdebugMessage("  stage: %d\n", SCIPgetStage(masterprob));
       assert(SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || SCIPgetBestSol(masterprob) != NULL || SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN);
       if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL && GCGmasterIsCurrentSolValid(masterprob) )
+      {
          *lowerbound = SCIPgetSolOrigObj(masterprob, SCIPgetBestSol(masterprob));
+         assert(!SCIPisInfinity(scip, *lowerbound));
+      }
       else if( SCIPgetStatus(masterprob) == SCIP_STATUS_INFEASIBLE || SCIPgetStatus(masterprob) == SCIP_STATUS_TIMELIMIT || !GCGmasterIsCurrentSolValid(masterprob) )
       {
          SCIP_Real tilim;
@@ -2860,6 +2868,8 @@ SCIP_RETCODE solveMasterProblem(
             return SCIP_OKAY;
          }
          *lowerbound = SCIPinfinity(scip);
+         *result = SCIP_CUTOFF;
+         return SCIP_OKAY;
       }
       else if( SCIPgetStatus(masterprob) == SCIP_STATUS_UNKNOWN )
       {
@@ -2933,6 +2943,7 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
       nodelimit = (SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) ? 1 : oldnnodes + 1);
       /* solving the master problem */
       SCIP_CALL( solveMasterProblem(scip, masterprob, relaxdata, nodelimit, lowerbound, result) );
+      assert(*result == SCIP_CUTOFF || !SCIPisInfinity(scip, *lowerbound));
 
       if( relaxdata->currentorigsol != NULL )
       {
@@ -3181,6 +3192,8 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
    {
       SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Sorry, the automatic selection is not currently available\n");
    }
+
+   assert(*result == SCIP_CUTOFF || !SCIPisInfinity(scip, *lowerbound));
 
    return SCIP_OKAY;
 }
