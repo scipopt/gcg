@@ -1121,20 +1121,14 @@ SCIP_RETCODE solveCliquer(
    }
 
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&markedconstraints,nconss) );
-   SCIP_CALL( SCIPallocBufferArray(pricingprob,&indsetvars,npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&solvals,npricingprobvars) );
-   SCIP_CALL( SCIPallocBufferArray(pricingprob,&vconsvars,2) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&linkedvars,npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&linkmatrix,npricingprobvars) );
    for( i = 0; i < npricingprobvars; ++i )
    {
       SCIP_CALL( SCIPallocBufferArray(pricingprob,&linkmatrix[i],npricingprobvars) );
    }
-   SCIP_CALL( SCIPallocBufferArray(pricingprob, &consvarsfixedcount, nconss) );
-   SCIP_CALL( SCIPallocBufferArray(pricingprob, &consvarsfixedtozerocount, nconss) );
-   SCIP_CALL( SCIPallocBufferArray(pricingprob, &aggrobjcoef, npricingprobvars) );
-   SCIP_CALL( SCIPallocBufferArray(pricingprob, &cliquerconstypes, nconss) );
-   SCIP_CALL( SCIPallocBufferArray(pricingprob, &couplingcoefindices, nconss) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob,&cliquerconstypes,nconss) );
 
    /* Used to keep track of node indizes for bijection while building the graph */
    indexcount = 0;
@@ -1193,12 +1187,6 @@ SCIP_RETCODE solveCliquer(
    if( nfixedvars == npricingprobvars )
       goto CREATECOLUMN;
 
-   for( i = 0; i < nconss; i++ )
-   {
-      consvarsfixedcount[i] = 0;       /* Initialize array to count the number of fixed vars per constraint. */
-      couplingcoefindices[i] = -1;     /* Initialize array to save coupling coefficient if constraint is a coupling constraint. */
-   }
-
 
    /* Determine constraint types for easier handling later on.
     * Also, it is checked for constraints that cannot be handled by this solver. */
@@ -1207,6 +1195,16 @@ SCIP_RETCODE solveCliquer(
       /* Encountered constraint that can not be handled. */
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
       goto TERMINATE;
+   }
+
+
+   /* Allocate and initialize memory for propagation of fixed variable values. */
+   SCIP_CALL( SCIPallocBufferArray(pricingprob,&consvarsfixedcount,nconss) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob,&couplingcoefindices,nconss) );
+   for( i = 0; i < nconss; i++ )
+   {
+      consvarsfixedcount[i] = 0;       /* Initialize array to count the number of fixed vars per constraint. */
+      couplingcoefindices[i] = -1;     /* Initialize array to save coupling coefficient if constraint is a coupling constraint. */
    }
 
    /* Propagate the already fixed variables to (potentially) get more fixed variables. */
@@ -1224,6 +1222,12 @@ SCIP_RETCODE solveCliquer(
    /* No graph needs to be built, we just can build the corresponding column. */
    if( nfixedvars == npricingprobvars )
       goto CREATECOLUMN;
+
+   /* Allocate memory needed for building the graph and creating a column. */
+   SCIP_CALL( SCIPallocBufferArray(pricingprob,&indsetvars,npricingprobvars) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob,&vconsvars,2) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob,&consvarsfixedtozerocount,nconss) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob,&aggrobjcoef,npricingprobvars) );
 
    /* Before adding nodes to the graph, aggregating the objective coefficients may be necessary if "same"-constraints exist. */
    if( nlinkedvars > 0 )
