@@ -1068,7 +1068,6 @@ SCIP_RETCODE solveCliquer(
    SCIP_VAR**        pricingprobvars;
    SCIP_VAR**        linkedvars;
    SCIP_Real*        solvals;
-   SCIP_Real*        consvals;
    SCIP_Real*        aggrobjcoef;
    SCIP_Real         scalingfactor;
    SCIP_Bool         retcode;
@@ -1089,8 +1088,6 @@ SCIP_RETCODE solveCliquer(
    int               nfixedvars;
    int               nodeindex0;
    int               nodeindex1;
-   int               nvarsfixedtoone;
-   int               vartoset;
    CLIQUER_CONSTYPE* cliquerconstypes;
    GCG_COL*          col;
 
@@ -1228,8 +1225,9 @@ SCIP_RETCODE solveCliquer(
    if( nfixedvars == npricingprobvars )
       goto CREATECOLUMN;
 
-   /* Before adding nodes to the graph, aggregating the objective coefficients for "same"-constraints is necessary. */
-   aggregateObjCoef(scip, linkmatrix, linkedvars, nlinkedvars, aggrobjcoef);
+   /* Before adding nodes to the graph, aggregating the objective coefficients may be necessary if "same"-constraints exist. */
+   if( nlinkedvars > 0 )
+      aggregateObjCoef(scip, linkmatrix, linkedvars, nlinkedvars, aggrobjcoef);
 
    /* Now calculate scaling factor based on maximum aggregated objective coefficient value. */
 
@@ -1318,7 +1316,6 @@ SCIP_RETCODE solveCliquer(
             continue;
 
          lconsvars = SCIPgetVarsLinear(pricingprob, constraints[i]);
-         consvals = SCIPgetValsLinear(pricingprob, constraints[i]);
 
          if( (cliquerconstypes[i] == LINEAR_IS && (SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[0], linkedvars, nlinkedvars, aggrobjcoef), 0)
                || SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[1], linkedvars, nlinkedvars, aggrobjcoef), 0)))
