@@ -1071,6 +1071,8 @@ SCIP_RETCODE solveCliquer(
    SCIP_Real*        aggrobjcoef;
    SCIP_Real         scalingfactor;
    SCIP_Bool         retcode;
+   SCIP_Bool         ismempropallocated;
+   SCIP_Bool         ismemgraphallocated;
    set_t             clique;
    graph_t*          g;
    clique_options    cl_opts;
@@ -1129,6 +1131,10 @@ SCIP_RETCODE solveCliquer(
       SCIP_CALL( SCIPallocBufferArray(pricingprob,&linkmatrix[i],npricingprobvars) );
    }
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&cliquerconstypes,nconss) );
+
+   /* Boolean variables to keep track of what was allocated. */
+   ismempropallocated = FALSE;
+   ismemgraphallocated = FALSE;
 
    /* Used to keep track of node indizes for bijection while building the graph */
    indexcount = 0;
@@ -1201,6 +1207,7 @@ SCIP_RETCODE solveCliquer(
    /* Allocate and initialize memory for propagation of fixed variable values. */
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&consvarsfixedcount,nconss) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&couplingcoefindices,nconss) );
+   ismempropallocated = TRUE;
    for( i = 0; i < nconss; i++ )
    {
       consvarsfixedcount[i] = 0;       /* Initialize array to count the number of fixed vars per constraint. */
@@ -1228,6 +1235,7 @@ SCIP_RETCODE solveCliquer(
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&vconsvars,2) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&consvarsfixedtozerocount,nconss) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&aggrobjcoef,npricingprobvars) );
+   ismemgraphallocated = TRUE;
 
    /* Before adding nodes to the graph, aggregating the objective coefficients may be necessary if "same"-constraints exist. */
    if( nlinkedvars > 0 )
@@ -1623,21 +1631,27 @@ SCIP_RETCODE solveCliquer(
       set_free(clique); /* clique can only be freed if non-empty */
 
  TERMINATE:
+   if( ismemgraphallocated )
+   {
+      SCIPfreeBufferArray(pricingprob, &indsetvars);
+      SCIPfreeBufferArray(pricingprob, &vconsvars);
+      SCIPfreeBufferArray(pricingprob, &consvarsfixedtozerocount);
+      SCIPfreeBufferArray(pricingprob, &aggrobjcoef);
+   }
+   if( ismempropallocated )
+   {
+      SCIPfreeBufferArray(pricingprob,&consvarsfixedcount);
+      SCIPfreeBufferArray(pricingprob,&couplingcoefindices);
+   }
    for( i = 0; i < npricingprobvars; ++i )
    {
       SCIPfreeBufferArray(pricingprob,&linkmatrix[i]);
    }
    SCIPfreeBufferArray(pricingprob,&linkmatrix);
    SCIPfreeBufferArray(pricingprob,&linkedvars);
-   SCIPfreeBufferArray(pricingprob,&vconsvars);
    SCIPfreeBufferArray(pricingprob,&solvals);
-   SCIPfreeBufferArray(pricingprob,&indsetvars);
    SCIPfreeBufferArray(pricingprob,&markedconstraints);
-   SCIPfreeBufferArray(pricingprob, &consvarsfixedcount);
-   SCIPfreeBufferArray(pricingprob, &consvarsfixedtozerocount);
-   SCIPfreeBufferArray(pricingprob, &aggrobjcoef);
-   SCIPfreeBufferArray(pricingprob, &cliquerconstypes);
-   SCIPfreeBufferArray(pricingprob, &couplingcoefindices);
+   SCIPfreeBufferArray(pricingprob,&cliquerconstypes);
    graph_free(g);
 
    return SCIP_OKAY;
