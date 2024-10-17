@@ -2614,8 +2614,6 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    /* free array for branchrules*/
    if( relaxdata->nbranchrules > 0 )
    {
-      int i;
-
       for( i = 0; i < relaxdata->nbranchrules; i++ )
       {
          SCIPfreeMemory(scip, &(relaxdata->branchrules[i]));
@@ -5425,7 +5423,6 @@ SCIP_RETCODE GCGinitializeMasterProblemSolve(
    )
 {
    SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
 
    assert(scip != NULL);
 
