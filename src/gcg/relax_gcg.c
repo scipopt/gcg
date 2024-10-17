@@ -2416,12 +2416,13 @@ SCIP_RETCODE initRelaxator(
 #ifdef _OPENMP
    if( relaxdata->mode == GCG_DECMODE_DANTZIGWOLFE && SCIPgetVerbLevel(scip) >= SCIP_VERBLEVEL_NORMAL )
    {
-      int nthreads = GCGpricerGetNPricingThreads(relaxdata->masterprob);
+      int ompmaxthreads = omp_get_max_threads();
+      int nthreads = GCGpricerGetMaxNThreads(relaxdata->masterprob);
       if( nthreads > 0 )
          nthreads = MIN(nthreads, GCGgetNRelPricingprobs(scip));
       else
-         nthreads = MIN(omp_get_max_threads(), GCGgetNRelPricingprobs(scip));
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Using up to %d thread(s) to solve the pricing problems.\n", nthreads);
+         nthreads = MIN(ompmaxthreads, GCGgetNRelPricingprobs(scip));
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Using up to %d (of %d) thread(s) to solve the pricing problems.\n", nthreads, ompmaxthreads);
    }
 #endif
 
