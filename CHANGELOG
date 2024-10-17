@@ -8,12 +8,12 @@ New features:
 New/changed parameters:
 -----------------------
 
-- renamed parameter 'pricing/masterpricer/threads' to 'pricing/masterpricer/nthreads' (default value: 0)
+- renamed parameter 'pricing/masterpricer/threads' to 'pricing/masterpricer/nthreads' (default value: 1)
 
 New/modified/removed API functions:
 ---------------------------
 
-- added 'GCGpricerAddColResult', 'GCGpricerGetNPricingThreads', 'GCGpricestoreGetNColsTotal'
+- added 'GCGpricerAddColResult', 'GCGpricerGetMaxNThreads', 'GCGpricestoreGetNColsTotal'
 - changed 'GCGpricestoreCreate', 'GCGpricestoreAddCol', 'GCGpricestoreGetCols', 'GCGpricestoreGetNCols'
 - removed 'GCGpricestoreRemoveInefficaciousCols', 'GCGpricestoreGetTime'
 - changed 'GCGcolpoolAddCol', 'GCGcolpoolPrice'
