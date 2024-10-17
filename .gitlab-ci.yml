@@ -266,11 +266,11 @@ build:highs_solver:
   script:
     ## HiGHS
     - git clone https://github.com/ERGO-Code/HiGHS.git lib/highs
-    - cmake -S./lib/highs -B./lib/highs/build -DFAST_BUILD=ON -DCMAKE_INSTALL_PREFIX=./lib/highs/build
+    - cmake -S./lib/highs -B./lib/highs/build -DCMAKE_INSTALL_PREFIX=./lib/highs/install
     - cmake --build ./lib/highs/build -j4
     - cmake --install ./lib/highs/build
     # main compilation
-    - cmake -S. -B./build -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DHIGHS=ON -DHIGHS_DIR=lib/highs/build
+    - cmake -S. -B./build -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DHIGHS=ON -DHIGHS_DIR=lib/highs/install
     - cmake --build build -j4 --target gcg
     - cmake --build build --target gcg_check
   artifacts:
