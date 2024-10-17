@@ -33,6 +33,7 @@
  * @author Christian Puchert
  * @author Michael Bastubbe
  * @author Jonas Witt
+ * @author Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -85,6 +86,7 @@
 
 #ifdef _OPENMP
 #include <omp.h>
+#include "struct_locks.h"
 #endif
 
 using namespace scip;
@@ -98,21 +100,21 @@ using namespace scip;
 #define DEFAULT_ABORTPRICINGGAP          0.00       /**< gap between dual bound and RMP objective at which pricing is aborted */
 #define DEFAULT_DISPINFOS                FALSE      /**< should additional information be displayed */
 #define DEFAULT_DISABLECUTOFF            2          /**< should the cutoffbound be applied in master LP solving? (0: on, 1:off, 2:auto) */
-#define DEFAULT_THREADS                  0          /**< number of threads (0 is OpenMP default) */
+#define DEFAULT_NTHREADS                 1          /**< number of threads (0: up to omp_get_max_threads()) */
 #define DEFAULT_STABILIZATION            TRUE       /**< should stabilization be used */
 #define DEFAULT_STABILIZATIONTREE        FALSE      /**< should stabilization be used in nodes other than the root node*/
 #define DEFAULT_HYBRIDASCENT             FALSE      /**< should hybridization of smoothing with an ascent method be enabled */
 #define DEFAULT_HYBRIDASCENT_NOAGG       FALSE      /**< should hybridization of smoothing with an ascent method be enabled
-                                                     *   if pricing problems cannot be aggregation */
+                                                     *   if pricing problems cannot be aggregated */
 
 #define DEFAULT_USECOLPOOL               TRUE       /**< should the colpool be checked for negative redcost cols before solving the pricing problems? */
 #define DEFAULT_COLPOOL_AGELIMIT         100        /**< default age limit for columns in column pool */
 
-#define DEFAULT_PRICE_ORTHOFAC 0.0
-#define DEFAULT_PRICE_OBJPARALFAC 0.0
-#define DEFAULT_PRICE_REDCOSTFAC 1.0
-#define DEFAULT_PRICE_MINCOLORTH 0.0
-#define DEFAULT_PRICE_EFFICIACYCHOICE 0
+#define DEFAULT_PRICE_ORTHOFAC           0.0
+#define DEFAULT_PRICE_OBJPARALFAC        0.0
+#define DEFAULT_PRICE_REDCOSTFAC         1.0
+#define DEFAULT_PRICE_MINCOLORTH         0.0
+#define DEFAULT_PRICE_EFFICIACYCHOICE    0
 
 #define DEFAULT_USEARTIFICIALVARS        FALSE      /**< add artificial vars to master (instead of using Farkas pricing) */
 #define DEFAULT_USEMAXOBJ                TRUE       /**< default value for using maxobj for big M objective of artificial variables */
@@ -214,6 +216,7 @@ struct SCIP_PricerData
    SCIP_Real             maxpricecols;       /**< maximum number of columns per round */
    SCIP_Real             maxpricecolsfarkas; /**< maximum number of columns per Farkas round */
    GCG_EFFICIACYCHOICE   efficiacychoice;    /**< choice to base efficiacy on */
+   int*                  nefficaciouscols;   /**< number of found (efficacious) cols per pricing problem */
 
    /* statistics */
    int                   oldvars;            /**< Vars of last pricing iteration */
@@ -227,6 +230,12 @@ struct SCIP_PricerData
    double                rootnodedegeneracy; /**< degeneracy of the root node */
    double                avgrootnodedegeneracy; /**< average degeneray of all nodes */
    int                   ndegeneracycalcs;   /**< number of observations */
+
+#ifdef _OPENMP
+   /* parallelization */
+   int                   maxnthreads;        /**< maximal number of threads used to parallelize pricing */
+   GCG_LOCKS*            locks;              /**< OpenMP locks */
+#endif
 
 #ifdef SCIP_STATISTIC
    int                   nrootbounds;        /**< number of stored bounds */
@@ -246,8 +255,6 @@ struct SCIP_PricerData
 #endif
 };
 
-
-int ObjPricerGcg::threads;
 
 /** information method for a parameter change of disablecutoff */
 static
@@ -675,7 +682,11 @@ SCIP_RETCODE ObjPricerGcg::setPricingProblemMemorylimit(
 
    if( !SCIPisInfinity(origprob, memlimit) )
    {
-      memlimit -= SCIPgetMemUsed(origprob)/1048576.0 + GCGgetPricingprobsMemUsed(origprob) - SCIPgetMemUsed(pricingscip)/1048576.0;
+      GCG_SET_LOCK(&pricerdata->locks->pricinglimitslock);
+      memlimit -= SCIPgetMemUsed(origprob)/1048576.0 + GCGgetPricingprobsMemUsed(origprob);
+      GCG_UNSET_LOCK(&pricerdata->locks->pricinglimitslock);
+
+      memlimit -= SCIPgetMemUsed(pricingscip)/1048576.0;
       if( memlimit < 0 )
          memlimit = 0.0;
       SCIP_CALL( SCIPsetRealParam(pricingscip, "limits/memory", memlimit) );
@@ -1663,27 +1674,30 @@ void ObjPricerGcg::updateRedcosts(
    }
 }
 
-/** add a new column to the pricing storage */
 SCIP_RETCODE ObjPricerGcg::addColToPricestore(
-   GCG_COL*              col                 /**< priced col */
+   GCG_COL*              col,                /**< priced col */
+   SCIP_Bool*            added
    )
 {
-   SCIP_RETCODE retcode;
-
+   SCIP_Bool addedcol;
+   SCIP_Real redcost;
    assert(col != NULL);
-   assert(pricingtype != NULL);
-
-   SCIP_Real redcost = computeRedCostGcgCol(pricingtype, col, NULL);
+   redcost = computeRedCostGcgCol(pricingtype, col, NULL);
    GCGcolUpdateRedcost(col, redcost, FALSE);
+   GCGpricestoreAddCol(scip_, pricestore, col, FALSE, &addedcol);
 
-   SCIPdebugMessage("  -> new column <%p>, reduced cost = %g\n", (void*) col, redcost);
-
-   #pragma omp critical (update)
+   if( addedcol )
    {
-      retcode = GCGpricestoreAddCol(scip_, pricestore, col, FALSE);
+      if( SCIPisDualfeasNegative(scip_, GCGcolGetRedcost(col)) )
+         pricerdata->nefficaciouscols[col->probnr]++;
+#ifdef SCIP_DEBUG
+      GCG_SET_LOCK(&pricerdata->locks->printlock);
+      SCIPdebugMessage("  -> new column <%p>, reduced cost = %g\n", (void*) col, redcost);
+      GCG_UNSET_LOCK(&pricerdata->locks->printlock);
+#endif
    }
-   SCIP_CALL( retcode );
-
+   if( added != NULL )
+      *added = addedcol;
    return SCIP_OKAY;
 }
 
@@ -1693,25 +1707,28 @@ void ObjPricerGcg::getBestCols(
    )
 {
    GCG_COL** cols;
+   GCG_COL* col;
    int ncols;
-
    int i;
+   int j;
 
    assert(pricingprobcols != NULL);
 
-   cols = GCGpricestoreGetCols(pricestore);
-   ncols = GCGpricestoreGetNCols(pricestore);
-
    for( i = 0; i < pricerdata->npricingprobs; ++i )
+   {
       pricingprobcols[i] = NULL;
 
-   for( i = 0; i < ncols; ++i )
-   {
-      int probnr = GCGcolGetProbNr(cols[i]);
+      cols = GCGpricestoreGetCols(pricestore, i);
+      ncols = GCGpricestoreGetNCols(pricestore, i);
 
-      if( pricingprobcols[probnr] == NULL
-         || SCIPisDualfeasLT(scip_, GCGcolGetRedcost(cols[i]), GCGcolGetRedcost(pricingprobcols[probnr])) )
-         pricingprobcols[probnr] = cols[i];
+      for( j = 0; j < ncols; ++j )
+      {
+         col = cols[j];
+         assert(i == GCGcolGetProbNr(col));
+
+         if( pricingprobcols[i] == NULL || SCIPisDualfeasLT(scip_, GCGcolGetRedcost(col), GCGcolGetRedcost(pricingprobcols[i])) )
+            pricingprobcols[i] = col;
+      }
    }
 }
 
@@ -2336,7 +2353,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
       pricerdata->npointsprob[prob]++;
    }
 
-   SCIP_CALL( GCGcreateMasterVar(scip, GCGmasterGetOrigprob(scip), pricerdata->pricingprobs[prob], &newvar, varname, objcoeff,
+   SCIP_CALL( GCGcreateMasterVar(scip, origprob, pricerdata->pricingprobs[prob], &newvar, varname, objcoeff,
          pricerdata->vartype, isray, prob, nsolvars, solvals, solvars, FALSE));
 
    SCIPvarMarkDeletable(newvar);
@@ -2582,7 +2599,6 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
    GCG_SOLVER* solver;
    SCIP_Bool heuristic;
    SCIP_Bool solved;
-   SCIP_RETCODE retcode;
 
    pricingprob = GCGpricingjobGetPricingprob(pricingjob);
    assert(pricingprob != NULL);
@@ -2598,11 +2614,8 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
    heuristic = GCGpricingjobIsHeuristic(pricingjob);
 
    // @todo: this should be done by the pricing solvers
-   #pragma omp critical (limits)
-   {
-      retcode = setPricingProblemMemorylimit(pricingscip);
-   }
-   SCIP_CALL( retcode );
+   // @todo: has to consider #threads
+   SCIP_CALL( setPricingProblemMemorylimit(pricingscip) );
 
    /* add the next generic branching constraint if necessary */
    if( !GCGpricingprobBranchconsIsAdded(pricingprob) )
@@ -2640,24 +2653,22 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
 
    if( !heuristic )
    {
-      #pragma omp atomic
+      #pragma omp atomic update
       pricerdata->solvedsubmipsoptimal++;
    }
    else
    {
-      #pragma omp atomic
+      #pragma omp atomic update
       pricerdata->solvedsubmipsheur++;
    }
 
 #ifdef SCIP_STATISTIC
-   #pragma omp critical (collectstats)
-   GCGpricerCollectStatistic(pricerdata, pricetype->getType(), probnr,
-      SCIPgetSolvingTime(pricingscip));
+   GCGpricerCollectStatistic(pricerdata, pricetype->getType(), probnr, SCIPgetSolvingTime(pricingscip));
 #endif
    /* @todo: This should actually be a MIP solver specific statistic */
    if( SCIPgetStage(pricingscip) > SCIP_STAGE_SOLVING )
    {
-      #pragma omp atomic
+      #pragma omp atomic update
       pricerdata->pricingiters += SCIPgetNLPIterations(pricingscip);
    }
 
@@ -2708,7 +2719,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIP_Bool*            bestredcostvalid    /**< pointer to store if bestredcost are valid (pp solvedoptimal) */
    )
 {
-   GCG_PRICINGJOB* pricingjob = NULL;
    GCG_COL** bestcols = NULL;
    SCIP_LPI* lpi = NULL;
    SCIP_Real* bestobjvals = NULL;
@@ -2722,13 +2732,12 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIP_Bool enableppcuts;
    SCIP_Bool enablestab;
    int nsuccessfulprobs;
-   int maxniters;
-   int niters;
    int i;
    int j;
    int nfoundvars;
    SCIP_Bool optimal;
    bool probingnode;
+   int nthreads;
 
 #ifdef SCIP_STATISTIC
    SCIP_Real** olddualvalues;
@@ -2757,8 +2766,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    if( lowerbound != NULL )
       *lowerbound = -SCIPinfinity(scip_);
 
-   maxniters = pricingcontroller->getMaxNIters();
-
    // disable colpool while probing mode is active (can be removed after a feasibility check (#586) is implemented)
    probingnode = (SCIPnodeGetType(SCIPgetCurrentNode(scip_)) == SCIP_NODETYPE_PROBINGNODE);
 
@@ -2775,7 +2782,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &bestobjvals, pricerdata->npricingprobs) );
 
    enableppcuts = FALSE;
-   SCIP_CALL( SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppcuts", &enableppcuts) );
+   SCIP_CALL( SCIPgetBoolParam(origprob, "sepa/basis/enableppcuts", &enableppcuts) );
    /* set parameters for adding pool cuts to separation basis */
    if( enableppcuts && SCIPgetCurrentNode(scip_) != SCIPgetRootNode(scip_) )
    {
@@ -2789,13 +2796,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          }
       }
    }
-
-#ifdef _OPENMP
-   if( threads > 0 )
-      omp_set_num_threads(MIN(threads, GCGgetNRelPricingprobs(origprob)));
-   else
-      omp_set_num_threads(GCGgetNRelPricingprobs(origprob));
-#endif
 
    /* todo: We avoid checking for feasibility of the columns using this hack */
    if( pricerdata->usecolpool && !probingnode )
@@ -2831,8 +2831,17 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    nstabrounds = 0;
 #endif
 
-   SCIPdebugMessage("***** New pricing round at node %" SCIP_LONGINT_FORMAT " (depth = %d), maxniters = %d\n",
-      SCIPgetNNodes(scip_), SCIPnodeGetDepth(SCIPgetCurrentNode(scip_)), maxniters);
+   SCIPdebugMessage("***** New pricing round at node %" SCIP_LONGINT_FORMAT " (depth = %d)\n",
+      SCIPgetNNodes(scip_), SCIPnodeGetDepth(SCIPgetCurrentNode(scip_)));
+
+#ifdef _OPENMP
+   if( pricerdata->maxnthreads > 0 )
+      nthreads = MIN(pricerdata->maxnthreads, GCGgetNRelPricingprobs(origprob));
+   else
+      nthreads = MIN(omp_get_max_threads(), GCGgetNRelPricingprobs(origprob));
+#else
+   nthreads = 1;
+#endif
 
    /* stabilization loop */
    do
@@ -2898,101 +2907,131 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       /* check if colpool already contains columns with negative reduced cost */
       if( pricerdata->usecolpool && !probingnode )
       {
-         SCIP_Bool foundvarscolpool;
-         int oldnfoundcols;
+         int nfoundvarscolpool;
 
-         foundvarscolpool = FALSE;
-         oldnfoundcols = GCGpricestoreGetNCols(pricestore);
+         SCIP_CALL( GCGcolpoolPrice(colpool, NULL, &nfoundvarscolpool) );
+         SCIPstatisticMessage("cp: %d impr c\n", nfoundvarscolpool);
 
-         SCIP_CALL( GCGcolpoolPrice(colpool, pricestore, NULL, &foundvarscolpool) );
-         SCIPstatisticMessage("cp: %d impr c\n", GCGpricestoreGetNCols(pricestore) - oldnfoundcols);
-
-         if( foundvarscolpool )
+         if( nfoundvarscolpool > 0 )
          {
             SCIPdebugMessage("*** Found column(s) with negative reduced cost in column pool\n");
-            assert(GCGpricestoreGetNCols(pricestore) > 0);
+            assert(GCGpricestoreGetNColsTotal(pricestore) > 0);
             break;
          }
       }
 
       pricingcontroller->setupPriorityQueue(pricerdata->dualsolconv);
 
+      assert(!infeasible);
       /* actual pricing loop: perform the pricing jobs until none are left or an abortion criterion is met */
-      #pragma omp parallel for ordered firstprivate(pricingjob) shared(retcode, pricetype, nfoundvars, nsuccessfulprobs) schedule(static,1)
-      for( niters = 0; niters < maxniters; ++niters )
+      #pragma omp parallel default(none) shared(nthreads, retcode, pricetype, nfoundvars, nsuccessfulprobs, stabilized) num_threads(nthreads)
+      #pragma omp single
+      for( int t = 0; t < nthreads; ++t)
       {
-         GCG_PRICINGPROB* pricingprob;
-         GCG_PRICINGSTATUS status;
-         SCIP_Real problowerbound;
-         SCIP_RETCODE private_retcode;
-
-         int oldnimpcols = GCGpricestoreGetNEfficaciousCols(pricestore);
-
-         #pragma omp flush(retcode)
-         if( retcode != SCIP_OKAY )
-            continue;
-
-         /* retrieve the next pricing job from the queue */
-         #pragma omp critical (update)
+         #pragma omp task default(none) shared(retcode, pricetype, nfoundvars, nsuccessfulprobs, stabilized)
+         while( TRUE )
          {
-            pricingjob = pricingcontroller->getNextPricingjob();
-         }
-         if( pricingjob == NULL )
-            continue;
+            GCG_PRICINGJOB* pricingjob;
+            GCG_PRICINGPROB* pricingprob;
+            GCG_PRICINGSTATUS status;
+            SCIP_Real problowerbound;
+            SCIP_RETCODE private_retcode;
+            int pricingprobnr;
+            int impcols;
+            int oldimpcols;
+            int _nfoundvars;
+            int _nsuccessfulprobs;
+            int iter;
 
-         #pragma omp flush(nfoundvars, nsuccessfulprobs)
-         if( (pricingcontroller->canPricingloopBeAborted(pricetype, nfoundvars, nsuccessfulprobs) || infeasible) && !stabilized )
-         {
-            SCIPdebugMessage("*** Abort pricing loop, infeasible = %u, stabilized = %u\n", infeasible, stabilized);
-            continue;
-         }
+            #pragma omp atomic read
+            private_retcode = retcode;
 
-         /* initializations */
-         pricingprob = GCGpricingjobGetPricingprob(pricingjob);
-         status = GCG_PRICINGSTATUS_UNKNOWN;
-         problowerbound = -SCIPinfinity(scip_);
+            if( private_retcode != SCIP_OKAY )
+               break;
 
-         SCIPdebugMessage("*** Solve pricing problem %d, solver <%s>, stabilized = %u, %s\n",
-            GCGpricingprobGetProbnr(pricingprob), GCGsolverGetName(GCGpricingjobGetSolver(pricingjob)), stabilized,
-            GCGpricingjobIsHeuristic(pricingjob) ? "heuristic" : "exact");
-
-         /* @todo: this should be done by the pricing solvers */
-         #pragma omp critical (limits)
-         SCIP_CALL_ABORT( pricingcontroller->setPricingjobTimelimit(pricingjob) );
-
-#ifdef SCIP_STATISTIC
-         /* @todo: this can interfere with parallelization */
-         pricingtime = pricetype->getClockTime();
-#endif
-
-         /* solve the pricing problem */
-         private_retcode = performPricingjob(pricingjob, pricetype, &status, &problowerbound);
-
-#ifdef SCIP_STATISTIC
-         pricingtime = pricetype->getClockTime() - pricingtime;
-#endif
-
-         SCIPdebugMessage("  -> status: %d\n", status);
-         SCIPdebugMessage("  -> problowerbound: %.4g\n", problowerbound);
-
-         /* update pricing problem results, store columns */
-         #pragma omp critical (update)
-         {
-            pricingcontroller->updatePricingprob(pricingprob, status, problowerbound, GCGpricestoreGetNEfficaciousCols(pricestore) - oldnimpcols);
-         }
-
-         /* update solving statistics, needed for checking the abortion criterion */
-         #pragma omp ordered
-         {
-            #pragma omp critical (retcode)
-            retcode = private_retcode; // @todo: handle return code correctly
-
-            #pragma omp atomic
-            nfoundvars += GCGpricestoreGetNEfficaciousCols(pricestore) - oldnimpcols;
-
-            if( oldnimpcols == 0 && GCGpricingprobGetNImpCols(pricingprob) > 0 )
+            #pragma omp atomic read
+            _nfoundvars = nfoundvars;
+            #pragma omp atomic read
+            _nsuccessfulprobs = nsuccessfulprobs;
+            if( pricingcontroller->canPricingloopBeAborted(pricetype, _nfoundvars, _nsuccessfulprobs) && !stabilized )
             {
-               #pragma omp atomic
+#ifdef SCIP_DEBUG
+               GCG_SET_LOCK(&pricerdata->locks->printlock);
+               SCIPdebugMessage("*** Abort pricing loop, stabilized = %u\n", stabilized);
+               GCG_UNSET_LOCK(&pricerdata->locks->printlock);
+#endif
+               break;
+            }
+
+            /* retrieve the next pricing job from the queue */
+            GCG_SET_LOCK(&pricerdata->locks->pricinglock);
+            pricingjob = pricingcontroller->getNextPricingjob();
+            GCG_UNSET_LOCK(&pricerdata->locks->pricinglock);
+
+            if( pricingjob == NULL )
+               break;
+
+            /* initializations */
+            pricingprob = GCGpricingjobGetPricingprob(pricingjob);
+            pricingprobnr = GCGpricingprobGetProbnr(pricingprob);
+            oldimpcols = pricerdata->nefficaciouscols[pricingprobnr];
+            status = GCG_PRICINGSTATUS_UNKNOWN;
+            problowerbound = -SCIPinfinity(scip_);
+
+#ifdef SCIP_DEBUG
+            GCG_SET_LOCK(&pricerdata->locks->printlock);
+            SCIPdebugMessage("*** Solve solving pricing problem %d, solver <%s>, stabilized = %u, %s\n",
+               pricingprobnr, GCGsolverGetName(GCGpricingjobGetSolver(pricingjob)), stabilized,
+               GCGpricingjobIsHeuristic(pricingjob) ? "heuristic" : "exact");
+            GCG_UNSET_LOCK(&pricerdata->locks->printlock);
+#endif
+
+            /* @todo: this should be done by the pricing solvers */
+            GCG_SET_LOCK(&pricerdata->locks->pricinglimitslock);
+            SCIP_CALL_ABORT( pricingcontroller->setPricingjobTimelimit(pricingjob) );
+            GCG_UNSET_LOCK(&pricerdata->locks->pricinglimitslock);
+
+   #ifdef SCIP_STATISTIC
+            /* @todo: this can interfere with parallelization */
+            pricingtime = pricetype->getClockTime();
+   #endif
+
+            /* solve the pricing problem */
+            private_retcode = performPricingjob(pricingjob, pricetype, &status, &problowerbound);
+
+   #ifdef SCIP_STATISTIC
+            pricingtime = pricetype->getClockTime() - pricingtime;
+   #endif
+
+            impcols = pricerdata->nefficaciouscols[pricingprobnr] - oldimpcols;
+
+#ifdef SCIP_DEBUG
+            GCG_SET_LOCK(&pricerdata->locks->printlock);
+            SCIPdebugMessage("*** Finished solving pricing problem %d, solver <%s>, stabilized = %u, %s\n",
+               pricingprobnr, GCGsolverGetName(GCGpricingjobGetSolver(pricingjob)), stabilized,
+               GCGpricingjobIsHeuristic(pricingjob) ? "heuristic" : "exact");
+            SCIPdebugMessage("  -> status: %d\n", status);
+            SCIPdebugMessage("  -> problowerbound: %.4g\n", problowerbound);
+            SCIPdebugMessage("  -> #impcols: %d\n", impcols);
+            GCG_UNSET_LOCK(&pricerdata->locks->printlock);
+#endif
+
+            /* update pricing problem results */
+            pricingcontroller->updatePricingprob(pricingprob, status, problowerbound, impcols);
+
+            /* update solving statistics, needed for checking the abortion criterion */
+            if( private_retcode != SCIP_OKAY )
+            {
+               #pragma omp aotmic write
+               retcode = private_retcode; // @todo: handle return code correctly
+            }
+
+            #pragma omp atomic update
+            nfoundvars += impcols;
+
+            if( oldimpcols == 0 && impcols > 0 )
+            {
+               #pragma omp atomic update
                ++nsuccessfulprobs;
             }
 
@@ -3000,13 +3039,10 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             if( status != GCG_PRICINGSTATUS_NOTAPPLICABLE )
             {
                SCIPstatisticMessage("P p %d : %d in %g\n",
-                  GCGpricingprobGetProbnr(pricingprob), GCGpricestoreGetNEfficaciousCols(pricestore) - oldnimpcols, pricingtime);
+                  pricingprobnr, impcols, pricingtime);
             }
-#endif
-         }
+  #endif
 
-         #pragma omp critical (update)
-         {
             pricingcontroller->evaluatePricingjob(pricingjob, status);
          }
       }
@@ -3155,12 +3191,12 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             *lowerbound = MAX(*lowerbound, lowerboundcandidate);
 
             /* add cuts based on the latest pricing problem objective to the original problem */
-            SCIP_CALL( SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppobjcg", &enableppobjcg) );
+            SCIP_CALL( SCIPgetBoolParam(origprob, "sepa/basis/enableppobjcg", &enableppobjcg) );
             if( enableppobjcg && SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) )
             {
                for( i = 0; i < pricerdata->npricingprobs; ++i )
                {
-                  if( !GCGisPricingprobRelevant(GCGmasterGetOrigprob(scip_), i) )
+                  if( !GCGisPricingprobRelevant(origprob, i) )
                      continue;
 
                   SCIP_CALL( SCIPsepaBasisAddPPObjConss(scip_, i, bestobjvals[i], TRUE) );
@@ -3176,12 +3212,16 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       /** @todo perhaps solve remaining pricing problems, if only few left? */
       /** @todo solve all pricing problems all k iterations? */
    }
-   while( nextchunk || (stabilized && nfoundvars == 0) );
+   while( !SCIPisStopped(scip_) && (nextchunk || (stabilized && nfoundvars == 0)) );
 
    SCIPdebugMessage("*** Pricing loop finished, found %d improving columns.\n", nfoundvars);
 
    /* Add new columns as variables to the master problem or move them to the column pool */
    SCIP_CALL( GCGpricestoreApplyCols(pricestore, colpool, (pricerdata->usecolpool && !probingnode), &nfoundvars) );
+   for( j = 0; j < pricerdata->npricingprobs; j++ )
+   {
+      pricerdata->nefficaciouscols[j] = 0;
+   }
 
    SCIPdebugMessage("Added %d new variables.\n", nfoundvars);
 
@@ -3189,7 +3229,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIPfreeBlockMemoryArray(scip_, &bestcols, pricerdata->npricingprobs);
 
    enableppcuts = FALSE;
-   SCIP_CALL( SCIPgetBoolParam(GCGmasterGetOrigprob(scip_), "sepa/basis/enableppcuts", &enableppcuts) );
+   SCIP_CALL( SCIPgetBoolParam(origprob, "sepa/basis/enableppcuts", &enableppcuts) );
 
    /* add pool cuts to sepa basis */
    if( enableppcuts && SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) )
@@ -3618,6 +3658,8 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    /* alloc memory for arrays of reduced cost */
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->dualsolconv), pricerdata->npricingprobs) );
 
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->nefficaciouscols), pricerdata->npricingprobs) );
+
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
 
@@ -3628,7 +3670,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
       pricerdata->redcostfoundvars[i] = 0;
       pricerdata->redcostnodetimedist[i]= 0;
       pricerdata->dualsolconv[i] = -SCIPinfinity(scip_);
-
+      pricerdata->nefficaciouscols[i] = 0;
 
       if( GCGisPricingprobRelevant(origprob, i) )
       {
@@ -3866,6 +3908,8 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    }
    SCIPfreeBlockMemoryArray(scip, &(pricerdata->realdualvalues), pricerdata->maxrealdualvaluescapacity);
    SCIPfreeBlockMemoryArray(scip, &(pricerdata->maxrealdualvalues), pricerdata->maxrealdualvaluescapacity);
+
+   SCIPfreeBlockMemoryArray(scip, &(pricerdata->nefficaciouscols), pricerdata->npricingprobs);
 
    return SCIP_OKAY;
 }
@@ -4166,7 +4210,7 @@ SCIP_RETCODE ObjPricerGcg::createPricingTypes()
 /** create the pricing controller */
 SCIP_RETCODE ObjPricerGcg::createPricingcontroller()
 {
-   pricingcontroller = new Pricingcontroller(scip_);
+   pricingcontroller = new Pricingcontroller(scip_, origprob);
    SCIP_CALL( pricingcontroller->addParameters() );
 
    return SCIP_OKAY;
@@ -4197,10 +4241,10 @@ SCIP_RETCODE ObjPricerGcg::createColpool()
 
 SCIP_RETCODE ObjPricerGcg::createPricestore()
 {
-   SCIP_CALL( GCGpricestoreCreate(scip_, &pricestore,
+   SCIP_CALL( GCGpricestoreCreate(scip_, origprob, &pricestore,
       pricerdata->redcostfac, pricerdata->objparalfac, pricerdata->orthofac,
-      pricerdata->mincolorth,
-      pricerdata->efficiacychoice) );
+      pricerdata->mincolorth, pricerdata->efficiacychoice,
+      1.1 * MAX(reducedcostpricing->getMaxcolsround(), GCGgetNRelPricingprobs(origprob) * reducedcostpricing->getMaxcolsprob())) );
 
    return SCIP_OKAY;
 }
@@ -4233,6 +4277,10 @@ SCIP_RETCODE SCIPincludePricerGcg(
    pricerdata->foundvarshist = NULL;
 #endif
 
+#ifdef _OPENMP
+   pricerdata->locks = GCGgetLocks(origprob);
+#endif
+
    pricer = new ObjPricerGcg(scip, origprob, PRICER_NAME, PRICER_DESC, PRICER_PRIORITY, PRICER_DELAY, pricerdata);
    /* include variable pricer */
    SCIP_CALL( SCIPincludeObjPricer(scip, pricer, TRUE) );
@@ -4260,9 +4308,16 @@ SCIP_RETCODE SCIPincludePricerGcg(
          "should additional informations concerning the pricing process be displayed?",
          &pricerdata->dispinfos, FALSE, DEFAULT_DISPINFOS, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/threads",
-         "how many threads should be used to concurrently solve the pricing problem (0 to guess threads by OpenMP)",
-         &ObjPricerGcg::threads, FALSE, DEFAULT_THREADS, 0, 4096, NULL, NULL) );
+#ifdef _OPENMP
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/nthreads",
+            "maximum number of threads used to parallelize pricing (0: automatic)",
+            (int*)&pricerdata->maxnthreads, FALSE, DEFAULT_NTHREADS, 0, omp_get_max_threads(), NULL, NULL) );
+#ifdef SCIP_STATISTIC
+   /* statistics are not threadsafe */
+   SCIP_CALL( SCIPsetIntParam(origprob, "pricing/masterpricer/nthreads", 1) );
+   SCIP_CALL( SCIPfixParam(origprob, "pricing/masterpricer/nthreads") );
+#endif
+#endif
 
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricing/masterpricer/stabilization",
          "should stabilization be performed?",
@@ -4333,7 +4388,6 @@ SCIP_RETCODE SCIPincludePricerGcg(
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/pricestore/efficiacychoice",
             "choice to base efficiacy on",
             (int*)&pricerdata->efficiacychoice, FALSE, DEFAULT_PRICE_EFFICIACYCHOICE, 0, 2, NULL, NULL) );
-
 
    return SCIP_OKAY;
 }
@@ -4801,7 +4855,7 @@ int GCGpricerGetNPointsProb(
    pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
-   if( !GCGisPricingprobRelevant(GCGmasterGetOrigprob(scip), probnr) )
+   if( !GCGisPricingprobRelevant(pricer->getOrigprob(), probnr) )
       return 0;
    else
       return pricerdata->npointsprob[probnr];
@@ -4825,7 +4879,7 @@ int GCGpricerGetNRaysProb(
    pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
-   if( !GCGisPricingprobRelevant(GCGmasterGetOrigprob(scip), probnr) )
+   if( !GCGisPricingprobRelevant(pricer->getOrigprob(), probnr) )
       return 0;
    else
       return pricerdata->nraysprob[probnr];
@@ -4875,7 +4929,25 @@ SCIP_RETCODE GCGpricerAddCol(
    pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
    assert(pricer != NULL);
 
-   SCIP_CALL( pricer->addColToPricestore(col) );
+   SCIP_CALL( pricer->addColToPricestore(col, NULL) );
+
+   return SCIP_OKAY;
+}
+
+/** add a new column to the pricing storage */
+extern "C"
+SCIP_RETCODE GCGpricerAddColResult(
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_COL*              col,                /**< priced col */
+   SCIP_Bool*            added
+   )
+{
+   ObjPricerGcg* pricer;
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   SCIP_CALL( pricer->addColToPricestore(col, added) );
 
    return SCIP_OKAY;
 }
@@ -5383,3 +5455,25 @@ GCG_COLPOOL* GCGgetColpool(
 
    return pricer->colpool;
 }
+
+#ifdef _OPENMP
+GCG_EXPORT
+int GCGpricerGetMaxNThreads(
+   SCIP*                 scip                /**< SCIP data structure */
+   )
+{
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+   int nthreads;
+
+   assert(scip != NULL);
+
+   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   return pricerdata->maxnthreads;
+}
+#endif

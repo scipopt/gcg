@@ -202,6 +202,14 @@ SCIP_RETCODE GCGpricerAddCol(
    GCG_COL*              col                 /**< priced col */
    );
 
+/** add a new column to the pricing storage and store result*/
+GCG_EXPORT
+SCIP_RETCODE GCGpricerAddColResult(
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_COL*              col,                /**< priced col */
+   SCIP_Bool*            added               /**< pointer to var that indicates whether the col was added */
+   );
+
 /** transfers a primal solution of the original problem into the master variable space,
  *  i.e. creates one master variable for each block and adds the solution to the master problem  */
 GCG_EXPORT
@@ -295,6 +303,14 @@ GCG_EXPORT
 GCG_COLPOOL* GCGgetColpool(
    SCIP*                 scip                /**< SCIP data structure */
    );
+
+#ifdef _OPENMP
+/** get maximal number of pricing threads */
+GCG_EXPORT
+int GCGpricerGetMaxNThreads(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+#endif
 
 /**@} */
 #ifdef __cplusplus

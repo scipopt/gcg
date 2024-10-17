@@ -279,6 +279,18 @@ SCIP_Real GCGcolComputeOrth(
    GCG_COL*             gcgcol2             /**< second gcg column */
    );
 
+/** gets the hash key of a col */
+GCG_EXPORT
+SCIP_DECL_HASHGETKEY(GCGhashGetKeyCol);
+
+/** returns TRUE iff both cols are identical */
+GCG_EXPORT
+SCIP_DECL_HASHKEYEQ(GCGhashKeyEqCol);
+
+/** calculates the hash key value of a col */
+GCG_EXPORT
+SCIP_DECL_HASHKEYVAL(GCGhashKeyValCol);
+
 /**@} */
 
 #ifdef __cplusplus

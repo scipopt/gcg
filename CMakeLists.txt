@@ -40,7 +40,14 @@ endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
-option(OPENMP "should gcg be compiled with openmp" OFF)
+if(MSVC)
+   # disable since SCIP requires an OpenMP feature which is not supported by the native MSVC
+   set(DEFAULT_OPENMP OFF)
+else()
+   set(DEFAULT_OPENMP ON)
+endif()
+
+option(OPENMP "should gcg be compiled with openmp" ${DEFAULT_OPENMP})
 option(STATIC_GMP "prefer static gmp library" OFF)
 option(GSL "should gcg be compiled with GSL" ON)
 option(GMP "should gmp be linked" ON)
@@ -57,6 +64,7 @@ if(OPENMP)
    if(OPENMP_FOUND)
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+      set(THREADSAFE ON FORCE)
    endif()
 endif()
 

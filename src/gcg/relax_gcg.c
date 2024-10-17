@@ -44,6 +44,11 @@
 //#define SCIP_DEBUG
 
 #include <string.h>
+#ifdef _OPENMP
+#include <omp.h>
+#include "struct_locks.h"
+#endif
+#include "type_locks.h"
 
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"
@@ -175,6 +180,10 @@ struct SCIP_RelaxData
 
    /* visualization parameter */
    GCG_PARAMDATA*        paramsvisu;         /**< parameters for visualization */
+
+#ifdef _OPENMP
+   GCG_LOCKS*            locks;                  /** OpenMP locks */
+#endif
 };
 
 
@@ -2404,6 +2413,19 @@ SCIP_RETCODE initRelaxator(
 
    SCIP_CALL( createMaster(scip, relaxdata) );
 
+#ifdef _OPENMP
+   if( relaxdata->mode == GCG_DECMODE_DANTZIGWOLFE && SCIPgetVerbLevel(scip) >= SCIP_VERBLEVEL_NORMAL )
+   {
+      int ompmaxthreads = omp_get_max_threads();
+      int nthreads = GCGpricerGetMaxNThreads(relaxdata->masterprob);
+      if( nthreads > 0 )
+         nthreads = MIN(nthreads, GCGgetNRelPricingprobs(scip));
+      else
+         nthreads = MIN(ompmaxthreads, GCGgetNRelPricingprobs(scip));
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Using up to %d (of %d) thread(s) to solve the pricing problems.\n", nthreads, ompmaxthreads);
+   }
+#endif
+
    /* for Benders' decomposition, the Benders' plugin must be activated */
    if( relaxdata->mode == GCG_DECMODE_BENDERS )
    {
@@ -2424,9 +2446,40 @@ SCIP_RETCODE initRelaxator(
    return SCIP_OKAY;
 }
 
+#ifdef _OPENMP
+/** initializes all OpenMP locks */
+static
+void initLocks(
+   GCG_LOCKS*            locks               /**< OpenMP locks */
+   )
+{
+   assert(locks != NULL);
+   GCG_INIT_LOCK(&locks->memorylock);
+   GCG_INIT_LOCK(&locks->pricinglock);
+   GCG_INIT_LOCK(&locks->pricinglimitslock);
+   GCG_INIT_LOCK(&locks->pricestorelock);
+   GCG_INIT_LOCK(&locks->printlock);
+}
+
+/** destroys all OpenMP locks */
+static
+void destroyLocks(
+   GCG_LOCKS*            locks               /**< OpenMP locks */
+   )
+{
+   assert(locks != NULL);
+   GCG_DESTROY_LOCK(&locks->memorylock);
+   GCG_DESTROY_LOCK(&locks->pricinglock);
+   GCG_DESTROY_LOCK(&locks->pricinglimitslock);
+   GCG_DESTROY_LOCK(&locks->pricestorelock);
+   GCG_DESTROY_LOCK(&locks->printlock);
+}
+#endif
+
 /** initializes relaxator data */
 static
-void initRelaxdata(
+SCIP_RETCODE initRelaxdata(
+   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_RELAXDATA*       relaxdata           /**< relaxdata data structure */
    )
 {
@@ -2470,6 +2523,13 @@ void initRelaxdata(
    relaxdata->relaxisinitialized = FALSE;
    relaxdata->simplexiters = 0;
    relaxdata->rootnodetime = NULL;
+
+#ifdef _OPENMP
+   SCIP_CALL( SCIPallocMemory(scip, &relaxdata->locks) );
+   initLocks(relaxdata->locks);
+#endif
+
+return SCIP_OKAY;
 }
 
 /*
@@ -2509,6 +2569,15 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
       SCIP_CALL( GCGdecompFree(scip, &relaxdata->decomp) );
    }
 
+#ifdef _OPENMP
+   /* free locks struct */
+   if( relaxdata->locks != NULL )
+   {
+      destroyLocks(relaxdata->locks);
+      SCIPfreeMemory(scip, &relaxdata->locks);
+   }
+#endif
+
    SCIPfreeMemory(scip, &relaxdata);
    return SCIP_OKAY;
 }
@@ -2545,8 +2614,6 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    /* free array for branchrules*/
    if( relaxdata->nbranchrules > 0 )
    {
-      int i;
-
       for( i = 0; i < relaxdata->nbranchrules; i++ )
       {
          SCIPfreeMemory(scip, &(relaxdata->branchrules[i]));
@@ -2611,7 +2678,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    assert(relaxdata != NULL);
    assert(relaxdata->masterprob != NULL);
 
-   initRelaxdata(relaxdata);
+   SCIP_CALL( initRelaxdata(scip, relaxdata) );
    SCIP_CALL( SCIPcreateClock(scip, &(relaxdata->rootnodetime)) );
 
    /* if the master problem decomposition mode is the same as the original SCIP instance mode, then the master problem
@@ -3232,7 +3299,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIPcreateParamsVisu(scip, &(relaxdata->paramsvisu));
    assert(relaxdata->paramsvisu != NULL);
 
-   initRelaxdata(relaxdata);
+   SCIP_CALL( initRelaxdata(scip, relaxdata) );
 
    /* include relaxator */
    SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
@@ -5356,7 +5423,6 @@ SCIP_RETCODE GCGinitializeMasterProblemSolve(
    )
 {
    SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
 
    assert(scip != NULL);
 
@@ -5365,3 +5431,19 @@ SCIP_RETCODE GCGinitializeMasterProblemSolve(
    assert(SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED);
    return initializeMasterProblemSolve(scip, relax);
 }
+
+#ifdef _OPENMP
+GCG_LOCKS* GCGgetLocks(
+   SCIP*                 scip               /**< the SCIP data structure */
+   )
+{
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_RELAX* relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->locks;
+}
+#endif
