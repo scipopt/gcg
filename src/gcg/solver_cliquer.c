@@ -1131,9 +1131,10 @@ SCIP_RETCODE solveCliquer(
       SCIP_CALL( SCIPallocBufferArray(pricingprob,&linkmatrix[i],npricingprobvars) );
    }
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&cliquerconstypes,nconss) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob,&consvarsfixedcount,nconss) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob,&couplingcoefindices,nconss) );
 
    /* Boolean variables to keep track of what was allocated. */
-   ismempropallocated = FALSE;
    ismemgraphallocated = FALSE;
 
    /* Used to keep track of node indizes for bijection while building the graph */
@@ -1193,6 +1194,12 @@ SCIP_RETCODE solveCliquer(
    if( nfixedvars == npricingprobvars )
       goto CREATECOLUMN;
 
+   for( i = 0; i < nconss; i++ )
+   {
+      consvarsfixedcount[i] = 0;       /* Initialize array to count the number of fixed vars per constraint. */
+      couplingcoefindices[i] = -1;     /* Initialize array to save coupling coefficient if constraint is a coupling constraint. */
+   }
+
 
    /* Determine constraint types for easier handling later on.
     * Also, it is checked for constraints that cannot be handled by this solver. */
@@ -1201,17 +1208,6 @@ SCIP_RETCODE solveCliquer(
       /* Encountered constraint that can not be handled. */
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
       goto TERMINATE;
-   }
-
-
-   /* Allocate and initialize memory for propagation of fixed variable values. */
-   SCIP_CALL( SCIPallocBufferArray(pricingprob,&consvarsfixedcount,nconss) );
-   SCIP_CALL( SCIPallocBufferArray(pricingprob,&couplingcoefindices,nconss) );
-   ismempropallocated = TRUE;
-   for( i = 0; i < nconss; i++ )
-   {
-      consvarsfixedcount[i] = 0;       /* Initialize array to count the number of fixed vars per constraint. */
-      couplingcoefindices[i] = -1;     /* Initialize array to save coupling coefficient if constraint is a coupling constraint. */
    }
 
    /* Propagate the already fixed variables to (potentially) get more fixed variables. */
@@ -1638,11 +1634,8 @@ SCIP_RETCODE solveCliquer(
       SCIPfreeBufferArray(pricingprob, &consvarsfixedtozerocount);
       SCIPfreeBufferArray(pricingprob, &aggrobjcoef);
    }
-   if( ismempropallocated )
-   {
-      SCIPfreeBufferArray(pricingprob,&consvarsfixedcount);
-      SCIPfreeBufferArray(pricingprob,&couplingcoefindices);
-   }
+   SCIPfreeBufferArray(pricingprob,&consvarsfixedcount);
+   SCIPfreeBufferArray(pricingprob,&couplingcoefindices);
    for( i = 0; i < npricingprobvars; ++i )
    {
       SCIPfreeBufferArray(pricingprob,&linkmatrix[i]);
