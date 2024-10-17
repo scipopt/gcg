@@ -14,7 +14,7 @@ set(GCG_VERSION_MAJOR 4)
 set(GCG_VERSION_MINOR 0)
 set(GCG_VERSION_PATCH 0)
 set(GCG_VERSION_SUB 0)
-set(GCG_VERSION_API 18)
+set(GCG_VERSION_API 21)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
@@ -40,7 +40,14 @@ endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
-option(OPENMP "should gcg be compiled with openmp" OFF)
+if(MSVC)
+   # disable since SCIP requires an OpenMP feature which is not supported by the native MSVC
+   set(DEFAULT_OPENMP OFF)
+else()
+   set(DEFAULT_OPENMP ON)
+endif()
+
+option(OPENMP "should gcg be compiled with openmp" ${DEFAULT_OPENMP})
 option(STATIC_GMP "prefer static gmp library" OFF)
 option(GSL "should gcg be compiled with GSL" ON)
 option(GMP "should gmp be linked" ON)
@@ -50,6 +57,7 @@ option(HIGHS "should HiGHS be used for solving pricing MIPs" OFF)
 option(MT "use static runtime libraries for Visual Studio compiler" OFF)
 option(GCG_DEV_BUILD "compile SCIP and SoPlex located in lib/scip-git and lib/soplex-git" OFF)
 option(HMETIS "should hmetis be called" OFF)
+option(JSON "should JSON library be linked" ON)
 
 # OPENMP
 if(OPENMP)
@@ -57,6 +65,7 @@ if(OPENMP)
    if(OPENMP_FOUND)
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+      set(THREADSAFE ON FORCE)
    endif()
 endif()
 
@@ -132,8 +141,21 @@ if(HMETIS_FOUND)
    add_definitions(-DWITH_HMETIS)
 endif()
 
-set(SYM sbliss CACHE STRING "options for symmetry computation")  #create the variable
-set_property(CACHE SYM PROPERTY STRINGS sbliss bliss none )  #define list of values GUI will offer for the variable
+# JSON
+if(JSON)
+   find_package(JANSSON)
+endif()
+if(JANSSON_FOUND)
+   include_directories(${JANSSON_INCLUDE_DIRS})
+   add_definitions(-DWITH_JSON)
+   set(JANSSON_PIC_LIBRARIES ${JANSSON_LIBRARIES})
+else()
+   set(JANSSON_LIBRARIES)
+   set(JANSSON_PIC_LIBRARIES)
+endif()
+
+set(SYM snauty CACHE STRING "options for symmetry computation")  #create the variable
+set_property(CACHE SYM PROPERTY STRINGS sbliss bliss nauty snauty none )  #define list of values GUI will offer for the variable
 
 #set the correct rpath for OS X
 set(CMAKE_MACOSX_RPATH ON)
@@ -147,6 +169,7 @@ if(MSVC)
     add_definitions(/wd4100)
     add_definitions(/wd4244)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    add_compile_options(/bigobj)
 endif()
 
 # Visual Studio compiler with static runtime libraries
@@ -162,25 +185,32 @@ file(WRITE ${CMAKE_BINARY_DIR}/gcg_update_githash.cmake "
 find_program(GIT git)
 if(EXISTS \${DST})
    file(STRINGS \${DST} GITHASH_OLD)
-   string(REGEX REPLACE \"#define GCG_GITHASH \\\"(.*)\\\"\" \"\\\\1\" GITHASH_OLD \${GITHASH_OLD})
+   string(REGEX REPLACE \"#define GCG_GITHASH \\\"(.*)\\\"\" \"\\\\1\" GITHASH_OLD \"\${GITHASH_OLD}\")
 endif()
 if((GIT) AND (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git))
    execute_process(
       COMMAND \${GIT} describe --always --dirty
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       OUTPUT_VARIABLE GITHASH OUTPUT_STRIP_TRAILING_WHITESPACE)
-   string(REGEX REPLACE \"^.*-g\" \"\" GITHASH \${GITHASH})
+   string(REGEX REPLACE \"^.*-g\" \"\" GITHASH \"\${GITHASH}\")
    if(NOT \${GITHASH} STREQUAL \"\${GITHASH_OLD}\")
       file(WRITE \${DST} \"#define GCG_GITHASH \\\"\${GITHASH}\\\"\n\")
    endif()
 else()
    set(GITHASH \${GITHASH_OLD})
+   if(NOT GITHASH)
+      message(STATUS \"Compiling without git information\")
+      set(GITHASH \"NoGitInfo\")
+   endif()
+   file(WRITE \${DST} \"#define GCG_GITHASH \\\"\${GITHASH}\\\"\n\")
 endif()
 message(STATUS \"Git hash: \" \${GITHASH})
 ")
 add_custom_target(gcg_update_githash
-                  COMMAND ${CMAKE_COMMAND} -DDST=${PROJECT_SOURCE_DIR}/src/gcg/githash.c
-                                           -P ${CMAKE_BINARY_DIR}/gcg_update_githash.cmake)
+   COMMAND ${CMAKE_COMMAND}
+      -DDST=${PROJECT_SOURCE_DIR}/src/gcg/githash.c
+      -P ${CMAKE_BINARY_DIR}/gcg_update_githash.cmake)
+
 # use C++11 standard
 set(CMAKE_CXX_STANDARD 11)
 
@@ -195,6 +225,13 @@ if(NOT GCG_DEV_BUILD)
    if(SCIP_FOUND)
       # SCIP headers can be directly included
       include_directories(${SCIP_INCLUDE_DIRS})
+
+      if(ZLIB AND NOT TARGET ZLIB::ZLIB)
+         find_package(ZLIB REQUIRED)
+      endif()
+      if(READLINE)
+         find_package(Readline REQUIRED)
+      endif()
    endif()
 endif()
 
@@ -214,20 +251,56 @@ if((NOT SCIP_FOUND) AND (EXISTS ${GCG_DEV_BUILD_SCIP_PATH}) AND (EXISTS ${GCG_DE
    add_subdirectory(${GCG_DEV_BUILD_SCIP_PATH})
    set(SCIP_LIBRARIES libscip)
 elseif(GCG_DEV_BUILD)
-   message(WARNING "GCG_DEV_BUILD option is set but could not find SCIP and SoPlex in the lib/ subdirectory. Please specify GCG_DEV_BUILD_SOPLEX_PATH and GCG_DEV_BUILD_SCIP_PATH")
+   message(FATAL_ERROR "GCG_DEV_BUILD option is set but could not find SCIP and SoPlex in the lib/ subdirectory. Please specify GCG_DEV_BUILD_SOPLEX_PATH and GCG_DEV_BUILD_SCIP_PATH")
 endif()
 
 #search the selected symmetry computation program
 if(SYM STREQUAL "bliss" OR SYM STREQUAL "sbliss")
-   set(SYM_LIBRARIES libbliss ${GMP_LIBRARIES})
-   set(SYM_PIC_LIBRARIES libbliss ${GMP_LIBRARIES})
+   if(NOT TARGET Bliss::libbliss)
+      find_package(Bliss CONFIG HINTS ${BLISS_DIR})
+      if(NOT TARGET Bliss::libbliss)
+         find_package(Bliss REQUIRED)
+         include_directories(${BLISS_INCLUDE_DIRS})
+      endif()
+   endif()
+   set(BLISS_LIBRARIES Bliss::libbliss)
+   set(SYM_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
+   set(SYM_PIC_LIBRARIES ${BLISS_LIBRARIES} ${GMP_LIBRARIES})
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BLISS_DEFINITIONS} -DWITH_BLISS")
-elseif(SYM STREQUAL "none")
+   # if sbliss: sassy is a header-only library and is already included by SCIP
+elseif(SYM STREQUAL "nauty" OR SYM STREQUAL "snauty")
+   if(NOT GCG_DEV_BUILD AND NOT SCIPOptSuite_SOURCE_DIR)
+      find_package(NAUTY REQUIRED)
+      include_directories(${NAUTY_INCLUDE_DIRS})
+      set(SYM_LIBRARIES ${NAUTY_LIBRARIES})
+      set(SYM_PIC_LIBRARIES ${NAUTY_LIBRARIES})
+   else()
+      message(STATUS "Using nauty provided by SCIP")
+      if(GCG_DEV_BUILD)
+         set(NAUTY_SRC_DIR ${GCG_DEV_BUILD_SCIP_PATH}/src/nauty/)
+      elseif(SCIPOptSuite_SOURCE_DIR)
+         set(NAUTY_SRC_DIR ${SCIPOptSuite_SOURCE_DIR}/scip/src/nauty/)
+      endif()
+      set(symsources
+         ${NAUTY_SRC_DIR}/nauty.c
+         ${NAUTY_SRC_DIR}/nautil.c
+         ${NAUTY_SRC_DIR}/nausparse.c
+         ${NAUTY_SRC_DIR}/schreier.c
+         ${NAUTY_SRC_DIR}/naurng.c
+      )
+      set(SYM_LIBRARIES)
+      set(SYM_PIC_LIBRARIES)
+   endif()
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${NAUTY_DEFINITIONS} -DWITH_NAUTY")
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${NAUTY_DEFINITIONS} -DWITH_NAUTY")
+   # if snauty: sassy is a header-only library and is already included by SCIP
+else()
+   message(STATUS "GCG will be compiled without symmetry computation")
    set(SYM_LIBRARIES)
    set(SYM_PIC_LIBRARIES)
-else()
-   message(FATAL_ERROR "option SYM has wrong value")
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DNO_AUT_LIB")
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BLISS_DEFINITIONS} -DNO_AUT_LIB")
 endif()
 
 # TODO: In SCIP, license is in COPYING file and not in LICENSE.

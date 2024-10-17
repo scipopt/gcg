@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -44,6 +44,11 @@
 //#define SCIP_DEBUG
 
 #include <string.h>
+#ifdef _OPENMP
+#include <omp.h>
+#include "struct_locks.h"
+#endif
+#include "type_locks.h"
 
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"
@@ -69,9 +74,9 @@
 
 #include "gcg.h"
 
-#ifdef WITH_BLISS
-#include "pub_bliss.h"
-#include "bliss_automorph.h"
+#ifndef NO_AUT_LIB
+#include "symmetry/pub_automorphism.h"
+#include "symmetry/automorphism.h"
 #endif
 
 #define RELAX_NAME             "gcg"
@@ -88,7 +93,10 @@
                                                     1: Benders' decomposition, 2: solve original problem) */
 #define DEFAULT_BLISS TRUE
 #define DEFAULT_BLISS_SEARCH_NODE_LIMIT 0
-#define DEFAULT_BLISS_GENERATOR_LIMIT 0
+#define DEFAULT_BLISS_GENERATOR_LIMIT 100
+#define DEFAULT_AGGREGATIONNCONSSLIMIT 300
+#define DEFAULT_AGGREGATIONNVARSLIMIT 300
+
 #define DELVARS
 
 /*
@@ -130,6 +138,7 @@ struct SCIP_RelaxData
    SCIP_SOL*             currentorigsol;     /**< current lp solution transformed into the original space */
    SCIP_Bool             origsolfeasible;    /**< is the current lp solution primal feasible in the original space? */
    SCIP_Longint          lastmasterlpiters;  /**< number of lp iterations when currentorigsol was updated the last time */
+   SCIP_Longint          lastmasternode;     /**< number of current node when currentorigsol was updated the last time */
    SCIP_SOL*             lastmastersol;      /**< last feasible master solution that was added to the original problem */
    SCIP_CONS**           markedmasterconss;  /**< array of conss that are marked to be in the master */
    int                   nmarkedmasterconss; /**< number of elements in array of conss that are marked to be in the master */
@@ -149,9 +158,11 @@ struct SCIP_RelaxData
    SCIP_Bool             dispinfos;          /**< should additional information be displayed? */
    GCG_DECMODE           mode;               /**< the decomposition mode for GCG. 0: Dantzig-Wolfe (default), 1: Benders' decomposition, 2: automatic */
    int                   origverblevel;      /**< the verbosity level of the original problem */
-   SCIP_Bool             usebliss;           /**< should bliss be used to check for identical blocks? */
+   SCIP_Bool             usesymmetrylib;     /**< should symmetry detection lib be used to check for identical blocks? */
    int                   searchnodelimit;    /**< bliss search node limit (requires patched bliss version) */
    int                   generatorlimit;     /**< bliss generator limit (requires patched bliss version) */
+   int                   aggregationnconsslimit;          /**< if this limit on the number of constraints of a block is exceeded the aggregation information for this block is not calculated */
+   int                   aggregationnvarslimit;           /**< if this limit on the number of variables of a block is exceeded the aggregation information for this block is not calculated */
 
    /* data for probing */
    SCIP_Bool             masterinprobing;    /**< is the master problem in probing mode? */
@@ -169,6 +180,10 @@ struct SCIP_RelaxData
 
    /* visualization parameter */
    GCG_PARAMDATA*        paramsvisu;         /**< parameters for visualization */
+
+#ifdef _OPENMP
+   GCG_LOCKS*            locks;                  /** OpenMP locks */
+#endif
 };
 
 
@@ -1276,10 +1291,6 @@ SCIP_RETCODE createMasterProblem(
 
    /* do not modify the time limit after solving the master problem */
    SCIP_CALL( SCIPsetBoolParam(masterscip, "reoptimization/commontimelimit", FALSE) );
-
-   /* disable aggregation and multiaggregation of variables, as this might lead to issues with copied original variables */
-   SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotaggr", TRUE) );
-   SCIP_CALL( SCIPsetBoolParam(masterscip, "presolving/donotmultaggr", TRUE) );
 
    /* for Benders' decomposition, some additional parameter settings are required for the master problem. */
    if( mode == GCG_DECMODE_BENDERS )
@@ -2402,6 +2413,19 @@ SCIP_RETCODE initRelaxator(
 
    SCIP_CALL( createMaster(scip, relaxdata) );
 
+#ifdef _OPENMP
+   if( relaxdata->mode == GCG_DECMODE_DANTZIGWOLFE && SCIPgetVerbLevel(scip) >= SCIP_VERBLEVEL_NORMAL )
+   {
+      int ompmaxthreads = omp_get_max_threads();
+      int nthreads = GCGpricerGetMaxNThreads(relaxdata->masterprob);
+      if( nthreads > 0 )
+         nthreads = MIN(nthreads, GCGgetNRelPricingprobs(scip));
+      else
+         nthreads = MIN(ompmaxthreads, GCGgetNRelPricingprobs(scip));
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Using up to %d (of %d) thread(s) to solve the pricing problems.\n", nthreads, ompmaxthreads);
+   }
+#endif
+
    /* for Benders' decomposition, the Benders' plugin must be activated */
    if( relaxdata->mode == GCG_DECMODE_BENDERS )
    {
@@ -2422,9 +2446,40 @@ SCIP_RETCODE initRelaxator(
    return SCIP_OKAY;
 }
 
+#ifdef _OPENMP
+/** initializes all OpenMP locks */
+static
+void initLocks(
+   GCG_LOCKS*            locks               /**< OpenMP locks */
+   )
+{
+   assert(locks != NULL);
+   GCG_INIT_LOCK(&locks->memorylock);
+   GCG_INIT_LOCK(&locks->pricinglock);
+   GCG_INIT_LOCK(&locks->pricinglimitslock);
+   GCG_INIT_LOCK(&locks->pricestorelock);
+   GCG_INIT_LOCK(&locks->printlock);
+}
+
+/** destroys all OpenMP locks */
+static
+void destroyLocks(
+   GCG_LOCKS*            locks               /**< OpenMP locks */
+   )
+{
+   assert(locks != NULL);
+   GCG_DESTROY_LOCK(&locks->memorylock);
+   GCG_DESTROY_LOCK(&locks->pricinglock);
+   GCG_DESTROY_LOCK(&locks->pricinglimitslock);
+   GCG_DESTROY_LOCK(&locks->pricestorelock);
+   GCG_DESTROY_LOCK(&locks->printlock);
+}
+#endif
+
 /** initializes relaxator data */
 static
-void initRelaxdata(
+SCIP_RETCODE initRelaxdata(
+   SCIP*                 scip,               /**< SCIP data structure */
    SCIP_RELAXDATA*       relaxdata           /**< relaxdata data structure */
    )
 {
@@ -2452,6 +2507,7 @@ void initRelaxdata(
 
    relaxdata->lastmastersol = NULL;
    relaxdata->lastmasterlpiters = 0;
+   relaxdata->lastmasternode = -1;
    relaxdata->markedmasterconss = NULL;
    relaxdata->maxmarkedmasterconss = 0;
    relaxdata->masterinprobing = FALSE;
@@ -2467,6 +2523,13 @@ void initRelaxdata(
    relaxdata->relaxisinitialized = FALSE;
    relaxdata->simplexiters = 0;
    relaxdata->rootnodetime = NULL;
+
+#ifdef _OPENMP
+   SCIP_CALL( SCIPallocMemory(scip, &relaxdata->locks) );
+   initLocks(relaxdata->locks);
+#endif
+
+return SCIP_OKAY;
 }
 
 /*
@@ -2506,6 +2569,15 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
       SCIP_CALL( GCGdecompFree(scip, &relaxdata->decomp) );
    }
 
+#ifdef _OPENMP
+   /* free locks struct */
+   if( relaxdata->locks != NULL )
+   {
+      destroyLocks(relaxdata->locks);
+      SCIPfreeMemory(scip, &relaxdata->locks);
+   }
+#endif
+
    SCIPfreeMemory(scip, &relaxdata);
    return SCIP_OKAY;
 }
@@ -2516,12 +2588,22 @@ static
 SCIP_DECL_RELAXEXIT(relaxExitGcg)
 {
    SCIP_RELAXDATA* relaxdata;
+   int i;
 
    assert(scip != NULL);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+
+   /* free pricing problems */
+   for( i = relaxdata->npricingprobs - 1; i >= 0 ; i-- )
+   {
+      SCIP_CALL( SCIPfree(&(relaxdata->pricingprobs[i])) );
+   }
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->pricingprobs), relaxdata->npricingprobs);
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->blockrepresentative), relaxdata->npricingprobs);
+   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->nblocksidentical), relaxdata->npricingprobs);
 
    if( relaxdata->decomp != NULL )
    {
@@ -2532,8 +2614,6 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    /* free array for branchrules*/
    if( relaxdata->nbranchrules > 0 )
    {
-      int i;
-
       for( i = 0; i < relaxdata->nbranchrules; i++ )
       {
          SCIPfreeMemory(scip, &(relaxdata->branchrules[i]));
@@ -2598,7 +2678,7 @@ SCIP_DECL_RELAXINITSOL(relaxInitsolGcg)
    assert(relaxdata != NULL);
    assert(relaxdata->masterprob != NULL);
 
-   initRelaxdata(relaxdata);
+   SCIP_CALL( initRelaxdata(scip, relaxdata) );
    SCIP_CALL( SCIPcreateClock(scip, &(relaxdata->rootnodetime)) );
 
    /* if the master problem decomposition mode is the same as the original SCIP instance mode, then the master problem
@@ -2711,15 +2791,6 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
    {
       SCIP_CALL( SCIPfreeProb(relaxdata->masterprob) );
    }
-
-   /* free pricing problems */
-   for( i = relaxdata->npricingprobs - 1; i >= 0 ; i-- )
-   {
-      SCIP_CALL( SCIPfree(&(relaxdata->pricingprobs[i])) );
-   }
-   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->pricingprobs), relaxdata->npricingprobs);
-   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->blockrepresentative), relaxdata->npricingprobs);
-   SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->nblocksidentical), relaxdata->npricingprobs);
 
    /* free solutions */
    if( relaxdata->currentorigsol != NULL )
@@ -2914,6 +2985,8 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
    /* only solve the relaxation if it was not yet solved at the current node */
    if( SCIPnodeGetNumber(SCIPgetCurrentNode(scip)) != relaxdata->lastsolvednodenr )
    {
+      SCIP_CONS* activeorigcons;
+
       /* start root node time clock */
       if( SCIPgetRootNode(scip) == SCIPgetCurrentNode(scip) )
       {
@@ -2960,10 +3033,11 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
             SCIPdebugMessage("  updated current best primal feasible solution.\n");
       }
 
-      if( GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip)) != NULL )
+      activeorigcons = GCGconsOrigbranchGetActiveCons(scip);
+      if( GCGconsOrigbranchGetBranchrule(activeorigcons) != NULL )
       {
-         SCIP_CALL( GCGrelaxBranchMasterSolved(scip, GCGconsOrigbranchGetBranchrule(GCGconsOrigbranchGetActiveCons(scip) ),
-               GCGconsOrigbranchGetBranchdata(GCGconsOrigbranchGetActiveCons(scip)), *lowerbound) );
+         SCIP_CALL( GCGrelaxBranchMasterSolved(scip, GCGconsOrigbranchGetBranchrule(activeorigcons ),
+               GCGconsOrigbranchGetBranchdata(activeorigcons), *lowerbound) );
       }
 
       /* stop root node clock */
@@ -2977,6 +3051,9 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
    {
       SCIPdebugMessage("Problem has been already solved at this node\n");
    }
+
+   if( SCIPgetStatus(masterprob) == SCIP_STATUS_OPTIMAL )
+      *result = SCIP_CUTOFF;
 
    return SCIP_OKAY;
 }
@@ -3198,6 +3275,14 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    }
 #endif
 
+#ifdef WITH_NAUTY
+   {
+      char name[SCIP_MAXSTRLEN];
+      GCGgetNautyName(name, SCIP_MAXSTRLEN);
+      SCIP_CALL( SCIPincludeExternalCodeInformation(scip, name, "A Tool for Computing Automorphism Groups of Graphs by B.D. McKay and A. Piperno (https://pallini.di.uniroma1.it/)") );
+   }
+#endif
+
 #ifdef WITH_CLIQUER
       SCIP_CALL( SCIPincludeExternalCodeInformation(scip, "Cliquer", "A set of C routines for finding cliques in an arbitrary weighted graph by S. Niskanen and P. Ostergard (https://users.aalto.fi/~pat/cliquer.html)") );
 #endif
@@ -3214,7 +3299,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIPcreateParamsVisu(scip, &(relaxdata->paramsvisu));
    assert(relaxdata->paramsvisu != NULL);
 
-   initRelaxdata(relaxdata);
+   SCIP_CALL( initRelaxdata(scip, relaxdata) );
 
    /* include relaxator */
    SCIP_CALL( SCIPincludeRelax(scip, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
@@ -3272,9 +3357,30 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/mipdiscretization",
          "should discretization (TRUE) or convexification (FALSE) approach be used in mixed-integer programs?",
          &(relaxdata->mipdiscretization), FALSE, DEFAULT_MIPDISCRETIZATION, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/aggregation",
+   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/aggregation/enabled",
          "should identical blocks be aggregated (only for discretization approach)?",
          &(relaxdata->aggregation), FALSE, DEFAULT_AGGREGATION, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/aggregation/limitnconssperblock",
+         "Limits the number of constraints of a block (aggregation information for block is not calculated when exceeded)",
+         &(relaxdata->aggregationnconsslimit), FALSE, DEFAULT_AGGREGATIONNCONSSLIMIT, 0, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/aggregation/limitnvarsperblock",
+         "Limits the number of variables of a block (aggregation information for block is not calculated when exceeded)",
+         &(relaxdata->aggregationnvarslimit), FALSE, DEFAULT_AGGREGATIONNVARSLIMIT, 0, INT_MAX, NULL, NULL) );
+#ifndef NO_AUT_LIB
+   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/aggregation/usesymmetrylib",
+         "should a symmetry detection library be used to check for identical blocks?",
+         &(relaxdata->usesymmetrylib), FALSE, DEFAULT_BLISS, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/aggregation/searchnodelimit",
+         "search node limit (0: unlimited), requires patched bliss version",
+         &(relaxdata->searchnodelimit), TRUE, (int)DEFAULT_BLISS_SEARCH_NODE_LIMIT, 0, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/aggregation/generatorlimit",
+         "generator limit (0: unlimited), requires patched bliss version or version >= 0.76",
+         &(relaxdata->generatorlimit), TRUE, (int)DEFAULT_BLISS_GENERATOR_LIMIT, 0, INT_MAX, NULL, NULL) );
+#else
+   relaxdata->usesymmetrylib = FALSE;
+   relaxdata->searchnodelimit = 0;
+   relaxdata->generatorlimit = 0;
+#endif
    SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/dispinfos",
          "should additional information about the blocks be displayed?",
          &(relaxdata->dispinfos), FALSE, DEFAULT_DISPINFOS, NULL, NULL) );
@@ -3282,21 +3388,6 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
             "the decomposition mode that GCG will use. (0: Dantzig-Wolfe (default), 1: Benders' decomposition, "
             "2: no decomposition will be performed)",
             (int*)&(relaxdata->mode), FALSE, (int)DEFAULT_MODE, 0, 2, NULL, NULL) );
-#ifdef WITH_BLISS
-   SCIP_CALL( SCIPaddBoolParam(scip, "relaxing/gcg/bliss/enabled",
-         "should bliss be used to check for identical blocks?",
-         &(relaxdata->usebliss), FALSE, DEFAULT_BLISS, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/bliss/searchnodelimit",
-         "bliss search node limit (0: unlimited), requires patched bliss version",
-         &(relaxdata->searchnodelimit), TRUE, (int)DEFAULT_BLISS_SEARCH_NODE_LIMIT, 0, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "relaxing/gcg/bliss/generatorlimit",
-         "bliss generator limit (0: unlimited), requires patched bliss version or version >= 0.76",
-         &(relaxdata->generatorlimit), TRUE, (int)DEFAULT_BLISS_GENERATOR_LIMIT, 0, INT_MAX, NULL, NULL) );
-#else
-   relaxdata->usebliss = FALSE;
-   relaxdata->searchnodelimit = 0;
-   relaxdata->generatorlimit = 0;
-#endif
 
    return SCIP_OKAY;
 }
@@ -4523,7 +4614,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
 }
 
 
-/** checks whether a variable shoudl be added as an external branching candidate, if so it is added */
+/** checks whether a variable should be added as an external branching candidate, if so it is added */
 static
 SCIP_RETCODE checkAndAddExternalBranchingCandidate(
    SCIP*                 scip,               /**< the SCIP data structure */
@@ -4552,6 +4643,28 @@ SCIP_RETCODE checkAndAddExternalBranchingCandidate(
 }
 
 
+/* frees current currentorigsol, sets origsolfeasible to FALSE and clears external branching candidates */
+static
+SCIP_RETCODE freeCurrentOrigSol(
+   SCIP* scip,                               /**< the SCIP data structure */
+   SCIP_RELAXDATA* relaxdata                 /**< relaxdata of the relaxator */
+   )
+{
+   relaxdata->origsolfeasible = FALSE;
+   /* free previous solution and clear branching candidates */
+   if( relaxdata->currentorigsol != NULL )
+   {
+      SCIPdebugMessage("Freeing previous solution origsol\n");
+      SCIP_CALL( SCIPfreeSol(scip, &(relaxdata->currentorigsol)) );
+   }
+
+   if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVING )
+   {
+      SCIPclearExternBranchCands(scip);
+   }
+   return SCIP_OKAY;
+}
+
 
 /** transforms the current solution of the master problem into the original problem's space
  *  and saves this solution as currentsol in the relaxator's data
@@ -4578,37 +4691,38 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    norigvars = SCIPgetNVars(scip);
    assert(origvars != NULL);
 
-   relaxdata->origsolfeasible = FALSE;
-
    /* if the master problem has not been solved, don't try to update the solution */
    if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_TRANSFORMED )
-      return SCIP_OKAY;
-
-   /* free previous solution and clear branching candidates */
-   if( relaxdata->currentorigsol != NULL )
    {
-      SCIPdebugMessage("Freeing previous solution origsol\n");
-      SCIP_CALL( SCIPfreeSol(scip, &(relaxdata->currentorigsol)) );
+      SCIP_CALL( freeCurrentOrigSol(scip, relaxdata) );
+      return SCIP_OKAY;
    }
-   SCIPclearExternBranchCands(scip);
 
    if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVED || SCIPgetLPSolstat(relaxdata->masterprob) == SCIP_LPSOLSTAT_OPTIMAL )
    {
       SCIP_SOL* mastersol;
+      SCIP_Longint currentnode;
 
-      relaxdata->lastmasterlpiters = SCIPgetNLPIterations(relaxdata->masterprob);
+      currentnode = SCIPgetCurrentNode(relaxdata->masterprob) == NULL ? -1 : SCIPnodeGetNumber(SCIPgetCurrentNode(relaxdata->masterprob));
 
       /* create new solution */
       if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVING )
       {
          SCIPdebugMessage("Masterproblem still solving, mastersol = NULL\n");
          mastersol = NULL;
+
+         if( relaxdata->lastmasternode == currentnode && relaxdata->lastmasterlpiters >= SCIPgetNLPIterations(relaxdata->masterprob) )
+         {
+            SCIPdebugMessage("no new lp iterations\n");
+            return SCIP_OKAY;
+         }
       }
       else if( SCIPgetStage(relaxdata->masterprob) == SCIP_STAGE_SOLVED )
       {
          mastersol = SCIPgetBestSol(relaxdata->masterprob);
          if( mastersol == NULL )
          {
+            SCIP_CALL( freeCurrentOrigSol(scip, relaxdata) );
             SCIPdebugMessage("Masterproblem solved, no master sol present\n");
             return SCIP_OKAY;
          }
@@ -4619,6 +4733,12 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          SCIPdebugMessage("stage in master not solving and not solved!\n");
          return SCIP_OKAY;
       }
+
+      /* free previous solution and clear branching candidates */
+      SCIP_CALL( freeCurrentOrigSol(scip, relaxdata) );
+
+      relaxdata->lastmasterlpiters = SCIPgetNLPIterations(relaxdata->masterprob);
+      relaxdata->lastmasternode = currentnode;
 
       if( !SCIPisInfinity(scip, SCIPgetSolOrigObj(relaxdata->masterprob, mastersol)) && GCGmasterIsSolValid(relaxdata->masterprob, mastersol) )
       {
@@ -4678,6 +4798,10 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
 
          SCIPdebugMessage("updated relaxation branching candidates\n");
       }
+   }
+   else
+   {
+      SCIP_CALL( freeCurrentOrigSol(scip, relaxdata) );
    }
 
    return SCIP_OKAY;
@@ -5299,7 +5423,6 @@ SCIP_RETCODE GCGinitializeMasterProblemSolve(
    )
 {
    SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
 
    assert(scip != NULL);
 
@@ -5308,3 +5431,19 @@ SCIP_RETCODE GCGinitializeMasterProblemSolve(
    assert(SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED);
    return initializeMasterProblemSolve(scip, relax);
 }
+
+#ifdef _OPENMP
+GCG_LOCKS* GCGgetLocks(
+   SCIP*                 scip               /**< the SCIP data structure */
+   )
+{
+   SCIP_RELAXDATA* relaxdata;
+   SCIP_RELAX* relax = SCIPfindRelax(scip, RELAX_NAME);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   return relaxdata->locks;
+}
+#endif

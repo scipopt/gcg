@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -85,7 +85,21 @@ SCIP_DECL_NODESELFREE(nodeselFreeMaster)
 
 
 /** solving process initialization method of node selector (called when branch and bound process is about to begin) */
-#define nodeselInitsolMaster NULL
+static
+SCIP_DECL_NODESELINITSOL(nodeselInitsolMaster)
+{
+   SCIP_NODESELDATA* nodeseldata;
+   assert(nodesel != NULL);
+   assert(strcmp(SCIPnodeselGetName(nodesel), NODESEL_NAME) == 0);
+   assert(scip != NULL);
+
+   nodeseldata = SCIPnodeselGetData(nodesel);
+   assert(nodeseldata != NULL);
+
+   nodeseldata->lastorignodenumber = -1LL;
+
+   return SCIP_OKAY;
+}
 
 
 /** solving process deinitialization method of node selector (called before branch and bound process data is freed) */

@@ -7,8 +7,99 @@ New features:
 
 - Solver plugin for HiGHS. Allows user to select HiGHS as a pricing problem solver.
 
+New/changed parameters:
+-----------------------
+
+- renamed parameter 'pricing/masterpricer/threads' to 'pricing/masterpricer/nthreads' (default value: 1)
+
+New/modified/removed API functions:
+---------------------------
+
+- added 'GCGpricerAddColResult', 'GCGpricerGetMaxNThreads', 'GCGpricestoreGetNColsTotal'
+- changed 'GCGpricestoreCreate', 'GCGpricestoreAddCol', 'GCGpricestoreGetCols', 'GCGpricestoreGetNCols'
+- removed 'GCGpricestoreRemoveInefficaciousCols', 'GCGpricestoreGetTime'
+- changed 'GCGcolpoolAddCol', 'GCGcolpoolPrice'
+- added 'GCGhashGetKeyCol', 'GCGhashKeyEqCol', 'GCGhashKeyValCol'
+
+Miscellaneous
+-------------
+
+- enable OpenMP by default
+
+
+@page RN37 Release notes for GCG 3.7
+@section RN370 GCG 3.7.0
+*************************
+
+New features:
+-------------
+
+- nauty support (symmetry detection)
+
+New/modified/removed API functions:
+---------------------------
+
+- add 'GCGgetNautyName'
+
+New/changed parameters:
+-----------------------
+
+- renamed parameter 'relaxing/gcg/aggregation' to 'relaxing/gcg/aggregation/enabled'
+- renamed and moved parameter 'relaxing/gcg/bliss/enabled' to 'relaxing/gcg/aggregation/usesymmetrylib'
+- moved parameter 'relaxing/gcg/bliss/searchnodelimit' to 'relaxing/gcg/aggregation/searchnodelimit'
+- moved parameter 'relaxing/gcg/bliss/generatorlimit' to 'relaxing/gcg/aggregation/generatorlimit'
+- changed default value of 'relaxing/gcg/aggregation/generatorlimit' to 100
+- moved parameter 'detection/aggregation/limitnconssperblock' to 'relaxing/gcg/aggregation/limitnconssperblock'
+- moved parameter 'detection/aggregation/limitnvarsperblock' to 'relaxing/gcg/aggregation/limitnvarsperblock'
+
+Miscellaneous
+-------------
+
+- moved files related to symmetry detection to src/symmetry/
+- renamed 'pub_bliss.h' to 'pub_automorphism.h'
+
 
 @page RN36 Release notes for GCG 3.6
+@section RN363 GCG 3.6.3
+*************************
+
+Bug fixes
+---------
+
+- Fixed missing include of <algorithm> in some files.
+
+
+@section RN362 GCG 3.6.2
+*************************
+
+Build system
+------------
+
+- CMake configuration does not fail if value of 'SYM' is not supported
+
+
+@section RN361 GCG 3.6.1
+*************************
+
+Bug fixes
+---------
+
+- fix (global) bound propagation bugs
+- remove columns from colpool that violate global bounds
+- tree synchronization: fix segfault
+- fix 'gcg_check' CMake target
+- fix calculation of dual objective value and improve numerical stability
+- fix calculation of reduced costs of columns (in presence of very small dual values)
+- knapsack pricing solver reports optimality of solution if capacity is zero
+- prevent cliquer pricing solver from creating columns that violate varbounds
+
+New/modified/removed API functions:
+---------------------------
+
+- added function 'GCGgetColpool'
+- added function 'GCGcolpoolPropagateGlobalBounds'
+
+
 @section RN360 GCG 3.6.0
 *************************
 

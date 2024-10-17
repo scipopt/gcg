@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -278,6 +278,18 @@ SCIP_Real GCGcolComputeOrth(
    GCG_COL*             gcgcol1,            /**< first gcg column */
    GCG_COL*             gcgcol2             /**< second gcg column */
    );
+
+/** gets the hash key of a col */
+GCG_EXPORT
+SCIP_DECL_HASHGETKEY(GCGhashGetKeyCol);
+
+/** returns TRUE iff both cols are identical */
+GCG_EXPORT
+SCIP_DECL_HASHKEYEQ(GCGhashKeyEqCol);
+
+/** calculates the hash key value of a col */
+GCG_EXPORT
+SCIP_DECL_HASHKEYVAL(GCGhashKeyValCol);
 
 /**@} */
 

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    bliss_automorph.h
+/**@file    automorph.h
  * @brief   automorphism recognition of SCIPs
  *
  * @author  Martin Bergner
@@ -38,8 +38,8 @@
 #include "scip/type_misc.h"
 #include "scip/type_retcode.h"
 
-#ifndef BLISS_AUTOMORPH_H_
-#define BLISS_AUTOMORPH_H_
+#ifndef AUTOMORPHISM_H__
+#define AUTOMORPHISM_H__
 
 
 
@@ -47,21 +47,7 @@
 extern "C" {
 #endif
 
-/** compare two graphs w.r.t. automorphism */
-SCIP_RETCODE cmpGraphPair(
-   SCIP*                 origscip,           /**< SCIP data structure */
-   SCIP*                 scip1,              /**< first SCIP data structure to compare */
-   SCIP*                 scip2,              /**< second SCIP data structure to compare */
-   int                   prob1,              /**< index of first pricing prob */
-   int                   prob2,              /**< index of second pricing prob */
-   SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
-   SCIP_HASHMAP*         varmap,             /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP*         consmap,            /**< hashmap to save permutation of constraints */
-   unsigned int          searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
-   unsigned int          generatorlimit      /**< bliss generator limit (requires patched bliss version) */
-   );
-
 #ifdef __cplusplus
 }
 #endif
-#endif /* BLISS_AUTOMORPH_H_ */
+#endif /* AUTOMORPHISM_H__ */

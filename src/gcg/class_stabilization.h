@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -40,6 +40,11 @@
 #include "class_pricingtype.h"
 
 namespace gcg {
+
+/**
+ * @ingroup PRICING_PRIV
+ * @{
+ */
 
 class Stabilization
 {
@@ -227,5 +232,6 @@ private:
    ) const;
 };
 
+/** @} */
 } /* namespace gcg */
 #endif /* CLASS_STABILIZATION_H_ */

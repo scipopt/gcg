@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    pub_bliss.h
+/**@file    pub_automorphism.h
  * @ingroup PUBLICCOREAPI
  * @brief   helper functions for automorphism detection
  *
@@ -37,35 +37,84 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef PUB_BLISS_H_
-#define PUB_BLISS_H_
+#ifndef PUB_AUTOMORPHISM_H_
+#define PUB_AUTOMORPHISM_H_
 
-#include "def.h"
+#include "gcg/def.h"
 #include "scip/scip.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
+typedef struct struct_graph AUT_GRAPH;
+typedef struct struct_graph_data AUT_GRAPH_DATA;
 typedef struct struct_cons AUT_CONS;
 typedef struct struct_var AUT_VAR;
 typedef struct struct_coef AUT_COEF;
 typedef struct struct_colorinformation AUT_COLOR;
 /**
-* @ingroup BLISS
+* @ingroup AUTOMORPHISM
 * @{
   */
 
+#ifdef WITH_BLISS
 /** returns bliss version */
 GCG_EXPORT
 void GCGgetBlissName(char* buffer, int len);
+#endif
+
+#ifdef WITH_NAUTY
+/** returns nauty version */
+GCG_EXPORT
+void GCGgetNautyName(char* buffer, int len);
+#endif
 
 #ifdef __cplusplus
 }
 #endif
 
 #ifdef __cplusplus
+struct struct_graph
+{
+   /** initializes the graph */
+   SCIP_RETCODE init(
+      SCIP* scip,                                                  /**< SCIP struct */
+      int nvertices                                                /**< number of vertices */
+      );
+
+   /** destroys the graph */
+   SCIP_RETCODE destroy();
+
+   /** sets the color of a vertex */
+   void setColor(
+      int vertex,                                                  /**< vertex */
+      int color                                                    /**< color */
+      );
+
+   /** adds an edge */
+   void addEdge(
+      int v1,                                                      /**< first vertex */
+      int v2                                                       /**< second vertex */
+      );
+
+   /** returns the number of vertices */
+   unsigned int getNVertices();
+
+   /** found automorphisms */
+   SCIP_RETCODE findAutomorphisms(
+      void* userdata,                                              /**< pointer to user data that will be passed to fhook */
+      void (*fhook)(void*, unsigned int, const unsigned int*),     /**< pointer to function that will be called for each found generator */
+      unsigned int searchnodelimit,                                /**< search node limit (requires patched bliss version) */
+      unsigned int generatorlimit                                  /**< generator limit (requires patched bliss version or version >=0.76) */
+      );
+
+   /** signals that the search should be terminated */
+   void terminateSearch();
+
+   AUT_GRAPH_DATA* graphdata;
+};
+
 /** saves a constraint with its corresponding scip */
 struct struct_cons
 {
@@ -166,4 +215,4 @@ struct struct_colorinformation
 
 #endif
 /** @} */
-#endif /* PUB_BLISS_H_ */
+#endif /* PUB_AUTOMORPHISM_H_ */

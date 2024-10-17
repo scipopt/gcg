@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -62,7 +62,8 @@ SCIP_RETCODE GCGpqueueCreate(
    SCIP*                scip,                /** SCIP data structure */
    GCG_PQUEUE**         pqueue,              /**< pointer to a priority queue */
    int                   initsize,           /**< initial number of available element slots */
-   SCIP_DECL_SORTPTRCOMP((*ptrcomp))         /**< data element comparator */
+   SCIP_DECL_SORTPTRCOMP((*ptrcomp)),        /**< data element comparator */
+   GCG_LOCK*             memorylock          /**< memory lock */
    );
 
 /** frees priority queue, but not the data elements themselves */

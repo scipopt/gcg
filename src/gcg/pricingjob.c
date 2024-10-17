@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -114,7 +114,7 @@ SCIP_RETCODE GCGpricingjobSetup(
    }
 
    GCGpricingjobResetSolver(scip, pricingjob);
-   if( heuristic )
+   if( heuristic && pricingjob->solver != NULL && GCGsolverIsHeurEnabled(pricingjob->solver) )
       GCGpricingjobResetHeuristic(pricingjob);
    else
       GCGpricingjobSetExact(pricingjob);
@@ -239,7 +239,7 @@ void GCGpricingjobResetHeuristic(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    )
 {
-   if( GCGsolverIsHeurEnabled(pricingjob->solver) )
+   if( pricingjob->solver != NULL && GCGsolverIsHeurEnabled(pricingjob->solver) )
       pricingjob->heuristic = TRUE;
    else
       pricingjob->heuristic = FALSE;

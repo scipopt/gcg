@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -226,6 +226,7 @@ struct SCIP_BranchruleData
 
 /* needed for compare_function (for now) */
 SCIP_BRANCHRULEDATA*     this_branchruledata;
+#pragma omp threadprivate(this_branchruledata)
 
 /*
  * Hash functions
@@ -958,6 +959,8 @@ SCIP_RETCODE selectCandidate(
 
    *result = SCIP_DIDNOTRUN;
 
+   this_branchruledata = branchruledata;
+
    /* get master problem */
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
@@ -1609,8 +1612,6 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &branchruledata->vartuples, branchruledata->maxvars) );
 
    branchruledata->initialized = TRUE;
-
-   this_branchruledata = branchruledata;
 
    return SCIP_OKAY;
 }

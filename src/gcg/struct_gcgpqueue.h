@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -41,6 +41,7 @@
 #include "scip/scip.h"
 
 #include "type_gcgpqueue.h"
+#include "type_locks.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,6 +64,9 @@ struct GCG_PQueue
    void**                slots;              /**< array of element slots */
    int                   len;                /**< number of used element slots */
    int                   size;               /**< total number of available element slots */
+#ifdef _OPENMP
+   GCG_LOCK*             memorylock;         /**< memory lock */
+#endif
 };
 
 #ifdef __cplusplus

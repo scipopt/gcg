@@ -256,7 +256,6 @@ set(gcgheaders
     gcg/pricestore_gcg.h
     gcg/pricingjob.h
     gcg/pricingprob.h
-    gcg/pub_bliss.h
     gcg/pub_clscons.h
     gcg/pub_clsvar.h
     gcg/pub_colpool.h
@@ -316,6 +315,7 @@ set(gcgheaders
     gcg/type_detector.h
     gcg/type_gcgcol.h
     gcg/type_gcgpqueue.h
+    gcg/type_locks.h
     gcg/type_masterdiving.h
     gcg/type_origdiving.h
     gcg/type_parameter.h
@@ -357,16 +357,28 @@ set(gcggraphheaders
     graph/weights.h
    )
 
-if(SYM STREQUAL "bliss" OR SYM STREQUAL "sbliss")
-   set(gcgsources ${gcgsources}
-      gcg/bliss_automorph.cpp
-      gcg/bliss.cpp
+if(NOT SYM STREQUAL "none")
+   set(gcgsources ${gcgsources} ${symsources}
+      symmetry/automorphism.cpp
       gcg/dec_isomorph.cpp
    )
    set(gcgheaders ${gcgheaders} 
-      gcg/bliss_automorph.h
-      gcg/bliss_automorph.hpp
+      symmetry/automorphism.h
+      symmetry/automorphism.hpp
+      symmetry/pub_automorphism.h
       gcg/dec_isomorph.h
+   )
+endif()
+
+if(SYM STREQUAL "bliss" OR SYM STREQUAL "sbliss")
+   set(gcgsources ${gcgsources}
+      symmetry/automorphism_bliss.cpp
+   )
+endif()
+
+if(SYM STREQUAL "nauty" OR SYM STREQUAL "snauty")
+   set(gcgsources ${gcgsources}
+      symmetry/automorphism_nauty.cpp
    )
 endif()
 
@@ -412,6 +424,12 @@ if(HMETIS_FOUND)
    endif()
 endif()
 
+if(OPENMP_FOUND)
+   set(gcgheaders ${gcgheaders}
+      gcg/struct_locks.h
+   )
+endif()
+
 # all source files should be compiled with a c++ compiler
 if(CXXONLY)
     set_source_files_properties(main.c ${gcgsources} ${gcggraphsources} PROPERTIES LANGUAGE CXX)
@@ -435,15 +453,22 @@ else()
    setLibProperties(libgcg "gcg")
 endif()
 
-target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES})
+target_link_libraries(libgcg
+    PRIVATE
+    ${SCIP_LIBRARIES}
+    ${SYM_LIBRARIES}
+    ${CLIQUER_LIBRARIES}
+    ${CPLEX_LIBRARIES}
+    $<$<BOOL:${GSL_FOUND}>:GSL::gsl>
+    $<$<BOOL:${JANSSON_FOUND}>:jansson::jansson>)
 
 if(SHARED)
     set(SCIP_NEEDED 0)
-    target_link_libraries(libgcg PRIVATE ${SCIP_PIC_LIBRARIES} ${SYM_PIC_LIBRARIES} ${CLIQUER_PIC_LIBRARIES} ${CPLEX_PIC_LIBRARIES} ${HIGHS_PIC_LIBRARIES} ${GSL_PIC_LIBRARIES})
+    target_link_libraries(libgcg PRIVATE ${SCIP_PIC_LIBRARIES} ${SYM_PIC_LIBRARIES})
     add_executable(gcg main.c ${gcgsources} ${gcggraphsources} ${gcgheaders} ${gcggraphheaders})
 else()
     set(SCIP_NEEDED ${SCIP_FOUND})
-    target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${CPLEX_LIBRARIES} ${HIGHS_LIBRARIES} ${GSL_LIBRARIES})
+    target_link_libraries(libgcg PRIVATE ${SCIP_LIBRARIES} ${SYM_LIBRARIES})
     add_executable(gcg main.c)
     target_link_libraries(gcg libgcg)
 endif()
@@ -460,7 +485,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_sanitizers(gcg)
 endif()
 
-target_link_libraries(gcg ${SCIP_LIBRARIES} ${SYM_LIBRARIES} ${CLIQUER_LIBRARIES} ${CPLEX_LIBRARIES} ${HIGHS_LIBRARIES} ${GSL_LIBRARIES})
+target_link_libraries(gcg
+    ${SCIP_LIBRARIES}
+    ${SYM_LIBRARIES}
+    ${CLIQUER_LIBRARIES}
+    ${CPLEX_LIBRARIES}
+    $<$<BOOL:${GSL_FOUND}>:GSL::gsl>
+    $<$<BOOL:${JANSSON_FOUND}>:jansson::jansson>
+    ${HIGHS_LIBRARIES})
 
 add_dependencies(libgcg gcg_update_githash)
 add_dependencies(gcg gcg_update_githash)
@@ -516,12 +548,3 @@ configure_file(${PROJECT_SOURCE_DIR}/gcg-config.cmake.in
 # can link easily against gcg
 install(EXPORT gcg-targets FILE gcg-targets.cmake DESTINATION lib/cmake/gcg)
 install(FILES "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/gcg-config.cmake" DESTINATION lib/cmake/gcg)
-
-if(MSVC)
-   if(GCG_DEV_BUILD)
-      add_custom_command(TARGET gcg POST_BUILD
-         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-         "${SCIP_BINARY_DIR}/bin/$<CONFIG>/libscip.dll"
-         "${GCG_BINARY_DIR}/bin/$<CONFIG>")
-    endif()
-endif()

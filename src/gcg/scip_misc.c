@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -98,9 +98,9 @@ consType GCGconsGetType(
       return sos2;
    }
    else if( strcmp(conshdlrname, "indicator") == 0 )
-      {
-         return sos2;
-      }
+   {
+      return indicator;
+   }
    return unknown;
 }
 
@@ -919,5 +919,8 @@ SCIP_Bool GCGisRootNode(
    )
 {
    assert(scip != NULL);
-   return (SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip));
+   if( SCIPgetStage(scip) < SCIP_STAGE_SOLVING )
+      return TRUE;
+   else
+      return (SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip));
 }

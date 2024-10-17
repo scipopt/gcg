@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -42,14 +42,21 @@
 #include "type_pricingjob.h"
 #include "type_pricingprob.h"
 #include "objscip/objscip.h"
+#include "type_locks.h"
 
 namespace gcg {
+
+/**
+ * @ingroup PRICING_PRIV
+ * @{
+ */
 
 class Pricingcontroller
 {
 
 private:
    SCIP*                 scip_;              /**< SCIP instance (master problem) */
+   SCIP*                 origprob;           /**< SCIP instance (original problem) */
    GCG_PRICINGPROB**     pricingprobs;       /**< pricing problems */
    int                   npricingprobs;      /**< number of pricing problems */
    int                   maxpricingprobs;    /**< capacity of pricingprobs */
@@ -78,13 +85,20 @@ private:
    int                   eagerage;           /**< iterations since last eager iteration */
    int                   nsolvedprobs;       /**< number of completely solved pricing problems during the current pricing loop */
 
+#ifdef _OPENMP
+   GCG_LOCKS*            locks;              /**< OpenMP locks */
+#endif
+
 
 public:
    /** default constructor */
    Pricingcontroller();
 
    /** constructor */
-   Pricingcontroller(SCIP* scip);
+   Pricingcontroller(
+      SCIP* scip,
+      SCIP* origprob
+      );
 
    /** destructor */
    virtual ~Pricingcontroller();
@@ -195,5 +209,6 @@ private:
       ) const;
 };
 
+/** @} */
 } /* namespace gcg */
 #endif /* CLASS_PRICINGCONTROLLER_H_ */

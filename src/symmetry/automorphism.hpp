@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    bliss_automorph.hpp
+/**@file    automorph.hpp
  * @brief   automorphism recognition (C++ interface)
  *
  * @author  Erik Muehmer
@@ -33,10 +33,10 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_BLISS_AUTOMORPH_HPP
-#define GCG_BLISS_AUTOMORPH_HPP
+#ifndef GCG_AUTOMORPHISM_HPP__
+#define GCG_AUTOMORPHISM_HPP__
 
-#include "class_partialdecomp.h"
+#include "gcg/class_partialdecomp.h"
 
 
 /** compare two graphs w.r.t. automorphism */
@@ -52,4 +52,4 @@ SCIP_RETCODE cmpGraphPair(
    unsigned int            generatorlimit      /**< bliss generator limit (requires patched bliss version) */
 );
 
-#endif //GCG_BLISS_AUTOMORPH_HPP
+#endif //GCG_AUTOMORPHISM_HPP__

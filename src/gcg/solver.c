@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -41,6 +41,10 @@
 #include "pricer_gcg.h"
 
 #include <string.h>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 
 /** compares two solvers w. r. t. their priorities */
@@ -311,18 +315,22 @@ SCIP_RETCODE GCGsolverSolve(
          else
             clock = solver->heurfarkasclock;
 
-         #pragma omp critical (clock)
-         {
+#ifdef _OPENMP
+         if( omp_get_num_threads() == 1 )
             SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
-         }
+#else
+         SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
+#endif
 
          SCIP_CALL( solver->solversolveheur(scip, pricingprob, solver, probnr, dualsolconv, lowerbound, status) );
          *solved = TRUE;
 
-         #pragma omp critical (clock)
-         {
+#ifdef _OPENMP
+         if( omp_get_num_threads() == 1 )
             SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
-         }
+#else
+         SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
+#endif
       }
    }
    else
@@ -336,19 +344,22 @@ SCIP_RETCODE GCGsolverSolve(
          else
             clock = solver->optfarkasclock;
 
-         #pragma omp critical (clock)
-         {
+#ifdef _OPENMP
+         if( omp_get_num_threads() == 1 )
             SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
-         }
+#else
+         SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
+#endif
 
          SCIP_CALL( solver->solversolve(scip, pricingprob, solver, probnr, dualsolconv, lowerbound, status) );
          *solved = TRUE;
 
-         #pragma omp critical (clock)
-         {
+#ifdef _OPENMP
+         if( omp_get_num_threads() == 1 )
             SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
-         }
-
+#else
+          SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
+#endif
       }
    }
 
@@ -356,17 +367,17 @@ SCIP_RETCODE GCGsolverSolve(
    {
       if( redcost )
          if( heuristic )
-            #pragma omp atomic
+            #pragma omp atomic update
             ++solver->heurredcostcalls;
          else
-            #pragma omp atomic
+            #pragma omp atomic update
             ++solver->optredcostcalls;
       else
          if( heuristic )
-            #pragma omp atomic
+            #pragma omp atomic update
             ++solver->heurfarkascalls;
          else
-            #pragma omp atomic
+            #pragma omp atomic update
             ++solver->optfarkascalls;
    }
 

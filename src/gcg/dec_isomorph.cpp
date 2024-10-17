@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -51,14 +51,13 @@
 #include "class_detprobdata.h"
 #include "scip/clock.h"
 
-#include "bliss/graph.hh"
 #include "pub_gcgvar.h"
 #include <cstring>
 #include <cassert>
 #include <algorithm>
 #include <iostream>
 
-#include "pub_bliss.h"
+#include "symmetry/pub_automorphism.h"
 
 /* constraint handler properties */
 #define DEC_NAME                  "isomorph"  /**< name of detector */
@@ -402,7 +401,7 @@ static
 SCIP_RETCODE createGraph(
    SCIP*                 scip,               /**< SCIP to compare */
    AUT_COLOR             colorinfo,          /**< data structure to save intermediate data */
-   bliss::Graph*         graph,              /**< graph needed for discovering isomorphism */
+   AUT_GRAPH*            graph,              /**< graph needed for discovering isomorphism */
    SCIP_RESULT*          result,             /**< result pointer to indicate success or failure */
    gcg::PARTIALDECOMP*   partialdec,         /**< partialdec to create graph for */
    gcg::DETPROBDATA*     detprobdata         /**< detection process information and data */
@@ -417,14 +416,23 @@ SCIP_RETCODE createGraph(
    int curvar;
    int color;
    unsigned int nnodes;
+   unsigned int currentnode;
    SCIP_Bool onlysign;
-   nnodes = 0;
-   //building the graph out of the arrays
-   bliss::Graph* h = graph;
+   unsigned int nconsvarpairs; 
+   currentnode = 0;
    nconss = partialdec->getNOpenconss();
    nvars = partialdec->getNVars();
    z = 0;
    onlysign = colorinfo.getOnlySign();
+   nconsvarpairs = 0;
+
+   for( i = 0; i < nconss; i++ )
+   {
+      nconsvarpairs += detprobdata->getNVarsForCons(partialdec->getOpenconss()[i]);
+   }
+
+   nnodes = nconss + nvars + nconsvarpairs;
+   graph->init(scip, nnodes);
 
    //add a node for every constraint
    for( i = 0; i < nconss && *result == SCIP_SUCCESS; i++ )
@@ -442,8 +450,8 @@ SCIP_RETCODE createGraph(
       }
 
       assert(color >= 0);
-      (void)h->add_vertex((unsigned int) color);
-      nnodes++;
+      graph->setColor(currentnode, color);
+      currentnode++;
    }
    //add a node for every variable
    for( i = 0; i < nvars && *result == SCIP_SUCCESS; i++ )
@@ -457,8 +465,8 @@ SCIP_RETCODE createGraph(
          *result = SCIP_DIDNOTFIND;
          break;
       }
-      (void) h->add_vertex((unsigned int) (colorinfo.getLenCons() + color));
-      nnodes++;
+      graph->setColor(currentnode, colorinfo.getLenCons() + color);
+      currentnode++;
    }
    //connecting the nodes with an additional node in the middle
    //it is necessary, since only nodes have colors
@@ -509,25 +517,22 @@ SCIP_RETCODE createGraph(
          }
 
          curvar = SCIPvarGetProbindex(var);
-         (void) h->add_vertex((unsigned int) (colorinfo.getLenCons() + colorinfo.getLenVar() + color)); /*lint !e864 */
-         nnodes++;
-         h->add_edge((unsigned int)i, (unsigned int) (nconss + nvars + z));
-              h->add_edge((unsigned int) (nconss + nvars + z), (unsigned int) (nconss + curvar));
-              SCIPdebugMessage(
-                    "nz: c <%s> (id: %d, colour: %d) -> nz (id: %d) (value: %f, colour: %d) -> var <%s> (id: %d, colour: %d) \n",
-                    SCIPconsGetName(cons), i, colorinfo.get(scons),
-                    nconss + nvars + z, scoef.getVal(),
-                    color + colorinfo.getLenCons() + colorinfo.getLenVar(), /*lint !e864 */
-                    SCIPvarGetName(var), nconss + curvar,
-                    colorinfo.get(svar) + colorinfo.getLenCons());  /*lint !e864 */
-              z++;
-
+         graph->setColor(currentnode, colorinfo.getLenCons() + colorinfo.getLenVar() + color); /*lint !e864 */
+         currentnode++;
+         graph->addEdge(i, nconss + nvars + z);
+         graph->addEdge(nconss + nvars + z, nconss + curvar);
+         SCIPdebugMessage(
+               "nz: c <%s> (id: %d, colour: %d) -> nz (id: %d) (value: %f, colour: %d) -> var <%s> (id: %d, colour: %d) \n",
+               SCIPconsGetName(cons), i, colorinfo.get(scons),
+               nconss + nvars + z, scoef.getVal(),
+               color + colorinfo.getLenCons() + colorinfo.getLenVar(), /*lint !e864 */
+               SCIPvarGetName(var), nconss + curvar,
+               colorinfo.get(svar) + colorinfo.getLenCons());  /*lint !e864 */
+         z++;
       }
-
-
    }
-   SCIPdebugMessage("Iteration 1: nnodes = %ud, Cons = %d, Vars = %d\n", nnodes, colorinfo.getLenCons(), colorinfo.getLenVar()); /*lint !e864 */
-   assert(*result == SCIP_SUCCESS && nnodes == h->get_nof_vertices());
+   SCIPdebugMessage("Iteration 1: currentnode = %ud, Cons = %d, Vars = %d\n", currentnode, colorinfo.getLenCons(), colorinfo.getLenVar()); /*lint !e864 */
+   assert(*result == SCIP_SUCCESS && currentnode == graph->getNVertices());
 
    //free all allocated memory
    freeMemory(scip, &colorinfo);
@@ -1051,8 +1056,7 @@ SCIP_RETCODE detectIsomorph(
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
-   bliss::Graph graph;
-   bliss::Stats bstats;
+   AUT_GRAPH graph;
    AUT_HOOK *ptrhook;
    AUT_COLOR *colorinfo;
    gcg::PARTIALDECOMP* partialdec = detectiondata->workonpartialdec;
@@ -1076,21 +1080,13 @@ SCIP_RETCODE detectIsomorph(
    SCIP_CALL( setupArrays(scip, colorinfo, &detectordata->result, partialdec, detprobdata) );
    SCIP_CALL( createGraph(scip, *colorinfo, &graph, &detectordata->result, partialdec, detprobdata) );
 
-   ptrhook = new AUT_HOOK(FALSE, graph.get_nof_vertices(), scip, partialdec, detprobdata);
+   ptrhook = new AUT_HOOK(FALSE, graph.getNVertices(), scip, partialdec, detprobdata);
    for( i = 0; i < nconss; i++ )
    {
       ptrhook->conssperm[i] = -1;
    }
 
-#if BLISS_VERSION_MAJOR >= 1 || BLISS_VERSION_MINOR >= 76
-   auto report = [&](unsigned int n, const unsigned int* aut) {
-      fhookForPartialdecs((void*)ptrhook, n, aut);
-   };
-
-   graph.find_automorphisms(bstats, report);
-#else
-   graph.find_automorphisms(bstats, fhookForPartialdecs, ptrhook);
-#endif
+   graph.findAutomorphisms(ptrhook, fhookForPartialdecs, 0u, 0u);
 
    if( !ptrhook->getBool() )
       detectordata->result = SCIP_DIDNOTFIND;
@@ -1180,6 +1176,7 @@ SCIP_RETCODE detectIsomorph(
 
    delete colorinfo;
    delete ptrhook;
+   graph.destroy();
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
 

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -40,6 +40,7 @@
 #include "scip/scip.h"
 #include "def.h"
 #include "type_solver.h"
+#include "type_colpool.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -201,6 +202,14 @@ SCIP_RETCODE GCGpricerAddCol(
    GCG_COL*              col                 /**< priced col */
    );
 
+/** add a new column to the pricing storage and store result*/
+GCG_EXPORT
+SCIP_RETCODE GCGpricerAddColResult(
+   SCIP*                 scip,               /**< SCIP data structure */
+   GCG_COL*              col,                /**< priced col */
+   SCIP_Bool*            added               /**< pointer to var that indicates whether the col was added */
+   );
+
 /** transfers a primal solution of the original problem into the master variable space,
  *  i.e. creates one master variable for each block and adds the solution to the master problem  */
 GCG_EXPORT
@@ -288,6 +297,20 @@ SCIP_RETCODE GCGcomputeColMastercoefs(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_COL*              gcgcol              /**< GCG column data structure */
    );
+
+/** get colpool */
+GCG_EXPORT
+GCG_COLPOOL* GCGgetColpool(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+#ifdef _OPENMP
+/** get maximal number of pricing threads */
+GCG_EXPORT
+int GCGpricerGetMaxNThreads(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+#endif
 
 /**@} */
 #ifdef __cplusplus

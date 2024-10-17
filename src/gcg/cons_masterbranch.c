@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -36,7 +36,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/*#define SCIP_DEBUG*/
+/* #define SCIP_DEBUG */
 #include <assert.h>
 #include <string.h>
 
@@ -46,6 +46,7 @@
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
+#include "pub_colpool.h"
 
 #include "scip/cons_linear.h"
 
@@ -197,12 +198,16 @@ SCIP_RETCODE initializeConsdata(
    origcons = GCGconsOrigbranchGetActiveCons(origscip);
    assert(origcons != NULL);
 
-   /* @fixme: There should be an assertion instead; I guess consdata->origcons should be NULL */
-   if( consdata->origcons != origcons ) /*rootnode?*/
+   if( consdata->origcons == NULL ) /*rootnode?*/
    {
       SCIPdebugMessage("set root origcons\n");
       consdata->origcons = origcons;
       GCGconsOrigbranchSetMastercons(origcons, cons);
+   }
+   else if( consdata->origcons != origcons )
+   {
+      // todo: Check this case.
+      SCIPdebugMessage("B&B trees could be out of sync\n");
    }
 
    /* @fixme: Why should anything else happen? */
@@ -444,7 +449,7 @@ SCIP_Bool checkAggregatedGlobalBounds(
          SCIP_Real identbound = bndtype == SCIP_BOUNDTYPE_UPPER ? SCIPvarGetUbGlobal(identvars[i]) : SCIPvarGetLbGlobal(identvars[i]);
          if( !SCIPisEQ(scip, identbound, bound) )
          {
-            SCIPerrorMessage("Var <%s> has new local %s bound %g, but identical var <%s> has %g -- don't know how to handle!\n",
+            SCIPerrorMessage("Var <%s> has new global %s bound %g, but identical var <%s> has %g -- don't know how to handle!\n",
                SCIPvarGetName(bndvar), bndtype == SCIP_BOUNDTYPE_UPPER ? "upper" : "lower",
                   bound, SCIPvarGetName(identvars[i]), identbound);
             identical = FALSE;
@@ -1301,8 +1306,7 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
                      }
                      else
                      {
-                        SCIP_CALL(
-                           ensureCollectedBndvarsSize(scip, conshdlrdata, blocknr, ncollectedbndvars[blocknr] + 1));
+                        SCIP_CALL( ensureCollectedBndvarsSize(scip, conshdlrdata, blocknr, ncollectedbndvars[blocknr] + 1) );
                         if ( islinking )
                            linkingvaridxs[blocknr] = ncollectedbndvars[blocknr];
                         else
@@ -1323,8 +1327,7 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
                      }
                      else
                      {
-                        SCIP_CALL(
-                           ensureCollectedBndvarsSize(scip, conshdlrdata, blocknr, ncollectedbndvars[blocknr] + 1));
+                        SCIP_CALL( ensureCollectedBndvarsSize(scip, conshdlrdata, blocknr, ncollectedbndvars[blocknr] + 1) );
                         if ( islinking )
                            linkingvaridxs[blocknr] = ncollectedbndvars[blocknr];
                         else
@@ -1361,7 +1364,7 @@ SCIP_RETCODE applyLocalBndchgsToPricedMastervars(
             /** @todo check if this really works with linking variables */
 
             /* only look at variables not already fixed to 0 or that belong to no block */
-            if((SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i]))))
+            if( SCIPisFeasZero(scip, SCIPvarGetUbLocal(vars[i])) )
                continue;
 
             origvals = GCGmasterVarGetOrigvalmap(vars[i]);
@@ -1639,7 +1642,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    assert(origscip != NULL);
 
 
-   SCIPdebugMessage("Activating ");
+   SCIPdebugMessage("Activating branch master constraint: <%s>[stack size: %d].\n", SCIPconsGetName(cons), conshdlrdata->nstack+1);
    /* If the node is activated the first time, we have to initialize the constraint data first */
    if( consdata->nactivated == 0 )
    {
@@ -1800,32 +1803,23 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
       SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->localbndvars, (*consdata)->maxlocalbndchgs);
    }
 
-   /* delete branchdata if the corresponding origcons has already been deleted;
+   assert((*consdata)->origcons == NULL || GCGconsOrigbranchGetMastercons((*consdata)->origcons) == cons);
+
+   /* delete branchdata if the corresponding origcons has already been deleted or if created by the generic branchrule;
     * otherwise, it will be deleted by the corresponding origbranch constraint
     */
-   if( (*consdata)->origcons == NULL && (*consdata)->branchdata != NULL )
+   if( (*consdata)->branchdata != NULL && ((*consdata)->origcons == NULL || GCGisBranchruleGeneric((*consdata)->branchrule)) )
    {
       SCIP_CALL( GCGrelaxBranchDataDelete(origscip, (*consdata)->branchrule, &(*consdata)->branchdata) );
-      (*consdata)->branchdata = NULL;
-      (*consdata)->branchdata = NULL;
+      if( (*consdata)->origcons != NULL )
+         GCGconsOrigbranchSetBranchdata((*consdata)->origcons, NULL);
    }
-   else
-   {
-      if( (*consdata)->branchdata != NULL )
-      {
-         SCIP_CALL( GCGrelaxBranchDataDelete(origscip, (*consdata)->branchrule, &(*consdata)->branchdata) );
-         (*consdata)->branchdata = NULL;
-         if( (*consdata)->origcons != NULL )
-         {
-            GCGconsOrigbranchSetBranchdata((*consdata)->origcons, NULL);
-         }
-      }
-   }
+
+   (*consdata)->branchdata = NULL;
 
    /* set the mastercons pointer of the corresponding origcons to NULL */
    if( (*consdata)->origcons != NULL )
    {
-      assert(GCGconsOrigbranchGetMastercons((*consdata)->origcons) == cons);
       GCGconsOrigbranchSetMastercons((*consdata)->origcons, NULL);
    }
 
@@ -1942,43 +1936,58 @@ SCIP_DECL_CONSPROP(consPropMasterbranch)
    consdata = SCIPconsGetData(cons);
    assert(consdata != NULL);
 
-   if( !consdata->needprop && consdata->ncopiedvarbnds == 0 )
+   if( conshdlrdata->npendingbnds == 0 && !consdata->needprop && consdata->ncopiedvarbnds == 0 )
    {
       SCIPdebugMessage("No propagation of masterbranch constraint needed: <%s>, stack size = %d.\n",
          consdata->name, conshdlrdata->nstack);
 
-      *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
 
    SCIPdebugMessage("Starting propagation of masterbranch constraint: <%s>, stack size = %d, newvars = %d, npendingbnds = %d, npropbounds = %d.\n",
       consdata->name, conshdlrdata->nstack, GCGmasterGetNPricedvars(scip) - consdata->npropvars, conshdlrdata->npendingbnds, consdata->ncopiedvarbnds);
 
-   *result = SCIP_DIDNOTFIND;
-
    propcount = 0;
 
-   /* apply global bound changes on original problem variables to the master problem */
-   SCIP_CALL( applyGlobalBndchgsToPricedMastervars(scip, &propcount) );
-
-   /* apply local bound changes on the original variables on newly generated master variables */
-   SCIP_CALL( applyLocalBndchgsToPricedMastervars(scip, cons, &propcount) );
-
-   /* apply local bound changes on original variables that have been directly copied to the master problem */
-   SCIP_CALL( applyLocalBndchgsToCopiedMastervars(scip, cons, &propcount) );
-
-   /* call branching rule specific propagation method */
-   if( consdata->branchrule != NULL )
+   if( conshdlrdata->npendingbnds > 0 )
    {
-      /** @todo count number of propagations */
-      SCIP_CALL( GCGrelaxBranchPropMaster(origscip, consdata->branchrule, consdata->branchdata, result) );
+      *result = SCIP_DIDNOTFIND;
+
+      if( !conshdlrdata->pendingbndsactivated )
+      {
+         /* apply global bound changes in the original problem to the pricing problems */
+         SCIP_CALL(applyGlobalBndchgsToPricingprobs(scip));
+      }
+
+      /* apply global bound changes on original problem variables to the master problem */
+      SCIP_CALL( applyGlobalBndchgsToPricedMastervars(scip, &propcount) );
+
+      GCGcolpoolPropagateGlobalBounds(GCGgetColpool(scip));
+   }
+
+   if( consdata->needprop || consdata->ncopiedvarbnds != 0 )
+   {
+      *result = SCIP_DIDNOTFIND;
+
+      /* apply local bound changes on the original variables on newly generated master variables */
+      SCIP_CALL( applyLocalBndchgsToPricedMastervars(scip, cons, &propcount) );
+
+      /* apply local bound changes on original variables that have been directly copied to the master problem */
+      SCIP_CALL( applyLocalBndchgsToCopiedMastervars(scip, cons, &propcount) );
+
+      /* call branching rule specific propagation method */
+      if ( consdata->branchrule != NULL )
+      {
+         /** @todo count number of propagations */
+         SCIP_CALL( GCGrelaxBranchPropMaster(origscip, consdata->branchrule, consdata->branchdata, result) );
+      }
+
+      consdata->needprop = FALSE;
+      consdata->npropvars = GCGmasterGetNPricedvars(scip);
    }
 
    if( *result != SCIP_CUTOFF && propcount > 0 )
       *result = SCIP_REDUCEDDOM;
-
-   consdata->needprop = FALSE;
-   consdata->npropvars = GCGmasterGetNPricedvars(scip);
 
    return SCIP_OKAY;
 }

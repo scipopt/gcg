@@ -6,7 +6,7 @@
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
 #* This program is free software; you can redistribute it and/or             *
@@ -66,11 +66,12 @@ STATISTICS  =  	false
 PROJECT		=	none
 GTEST		=	false
 PARASCIP	= 	true
-BLISS      	=   true
+SYM      	=   snauty
 CLIQUER     =   false
 HMETIS      =   false
-OPENMP      =   false
+OPENMP      =   true
 GSL         =   false
+JSON        =   true
 HIGHS       =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CLIQUER).$(HIGHS)
@@ -87,10 +88,26 @@ override LPS =  cpx
 MAKEOVERRIDES += LPS=cpx
 endif
 
-# overriding SCIP SYM setting if compiled with BLISS
-ifeq ($(BLISS),true)
-override SYM=sbliss
-MAKEOVERRIDES += SYM=sbliss
+# overriding sym settings
+ifneq (,$(filter $(SYM),bliss sbliss))
+override BLISS=true
+override NAUTY=false
+MAKEOVERRIDES += BLISS=true
+MAKEOVERRIDES += NAUTY=false
+endif
+
+ifneq (,$(filter $(SYM),nauty snauty))
+override BLISS=false
+override NAUTY=true
+MAKEOVERRIDES += BLISS=false
+MAKEOVERRIDES += NAUTY=true
+endif
+
+ifeq ($(SYM),none)
+override BLISS=false
+override NAUTY=false
+MAKEOVERRIDES += BLISS=false
+MAKEOVERRIDES += NAUTY=false
 endif
 
 #-----------------------------------------------------------------------------
@@ -186,6 +203,15 @@ endif
 
 ifeq ($(CPLEXSOLVER),true)
 FLAGS		+=	-DWITH_CPLEXSOLVER -I$(SCIPDIR)/lib/include/cpxinc
+endif
+
+#-----------------------------------------------------------------------------
+# Jansson
+#-----------------------------------------------------------------------------
+
+ifeq ($(JSON),true)
+LDFLAGS		+=	-ljansson
+FLAGS		+=	-DWITH_JSON
 endif
 
 #-----------------------------------------------------------------------------
@@ -370,10 +396,23 @@ LIBOBJ = \
 			gcg/solver_mip.o \
 			gcg/stat.o \
 
+ifneq ($(SYM),none)
+LIBOBJ		+=	symmetry/automorphism.o \
+			gcg/dec_isomorph.o
+endif
+
 ifeq ($(BLISS),true)
-LIBOBJ		+=	gcg/bliss_automorph.o \
-			gcg/dec_isomorph.o \
-			gcg/bliss.o
+LIBOBJ		+=	symmetry/automorphism_bliss.o
+endif
+
+ifeq ($(NAUTY),true)
+LIBOBJ		+=	symmetry/automorphism_nauty.o \
+			$(SCIPDIR)/src/nauty/nauty.o \
+			$(SCIPDIR)/src/nauty/nautil.o \
+			$(SCIPDIR)/src/nauty/nausparse.o \
+			$(SCIPDIR)/src/nauty/schreier.o \
+			$(SCIPDIR)/src/nauty/naurng.o
+FLAGS		+=	-DWITH_NAUTY -I$(SCIPDIR)/src/nauty
 endif
 
 ifeq ($(CLIQUER),true)
@@ -400,7 +439,10 @@ MAINOBJFILES	=	$(addprefix $(OBJDIR)/,$(MAINOBJ))
 
 # GCG Library
 LIBOBJDIR	=	$(OBJDIR)/lib
-OBJSUBDIRS	= 	gcg graph
+OBJSUBDIRS	= 	gcg graph symmetry
+ifeq ($(NAUTY),true)
+OBJSUBDIRS	+=	lib/scip/src/nauty
+endif
 LIBOBJSUBDIRS   =       $(addprefix $(LIBOBJDIR)/,$(OBJSUBDIRS))
 
 GCGLIBSHORTNAME =	gcg
@@ -421,7 +463,10 @@ LDFLAGS		+=	$(LINKCXX_L)$(LIBDIR)/static/
 endif
 GCGLIBOBJFILES	=	$(addprefix $(LIBOBJDIR)/,$(GCGLIBOBJ))
 GCGLIBSRC	=	$(filter $(wildcard $(SRCDIR)/*.c),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.c))) $(filter $(wildcard $(SRCDIR)/*.cpp),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.cpp)))
-GCGLIBSRC	+=	$(filter $(wildcard $(SRCDIR)/*/*.c),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.c))) $(filter $(wildcard */*/*.cpp),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.cpp)))
+GCGLIBSRC	+=	$(filter $(wildcard $(SRCDIR)/*/*.c),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.c))) $(filter $(wildcard $(SRCDIR)/*/*.cpp),$(addprefix $(SRCDIR)/,$(GCGLIBOBJ:.o=.cpp)))
+ifeq ($(NAUTY),true)
+GCGLIBSRC	+=	$(filter $(wildcard $(SCIPDIR)/src/nauty/*.c),$(GCGLIBOBJ:.o=.c))
+endif
 GCGLIBDEP	=	$(SRCDIR)/depend.gcglib.$(OPT)
 
 ALLSRC		=	$(MAINSRC) $(GCGLIBSRC)
@@ -626,6 +671,12 @@ $(LIBOBJDIR)/%.o:	$(SRCDIR)/%.c | $(LIBOBJDIR) $(LIBOBJSUBDIRS)
 		@echo "-> compiling $@"
 		$(CC) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CFLAGS) $(CC_c)$< $(CC_o)$@
 
+ifeq ($(NAUTY),true)
+$(LIBOBJDIR)/lib/scip/%.o:	$(SCIPDIR)/%.c | $(LIBOBJDIR) $(LIBOBJSUBDIRS)
+		@echo "-> compiling $@"
+		$(CC) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CFLAGS) $(CC_c)$< $(CC_o)$@
+endif
+
 $(LIBOBJDIR)/%.o:	$(SRCDIR)/%.cpp | $(LIBOBJDIR) $(LIBOBJSUBDIRS)
 		@echo "-> compiling $@"
 		$(CXX) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CXXFLAGS) $(CXX_c)$< $(CXX_o)$@
@@ -813,10 +864,10 @@ help:
 		@echo "  - CLIQUER=<true|false>: Enables CLIQUER (as a heuristic for stable set pricing problems)."
 		@echo "  - HMETIS=<true|false>: Enables hMETIS (hypergraph partitioning, used in structure detection)."
 		@echo "  - GSL=<true|false>: Enables the GNU Scientific Library (needed by a detector)"
+		@echo "  - JSON=<true|false>: Enables JSON functionality (requires Jansson library)"
 		@echo "  - GAMS=<true|false>: To enable or disable (default) reading functionality in GAMS reader (needs GAMS)."
 		@echo "  - GTEST=<true|false>: Enables Google Test."
-		@echo "  - BLISS=<true|false>: Enables BLISS (graph isomorphism, used a.o., by 'isomorph' detector)."
-		@echo "  - SYM=<none|bliss|sbliss>: To choose type of symmetry handling."
+		@echo "  - SYM=<none|bliss|sbliss|nauty|snauty>: To choose type of symmetry handling."
 		@echo "  - ZIMPL=<true|false>: Enables ZIMPL, required to convert .zpl files to .lp/.mps files"
 		@echo "  - HIGHS=<true|false>: Enables HiGHS."
 		@echo
