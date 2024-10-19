@@ -45,6 +45,7 @@
 #include <scip/struct_var.h>
 #include <string.h>
 
+#include "branch_generic.h"
 #include "gcg.h"
 #include "cons_masterbranch.h"
 #include "cons_origbranch.h"

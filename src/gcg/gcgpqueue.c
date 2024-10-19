@@ -64,16 +64,21 @@ SCIP_RETCODE pqueueResize(
    )
 {
    int newsize;
+   SCIP_RETCODE retcode = SCIP_OKAY;
    assert(pqueue != NULL);
 
    if( minsize <= pqueue->size )
-      return SCIP_OKAY;
+      return retcode;
 
    newsize = SCIPcalcMemGrowSize(pqueue->scip, minsize);
-   SCIP_CALL( SCIPreallocBlockMemoryArray(pqueue->scip, &pqueue->slots, pqueue->size, newsize) );
+
+   GCG_SET_LOCK(pqueue->memorylock);
+   retcode = SCIPreallocBlockMemoryArray(pqueue->scip, &pqueue->slots, pqueue->size, newsize);
+   GCG_UNSET_LOCK(pqueue->memorylock);
+
    pqueue->size = newsize;
 
-   return SCIP_OKAY;
+   return retcode;
 }
 
 /** heapifies element at position pos into corresponding subtrees */
@@ -119,7 +124,8 @@ SCIP_RETCODE GCGpqueueCreate(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_PQUEUE**          pqueue,             /**< pointer to a priority queue */
    int                   initsize,           /**< initial number of available element slots */
-   SCIP_DECL_SORTPTRCOMP((*ptrcomp))         /**< data element comparator */
+   SCIP_DECL_SORTPTRCOMP((*ptrcomp)),        /**< data element comparator */
+   GCG_LOCK*             memorylock          /**< memory lock */
    )
 {
    assert(pqueue != NULL);
@@ -133,6 +139,9 @@ SCIP_RETCODE GCGpqueueCreate(
    (*pqueue)->scip = scip;
    (*pqueue)->slots = NULL;
    (*pqueue)->ptrcomp = ptrcomp;
+#ifdef _OPENMP
+   (*pqueue)->memorylock = memorylock;
+#endif
    SCIP_CALL( pqueueResize(*pqueue, initsize) );
 
    return SCIP_OKAY;

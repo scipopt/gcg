@@ -325,6 +325,7 @@ set(gcgheaders
     gcg/type_detector.h
     gcg/type_gcgcol.h
     gcg/type_gcgpqueue.h
+    gcg/type_locks.h
     gcg/type_mastercutdata.h
     gcg/type_masterdiving.h
     gcg/type_origdiving.h
@@ -408,6 +409,15 @@ if(CPLEX_FOUND)
    )
 endif()
 
+if(HIGHS_FOUND)
+   set(gcgsources ${gcgsources}
+      gcg/solver_highs.c
+   )
+   set(gcgheaders ${gcgheaders}
+      gcg/solver_highs.h
+   )
+endif()
+
 if(HMETIS_FOUND)
    if(NOT WIN32)
       set(gcgsources ${gcgsources}
@@ -424,6 +434,12 @@ if(HMETIS_FOUND)
       add_definitions(-DHMETIS_HEADER)
       configure_file(hmetis.h.in hmetis.h)
    endif()
+endif()
+
+if(OPENMP_FOUND)
+   set(gcgheaders ${gcgheaders}
+      gcg/struct_locks.h
+   )
 endif()
 
 # all source files should be compiled with a c++ compiler
@@ -487,7 +503,8 @@ target_link_libraries(gcg
     ${CLIQUER_LIBRARIES}
     ${CPLEX_LIBRARIES}
     $<$<BOOL:${GSL_FOUND}>:GSL::gsl>
-    $<$<BOOL:${JANSSON_FOUND}>:jansson::jansson>)
+    $<$<BOOL:${JANSSON_FOUND}>:jansson::jansson>
+    ${HIGHS_LIBRARIES})
 
 add_dependencies(libgcg gcg_update_githash)
 add_dependencies(gcg gcg_update_githash)

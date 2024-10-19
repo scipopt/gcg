@@ -82,6 +82,7 @@ build:make_release:
   script:
     # prepare dependencies
     - mkdir -p lib/include
+    - mkdir -p lib/shared
     - mkdir -p lib/static
     ## Cliquer ##
     # obtain
@@ -248,6 +249,29 @@ build:windows_debug:
     - echo "on windows"
   script:
     - cmake --workflow --preset gcg-windows-ci-debug
+  artifacts:
+    expire_in: 3 days
+    paths:
+      - $CI_PROJECT_DIR
+    exclude:
+      - $CI_PROJECT_DIR/.git/*
+
+# Additional / optional features
+build:highs_solver:
+  stage: "Build"
+  variables:
+    GIT_STRATEGY: fetch
+    GIT_SUBMODULE_STRATEGY: recursive
+  when: manual
+  script:
+    ## HiGHS
+    - git clone https://github.com/ERGO-Code/HiGHS.git lib/highs
+    - cmake -S./lib/highs -B./lib/highs/build
+    - cmake --build ./lib/highs/build -j4
+    # main compilation
+    - cmake -S. -B./build -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DHIGHS=ON -DHIGHS_DIR=lib/highs/build
+    - cmake --build build -j4 --target gcg
+    - cmake --build build --target gcg_check
   artifacts:
     expire_in: 3 days
     paths:

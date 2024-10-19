@@ -115,7 +115,7 @@ GCG_EXPORT
 SCIP_RETCODE GCGcolpoolAddCol(
    GCG_COLPOOL*          colpool,            /**< col pool */
    GCG_COL*              col,                /**< column to add */
-   SCIP_Bool*            success             /**< pointer to store if col was added */
+   SCIP_Bool             freeduplicate       /**< shouldl the col be freed if it is a duplicate? */
    );
 
 /** adds col to col pool and captures it; doesn't check for multiple cols */
@@ -161,9 +161,8 @@ void GCGcolpoolEndFarkas(
 GCG_EXPORT
 SCIP_RETCODE GCGcolpoolPrice(
    GCG_COLPOOL*          colpool,            /**< col pool */
-   GCG_PRICESTORE*       pricestore,         /**< GCG price storage */
    SCIP_SOL*             sol,                /**< solution to be separated (or NULL for LP-solution) */
-   SCIP_Bool*            foundvars           /**< pointer to store the result of the separation call */
+   int*                  nfoundvars          /**< pointer to store the result of the separation call */
    );
 
 /** removes cols that violate global bounds */

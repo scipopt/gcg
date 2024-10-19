@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,52 +25,32 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_gcgpqueue.h
- * @ingroup DATASTRUCTURES
- * @brief  data structure for priority queue
- * @author Jonas Witt
+/**@file   solver_highs.h
+ * @brief  highs solver for pricing problems
+ * @author Stephen J. Maher
+ * @ingroup PRICINGSOLVERS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_STRUCT_GCGPQUEUE_H_
-#define GCG_STRUCT_GCGPQUEUE_H_
+#ifndef GCG_SOLVER_HIGHS_H__
+#define GCG_SOLVER_HIGHS_H__
 
-#include "scip/def.h"
-#include "scip/type_misc.h"
 #include "scip/scip.h"
-
-#include "type_gcgpqueue.h"
-#include "type_locks.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** @brief priority queue data structure
- *
- *  Elements are stored in an array, which grows dynamically in size as new elements are added to the queue.
- *  The ordering is done through a pointer comparison function.
- *  The array is organized as follows. The root element (that is the "best" element $r$ with $r <= x$ for all $x$)
- *  is stored in position 0. The children of an element at position $p$ are stored at positions $q_1 = 2*p+1$ and
- *  $q_2 = 2*p+2$. That means, the parent of the element at position $q$ is at position $p = (q-1)/2$.
- *  At any time, the condition holds that $p <= q$ for each parent $p$ and its children $q$.
- *  Insertion and removal of single elements needs time $O(log n)$.
- */
-struct GCG_PQueue
-{
-   SCIP*                 scip;               /**< SCIP data structure */
-   SCIP_DECL_SORTPTRCOMP((*ptrcomp));        /**< compares two data elements */
-   void**                slots;              /**< array of element slots */
-   int                   len;                /**< number of used element slots */
-   int                   size;               /**< total number of available element slots */
-#ifdef _OPENMP
-   GCG_LOCK*             memorylock;         /**< memory lock */
-#endif
-};
+/** creates the HiGHS solver for pricing problems and includes it in GCG */
+extern
+SCIP_RETCODE GCGincludeSolverHighs(
+   SCIP*                 scip                /**< SCIP data structure */
+);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* STRUCT_GCGPQUEUE_H_ */
+#endif

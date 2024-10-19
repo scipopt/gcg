@@ -24,9 +24,11 @@ We currently have three different pricing solvers:
 
 | Name | Description | Priority |
 | -- | -- | -- |
-| Knapsack ([Documentation](solver__knapsack_8c_source.html)) | Knapsack program solving using a dynamic programming approach | 200 |
-| Cliquer ([Documentation](solver__knapsack_8c_source.html))  | Independent set problem solving using a heuristic (external) solver | 150 |
-| MIP ([Documentation](solver__knapsack_8c_source.html))      | Simply call MIP solver again (expensive) | 0 |
+| Knapsack ([Documentation](solver__knapsack_8c.html)) | Knapsack program solving using a dynamic programming approach | 200 |
+| Cliquer ([Documentation](solver__knapsack_8c.html))  | Independent set problem solving using a heuristic (external) solver | 150 |
+| HiGHS ([Documentation](solver__highs_8c.html))      | Call (external) HiGHS solver | 100 |
+| CPLEX ([Documentation](solver__cplex_8c.html))      | Call (external) CPLEX solver | 100 |
+| MIP ([Documentation](solver__knapsack_8c.html))      | Simply call MIP solver again (expensive) | 0 |
 
 All three of those can solve pricing problems heuristically or exact.
 
@@ -39,11 +41,25 @@ a commonly known dynamic programming approach to solve a knapsack problem optima
 ### Cliquer Solver
 This solver can be used for independent set problems. It makes use of the external software "Cliquer".  
 For installation instructions, please consult the @ref install-manually "installation guide". Note that
-for the Cliquer solver to work, GCG must have been compiled with `CLIQUER=TRUE`
+for the Cliquer solver to work, GCG must have been compiled with the enabled `CLIQUER` flag.
 
 ### Mixed Integer Program Solver
 This pricing solver is simply a call of SCIP's MIP solving functionality, meaning it is no faster than
 the usual solving. This consequentially leads to poor performance on many instances.
+
+### HiGHS Solver
+This pricing solver uses the HiGHS shared library to solve the pricing problems.
+See the [documentation](https://ergo-code.github.io/HiGHS/dev/) and the article (DOI: [10.1007/s12532-017-0130-5](https://link.springer.com/article/10.1007/s12532-017-0130-5)):
+```
+Parallelizing the dual revised simplex method, Q. Huangfu and J. A. J. Hall, Mathematical Programming Computation, 10 (1), 119-142, 2018.
+DOI: 10.1007/s12532-017-0130-5
+```
+Note that for the HiGHS solver to work, GCG must have been compiled with the enabled `HIGHS` flag.
+
+### CPLEX Solver
+This pricing solver uses the CPLEX shared library to solve the pricing problems.
+See the CPLEX [website](https://www.ibm.com/products/ilog-cplex-optimization-studio/cplex-optimizer).
+Note that for the CPLEX solver to work, GCG must have been compiled with the enabled `CPLEX` flag.
 
 <hr>
 

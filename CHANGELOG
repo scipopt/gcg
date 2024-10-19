@@ -5,15 +5,21 @@
 New features:
 -------------
 
+- Solver plugin for HiGHS. Allows user to select HiGHS as a pricing problem solver.
 - generic approach to handle cuts and branching constraints in the master problem with no couterpart in the original problem
 - created a pricing variable type for variables not corresponding to any original variable, inferred by mastercuts
 - automatic mastervariable synchronization across the entire search tree through history-tracking
 - component bound branching rule
 
 
-New/modified API functions:
+New/modified/removed API functions:
 ---------------------------
 
+- added 'GCGpricerAddColResult', 'GCGpricerGetMaxNThreads', 'GCGpricestoreGetNColsTotal'
+- changed 'GCGpricestoreCreate', 'GCGpricestoreAddCol', 'GCGpricestoreGetCols', 'GCGpricestoreGetNCols'
+- removed 'GCGpricestoreRemoveInefficaciousCols', 'GCGpricestoreGetTime'
+- changed 'GCGcolpoolAddCol', 'GCGcolpoolPrice'
+- added 'GCGhashGetKeyCol', 'GCGhashKeyEqCol', 'GCGhashKeyValCol'
 - Added function 'GCGcreateInferredPricingVar'
 - Added function 'GCGvarIsInferredPricing'
 - Added function 'GCGpricingmodificationCreate'
@@ -42,6 +48,7 @@ Renamed API functions:
 New/changed parameters:
 -----------------------
 
+- renamed parameter 'pricing/masterpricer/threads' to 'pricing/masterpricer/nthreads' (default value: 1)
 - Moved parameter 'sepa/master/enable' to 'sepa/original/enable'
 - Moved parameter 'sepa/master/paramsetting' to 'sepa/original/paramsetting'
 - Added parameter 'branching/compbnd/useMDMH'
@@ -70,6 +77,11 @@ Code cleanup:
 - Moved file 'sepa_master.c' to 'sepa_original.c'
 - Moved file 'sepa_master.h' to 'sepa_original.h'
 - Moved references of 'sepa_master' to 'sepa_original'
+
+Miscellaneous
+-------------
+
+- enable OpenMP by default
 
 
 @page RN37 Release notes for GCG 3.7

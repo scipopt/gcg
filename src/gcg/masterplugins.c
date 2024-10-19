@@ -192,6 +192,10 @@
 #include "solver_cplex.h"
 #endif
 
+#ifdef WITH_HIGHS
+#include "solver_highs.h"
+#endif
+
 #include "scip/table_default.h"
 
 /** includes default GCG master plugins */
@@ -346,6 +350,10 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 
 #ifdef WITH_CPLEXSOLVER
    SCIP_CALL( GCGincludeSolverCplex(scip) );
+#endif
+
+#ifdef WITH_HIGHS
+   SCIP_CALL( GCGincludeSolverHighs(scip) );
 #endif
 
    /* include masterbranch constraint handler */

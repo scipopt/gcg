@@ -40,12 +40,20 @@ endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
-option(OPENMP "should gcg be compiled with openmp" OFF)
+if(MSVC)
+   # disable since SCIP requires an OpenMP feature which is not supported by the native MSVC
+   set(DEFAULT_OPENMP OFF)
+else()
+   set(DEFAULT_OPENMP ON)
+endif()
+
+option(OPENMP "should gcg be compiled with openmp" ${DEFAULT_OPENMP})
 option(STATIC_GMP "prefer static gmp library" OFF)
 option(GSL "should gcg be compiled with GSL" ON)
 option(GMP "should gmp be linked" ON)
 option(CLIQUER "should cliquer be linked" ON)
 option(CPLEX "should Cplex be used for solving pricing MIPs" OFF)
+option(HIGHS "should HiGHS be used for solving pricing MIPs" OFF)
 option(MT "use static runtime libraries for Visual Studio compiler" OFF)
 option(GCG_DEV_BUILD "compile SCIP and SoPlex located in lib/scip-git and lib/soplex-git" OFF)
 option(HMETIS "should hmetis be called" OFF)
@@ -57,6 +65,7 @@ if(OPENMP)
    if(OPENMP_FOUND)
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+      set(THREADSAFE ON FORCE)
    endif()
 endif()
 
@@ -107,6 +116,21 @@ if(CPLEX_FOUND)
 else()
    set(CPLEX_LIBRARIES)
    set(CPLEX_PIC_LIBRARIES)
+endif()
+
+# HiGHS
+if(HIGHS)
+   find_package(HIGHS REQUIRED)
+endif()
+if(HIGHS_FOUND)
+   find_package(Threads)
+   add_definitions(-DWITH_HIGHS)
+   include_directories(${HIGHS_INCLUDE_DIRS})
+   set(HIGHS_LIBRARIES highs::highshighs) # I would expect that this should be set by highs-config.cmake
+   set(HIGHS_PIC_LIBRARIES ${HIGHS_LIBRARIES})
+else()
+   set(HIGHS_LIBRARIES)
+   set(HIGHS_PIC_LIBRARIES)
 endif()
 
 # HMETIS
