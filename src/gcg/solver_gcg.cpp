@@ -36,6 +36,7 @@
 /* #define SUBGCG_DETAILED_CLOCKS */
 /* #define DEBUG_PRICING_ALL_OUTPUT */
 /* #define DEBUG_PRICING_WRITE_PROBS */
+/* #define SUBGCG_DEBUG_OBJECTIVE_VALUE */
 #define SUBGCG_DEBUG_ITER -1
 
 #include "scip/scip.h"
@@ -312,8 +313,9 @@ SCIP_Bool buildProblem(
    SCIP_CALL_ABORT( SCIPstopClock(solverdata->origprob, solverdata->inittime) );
 #endif
 
-   SCIPdebugMessage("SUBGCG Problem %i built, stage: %i\n", probnr, SCIPgetStage(subgcg));
+   SCIPdebugMessage("SUBGCG Problem %d built, stage: %d\n", probnr, SCIPgetStage(subgcg));
 
+   SCIPdebugMessage("SUBGCG Detecting structure of problem %d\n", probnr);
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
@@ -340,7 +342,7 @@ SCIP_Bool buildProblem(
       SCIP_CALL(GCGdetectStructure(subgcg, &decompresult));
       if (decompresult != SCIP_SUCCESS)
       {
-         SCIPwarningMessage(pricingprob, "No decomposition found!\n");
+         SCIPinfoMessage(solverdata->origprob, NULL, "solver_gcg: No decomposition found for pricing problem %d.\n", probnr);
          SCIP_CALL( SCIPfree(&subgcg) );
          solverdata->pricingprobs[probnr] = NULL;
          return SCIP_OKAY;
@@ -355,6 +357,7 @@ SCIP_Bool buildProblem(
    SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_NONE) );
 #endif
 
+   SCIPdebugMessage("SUBGCG Problem %d structure detected, stage: %d\n", probnr, SCIPgetStage(subgcg));
 
    return TRUE;
 }
@@ -524,6 +527,8 @@ SCIP_RETCODE solveProblem(
    else
       nthreads = MIN(nthreads, omp_get_max_threads());
    nthreads = (int) MAX(nthreads / solverdata->nrelpricingprobs, 1);
+   /* @todo: free threads should be assigned to expensive pps or even better:
+      use additional threads (dynamically during solving) if other pps terminated */
    nfreethreads = nthreads % solverdata->nrelpricingprobs;
    assert(solverdata->relpricingprobidxs[probnr] >= 0);
    if( solverdata->relpricingprobidxs[probnr] + 1 <= nfreethreads )
@@ -603,7 +608,7 @@ SCIP_RETCODE solveProblem(
 #endif
 #endif
 
-   SCIPdebugMessage("Problem %i solved\n", probnr);
+   SCIPdebugMessage("Problem %d solved\n", probnr);
 
    //solverdata->iters += GCGmasterGetPricingSimplexIters(GCGgetMasterprob(subgcg));
    //solverdata->iters += SCIPgetNLPIterations(GCGgetMasterprob(subgcg));
@@ -789,7 +794,7 @@ GCG_DECL_SOLVERINITSOL(solverInitsolGcg)
    if (solverdata->depth >= solverdata->maxdepth)
    {
       assert(solverdata->origprob != NULL);
-      SCIPdebugMessage("GCG Solver is disabled (depth %i)!\n", solverdata->depth);
+      SCIPdebugMessage("GCG Solver is disabled (depth %d)!\n", solverdata->depth);
       SCIP_CALL( SCIPsetBoolParam(solverdata->origprob, "pricingsolver/gcg/exactenabled", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(solverdata->origprob, "pricingsolver/gcg/heurenabled", FALSE) );
       return SCIP_OKAY;
@@ -901,12 +906,13 @@ GCG_DECL_SOLVERSOLVE(solverSolveGcg)
    if (solverdata->pricingprobs == NULL)
    {
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
+      SCIPdebugMessage("GCG Solver not applicable, probnr: %d\n", probnr);
       return SCIP_OKAY;
    }
 
    *lowerbound = -SCIPinfinity(pricingprob);
 
-   SCIPdebugMessage("GCG Solver %li: solve start, probnr: %i, status: %u\n", solverdata->count+1, probnr, *status);
+   SCIPdebugMessage("GCG Solver %li: solve start, probnr: %d, status: %u\n", solverdata->count+1, probnr, *status);
 
    subgcg = solverdata->pricingprobs[probnr];
 
@@ -923,12 +929,25 @@ GCG_DECL_SOLVERSOLVE(solverSolveGcg)
 
    SCIP_CALL( solveProblem(pricingprob, subgcg, probnr, solverdata, lowerbound, status) );
 
+#ifdef SUBGCG_DEBUG_OBJECTIVE_VALUE
+   if( SCIPgetStatus(subgcg) == SCIP_STATUS_OPTIMAL )
+   {
+      SCIPsolve(pricingprob);
+      assert(SCIPisEQ(solverdata->origprob, SCIPgetDualbound(pricingprob), SCIPgetDualbound(subgcg)));
+      if( !SCIPisEQ(solverdata->origprob, SCIPgetDualbound(pricingprob), SCIPgetDualbound(subgcg)) )
+      {
+         SCIPerrorMessage("GCG Solver: optimal dualbound (gcg: %f, scip: %f) does not match: prob %d, iter %ld\n", SCIPgetDualbound(subgcg), SCIPgetDualbound(pricingprob), probnr, solverdata->count);
+         return SCIP_ERROR;
+      }
+   }
+#endif
+
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( GCGprintStatistics(subgcg, NULL) );
    SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_NONE) );
 #endif
 
-   SCIPdebugMessage("GCG Solver: solve finished, probnr: %i, status: %u\n", probnr, *status);
+   SCIPdebugMessage("GCG Solver: solve finished, probnr: %d, status: %u\n", probnr, *status);
 
    return SCIP_OKAY;
 }
@@ -947,12 +966,13 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurGcg)
    if (solverdata->pricingprobs == NULL)
    {
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
+      SCIPdebugMessage("GCG Solver not applicable, probnr: %d\n", probnr);
       return SCIP_OKAY;
    }
 
    *lowerbound = -SCIPinfinity(pricingprob);
 
-   SCIPdebugMessage("GCG Solver %li: solveHeur start, probnr: %i, status: %u\n", solverdata->count+1, probnr, *status);
+   SCIPdebugMessage("GCG Solver %li: solveHeur start, probnr: %d, status: %u\n", solverdata->count+1, probnr, *status);
 
    subgcg = solverdata->pricingprobs[probnr];
 
@@ -1016,11 +1036,24 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurGcg)
 
    SCIP_CALL( solveProblem(pricingprob, subgcg, probnr, solverdata, lowerbound, status) );
 
+#ifdef SUBGCG_DEBUG_OBJECTIVE_VALUE
+   if( SCIPgetStatus(subgcg) == SCIP_STATUS_OPTIMAL )
+   {
+      SCIPsolve(pricingprob);
+      assert(SCIPisEQ(solverdata->origprob, SCIPgetDualbound(pricingprob), SCIPgetDualbound(subgcg)));
+      if( !SCIPisEQ(solverdata->origprob, SCIPgetDualbound(pricingprob), SCIPgetDualbound(subgcg)) )
+      {
+         SCIPerrorMessage("GCG Solver: optimal dualbound (gcg: %f, scip: %f) does not match: prob %d, iter %ld\n", SCIPgetDualbound(subgcg), SCIPgetDualbound(pricingprob), probnr, solverdata->count);
+         return SCIP_ERROR;
+      }
+   }
+#endif
+
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_NONE) );
 #endif
 
-   SCIPdebugMessage("GCG Solver: solveHeur finished, probnr: %i, status: %u\n", probnr, *status);
+   SCIPdebugMessage("GCG Solver: solveHeur finished, probnr: %d, status: %u\n", probnr, *status);
 
    return SCIP_OKAY;
 }
@@ -1065,7 +1098,7 @@ GCG_DECL_SOLVERUPDATE(solverUpdateGcg)
    SCIPstopClock(solverdata->origprob, solverdata->updatetime);
 #endif
 
-   SCIPdebugMessage("Updated problem %i\n", probnr);
+   SCIPdebugMessage("Updated problem %d\n", probnr);
 
    return SCIP_OKAY;
 }
