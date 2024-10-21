@@ -1276,10 +1276,7 @@ void PARTIALDECOMP::calcAggregationInformation(
 
    int nreps = 1;
 
-   if( aggInfoCalculated() )
-      return;
-
-   if( !isComplete() )
+   if( aggInfoCalculated() || !isComplete() || !linkingvars.empty() )
       return;
 
 #ifndef NO_AUT_LIB
@@ -4659,7 +4656,7 @@ std::vector<int>& PARTIALDECOMP::getStairlinkingvars(
    int block
    )
 {
-   assert( block >= 0 && block < nblocks );
+   assert( block >= 0 && block < stairlinkingvars.size() );
    return stairlinkingvars[block];
 }
 
@@ -4683,7 +4680,7 @@ std::vector<int>& PARTIALDECOMP::getVarsForBlock(
    int block
    )
 {
-   assert( block >= 0 && block < nblocks );
+   assert( block >= 0 && block < varsforblocks.size() );
    return varsforblocks[block];
 }
 
@@ -4693,6 +4690,7 @@ int PARTIALDECOMP::getVarProbindexForBlock(
    int block
    )
 {
+   assert(block >= 0 && block < varsforblocks.size());
    std::vector<int>::iterator lb = lower_bound( varsforblocks[block].begin(), varsforblocks[block].end(), varid );
 
    if( lb != varsforblocks[block].end() && *lb == varid )
@@ -4715,7 +4713,7 @@ bool PARTIALDECOMP::isConsBlockconsOfBlock(
    )
 {
    assert( cons >= 0 && cons < nconss );
-   assert( block >= 0 && block < nblocks );
+   assert( block >= 0 && block < conssforblocks.size() );
    std::vector<int>::iterator lb = lower_bound( conssforblocks[block].begin(), conssforblocks[block].end(), cons );
    if( lb != conssforblocks[block].end() &&  *lb == cons )
       return true;
@@ -4728,7 +4726,7 @@ bool PARTIALDECOMP::isConsMastercons(
    int cons
    )
 {
-   assert( cons >= 0 && cons < nconss );
+   assert( cons >= 0 && cons < isconsmaster.size() );
   return isconsmaster[cons];
 }
 
@@ -4737,7 +4735,7 @@ bool PARTIALDECOMP::isConsOpencons(
    int cons
    )
 {
-   assert( cons >= 0 && cons < nconss );
+   assert( cons >= 0 && cons < isconsopen.size() );
    return isconsopen[cons];
 }
 
@@ -5812,6 +5810,8 @@ bool PARTIALDECOMP::setSymmetryInformation(
    )
 {
    bool success = true;
+   if( !linkingvars.empty() )
+      return false;
    blockstoeqclasses.resize(getNBlocks());
    for( int b = 0; b < getNBlocks(); ++b )
    {

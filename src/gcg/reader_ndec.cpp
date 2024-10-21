@@ -681,7 +681,7 @@ bool NDecFileHandler::serializeDecomposition(
    }
    success &= setObjectValue("blocks", jsonblocks, json);
 
-   if( decomp->aggInfoCalculated() )
+   if( decomp->aggInfoCalculated() && decomp->getNEquivalenceClasses() < decomp->getNBlocks() )
    {
       json_t* jsonsymmetry = json_object();
       for( int ec = 0; ec < decomp->getNEquivalenceClasses(); ++ec )
