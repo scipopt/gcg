@@ -79,6 +79,7 @@
 #define DEFAULT_SOLLIMITFAC          1.5     /**< factor by which to increase solution limit for heuristic pricing */
 #define DEFAULT_SETTINGSFILE         "-"     /**< settings file to be applied in pricing problems */
 #define DEFAULT_PRESOL_MAX_ROUNDS    0       /**< default maximal number of presolving rounds */
+#define DEFAULT_ENABLE_WARNINGS      FALSE   /**< should warnings (of pricing problems) be enabled by default */
 
 /*
  * Data structures
@@ -97,6 +98,7 @@ struct GCG_SolverData
    int                     nrelpricingprobs;
    int*                    nbasicpricingconss;  /**< array storing the basic number of constraints of the pricing problems */
    int*                    relpricingprobidxs;  /**< indices of the relevant pricing problems (-1 if pp is not relevant) */
+   SCIP_Bool               enablewarnings;      /**< enable warnings of pricing problems */
 
    SCIP_Longint            startnodelimit;      /**< start node limit for heuristic pricing */
    SCIP_Longint            startstallnodelimit; /**< start stalling node limit for heuristic pricing */
@@ -154,6 +156,7 @@ void solverGcgPrepareNestedSolver(
    nestedsolverdata->startnodelimit = solverdata->startnodelimit;
    nestedsolverdata->startsollimit = solverdata->startsollimit;
    nestedsolverdata->startstallnodelimit = solverdata->startstallnodelimit;
+   nestedsolverdata->enablewarnings = solverdata->enablewarnings;
 }
 
 static
@@ -253,8 +256,20 @@ SCIP_Bool buildProblem(
    SCIP_CALL( SCIPcreate(&subgcg) );
    solverdata->pricingprobs[probnr] = subgcg;
 
+#ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
    SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/printreason", FALSE) );
+#else
+   if( solverdata->enablewarnings )
+   {
+      SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
+      SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/printreason", FALSE) );
+   }
+   else
+   {
+      SCIPsetMessagehdlrQuiet(subgcg, TRUE);
+   }
+#endif
 
    SCIP_CALL( SCIPincludeGcgPlugins(subgcg) );
    (void)SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_subgcg", SCIPgetProbName(pricingprob) );
@@ -299,7 +314,11 @@ SCIP_Bool buildProblem(
 
    SCIPdebugMessage("SUBGCG Problem %i built, stage: %i\n", probnr, SCIPgetStage(subgcg));
 
-   SCIPdebugMessage("SUBGCG Detecting structure of problem %i\n", probnr);
+
+#ifdef DEBUG_PRICING_ALL_OUTPUT
+   SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
+#endif
+
 #ifdef SUBGCG_DETAILED_CLOCKS
    SCIP_CALL_ABORT( SCIPstartClock(solverdata->origprob, solverdata->inittime) );
 #endif
@@ -332,7 +351,10 @@ SCIP_Bool buildProblem(
    SCIP_CALL_ABORT( SCIPstopClock(solverdata->origprob, solverdata->inittime) );
 #endif
 
-   SCIPdebugMessage("SUBGCG Problem %i structure detected, stage: %i\n", probnr, SCIPgetStage(subgcg));
+#ifdef DEBUG_PRICING_ALL_OUTPUT
+   SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_NONE) );
+#endif
+
 
    return TRUE;
 }
@@ -903,7 +925,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveGcg)
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( GCGprintStatistics(subgcg, NULL) );
-   SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", 0) );
+   SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_NONE) );
 #endif
 
    SCIPdebugMessage("GCG Solver: solve finished, probnr: %i, status: %u\n", probnr, *status);
@@ -995,7 +1017,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurGcg)
    SCIP_CALL( solveProblem(pricingprob, subgcg, probnr, solverdata, lowerbound, status) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", 0) );
+   SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_NONE) );
 #endif
 
    SCIPdebugMessage("GCG Solver: solveHeur finished, probnr: %i, status: %u\n", probnr, *status);
@@ -1130,6 +1152,10 @@ SCIP_RETCODE GCGincludeSolverGcg(
    SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/gcg/presolmaxrounds",
          "maximal number of presolving rounds (-1: unlimited, 0: off, will be overwritten by a settings file)",
          &solverdata->presolmaxrounds, FALSE, DEFAULT_PRESOL_MAX_ROUNDS, -1, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricingsolver/gcg/enablewarnings",
+         "should warnings of pricing problems be printed",
+         &solverdata->enablewarnings, FALSE, DEFAULT_ENABLE_WARNINGS, NULL, NULL) );
 
    return SCIP_OKAY;
 }

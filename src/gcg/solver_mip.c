@@ -64,6 +64,7 @@
 #define DEFAULT_GAPLIMITFAC          0.8     /**< factor by which to decrease gap limit for heuristic pricing (1.0: subtract start limit) */
 #define DEFAULT_SOLLIMITFAC          1.0     /**< factor by which to increase solution limit for heuristic pricing (1.0: add start limit) */
 #define DEFAULT_SETTINGSFILE         "-"     /**< settings file to be applied in pricing problems */
+#define DEFAULT_ENABLE_WARNINGS      FALSE   /**< should warnings (of pricing problems) be enabled by default */
 
 
 
@@ -81,6 +82,7 @@ struct GCG_SolverData
    SCIP_Real             gaplimitfac;         /**< factor by which to decrease gap limit for heuristic pricing (1.0: subtract start limit) */
    SCIP_Real             sollimitfac;         /**< factor by which to increase solution limit for heuristic pricing (1.0: add start limit) */
    char*                 settingsfile;        /**< settings file to be applied in pricing problems */
+   SCIP_Bool             enablewarnings;      /**< enable warnings of pricing problems */
 
    /* solver data */
    SCIP_Longint*         curnodelimit;        /**< current node limit per pricing problem */
@@ -426,6 +428,13 @@ SCIP_RETCODE solveProblem(
    assert(lowerbound != NULL);
    assert(status != NULL);
 
+#ifndef DEBUG_PRICING_ALL_OUTPUT
+   if( !solverdata->enablewarnings && !SCIPmessagehdlrIsQuiet(SCIPgetMessagehdlr(pricingprob)) )
+   {
+      SCIPsetMessagehdlrQuiet(pricingprob, TRUE);
+   }
+#endif
+
 #ifdef SCIP_STATISTIC
    oldnnodes = SCIPgetNNodes(pricingprob);
 #endif
@@ -611,7 +620,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    SCIP_CALL( solveProblem(scip, pricingprob, probnr, solverdata, lowerbound, status) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", 0) );
+   SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_NONE) );
    SCIP_CALL( SCIPprintStatistics(pricingprob, NULL) );
 #endif
 
@@ -687,7 +696,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    SCIP_CALL( solveProblem(scip, pricingprob, probnr, solverdata, lowerbound, status) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", 0) );
+   SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_NONE) );
    SCIP_CALL( SCIPprintStatistics(pricingprob, NULL) );
 #endif
 
@@ -751,6 +760,10 @@ SCIP_RETCODE GCGincludeSolverMip(
    SCIP_CALL( SCIPaddStringParam(origprob, "pricingsolver/mip/settingsfile",
          "settings file for pricing problems",
          &solverdata->settingsfile, TRUE, DEFAULT_SETTINGSFILE, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricingsolver/mip/enablewarnings",
+         "should warnings of pricing problems be printed",
+         &solverdata->enablewarnings, FALSE, DEFAULT_ENABLE_WARNINGS, NULL, NULL) );
 
 
    return SCIP_OKAY;
