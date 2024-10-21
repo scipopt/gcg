@@ -101,7 +101,7 @@ using namespace scip;
 #define DEFAULT_ABORTPRICINGGAP          0.00       /**< gap between dual bound and RMP objective at which pricing is aborted */
 #define DEFAULT_DISPINFOS                FALSE      /**< should additional information be displayed */
 #define DEFAULT_DISABLECUTOFF            2          /**< should the cutoffbound be applied in master LP solving? (0: on, 1:off, 2:auto) */
-#define DEFAULT_NTHREADS                 1          /**< number of threads (0 is OpenMP default) */
+#define DEFAULT_NTHREADS                 1          /**< number of threads (0: up to omp_get_max_threads()) */
 #define DEFAULT_STABILIZATION            TRUE       /**< should stabilization be used */
 #define DEFAULT_STABILIZATIONTREE        FALSE      /**< should stabilization be used in nodes other than the root node*/
 #define DEFAULT_HYBRIDASCENT             FALSE      /**< should hybridization of smoothing with an ascent method be enabled */
@@ -234,7 +234,7 @@ struct SCIP_PricerData
 
 #ifdef _OPENMP
    /* parallelization */
-   int                   npricingthreads;    /**< maximal number of threads used to parallelize pricing */
+   int                   maxnthreads;        /**< maximal number of threads used to parallelize pricing */
    GCG_LOCKS*            locks;              /**< OpenMP locks */
 #endif
 
@@ -2836,8 +2836,8 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       SCIPgetNNodes(scip_), SCIPnodeGetDepth(SCIPgetCurrentNode(scip_)));
 
 #ifdef _OPENMP
-   if( pricerdata->npricingthreads > 0 )
-      nthreads = MIN(pricerdata->npricingthreads, GCGgetNRelPricingprobs(origprob));
+   if( pricerdata->maxnthreads > 0 )
+      nthreads = MIN(pricerdata->maxnthreads, GCGgetNRelPricingprobs(origprob));
    else
       nthreads = MIN(omp_get_max_threads(), GCGgetNRelPricingprobs(origprob));
 #else
@@ -4312,7 +4312,7 @@ SCIP_RETCODE SCIPincludePricerGcg(
 #ifdef _OPENMP
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/nthreads",
             "maximum number of threads used to parallelize pricing (0: automatic)",
-            (int*)&pricerdata->npricingthreads, FALSE, DEFAULT_NTHREADS, 0, omp_get_max_threads(), NULL, NULL) );
+            (int*)&pricerdata->maxnthreads, FALSE, DEFAULT_NTHREADS, 0, omp_get_max_threads(), NULL, NULL) );
 #ifdef SCIP_STATISTIC
    /* statistics are not threadsafe */
    SCIP_CALL( SCIPsetIntParam(origprob, "pricing/masterpricer/nthreads", 1) );
@@ -5469,7 +5469,7 @@ GCG_COLPOOL* GCGgetColpool(
 
 #ifdef _OPENMP
 GCG_EXPORT
-int GCGpricerGetNPricingThreads(
+int GCGpricerGetMaxNThreads(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -5485,6 +5485,6 @@ int GCGpricerGetNPricingThreads(
    pricerdata = pricer->getPricerdata();
    assert(pricerdata != NULL);
 
-   return pricerdata->npricingthreads;
+   return pricerdata->maxnthreads;
 }
 #endif

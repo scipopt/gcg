@@ -5,6 +5,8 @@
 New features:
 -------------
 
+- Solver plugin for HiGHS. Allows user to select HiGHS as a pricing problem solver.
+
 New/modified/removed structures, defines, and classes:
 ---------------------------
 
@@ -47,7 +49,21 @@ Code cleanup:
 New/changed parameters:
 -----------------------
 
-- renamed parameter 'pricing/masterpricer/threads' to 'pricing/masterpricer/nthreads' and set default value to 1
+- renamed parameter 'pricing/masterpricer/threads' to 'pricing/masterpricer/nthreads' (default value: 1)
+
+New/modified/removed API functions:
+---------------------------
+
+- added 'GCGpricerAddColResult', 'GCGpricerGetMaxNThreads', 'GCGpricestoreGetNColsTotal'
+- changed 'GCGpricestoreCreate', 'GCGpricestoreAddCol', 'GCGpricestoreGetCols', 'GCGpricestoreGetNCols'
+- removed 'GCGpricestoreRemoveInefficaciousCols', 'GCGpricestoreGetTime'
+- changed 'GCGcolpoolAddCol', 'GCGcolpoolPrice'
+- added 'GCGhashGetKeyCol', 'GCGhashKeyEqCol', 'GCGhashKeyValCol'
+
+Miscellaneous
+-------------
+
+- enable OpenMP by default
 
 
 @page RN37 Release notes for GCG 3.7
@@ -80,7 +96,6 @@ Miscellaneous
 
 - moved files related to symmetry detection to src/symmetry/
 - renamed 'pub_bliss.h' to 'pub_automorphism.h'
-- enable OpenMP by default
 
 
 @page RN36 Release notes for GCG 3.6

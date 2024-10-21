@@ -521,7 +521,7 @@ SCIP_RETCODE solveProblem(
    solverdata->count++;
 
 #ifdef _OPENMP
-   int nthreads = GCGpricerGetNPricingThreads(solverdata->masterprob);
+   int nthreads = GCGpricerGetMaxNThreads(solverdata->masterprob);
    if( nthreads == 0 )
       nthreads = omp_get_max_threads();
    else
@@ -534,7 +534,7 @@ SCIP_RETCODE solveProblem(
    if( solverdata->relpricingprobidxs[probnr] + 1 <= nfreethreads )
       nthreads++;
 
-   if( GCGpricerGetNPricingThreads(GCGgetMasterprob(subgcg)) != nthreads )
+   if( GCGpricerGetMaxNThreads(GCGgetMasterprob(subgcg)) != nthreads )
    {
       SCIP_CALL( SCIPsetIntParam(subgcg, "pricing/masterpricer/nthreads", nthreads) );
    }

@@ -740,7 +740,7 @@ SCIP_RETCODE createGraphNewDetection(
 
             /* add coefficent node for current coeff */
             graph->setColor(currentnode, color);
-            assert(ABS(val < SCIPinfinity(scip)));
+            assert(ABS(val) < SCIPinfinity(scip));
             SCIPdebugMessage("master nz for var <%s> (id: %d) (value: %f, color: %d)\n", SCIPvarGetName(var), currentnode, val, color);
             currentnode++;
          }

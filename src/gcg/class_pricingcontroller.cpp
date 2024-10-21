@@ -312,7 +312,11 @@ SCIP_RETCODE Pricingcontroller::initSol()
       }
    }
 
+#ifdef _OPENMP
    SCIP_CALL_EXC( GCGpqueueCreate(scip_, &pqueue, npricingjobs, comparePricingjobs, &locks->memorylock) );
+#else
+   SCIP_CALL_EXC( GCGpqueueCreate(scip_, &pqueue, npricingjobs, comparePricingjobs, NULL) );
+#endif
 
    return SCIP_OKAY;
 }

@@ -307,7 +307,7 @@ GCG_COLPOOL* GCGgetColpool(
 #ifdef _OPENMP
 /** get maximal number of pricing threads */
 GCG_EXPORT
-int GCGpricerGetNPricingThreads(
+int GCGpricerGetMaxNThreads(
    SCIP*                 scip                /**< SCIP data structure */
    );
 #endif
