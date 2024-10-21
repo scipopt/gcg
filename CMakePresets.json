@@ -49,6 +49,19 @@
             }
         },
         {
+            "name": "gcg-debug-nm",
+            "inherits": "gcg-default",
+            "displayName": "GCG Default Debug Config (native memory)",
+            "description": "Default GCG development debug build configuration with native memory handling",
+            "hidden": true,
+            "cacheVariables": {
+                "NOBLKBUFMEM": {
+                    "type": "BOOL",
+                    "value": "ON"
+                }
+            }
+        },
+        {
             "name": "gcg-release",
             "inherits": "gcg-default",
             "displayName": "GCG Default Release Config",
@@ -119,6 +132,19 @@
             ],
             "displayName": "GCG Linux Debug Config",
             "description": "GCG Linux development debug build configuration",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "gcg-linux-debug-nm",
+            "inherits": [
+                "gcg-debug-nm",
+                "gcg-linux"
+            ],
+            "displayName": "GCG Linux Debug Config (native memory)",
+            "description": "GCG Linux development debug build configuration with native memory handling",
             "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
@@ -242,6 +268,16 @@
             "configurePreset": "gcg-linux-debug",
             "displayName": "GCG Linux Debug Build",
             "description": "GCG Linux development debug build"
+        },
+        {
+            "name": "gcg-linux-debug-nm",
+            "inherits": [
+                "gcg-default",
+                "gcg-gcc-pb"
+            ],
+            "configurePreset": "gcg-linux-debug-nm",
+            "displayName": "GCG Linux Debug Build (native memory)",
+            "description": "GCG Linux development debug build with native memory handling"
         },
         {
             "name": "gcg-linux-release",
