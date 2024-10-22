@@ -26,6 +26,7 @@ We currently have three different pricing solvers:
 | -- | -- | -- |
 | Knapsack ([Documentation](solver__knapsack_8c.html)) | Knapsack program solving using a dynamic programming approach | 200 |
 | Cliquer ([Documentation](solver__knapsack_8c.html))  | Independent set problem solving using a heuristic (external) solver | 150 |
+| GCG ([Documentation](solver__gcg_8c.html))      | Call GCG solver | 110 |
 | HiGHS ([Documentation](solver__highs_8c.html))      | Call (external) HiGHS solver | 100 |
 | CPLEX ([Documentation](solver__cplex_8c.html))      | Call (external) CPLEX solver | 100 |
 | MIP ([Documentation](solver__knapsack_8c.html))      | Simply call MIP solver again (expensive) | 0 |
@@ -46,6 +47,12 @@ for the Cliquer solver to work, GCG must have been compiled with the enabled `CL
 ### Mixed Integer Program Solver
 This pricing solver is simply a call of SCIP's MIP solving functionality, meaning it is no faster than
 the usual solving. This consequentially leads to poor performance on many instances.
+
+### GCG Solver
+This pricing solver uses GCG recursively to solve the pricing problems.
+The solver is disabled by default. It can be enabled by setting the maximum (recursion) depth parameter `pricingsolver/gcg/maxdepth` to a value greater than 0.
+I.e., setting this parameter to 1 means that the GCG solver is used to solve the root pricing problems, but is disabled for the nested pricing problems.
+The solver either uses a nested decomposition provided by the user, or tries to detect a structure if no nested structure information is available.
 
 ### HiGHS Solver
 This pricing solver uses the HiGHS shared library to solve the pricing problems.

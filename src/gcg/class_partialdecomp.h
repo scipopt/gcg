@@ -74,6 +74,9 @@ enum USERGIVEN
 class DETPROBDATA;
 class PARTIALDECOMP;
 
+/**
+ * @brief a lightweight struct that stores nested structure information
+ */
 struct BLOCK_STRUCTURE
 {
    ~BLOCK_STRUCTURE();

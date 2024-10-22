@@ -238,7 +238,7 @@ SCIP_Bool buildProblem(
    GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
    SCIP*                 pricingprob,        /**< pricing problem */
    int                   probnr              /**< problem number */
-)
+   )
 {
    SCIP* subgcg = NULL;
    SCIP_Bool valid;
@@ -320,10 +320,10 @@ SCIP_Bool buildProblem(
 
    nsolvers = pricer->getNumSolvers();
 
-   for (i = 0; i < nsolvers; ++i)
+   for( i = 0; i < nsolvers; ++i )
    {
       childsolver = pricer->getSolvers()[i];
-      if (strcmp(childsolver->name, SOLVER_NAME) == 0)
+      if( strcmp(childsolver->name, SOLVER_NAME) == 0 )
       {
           solverGcgPrepareNestedSolver(solverdata, childsolver);
           break;
@@ -355,7 +355,7 @@ SCIP_Bool buildProblem(
    else
    {
       SCIP_CALL(GCGdetectStructure(subgcg, &decompresult));
-      if (decompresult != SCIP_SUCCESS)
+      if( decompresult != SCIP_SUCCESS )
       {
          SCIPinfoMessage(solverdata->origprob, NULL, "No decomposition found for pricing problem %d.\n", probnr);
          SCIP_CALL( SCIPfree(&subgcg) );
@@ -389,7 +389,7 @@ SCIP_RETCODE updateVars(
    int                   probnr,             /**< problem number */
    SCIP_Bool             varobjschanged,     /**< have the objective coefficients changed? */
    SCIP_Bool             varbndschanged      /**< have the lower and upper bounds changed? */
-)
+   )
 {
    SCIP_VAR** vars;
    int nvars;
@@ -410,7 +410,7 @@ SCIP_RETCODE updateVars(
    retval = SCIP_OKAY;
 
    /* get new bounds and objective coefficients of variables */
-   for (i = 0; i < nvars; i++)
+   for( i = 0; i < nvars; i++ )
    {
       SCIP_VAR* origvar;
       SCIP_VAR* var;
@@ -430,7 +430,7 @@ SCIP_RETCODE updateVars(
       else
          subvar = suborigvar;
 
-      if (varbndschanged)
+      if( varbndschanged )
       {
          if( !SCIPisEQ(subgcg, SCIPvarGetLbGlobal(var), SCIPvarGetLbGlobal(subvar)) )
          {
@@ -445,7 +445,7 @@ SCIP_RETCODE updateVars(
          assert(SCIPisFeasLE(subgcg, SCIPvarGetLbGlobal(var), SCIPvarGetUbGlobal(var)));
       }
 
-      if (varobjschanged)
+      if( varobjschanged )
          SCIPchgVarObj(subgcg, suborigvar, SCIPvarGetObj(origvar));
    }
 
@@ -459,7 +459,7 @@ SCIP_RETCODE updateBranchingConss(
    GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
    SCIP*                 pricingprob,        /**< pricing problem */
    int                   probnr              /**< problem number */
-)
+   )
 {
    SCIP_CONS** conss;
    SCIP_CONS** sconss;
@@ -479,17 +479,17 @@ SCIP_RETCODE updateBranchingConss(
    nbasicpricingconss = solverdata->nbasicpricingconss[probnr];
    nsubconss = SCIPgetNOrigConss(subgcg);
 
-   for (c = nbasicpricingconss; c < nsubconss; ++c)
+   for( c = nbasicpricingconss; c < nsubconss; ++c )
    {
       SCIPdelCons(subgcg, sconss[c]);
    }
 
    nnewconss = nconss - nbasicpricingconss;
 
-   if (nnewconss == 0)
+   if( nnewconss == 0 )
       return SCIP_OKAY;
 
-   for (c = nbasicpricingconss; c < nconss; ++c)
+   for( c = nbasicpricingconss; c < nconss; ++c )
    {
       SCIP_Bool valid;
       SCIP_CONS* newcons;
@@ -501,7 +501,7 @@ SCIP_RETCODE updateBranchingConss(
          SCIPconsIsPropagated(cons), FALSE, SCIPconsIsModifiable(cons),
          SCIPconsIsDynamic(cons), SCIPconsIsRemovable(cons), FALSE, TRUE, &valid) );
 
-      if (newcons != NULL && valid)
+      if( newcons != NULL && valid )
       {
          SCIP_CALL( SCIPaddCons(subgcg, newcons) );
 
@@ -527,7 +527,7 @@ SCIP_RETCODE solveProblem(
    GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
    SCIP_Real*            lowerbound,         /**< pointer to store lower bound */
    GCG_PRICINGSTATUS*    status              /**< pointer to store pricing problem status */
-)
+   )
 {
    GCG_COL* col;
    SCIP_RETCODE retcode;
@@ -640,7 +640,7 @@ SCIP_RETCODE solveProblem(
 #endif
 #endif
 
-   if (retcode != SCIP_OKAY)
+   if( retcode != SCIP_OKAY )
    {
       SCIPwarningMessage(pricingprob, "Pricing problem %d terminated with retcode = %d, ignoring\n", probnr, retcode);
       return SCIP_OKAY;
@@ -651,7 +651,7 @@ SCIP_RETCODE solveProblem(
    *status = getPricingstatus(subgcg);
    SCIPdebugMessage("GCG Solver: Pricingstatus after solve: %u\n", *status);
 
-   switch (*status)
+   switch( *status )
    {
    case GCG_PRICINGSTATUS_INFEASIBLE:
       SCIPdebugMessage("  -> infeasible.\n");
@@ -661,7 +661,7 @@ SCIP_RETCODE solveProblem(
       * so copy the primal ray into the solution structure and mark it to be a primal ray
       */
    case GCG_PRICINGSTATUS_UNBOUNDED:
-      if (!SCIPhasPrimalRay(subgcg))
+      if( !SCIPhasPrimalRay(subgcg) )
       {
          GCGconshdlrDecompFreeOrigOnExit(subgcg, FALSE);
          SCIP_CALL( SCIPfreeTransform(subgcg));
@@ -746,14 +746,14 @@ SCIP_RETCODE freeBlockMemory(
    int i;
    int npricingprobs = solverdata->npricingprobs;
 
-   if (solverdata->pricingprobs == NULL)
+   if( solverdata->pricingprobs == NULL )
       return SCIP_OKAY;
 
-   for (i = 0; i < npricingprobs; ++i)
+   for( i = 0; i < npricingprobs; ++i )
    {
-      if (GCGisPricingprobRelevant(solverdata->origprob, i))
+      if( GCGisPricingprobRelevant(solverdata->origprob, i) )
       {
-         if (solverdata->pricingprobs[i] != NULL)
+         if( solverdata->pricingprobs[i] != NULL )
          {
             GCGconshdlrDecompFreeDetprobdata(solverdata->pricingprobs[i]);
             SCIPhashmapFree(&(solverdata->varmaps[i]));
@@ -809,7 +809,7 @@ GCG_DECL_SOLVERINITSOL(solverInitsolGcg)
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
-   if (solverdata->depth >= solverdata->maxdepth)
+   if( solverdata->depth >= solverdata->maxdepth )
    {
       assert(solverdata->origprob != NULL);
       SCIPdebugMessage("GCG Solver is disabled (depth %d)!\n", solverdata->depth);
@@ -839,17 +839,17 @@ GCG_DECL_SOLVERINITSOL(solverInitsolGcg)
 #endif
 
    j = 0;
-   for (i = 0; i < npricingprobs; ++i)
+   for( i = 0; i < npricingprobs; ++i )
    {
       solverdata->pricingprobs[i] = NULL;
       solverdata->nbasicpricingconss[i] = 0;
       solverdata->varmaps[i] = NULL;
       solverdata->translatesymmetry[i] = TRUE;
 
-      if (GCGisPricingprobRelevant(solverdata->origprob, i))
+      if( GCGisPricingprobRelevant(solverdata->origprob, i) )
       {
          solverdata->relpricingprobidxs[i] = j++;
-         if (!buildProblem(solverdata, GCGgetPricingprob(solverdata->origprob, i), i))
+         if( !buildProblem(solverdata, GCGgetPricingprob(solverdata->origprob, i), i) )
          {
             SCIP_CALL( freeBlockMemory(scip, solverdata) );
             return SCIP_OKAY;
@@ -1012,25 +1012,25 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurGcg)
       switch( SCIPgetStatus(subgcg) )
       {
       case SCIP_STATUS_NODELIMIT:
-         if (solverdata->nodelimitfac > 1.0)
+         if( solverdata->nodelimitfac > 1.0 )
          {
             solverdata->curnodelimit[probnr] *= solverdata->nodelimitfac;
             break;
          }
       case SCIP_STATUS_STALLNODELIMIT:
-         if (solverdata->stallnodelimitfac > 1.0)
+         if( solverdata->stallnodelimitfac > 1.0 )
          {
             solverdata->curstallnodelimit[probnr] *= solverdata->stallnodelimitfac;
             break;
          }
       case SCIP_STATUS_GAPLIMIT:
-         if (solverdata->gaplimitfac < 1.0)
+         if( solverdata->gaplimitfac < 1.0 )
          {
             solverdata->curgaplimit[probnr] *= solverdata->gaplimitfac;
             break;
          }
       case SCIP_STATUS_SOLLIMIT:
-         if (solverdata->sollimitfac > 1.0)
+         if( solverdata->sollimitfac > 1.0 )
          {
             solverdata->cursollimit[probnr] *= solverdata->sollimitfac;
             break;
@@ -1085,7 +1085,7 @@ GCG_DECL_SOLVERUPDATE(solverUpdateGcg)
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
-   if (solverdata->pricingprobs == NULL || solverdata->pricingprobs[probnr] == NULL)
+   if( solverdata->pricingprobs == NULL || solverdata->pricingprobs[probnr] == NULL )
       return SCIP_OKAY;
 
    SCIPdebugMessage("GCG solver -- update data for problem %d: varobjschanged = %u, varbndschanged = %u, consschanged = %u\n",
@@ -1101,7 +1101,7 @@ GCG_DECL_SOLVERUPDATE(solverUpdateGcg)
 
    /* update pricing problem information */
    SCIP_CALL( updateVars(solverdata->masterprob, solverdata, pricingprob, probnr, varobjschanged, varbndschanged) );
-   if (consschanged)
+   if( consschanged )
    {
       SCIP_CALL( updateBranchingConss(solverdata->masterprob, solverdata, pricingprob, probnr) );
    }
