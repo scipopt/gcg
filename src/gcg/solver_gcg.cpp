@@ -63,7 +63,7 @@
 
 #define SOLVER_NAME          "gcg"
 #define SOLVER_DESC          "gcg solver for pricing problems"
-#define SOLVER_PRIORITY      100
+#define SOLVER_PRIORITY      110
 
 #define SOLVER_ENABLED      TRUE  /**< indicates whether the exact solving method of the solver should be enabled */
 #define SOLVER_HEU_ENABLED  TRUE  /**< indicates whether the heuristic solving method of the solver should be enabled */
@@ -250,10 +250,31 @@ SCIP_Bool buildProblem(
    SCIP_HASHMAP* varmap;
    SCIP_RESULT decompresult = SCIP_DIDNOTRUN;
    int npresolvrounds;
+   GCG_DECOMP* decomp;
+   gcg::PARTIALDECOMP* partialdec = NULL;
+   gcg::BLOCK_STRUCTURE* blockstructure = NULL;
 
 #ifdef SUBGCG_DETAILED_CLOCKS
    SCIP_CALL_ABORT( SCIPstartClock(solverdata->origprob, solverdata->inittime) );
 #endif
+
+   decomp = GCGgetStructDecomp(solverdata->origprob);
+   assert(decomp);
+   partialdec = GCGconshdlrDecompGetPartialdecFromID(solverdata->origprob, decomp->partialdecid);
+
+   if( partialdec && partialdec->isNested() )
+   {
+      blockstructure = partialdec->getBlockStructure(probnr);
+      if( blockstructure == NULL )
+      {
+#ifdef SUBGCG_DETAILED_CLOCKS
+         SCIP_CALL_ABORT( SCIPstopClock(solverdata->origprob, solverdata->inittime) );
+#endif
+         SCIPdebugMessage("Problem %d: no structure provided\n");
+         return SCIP_OKAY;
+      }
+   }
+
    SCIP_CALL( SCIPcreate(&subgcg) );
    solverdata->pricingprobs[probnr] = subgcg;
 
@@ -313,9 +334,9 @@ SCIP_Bool buildProblem(
    SCIP_CALL_ABORT( SCIPstopClock(solverdata->origprob, solverdata->inittime) );
 #endif
 
-   SCIPdebugMessage("SUBGCG Problem %d built, stage: %d\n", probnr, SCIPgetStage(subgcg));
+   SCIPdebugMessage("Problem %d built, stage: %d\n", probnr, SCIPgetStage(subgcg));
 
-   SCIPdebugMessage("SUBGCG Detecting structure of problem %d\n", probnr);
+   SCIPdebugMessage("Detecting structure of problem %d\n", probnr);
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
@@ -324,27 +345,24 @@ SCIP_Bool buildProblem(
 #ifdef SUBGCG_DETAILED_CLOCKS
    SCIP_CALL_ABORT( SCIPstartClock(solverdata->origprob, solverdata->inittime) );
 #endif
-   GCG_DECOMP* decomp = GCGgetStructDecomp(solverdata->origprob);
-   assert(decomp);
-   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(solverdata->origprob, decomp->partialdecid);
-   if( partialdec && partialdec->isNested() )
+
+   if( blockstructure )
    {
-      gcg::BLOCK_STRUCTURE* blockstructure = partialdec->getBlockStructure(probnr);
-      if( blockstructure )
-      {
-         gcg::DETPROBDATA* detprobdata = GCGconshdlrDecompGetDetprobdataOrig(subgcg);
-         assert(subgcg == detprobdata->getScip());
-         gcg::PARTIALDECOMP* newpartialdec = blockstructure->createPartialdec(partialdec, detprobdata, probnr);
-      }
+      gcg::DETPROBDATA* detprobdata = GCGconshdlrDecompGetDetprobdataOrig(subgcg);
+      assert(subgcg == detprobdata->getScip());
+      (void) blockstructure->createPartialdec(partialdec, detprobdata, probnr);
    }
    else
    {
       SCIP_CALL(GCGdetectStructure(subgcg, &decompresult));
       if (decompresult != SCIP_SUCCESS)
       {
-         SCIPinfoMessage(solverdata->origprob, NULL, "solver_gcg: No decomposition found for pricing problem %d.\n", probnr);
+         SCIPinfoMessage(solverdata->origprob, NULL, "No decomposition found for pricing problem %d.\n", probnr);
          SCIP_CALL( SCIPfree(&subgcg) );
          solverdata->pricingprobs[probnr] = NULL;
+#ifdef SUBGCG_DETAILED_CLOCKS
+         SCIP_CALL_ABORT( SCIPstopClock(solverdata->origprob, solverdata->inittime) );
+#endif
          return SCIP_OKAY;
       }
    }
@@ -357,7 +375,7 @@ SCIP_Bool buildProblem(
    SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_NONE) );
 #endif
 
-   SCIPdebugMessage("SUBGCG Problem %d structure detected, stage: %d\n", probnr, SCIPgetStage(subgcg));
+   SCIPdebugMessage("Problem %d structure detected, stage: %d\n", probnr, SCIPgetStage(subgcg));
 
    return TRUE;
 }
@@ -903,7 +921,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveGcg)
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
-   if (solverdata->pricingprobs == NULL)
+   if( solverdata->pricingprobs == NULL || solverdata->pricingprobs[probnr] == NULL )
    {
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
       SCIPdebugMessage("GCG Solver not applicable, probnr: %d\n", probnr);
@@ -963,7 +981,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurGcg)
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
-   if (solverdata->pricingprobs == NULL)
+   if( solverdata->pricingprobs == NULL || solverdata->pricingprobs[probnr] == NULL )
    {
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
       SCIPdebugMessage("GCG Solver not applicable, probnr: %d\n", probnr);

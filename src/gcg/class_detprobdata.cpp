@@ -281,6 +281,8 @@ void DETPROBDATA::getTranslatedPartialdecs(
       {
          if( blockstructures[b] )
             newpartialdec->setBlockStructure(b, blockstructures[b]->translateStructure(rowothertothis, colothertothis, translatesymmetry));
+         else
+            newpartialdec->setBlockStructure(b, NULL);
       }
 
       // we do not assign variables as the previous assignment might be invalid due to presolving

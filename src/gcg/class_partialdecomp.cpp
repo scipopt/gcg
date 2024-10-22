@@ -4227,7 +4227,7 @@ BLOCK_STRUCTURE* PARTIALDECOMP::getBlockStructure(
    int block
    )
 {
-   assert(block >= 0 && block < nblocks);
+   assert(block >= 0 && block < blockstructures.size());
    return blockstructures[block];
 }
 

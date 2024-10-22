@@ -237,6 +237,10 @@ SCIP_RETCODE readNDec(
                BLOCK_STRUCTURE* nestedstructure = blockdata.decomposition->createBlockStructure(scip, detprobdata);
                partialdec->setBlockStructure(block, nestedstructure);
             }
+            else
+            {
+               partialdec->setBlockStructure(block, NULL);
+            }
          }
          GCGconshdlrDecompAddPreexisitingPartialDec(scip, partialdec);
 
