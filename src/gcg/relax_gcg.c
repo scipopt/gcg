@@ -3821,7 +3821,7 @@ SCIP_RETCODE GCGrelaxBranchGetMasterCut(
    return SCIP_OKAY;
 }
 
-/** get mastercuts of all active nods */
+/** get mastercuts of all active nodes */
 SCIP_RETCODE GCGrelaxBranchGetAllActiveMasterCuts(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_BRANCHRULE***     branchrules,        /**< branching rules that created mastercuts */
