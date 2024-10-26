@@ -543,9 +543,9 @@ static
 SCIP_Bool determineCliquerConsTypes(
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
    SCIP_CONS**           constraints,        /**< Array containing pointers to SCIP constraints of pricing problem */
-   SCIP_CONS**           markedconstraints,  /**< Array containing pointers to SCIP constraints to mark them */
    SCIP_VAR**            linkedvars,         /**< Array of variables that are linked by eq-constraints */
    SCIP_VAR**            vconsvars,          /**< Array to store variables of a varbound constraint. */
+   int*                  markedconsindices,  /**< Array containing pointers to SCIP constraints to mark them */
    int**                 linkmatrix,         /**< Matrix indicating which variables are linked by a node */
    int*                  couplingcoefindices,/**< Array for coupling coefficient of each constraint (if coupling) */
    int*                  nlinkedvars,        /**< Index of linkedvars array */
@@ -676,8 +676,8 @@ SCIP_Bool determineCliquerConsTypes(
 
                /* Build the equality graph through updating the linkmatrix. */
                updateVarLinks(pricingprob,linkmatrix,vconsvars[0],vconsvars[1],linkedvars,nlinkedvars);
-               /* Since the vars may not be part of the graph, we have to be able to set their solval later, thus we save the constraint */
-               markedconstraints[*markedcount] = constraints[i];
+               /* Since the vars may not be part of the graph, we have to be able to set their solval later, thus we save the constraint index */
+               markedconsindices[*markedcount] = i;
                ++(*markedcount);
             }
             else
@@ -767,9 +767,9 @@ SCIP_Bool propagateVariablefixings(
    int**                 linkmatrix,         /**< Matrix indicating which variables are linked by a node */
    int*                  couplingcoefindices,/**< Array for coupling coefficient of each constraint (if coupling) */
    int*                  consvarsfixedcount, /**< Array for counting how many variables are fixed per constraint */
-   int*                  nlinkedvars,       /**< Index of linkedvars array */
+   int*                  nlinkedvars,        /**< Index of linkedvars array */
    int                   nconss,             /**< Index of constraints array */
-   int*                  nfixedvars,        /**< Integer counting the number of currently fixed problem variables */
+   int*                  nfixedvars,         /**< Integer counting the number of currently fixed problem variables */
    CLIQUER_CONSTYPE*     cliquerconstypes    /**< Array holding constraint types (specific to this solver) */
    )
 {
@@ -1062,7 +1062,6 @@ SCIP_RETCODE solveCliquer(
    )
 { /*lint -e715 */
    SCIP_CONS**       constraints;
-   SCIP_CONS**       markedconstraints;
    SCIP_CONSHDLR*    conshdlr;
    SCIP_VAR**        lconsvars;
    SCIP_VAR**        vconsvars;
@@ -1073,7 +1072,6 @@ SCIP_RETCODE solveCliquer(
    SCIP_Real*        aggrobjcoef;
    SCIP_Real         scalingfactor;
    SCIP_Bool         retcode;
-   SCIP_Bool         ismempropallocated;
    SCIP_Bool         ismemgraphallocated;
    set_t             clique;
    graph_t*          g;
@@ -1082,6 +1080,7 @@ SCIP_RETCODE solveCliquer(
    int*              couplingcoefindices;
    int*              consvarsfixedcount;
    int*              consvarsfixedtozerocount;
+   int*              markedconsindices;
    int               nlinkedvars;
    int               npricingprobvars;
    int               nvars;
@@ -1102,6 +1101,8 @@ SCIP_RETCODE solveCliquer(
    // TODO: REMOVE
 #ifdef SCIP_DEBUG
    static int no_model = 0;
+   if( no_model >= 265 )
+      printf("MATCH!\n");
 #endif
 
    assert(scip != NULL);
@@ -1124,7 +1125,7 @@ SCIP_RETCODE solveCliquer(
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( SCIPallocBufferArray(pricingprob,&markedconstraints,nconss) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob,&markedconsindices,nconss) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&solvals,npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&linkedvars,npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob,&linkmatrix,npricingprobvars) );
@@ -1192,13 +1193,6 @@ SCIP_RETCODE solveCliquer(
    no_model++;
 #endif
 
-   /* Check if all variables of the pricing problem are fixed. In this case, it is the only candidate solution. */
-   /* No graph needs to be built, we just can build the corresponding column. */
-   /* But we need to check if the solution is feasible, i.e., it is consistent with the constraints of the problem. */
-   //if( nfixedvars == npricingprobvars )
-      // TODO: Check feasibility.
-      //goto CREATECOLUMN;
-
    for( i = 0; i < nconss; i++ )
    {
       consvarsfixedcount[i] = 0;       /* Initialize array to count the number of fixed vars per constraint. */
@@ -1208,7 +1202,7 @@ SCIP_RETCODE solveCliquer(
 
    /* Determine constraint types for easier handling later on.
     * Also, it is checked for constraints that cannot be handled by this solver. */
-   if( !determineCliquerConsTypes(pricingprob,constraints,markedconstraints,linkedvars,vconsvars,linkmatrix,couplingcoefindices,&nlinkedvars,nconss,&markedcount,cliquerconstypes) )
+   if( !determineCliquerConsTypes(pricingprob,constraints,linkedvars,vconsvars,markedconsindices,linkmatrix,couplingcoefindices,&nlinkedvars,nconss,&markedcount,cliquerconstypes) )
    {
       /* Encountered constraint that can not be handled. */
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
@@ -1216,7 +1210,8 @@ SCIP_RETCODE solveCliquer(
    }
 
    /* Propagate the already fixed variables to (potentially) get more fixed variables. */
-   if( !propagateVariablefixings(pricingprob,constraints,linkedvars,vconsvars,solvals,linkmatrix,couplingcoefindices,consvarsfixedcount,&nlinkedvars,nconss,&nfixedvars,cliquerconstypes) )
+   if( (nlinkedvars > 0 || nfixedvars > 0) &&
+      !propagateVariablefixings(pricingprob,constraints,linkedvars,vconsvars,solvals,linkmatrix,couplingcoefindices,consvarsfixedcount,&nlinkedvars,nconss,&nfixedvars,cliquerconstypes) )
    {
       /* Variables are fixed in a conflicting way. -> problem is infeasible. */
       *status = GCG_PRICINGSTATUS_INFEASIBLE;
@@ -1300,15 +1295,11 @@ SCIP_RETCODE solveCliquer(
    /* in order for the rest of the logic to work out (node indices are fetched during runtime) */
    for( i = 0; i < markedcount; ++i )
    {
-      /* Varbound constraint of type x + cy == rhs */
-      if( SCIPisEQ(pricingprob, SCIPgetLhsVarbound(pricingprob,markedconstraints[i]), SCIPgetRhsVarbound(pricingprob,markedconstraints[i])) )
+      /* Since we know that all marked constraints at this point are same constraints, we can just add them to the graph. */
+      vconsvars[0] = SCIPgetVarVarbound(pricingprob,constraints[markedconsindices[i]]);
+      if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[0], linkedvars, nlinkedvars, aggrobjcoef), 0) )
       {
-         /* c == -1, thus variables have to become both 0 or both 1 */ 
-         if( (SCIPgetRhsVarbound(pricingprob,markedconstraints[i]) == 0) && (SCIPgetVbdcoefVarbound(pricingprob,markedconstraints[i]) == -1) )
-         {
-            vconsvars[0] = SCIPgetVarVarbound(pricingprob,markedconstraints[i]);
-            nodeindex0 = addVarToGraph(pricingprob,g,vconsvars[0],&indexcount,scalingfactor,indsetvars,linkmatrix,linkedvars,nlinkedvars,aggrobjcoef);
-         }
+         nodeindex0 = addVarToGraph(pricingprob,g,vconsvars[0],&indexcount,scalingfactor,indsetvars,linkmatrix,linkedvars,nlinkedvars,aggrobjcoef);
       }
    }
 
@@ -1334,8 +1325,6 @@ SCIP_RETCODE solveCliquer(
                || SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[1], linkedvars, nlinkedvars, aggrobjcoef), 0)))
             || cliquerconstypes[i] == LINEAR_IS_LIKE )
          {
-            // TODO: Case where both fixed to 0? (delete all edges to the nodes such that they are deleted?)
-
             /* One variable fixed to 0 (the other is not fixed): constraint is relaxed -> continue. */
             if( consvarsfixedcount[i] == 1 && consvarsfixedtozerocount[i] == 1 )
                continue;
@@ -1370,7 +1359,7 @@ SCIP_RETCODE solveCliquer(
             {
                /* We cannot guarantee that there is no constraint of the form x+CouplingVar <= 1 */
                /* If the node is part of the maximum clique, it is safe to set it to one, so we simply add it to the graph */
-               nodeindex0 = addVarToGraph(pricingprob, g, lconsvars[couplingcoefindices[i]], &indexcount, scalingfactor, indsetvars, linkmatrix, linkedvars, nlinkedvars, aggrobjcoef);
+               nodeindex0 = addVarToGraph(pricingprob,g,lconsvars[couplingcoefindices[i]],&indexcount,scalingfactor,indsetvars,linkmatrix,linkedvars,nlinkedvars,aggrobjcoef);
 
                /* We additionally have to mark the variable to later set it to one */
                if( solvals[SCIPvarGetProbindex(lconsvars[couplingcoefindices[i]])] < 0.0 )
@@ -1378,7 +1367,7 @@ SCIP_RETCODE solveCliquer(
             }
 
             /*
-             * If (coupling-)cliue constraint, try to add all (non-coupling) variables corresponding nodes to the graph
+             * If (coupling-)clique constraint, try to add all (non-coupling) variables corresponding nodes to the graph
              * if the objective coefficient is < 0 and remove edges between these nodes (if added).
              */
             if( cliquerconstypes[i] == LINEAR_CLIQUE || cliquerconstypes[i] == LINEAR_COUPLING_CLIQUE )
@@ -1389,7 +1378,7 @@ SCIP_RETCODE solveCliquer(
                {
                   /* We are only interested in vars potentially relevant for pricing (obj < 0) */
                   if( (cliquerconstypes[i] != LINEAR_COUPLING_CLIQUE || j != couplingcoefindices[i])
-                     && SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[j], linkedvars, nlinkedvars, aggrobjcoef), 0)
+                     && SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[j],linkedvars,nlinkedvars,aggrobjcoef), 0)
                      && solvals[SCIPvarGetProbindex(lconsvars[j])] != 0.0 )
                   {
                      /* Determine nodeindex0 */
@@ -1399,10 +1388,10 @@ SCIP_RETCODE solveCliquer(
                      for( k = j + 1; k < nvars; ++k )
                      {
                         if( (cliquerconstypes[i] != LINEAR_COUPLING_CLIQUE || k != couplingcoefindices[i])
-                           && SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[k], linkedvars, nlinkedvars, aggrobjcoef), 0)
+                           && SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[k],linkedvars,nlinkedvars,aggrobjcoef), 0)
                            && solvals[SCIPvarGetProbindex(lconsvars[k])] != 0.0 )
                         {
-                           nodeindex1 = addVarToGraph(pricingprob, g, lconsvars[k], &indexcount, scalingfactor, indsetvars, linkmatrix, linkedvars, nlinkedvars, aggrobjcoef);
+                           nodeindex1 = addVarToGraph(pricingprob,g,lconsvars[k],&indexcount,scalingfactor,indsetvars,linkmatrix,linkedvars,nlinkedvars,aggrobjcoef);
 
                            if( (nodeindex0 != nodeindex1) && GRAPH_IS_EDGE(g, nodeindex0, nodeindex1) )
                            {
@@ -1440,7 +1429,7 @@ SCIP_RETCODE solveCliquer(
                nodeindex1 = addVarToGraph(pricingprob,g,vconsvars[1],&indexcount,scalingfactor,indsetvars,linkmatrix,linkedvars,nlinkedvars,aggrobjcoef);
                /* It may be the case, that both the constraints x - y <= 0 and x + y <= 1 are part of the problem */
                /* Although rare, we later ensure that we do not set x to 1 while y is set to 0 */
-               markedconstraints[markedcount] = constraints[i];
+               markedconsindices[markedcount] = i;
                ++markedcount;
             }
             /* If only y may be relevant, add only y to the graph */
@@ -1560,8 +1549,13 @@ SCIP_RETCODE solveCliquer(
    {
       /* Coupling variables were pre-set to -2.0, if they are part of the maximum clique, we enable them. 
        * If we have already set a variable to 0, this was intended and should not be reverted.
+       *
+       * NOTE: As long as coupling variables may have positive cost but have cost of 1 in graph, the solver is of heuristic nature.
+       *       The '-2.0'-marked coupling variables are set to 1, even if they render the solution be of non-negative reduced cost.
+       *       The max-weighted-clique solver would need to support also negative costs to heal this.
        */
-      if( SET_CONTAINS(clique,i) && (SCIPisLT(pricingprob,SCIPvarGetObj(indsetvars[i]),0) || solvals[SCIPvarGetProbindex(indsetvars[i])] == -2.0) 
+      if( SET_CONTAINS(clique,i)
+         && (SCIPisLT(pricingprob,getAggrObjCoef(indsetvars[i],linkedvars,nlinkedvars,aggrobjcoef),0) || solvals[SCIPvarGetProbindex(indsetvars[i])] == -2.0)
          && solvals[SCIPvarGetProbindex(indsetvars[i])] != 0.0 )
       {
          /* Set all linked variables, if any */
@@ -1579,13 +1573,11 @@ SCIP_RETCODE solveCliquer(
 
    for( i = 0; i < markedcount; ++i )
    {
-      vconsvars[0] = SCIPgetVarVarbound(pricingprob,markedconstraints[i]);
-      vconsvars[1] = SCIPgetVbdvarVarbound(pricingprob,markedconstraints[i]);
+      vconsvars[0] = SCIPgetVarVarbound(pricingprob,constraints[markedconsindices[i]]);
+      vconsvars[1] = SCIPgetVbdvarVarbound(pricingprob,constraints[markedconsindices[i]]);
 
       /* Handle the case of marked inequality constraints of type x - y <= 0 in combination with x + y <= 1 -Constraints */
-      if( SCIPisEQ(pricingprob,SCIPgetRhsVarbound(pricingprob,markedconstraints[i]),0) 
-         && (SCIPisLT(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,markedconstraints[i]),-1) 
-            || SCIPisEQ(pricingprob,SCIPgetVbdcoefVarbound(pricingprob,markedconstraints[i]),-1)) )
+      if( cliquerconstypes[markedconsindices[i]] == VARBND_STD )
       {
          /* Check if a violating assignment was made and correct it */
          if( (solvals[SCIPvarGetProbindex(vconsvars[0])] == 1) && (solvals[SCIPvarGetProbindex(vconsvars[1])] == 0) )
@@ -1597,8 +1589,8 @@ SCIP_RETCODE solveCliquer(
       /* Handle the case that there are still solvals of equality constraints that do not agree.
        * This may occur if one is unset (solval:-1) and the other one is already set (solval 0 or 1)
        */
-      if( solvals[SCIPvarGetProbindex(vconsvars[0])] != solvals[SCIPvarGetProbindex(vconsvars[1])] 
-         && SCIPisEQ(pricingprob, SCIPgetLhsVarbound(pricingprob,markedconstraints[i]), SCIPgetRhsVarbound(pricingprob,markedconstraints[i])) )
+      if( solvals[SCIPvarGetProbindex(vconsvars[0])] != solvals[SCIPvarGetProbindex(vconsvars[1])]
+         && cliquerconstypes[markedconsindices[i]] == VARBND_SAME )
       {
          if( solvals[SCIPvarGetProbindex(vconsvars[0])] == 0 || solvals[SCIPvarGetProbindex(vconsvars[1])] == 0 )
          {
@@ -1617,7 +1609,7 @@ SCIP_RETCODE solveCliquer(
    {
       if( solvals[i] == -1.0 )
       {
-         if( SCIPisLT(pricingprob,SCIPvarGetObj(pricingprobvars[i]),0) )
+         if( SCIPisLT(pricingprob,getAggrObjCoef(pricingprobvars[i],linkedvars,nlinkedvars,aggrobjcoef),0) )
          {
             solvals[i] = 1.0;
          }
@@ -1629,9 +1621,6 @@ SCIP_RETCODE solveCliquer(
    }
 
    /* Create a column corresponding to our clique result */
-   // TODO: Why is "last known reduced cost" set to infinity?
-   //  (Because solver guaranteed a negative reduced cost column?)
-   //  Or is the solver heuristic because we do not know if the column has minimal let alone negative reduced cost?
  CREATECOLUMN:
    SCIP_CALL( GCGcreateGcgCol(pricingprob, &col, probnr, pricingprobvars, solvals, npricingprobvars, FALSE, SCIPinfinity(pricingprob)) );
    SCIP_CALL( GCGpricerAddCol(scip, col) );
@@ -1656,7 +1645,7 @@ SCIP_RETCODE solveCliquer(
    SCIPfreeBufferArray(pricingprob,&linkmatrix);
    SCIPfreeBufferArray(pricingprob,&linkedvars);
    SCIPfreeBufferArray(pricingprob,&solvals);
-   SCIPfreeBufferArray(pricingprob,&markedconstraints);
+   SCIPfreeBufferArray(pricingprob,&markedconsindices);
    SCIPfreeBufferArray(pricingprob,&cliquerconstypes);
    graph_free(g);
 
