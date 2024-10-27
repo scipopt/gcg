@@ -115,41 +115,44 @@ SCIP_Bool areVarsLinkedRec(
    int            vindex1,                        /**< Problem index of the first variable in the pair that is to be checked */
    int            vindex2,                        /**< Problem index of the second variable in the pair that is to be checked */
    int*           vartrace,                       /**< Array to keep track of which nodes have already been visited during recursion */
-   int            traceindex,                     /**< Index to keep track of the number of visited nodes during recursion */
+   int*           traceindex,                     /**< Pointer to index to keep track of the number of visited nodes during recursion */
    SCIP_VAR**     linkedvars,                     /**< Array of variables that are linked by eq-constraints */
    int            nlinkedvars                     /**< Index of linkedvars array */
    )
 {
    SCIP_Bool varintrace;
-   int       i,j;
+   int       nextvarindex;
+   int       i;
+   int       j;
 
-   varintrace = FALSE;
    /* Simple, direct link? (Matrix is symmetric) */
    if( linkmatrix[vindex1][vindex2] )
    {
       return TRUE;
    }
+
    /* More complex link by transitivity? */
-   else
+   /* Mark current noted visited by adding it to the trace. */
+   vartrace[*traceindex] = vindex1;
+   (*traceindex)++;
+   for( i = 0; i < nlinkedvars; ++i )
    {
-      for( i = 0; i < nlinkedvars; ++i )
+      nextvarindex = SCIPvarGetProbindex(linkedvars[i]);
+      if( linkmatrix[vindex1][nextvarindex] )
       {
-         if( linkmatrix[vindex1][SCIPvarGetProbindex(linkedvars[i])] )
+         /* To ensure termination, we have to keep track of the visited vars */
+         varintrace = FALSE;
+         for( j = 0; j < *traceindex; ++j )
          {
-            /* To ensure termination, we have to keep track of the visited vars */
-            for( j = 0; j < traceindex; ++j )
+            if( vartrace[j] == nextvarindex )
             {
-               if( vartrace[j] == SCIPvarGetProbindex(linkedvars[i]) )
-               {
-                  varintrace = TRUE;
-               }
+               varintrace = TRUE;
+               break;
             }
-            if( !varintrace )
-            {
-               vartrace[traceindex] = vindex1;
-               ++traceindex;
-               return areVarsLinkedRec(linkmatrix,SCIPvarGetProbindex(linkedvars[i]),vindex2,vartrace,traceindex,linkedvars,nlinkedvars);
-            }
+         }
+         if( !varintrace && areVarsLinkedRec(linkmatrix,nextvarindex,vindex2,vartrace,traceindex,linkedvars,nlinkedvars) )
+         {
+            return TRUE;
          }
       }
    }
@@ -190,7 +193,7 @@ SCIP_Bool areVarsLinked(
       vartrace[i] = -1;
    }
 
-   varslinked = areVarsLinkedRec(linkmatrix,vindex1,vindex2,vartrace,traceindex,linkedvars,nlinkedvars);
+   varslinked = areVarsLinkedRec(linkmatrix,vindex1,vindex2,vartrace,&traceindex,linkedvars,nlinkedvars);
 
    SCIPfreeBufferArray(scip,&vartrace);
 
@@ -246,6 +249,13 @@ void updateVarLinks(
    linkmatrix[varindex1][varindex2] = 1;
    linkmatrix[varindex2][varindex1] = 1;
 
+   /* The following loop is not necessary, as the equality graph itself is enough.
+    * One might want to check performance implications of establishing cliques from all connected components.
+    * This might increase speed of method areVarsLinked().
+    * Or the converse: Delete the following loop to save time in this function but potentially increase time
+    * consumption of areVarsLinked() which would need to traverse more nodes (increased transitivity).
+    * [Test this!]
+    */
    for( i = 0; i < *nlinkedvars; ++i )
    {
       /* It is sufficient to check the links between var1 and all other vars, since var1 and var2 are linked */
@@ -358,7 +368,7 @@ void aggregateObjCoef(
          }
       }
 
-      for( j = 0; j < nlinkedvars; j++ )
+      for( j = i; j < nlinkedvars; j++ )
       {
          if( valisset[j] == 2 )
          {
@@ -1100,9 +1110,11 @@ SCIP_RETCODE solveCliquer(
 
    // TODO: REMOVE
 #ifdef SCIP_DEBUG
-   static int no_model = 0;
-   if( no_model >= 265 )
-      printf("MATCH!\n");
+   static int no_model = -1;
+   no_model++;
+   printf("Model no. cliquer: %i\n", no_model);
+   if( no_model >= 937 )
+      printf("asdf\n");
 #endif
 
    assert(scip != NULL);
@@ -1190,7 +1202,6 @@ SCIP_RETCODE solveCliquer(
    char path[300];
    snprintf(path, sizeof(path), "/home/johannes/Projects/work-or/test_problems/cliquer_bug/pps_r1005gcol/model_%d.lp", no_model);
    SCIPwriteOrigProblem(pricingprob, path, "lp", FALSE);
-   no_model++;
 #endif
 
    for( i = 0; i < nconss; i++ )
@@ -1249,6 +1260,7 @@ SCIP_RETCODE solveCliquer(
 
 
    /* Count number of fixed variables and fixed-to-0 variables per constraint. */
+   // TODO: optimize for case of 0 fixed variables.
    for( i = 0; i < nconss; i++ )
    {
       assert(constraints[i] != NULL);
