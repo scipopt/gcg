@@ -83,11 +83,11 @@ namespace gcg {
 
 Pricingcontroller::Pricingcontroller(
    SCIP*                  scip,
-   SCIP*                  origprob
+   SCIP*                  origproblem
    )
 {
    scip_ = scip;
-   this->origprob = origprob;
+   origprob = origproblem;
    pricingprobs = NULL;
    npricingprobs = 0;
    pricingjobs = NULL;

@@ -96,8 +96,8 @@ public:
 
    /** constructor */
    Pricingcontroller(
-      SCIP* scip,
-      SCIP* origprob
+      SCIP* scip,                               /**< SCIP instance (master problem) */
+      SCIP* origproblem                         /**< SCIP instance (original problem) */
       );
 
    /** destructor */

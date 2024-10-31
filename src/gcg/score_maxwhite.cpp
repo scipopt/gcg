@@ -75,7 +75,7 @@ GCG_DECL_SCORECALC(scoreCalcMaxwhite)
 
    gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
 
-   SCIP_Real blockareascore = partialdec->calcBlockAreaScore(scip);
+   SCIP_Real blockareascore = partialdec->calcBlockAreaScore();
    borderareascore = partialdec->getScore(GCGconshdlrDecompFindScore(scip, "border area"));
 
    SCIP_Real maxwhitescore = blockareascore + borderareascore - 1.;

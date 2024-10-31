@@ -894,7 +894,6 @@ public:
    * @returns intermediate score value
    */
    SCIP_Real calcBlockAreaScore(
-      SCIP* scip                /**< SCIP data structure */
       );
 
    /**

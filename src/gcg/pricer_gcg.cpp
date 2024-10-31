@@ -2942,7 +2942,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             int oldimpcols;
             int _nfoundvars;
             int _nsuccessfulprobs;
-            int iter;
 
             #pragma omp atomic read
             private_retcode = retcode;
@@ -5475,7 +5474,6 @@ int GCGpricerGetMaxNThreads(
 {
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
-   int nthreads;
 
    assert(scip != NULL);
 

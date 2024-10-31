@@ -2300,9 +2300,6 @@ void PARTIALDECOMP::checkIdenticalBlocksTrivial(
 
 void PARTIALDECOMP::complete()
 {
-   size_t nopenconss = openconss.size();
-   size_t nopenvars = openvars.size();
-
    refineToBlocks();
 
    // assign the open components to the master (without removing them to avoid screwing with the vector indices)
@@ -4388,7 +4385,6 @@ SCIP_Real PARTIALDECOMP::getScore(
 
 
 SCIP_Real PARTIALDECOMP::calcBlockAreaScore(
-   SCIP* scip
    )
 {
    unsigned long matrixarea;
@@ -5846,13 +5842,11 @@ void PARTIALDECOMP::buildDecChainString(
    )
 {
    /* set detector chain info string */
-   SCIPsnprintf( buffer, SCIP_MAXSTRLEN, "" );
+   SCIPsnprintf(buffer, SCIP_MAXSTRLEN, "");
    if( this->usergiven == USERGIVEN::PARTIAL || this->usergiven == USERGIVEN::COMPLETE
       || this->usergiven == USERGIVEN::COMPLETED_CONSTOMASTER || this->getDetectorchain().empty() )
    {
-      char str1[2] = "\0"; /* gives {\0, \0} */
-      str1[0] = 'U';
-      (void) strncat( buffer, str1, 1 );
+      (void) strncat(buffer, "U", SCIP_MAXSTRLEN-2);
    }
 
    for( int d = 0; d < this->getNDetectors(); ++ d )
@@ -5860,8 +5854,8 @@ void PARTIALDECOMP::buildDecChainString(
       if( d == 0 && this->getDetectorchain()[d] == NULL )
          continue;
       char str[2] = "\0"; /* gives {\0, \0} */
-      str[0] = GCGdetectorGetChar( this->getDetectorchain()[d] );
-      (void) strncat( buffer, str, 1 );
+      str[0] = GCGdetectorGetChar(this->getDetectorchain()[d]);
+      (void) strncat(buffer, str, SCIP_MAXSTRLEN-strlen(buffer)-1);
    }
 }
 

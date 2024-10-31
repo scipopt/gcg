@@ -4549,9 +4549,6 @@ SCIP_RETCODE GCGconshdlrDecompPrintScoreStatistics(
    FILE*                 file
    )
 {
-   SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-   assert(conshdlrdata != NULL);
-
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Score statistics:\n");
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  Total Time       :   %8.2f\n",
                          GCGconshdlrDecompGetScoreTotalTime(scip));

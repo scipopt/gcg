@@ -608,36 +608,6 @@ SCIP_RETCODE checkSetppcStructure(
    return SCIP_OKAY;
 }
 
-/** checks whether two arrays of SCIP_Real's are identical */
-static
-SCIP_Bool realArraysAreEqual(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_Real*            array1,             /**< first array */
-   int                   array1length,       /**< length of first array */
-   SCIP_Real*            array2,             /**< second array */
-   int                   array2length        /**< length of second array */
-   )
-{
-   int i;
-
-   if( array1length != array2length )
-      return FALSE;
-
-   if( array1length == 0 )
-      return TRUE;
-
-   assert(array1 != NULL);
-   assert(array2 != NULL);
-
-   for( i = 0; i < array1length; i++ )
-   {
-      if( !SCIPisEQ(scip, array1[i], array2[i]) )
-         return FALSE;
-   }
-
-   return TRUE;
-}
-
 /** checks whether there are identical pricing blocks */
 static
 SCIP_RETCODE checkIdenticalBlocks(
