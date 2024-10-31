@@ -277,7 +277,7 @@ void DETPROBDATA::getTranslatedPartialdecs(
       }
 
       auto& blockstructures = otherpartialdec->getBlockStructures();
-      for( int b = 0; b < blockstructures.size(); ++ b )
+      for( int b = 0; b < (int)blockstructures.size(); ++ b )
       {
          if( blockstructures[b] )
             newpartialdec->setBlockStructure(b, blockstructures[b]->translateStructure(rowothertothis, colothertothis, translatesymmetry));

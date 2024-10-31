@@ -80,7 +80,7 @@ SCIP_RETCODE solveKnapsack(
 
    assert(pricingprob != NULL);
 
-   GCGsolverKnapsackSolveKnapsack(exactly, pricingprob, &solval, status, &solvars, &solvals, &nsolvars);
+   SCIP_CALL( GCGsolverKnapsackSolveKnapsack(exactly, pricingprob, &solval, status, &solvars, &solvals, &nsolvars) );
 
    if( solvars != NULL )
    {
@@ -499,6 +499,8 @@ SCIP_RETCODE GCGsolverKnapsackSolveKnapsack(
    SCIPfreeBufferArray(pricingprob, &items);
    SCIPfreeBufferArray(pricingprob, &ubs);
    SCIPfreeBufferArray(pricingprob, &consvals);
+
+   return SCIP_OKAY;
 }
 
 

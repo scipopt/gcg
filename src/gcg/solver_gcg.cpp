@@ -135,7 +135,7 @@ struct GCG_SolverData
  */
 
 static
-void solverGcgPrepareNestedSolver(
+SCIP_RETCODE solverGcgPrepareNestedSolver(
    GCG_SOLVERDATA*       solverdata,         /**< (outer) solver data structure */
    GCG_SOLVER*           nestedsolver        /**< nested GCG solver */
    )
@@ -147,7 +147,7 @@ void solverGcgPrepareNestedSolver(
    nestedsolverdata->presolmaxrounds = solverdata->presolmaxrounds;
    // @todo: maybe we should use SCIP's setParam methods
    SCIPfreeMemoryArrayNull(nestedsolverdata->origprob, &nestedsolverdata->settingsfile);
-   SCIPduplicateMemoryArray(nestedsolverdata->origprob, &nestedsolverdata->settingsfile, solverdata->settingsfile, strlen(solverdata->settingsfile)+1);
+   SCIP_CALL( SCIPduplicateMemoryArray(nestedsolverdata->origprob, &nestedsolverdata->settingsfile, solverdata->settingsfile, strlen(solverdata->settingsfile)+1) );
    nestedsolverdata->checksols = solverdata->checksols;
    nestedsolverdata->gaplimitfac = solverdata->gaplimitfac;
    nestedsolverdata->nodelimitfac = solverdata->nodelimitfac;
@@ -158,6 +158,7 @@ void solverGcgPrepareNestedSolver(
    nestedsolverdata->startsollimit = solverdata->startsollimit;
    nestedsolverdata->startstallnodelimit = solverdata->startstallnodelimit;
    nestedsolverdata->enablewarnings = solverdata->enablewarnings;
+   return SCIP_OKAY;
 }
 
 static
@@ -234,7 +235,7 @@ SCIP_RETCODE adjustSettings(
 }
 
 static
-SCIP_Bool buildProblem(
+SCIP_RETCODE buildProblem(
    GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
    SCIP*                 pricingprob,        /**< pricing problem */
    int                   probnr              /**< problem number */
@@ -270,7 +271,8 @@ SCIP_Bool buildProblem(
 #ifdef SUBGCG_DETAILED_CLOCKS
          SCIP_CALL_ABORT( SCIPstopClock(solverdata->origprob, solverdata->inittime) );
 #endif
-         SCIPdebugMessage("Problem %d: no structure provided\n");
+         SCIPdebugMessage("Problem %d: no structure provided\n", probnr);
+         solverdata->pricingprobs[probnr] = NULL;
          return SCIP_OKAY;
       }
    }
@@ -325,7 +327,7 @@ SCIP_Bool buildProblem(
       childsolver = pricer->getSolvers()[i];
       if( strcmp(childsolver->name, SOLVER_NAME) == 0 )
       {
-          solverGcgPrepareNestedSolver(solverdata, childsolver);
+          SCIP_CALL( solverGcgPrepareNestedSolver(solverdata, childsolver) );
           break;
       }
    }
@@ -354,7 +356,7 @@ SCIP_Bool buildProblem(
    }
    else
    {
-      SCIP_CALL(GCGdetectStructure(subgcg, &decompresult));
+      SCIP_CALL( GCGdetectStructure(subgcg, &decompresult) );
       if( decompresult != SCIP_SUCCESS )
       {
          SCIPinfoMessage(solverdata->origprob, NULL, "No decomposition found for pricing problem %d.\n", probnr);
@@ -377,7 +379,7 @@ SCIP_Bool buildProblem(
 
    SCIPdebugMessage("Problem %d structure detected, stage: %d\n", probnr, SCIPgetStage(subgcg));
 
-   return TRUE;
+   return SCIP_OKAY;
 }
 
 /** updates bounds and objective coefficients of variables in the given pricing problem */
@@ -393,7 +395,6 @@ SCIP_RETCODE updateVars(
 {
    SCIP_VAR** vars;
    int nvars;
-   int npricingvars;
    SCIP* subgcg;
    SCIP_HASHMAP* varmap;
    SCIP_RETCODE retval;
@@ -403,9 +404,8 @@ SCIP_RETCODE updateVars(
    varmap = solverdata->varmaps[probnr];
    vars = SCIPgetOrigVars(pricingprob);
    nvars = SCIPgetNOrigVars(pricingprob);
-   npricingvars = SCIPgetNOrigVars(subgcg);
 
-   assert(npricingvars == nvars);
+   assert(SCIPgetNOrigVars(subgcg) == nvars);
 
    retval = SCIP_OKAY;
 
@@ -849,18 +849,11 @@ GCG_DECL_SOLVERINITSOL(solverInitsolGcg)
       if( GCGisPricingprobRelevant(solverdata->origprob, i) )
       {
          solverdata->relpricingprobidxs[i] = j++;
-         if( !buildProblem(solverdata, GCGgetPricingprob(solverdata->origprob, i), i) )
-         {
-            SCIP_CALL( freeBlockMemory(scip, solverdata) );
-            return SCIP_OKAY;
-         }
-         else
-         {
-            solverdata->curnodelimit[i] = solverdata->startnodelimit;
-            solverdata->curgaplimit[i] = solverdata->startgaplimit;
-            solverdata->cursollimit[i] = solverdata->startsollimit;
-            solverdata->curstallnodelimit[i] = solverdata->startstallnodelimit;
-         }
+         solverdata->curnodelimit[i] = solverdata->startnodelimit;
+         solverdata->curgaplimit[i] = solverdata->startgaplimit;
+         solverdata->cursollimit[i] = solverdata->startsollimit;
+         solverdata->curstallnodelimit[i] = solverdata->startstallnodelimit;
+         SCIP_CALL( buildProblem(solverdata, GCGgetPricingprob(solverdata->origprob, i), i) );
       }
       else
       {
@@ -1013,28 +1006,28 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurGcg)
       {
       case SCIP_STATUS_NODELIMIT:
          if( solverdata->nodelimitfac > 1.0 )
-         {
             solverdata->curnodelimit[probnr] *= solverdata->nodelimitfac;
-            break;
-         }
+         else
+            solverdata->curnodelimit[probnr] += solverdata->startnodelimit;
+         break;
       case SCIP_STATUS_STALLNODELIMIT:
          if( solverdata->stallnodelimitfac > 1.0 )
-         {
             solverdata->curstallnodelimit[probnr] *= solverdata->stallnodelimitfac;
-            break;
-         }
+         else
+            solverdata->curstallnodelimit[probnr] += solverdata->startstallnodelimit;
+         break;
       case SCIP_STATUS_GAPLIMIT:
          if( solverdata->gaplimitfac < 1.0 )
-         {
             solverdata->curgaplimit[probnr] *= solverdata->gaplimitfac;
-            break;
-         }
+         else
+            solverdata->curgaplimit[probnr] = MAX(solverdata->curgaplimit[probnr] - solverdata->startgaplimit, 0.0);
+         break;
       case SCIP_STATUS_SOLLIMIT:
          if( solverdata->sollimitfac > 1.0 )
-         {
             solverdata->cursollimit[probnr] *= solverdata->sollimitfac;
-            break;
-         }
+         else
+            solverdata->cursollimit[probnr] += solverdata->startsollimit;
+         break;
       default:
          *status = GCG_PRICINGSTATUS_UNKNOWN;
          SCIPwarningMessage(pricingprob, "GCG solver: cancelled with status %u\n", SCIPgetStatus(subgcg));

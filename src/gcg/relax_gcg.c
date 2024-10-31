@@ -969,7 +969,9 @@ SCIP_RETCODE createPricingVariables(
    int v;
    int i;
    int npricingprobs;
+#ifndef NDEBUG
    SCIP_HASHMAP* hashorig2origvar;
+#endif
 
    assert(scip != NULL);
    assert(relaxdata != NULL);
@@ -1923,7 +1925,8 @@ SCIP_RETCODE solveBlockProblem(
          int nsolvars;
          SCIP_VAR** solvars = NULL;
          SCIP_Real* solvals = NULL;
-         GCGsolverKnapsackSolveKnapsack(TRUE, blockprob, &solval, &status, &solvars, &solvals, &nsolvars);
+
+         SCIP_CALL( GCGsolverKnapsackSolveKnapsack(TRUE, blockprob, &solval, &status, &solvars, &solvals, &nsolvars) );
 
          if( solvars != NULL )
          {

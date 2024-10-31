@@ -108,7 +108,7 @@ class AbstractElementParser
 {
 public:
    explicit AbstractElementParser(SCIP* scip, NDecFileHandler& filehandler)
-      : scip_(scip), filehandler_(filehandler), error_(false) {}
+      : filehandler_(filehandler), scip_(scip), error_(false) {}
 
    virtual ~AbstractElementParser() = default;
 
@@ -397,7 +397,7 @@ BLOCK_STRUCTURE* DecompositionData::createBlockStructure(
       bool success = true;
       for( auto& blockdata : blocks )
       {
-         if( blockdata.symmetricalblock >= 0 && blockdata.symmetricalblock < blocks.size() )
+         if( blockdata.symmetricalblock >= 0 && blockdata.symmetricalblock < (int)blocks.size() )
          {
             blockstructure->symmetricalblocks.push_back(blockdata.symmetricalblock);
          }
@@ -443,7 +443,7 @@ BLOCK_STRUCTURE* DecompositionData::createBlockStructure(
 NDecFileHandler::NDecFileHandler(
    SCIP* scip,
    const char* filename
-   ) : scip_(scip), json_(NULL), error_(), wfile_(NULL)
+   ) : wfile_(NULL), json_(NULL), error_(), scip_(scip)
 {
    rfile_ = SCIPfopen(filename, "r");
 }
@@ -451,7 +451,7 @@ NDecFileHandler::NDecFileHandler(
 NDecFileHandler::NDecFileHandler(
    SCIP* scip,
    FILE* file
-   ) : scip_(scip), json_(NULL), error_(), wfile_(file), rfile_(NULL)
+   ) : rfile_(NULL), wfile_(file), json_(NULL), error_(), scip_(scip)
 {
 }
 

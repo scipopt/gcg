@@ -48,7 +48,7 @@ struct DecompositionData;
 
 struct BlockData
 {
-   BlockData(int probnr) : decomposition(NULL), probnr(probnr), symmetricalblock(probnr) {}
+   BlockData(int blocknr) : decomposition(NULL), symmetricalblock(blocknr), probnr(blocknr) {}
    BlockData(const BlockData&) = delete;
    BlockData(BlockData&&) noexcept;
    ~BlockData();

@@ -957,17 +957,11 @@ int findGenericConsname(
    while( TRUE )
    {
       /* create new name candidate */
-      char candidatename[SCIP_MAXSTRLEN] = "c_";
-      char number[20];
-      snprintf(number, sizeof(number), "%d", candidatenumber );
-      strcat(candidatename, number );
+      SCIPsnprintf(consname, SCIP_MAXSTRLEN, "c_%d", candidatenumber);
 
       /* check candidate, if it is not free increase counter for candidate number */
-      if ( SCIPfindCons( scip, candidatename ) == NULL )
-      {
-         strncpy(consname, candidatename, namelength - 1);
+      if ( SCIPfindCons(scip, consname) == NULL )
          return candidatenumber;
-      }
       else
          ++candidatenumber;
    }
@@ -3144,7 +3138,6 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
    )
 {
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
-   bool assignedconss = false;
    assert(conshdlrdata != NULL);
    assert(partialdec != NULL);
 
@@ -3164,7 +3157,6 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
          for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
          {
             itr = partialdec->fixConsToMaster(itr);
-            assignedconss = true;
          }
          assert(partialdec->getUsergiven() == USERGIVEN::COMPLETED_CONSTOMASTER);
       }
@@ -4752,7 +4744,7 @@ SCIP_RETCODE SCIPconshdlrDecompRepairConsNames(
          if( SCIPgetStage(scip) <= SCIP_STAGE_PROBLEM )
          {
             char newconsname[SCIP_MAXSTRLEN];
-            startcount = findGenericConsname(scip, startcount, newconsname, SCIP_MAXSTRLEN ) + 1;
+            startcount = findGenericConsname(scip, startcount, newconsname, SCIP_MAXSTRLEN) + 1;
             SCIPdebugMessage( "Change consname to %s\n", newconsname );
             SCIPchgConsName(scip, cons, newconsname );
             consnamemap[newconsname] = true;

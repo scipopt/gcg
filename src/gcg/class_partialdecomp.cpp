@@ -109,7 +109,7 @@ PARTIALDECOMP* BLOCK_STRUCTURE::createPartialdec(
    std::vector<int> colmapping(olddetprobdata->getNVars(), -1);
    std::vector<int> reversecolmapping(newdetprobdata->getNVars(), -1);
 
-   for( int cons = 0; cons < rowmapping.size(); ++cons)
+   for( int cons = 0; cons < (int)rowmapping.size(); ++cons)
    {
       SCIPsnprintf(buffer, SCIP_MAXSTRLEN, "p%d_%s", probnr, SCIPconsGetName(olddetprobdata->getCons(cons)));
       int idx = newdetprobdata->getIndexForCons(buffer);
@@ -117,7 +117,7 @@ PARTIALDECOMP* BLOCK_STRUCTURE::createPartialdec(
          rowmapping[cons] = idx;
    }
 
-   for( int var = 0; var < colmapping.size(); ++var)
+   for( int var = 0; var < (int)colmapping.size(); ++var)
    {
       SCIPsnprintf(buffer, SCIP_MAXSTRLEN, "pr%d_%s", probnr, SCIPvarGetName(olddetprobdata->getVar(var)));
       int idx = newdetprobdata->getIndexForVar(buffer);
@@ -145,7 +145,7 @@ PARTIALDECOMP* BLOCK_STRUCTURE::createPartialdec(
          if( idx >= 0 )
             partialdec->fixConsToBlock(idx, block);
       }
-      for( int subblock = 0; subblock < blockstructures.size(); ++subblock )
+      for( int subblock = 0; subblock < (int)blockstructures.size(); ++subblock )
       {
          BLOCK_STRUCTURE* subblockstructure = blockstructures[subblock];
          BLOCK_STRUCTURE* newsubblockstructure = NULL;
@@ -246,9 +246,9 @@ PARTIALDECOMP::PARTIALDECOMP(
    bool originalProblem
    ) :
    scip( _scip ), nblocks( 0 ), masterconss( 0 ),
-   mastervars( 0 ), conssforblocks( 0 ), varsforblocks( 0 ), linkingvars( 0 ), stairlinkingvars( 0 ),
+   mastervars( 0 ), conssforblocks( 0 ), varsforblocks( 0 ), linkingvars( 0 ), linkingvarsforblocks(0), stairlinkingvars( 0 ),
    ncoeffsforblock(std::vector<int>(0)), ncoeffsforblockformastercons(0),
-   varsforblocksorted(true), stairlinkingvarsforblocksorted(true), linkingvarsforblocks(0),
+   varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
    conssforblocksorted(true), linkingvarssorted(true), mastervarssorted(true),
    masterconsssorted(true), hashvalue( 0 ), hvoutdated(true), isselected( false ), isagginfoalreadytoexpensive(false), isfinishedbyfinisher( false ),
    nequivalenceclasses(0), eqclasstoblocks(std::vector<std::vector<int>>(0)), blockstoeqclasses(std::vector<int>(0) ), eqclassesvarmappings(std::vector<std::vector<std::vector<int> > >(0)),
@@ -2823,24 +2823,24 @@ void PARTIALDECOMP::considerImplicits(
    /* set openconss with more than two blockvars to master */
    for( size_t c = 0; c < openconss.size(); ++ c )
    {
-      std::vector<bool> hitsblock = std::vector<bool>(nblocks, false);
+      std::vector<bool> hitsblock(nblocks, false);
       foundblocks.clear();
       master = false;
       hitsOpenVar = false;
       cons = openconss[c];
 
-      for( int v = 0; v < detprobdata->getNVarsForCons( cons ) && ! master; ++ v )
+      for( int v = 0; v < detprobdata->getNVarsForCons(cons) && !master; ++v )
       {
-         var = detprobdata->getVarsForCons( cons )[v];
+         var = detprobdata->getVarsForCons(cons)[v];
 
-         if( isVarMastervar( var ) )
+         if( isVarMastervar(var) )
          {
             master = true;
-            fixConsToMaster( cons );
+            fixConsToMaster(cons);
             continue;
          }
 
-         if( isVarOpenvar( var ) )
+         if( isVarOpenvar(var) )
          {
             hitsOpenVar = true;
             if( !benders )
@@ -2849,10 +2849,10 @@ void PARTIALDECOMP::considerImplicits(
 
          for( int b = 0; b < nblocks && ! master; ++ b )
          {
-            if( isVarBlockvarOfBlock( var, b ) && !hitsblock[b] )
+            if( isVarBlockvarOfBlock(var, b) && !hitsblock[b] )
             {
                hitsblock[b] = true;
-               foundblocks.push_back( b );
+               foundblocks.push_back(b);
                break;
             }
          }
@@ -2860,20 +2860,20 @@ void PARTIALDECOMP::considerImplicits(
 
       if ( benders && foundblocks.size() == 1 && !master )
       {
-         setConsToBlock( cons, foundblocks[0] );
+         setConsToBlock(cons, foundblocks[0]);
          del.push_back(cons);
       }
 
       if( !benders && foundblocks.size() > 1 )
       {
-         setConsToMaster( cons );
+         setConsToMaster(cons);
          del.push_back(cons);
       }
 
       /* also assign open constraints that only have vars assigned to one single block and no open vars*/
-      if( foundblocks.size() == 1 && ! hitsOpenVar && ! master && ! benders )
+      if( foundblocks.size() == 1 && !hitsOpenVar && !master && !benders )
       {
-         setConsToBlock( cons, foundblocks[0] );
+         setConsToBlock(cons, foundblocks[0]);
          del.push_back(cons);
       }
    }
@@ -2922,7 +2922,7 @@ void PARTIALDECOMP::considerImplicits(
             continue;
          }
 
-         if( isConsOpencons( cons ) )
+         if( isConsOpencons(cons) )
          {
             hitsOpenCons = true;
             hitonlyblockconss = false;
@@ -2934,12 +2934,12 @@ void PARTIALDECOMP::considerImplicits(
       {
          for( int c = 0; c < detprobdata->getNConssForVar( var ); ++ c )
          {
-            cons = detprobdata->getConssForVar( var )[c];
-            if( isConsBlockconsOfBlock( cons, b ) )
+            cons = detprobdata->getConssForVar(var)[c];
+            if( isConsBlockconsOfBlock(cons, b) )
             {
                assert(std::find(foundblocks.begin(), foundblocks.end(), b) == foundblocks.end());
                hitonlymasterconss = false;
-               foundblocks.push_back( b );
+               foundblocks.push_back(b);
                break;
             }
          }
@@ -2958,27 +2958,27 @@ void PARTIALDECOMP::considerImplicits(
          del.push_back(var);
       }
 
-      if( benders && hitonlyblockconss && foundblocks.size() > 0 )
+      if( benders && hitonlyblockconss && foundblocks.size() == 1 )
       {
-         setVarToBlock( var, foundblocks[0] );
+         setVarToBlock(var, foundblocks[0]);
          del.push_back(var);
       }
 
       if( benders && hitonlymasterconss)
       {
-         setVarToMaster( var);
+         setVarToMaster(var);
          del.push_back(var);
       }
 
-      if( !benders && foundblocks.size() == 1 && ! hitsOpenCons )
+      if( !benders && foundblocks.size() == 1 && !hitsOpenCons )
       {
-         setVarToBlock( var, foundblocks[0] );
+         setVarToBlock(var, foundblocks[0]);
          del.push_back(var);
       }
 
-      if( !benders && foundblocks.size() == 0 && ! hitsOpenCons )
+      if( !benders && foundblocks.size() == 0 && !hitsOpenCons )
       {
-         setVarToMaster( var );
+         setVarToMaster(var);
          del.push_back(var);
       }
    }
@@ -3672,9 +3672,9 @@ void PARTIALDECOMP::findVarsLinkingToMaster(
       {
          for( int b = 0; b < nblocks; ++b )
          {
-            auto it = std::lower_bound(linkingvarsforblocks[b].begin(), linkingvarsforblocks[b].end(), lvar);
-            if( it != linkingvarsforblocks[b].end() && *it == lvar )
-               linkingvarsforblocks[b].erase(it);
+            auto itr = std::lower_bound(linkingvarsforblocks[b].begin(), linkingvarsforblocks[b].end(), lvar);
+            if( itr != linkingvarsforblocks[b].end() && *itr == lvar )
+               linkingvarsforblocks[b].erase(itr);
          }
       }
    }
