@@ -45,13 +45,13 @@
 GCG_EXPORT
 std::vector<gcg::PARTIALDECOMP*>* GCGconshdlrDecompGetPartialdecs(
    SCIP*          scip  /**< SCIP data structure */
-);
+   );
 
 GCG_EXPORT
 gcg::PARTIALDECOMP* GCGgetPartialdecToWrite(
    SCIP*                         scip,
    SCIP_Bool                     transformed
-);
+   );
 
 /** @brief local method to find a partialdec for a given id or NULL if no partialdec with such id is found
  * @returns partialdec pointer of partialdec with given id or NULL if it does not exist
@@ -60,18 +60,30 @@ GCG_EXPORT
 gcg::PARTIALDECOMP* GCGconshdlrDecompGetPartialdecFromID(
    SCIP* scip,          /**< SCIP data structure */
    int partialdecid     /**< partialdec id */
-);
+   );
 
 /** @brief adds a preexisting partial dec to be considered at the beginning of the detection
  *
- * @note refines the partialdec to be consistent, adds meta data/statistics
+ * @note refines the partialdec to be consistent, adds meta data/statistics, completes partial dec by assigning open conss to master if USERGIVEN::COMPLETED_CONSTOMASTER is set
  * @returns SCIP return code
 */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
    SCIP* scip,                   /**< SCIP data structure */
    gcg::PARTIALDECOMP* partialdec/**< partial dec to add */
-);
+   );
+
+/** @brief adds a preexisting partial dec to be considered at the beginning of the detection
+ *
+ * @note refines the partialdec to be consistent, adds meta data/statistics, completes partial dec by assigning open conss to master if USERGIVEN::COMPLETED_CONSTOMASTER is set
+ * @returns SCIP return code
+*/
+GCG_EXPORT
+SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
+   SCIP* scip,                      /**< SCIP data structure */
+   gcg::PARTIALDECOMP* partialdec,  /**< partial dec to add */
+   SCIP_Bool addpartialdec          /**< if completed, add partial dec as well */
+   );
 
 /** @brief deregisters a partialdec in the conshdlr
  *
@@ -82,7 +94,7 @@ GCG_EXPORT
 void GCGconshdlrDecompDeregisterPartialdec(
    SCIP* scip,                       /**< SCIP data structure */
    gcg::PARTIALDECOMP* partialdec    /**< the partialdec */
-);
+   );
 
 /** @brief registers a partialdec in the conshdlr
  *
@@ -93,7 +105,7 @@ GCG_EXPORT
 void GCGconshdlrDecompRegisterPartialdec(
    SCIP* scip,                       /**< SCIP data structure */
    gcg::PARTIALDECOMP* partialdec    /**< the partialdec to register */
-);
+   );
 
 /**
  * @brief help method to access detprobdata for unpresolved problem
@@ -103,7 +115,7 @@ void GCGconshdlrDecompRegisterPartialdec(
 GCG_EXPORT
 gcg::DETPROBDATA* GCGconshdlrDecompGetDetprobdataOrig(
    SCIP*                 scip                 /**< SCIP data structure */
-);
+   );
 
 /**
  * @brief help method to access detprobdata for transformed problem
@@ -113,7 +125,7 @@ gcg::DETPROBDATA* GCGconshdlrDecompGetDetprobdataOrig(
 GCG_EXPORT
 gcg::DETPROBDATA* GCGconshdlrDecompGetDetprobdataPresolved(
    SCIP*                 scip                 /**< SCIP data structure */
-);
+   );
 
 /**
  * @brief initilizes the candidates data structures with selected partialdecs

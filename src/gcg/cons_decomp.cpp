@@ -1080,9 +1080,10 @@ SCIP_RETCODE createPartialdecFromDecomp(
       partialdec->addNNewBlocks(*(GCGdecompGetNNewBlocks(decomp)));
    }
 
-   /* calc maxwhitescore and hashvalue */
-   partialdec->prepare();
-   partialdec->calcStairlinkingVars();
+   if( stairlinkingvars == NULL )
+   {
+      partialdec->reorderBlocksForStairlinkingVars();
+   }
 
    *newpartialdec = partialdec;
    return SCIP_OKAY;
@@ -3063,28 +3064,6 @@ void GCGconshdlrDecompAddCandidatesNBlocks(
 }
 
 
-SCIP_RETCODE GCGconshdlrDecompAddDecomp(
-   SCIP*                 scip,
-   GCG_DECOMP*           decomp,
-   SCIP_Bool             select
-   )
-{
-   PARTIALDECOMP* partialdec;
-
-   if( decomp->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
-   {
-      SCIPerrorMessage("Problem is not presolved yet.");
-      return SCIP_ERROR;
-   }
-
-   SCIP_CALL( createPartialdecFromDecomp(scip, decomp, &partialdec) );
-   SCIP_CALL( addPartialdec(scip, partialdec) );
-   partialdec->setSelected(select);
-
-   return SCIP_OKAY;
-}
-
-
 int GCGconshdlrDecompAddMatrixPartialdec(
    SCIP* scip,
    SCIP_Bool presolved
@@ -3154,34 +3133,65 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
    PARTIALDECOMP* partialdec
    )
 {
+   return GCGconshdlrDecompAddPreexisitingPartialDec(scip, partialdec, FALSE);
+}
+
+
+SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
+   SCIP* scip,
+   gcg::PARTIALDECOMP* partialdec,
+   SCIP_Bool addpartialdec
+   )
+{
    SCIP_CONSHDLRDATA* conshdlrdata = getConshdlrdata(scip);
    bool assignedconss = false;
    assert(conshdlrdata != NULL);
-   assert( partialdec != NULL );
+   assert(partialdec != NULL);
 
    if( partialdec->shouldCompletedByConsToMaster() )
    {
-      auto& openconss = partialdec->getOpenconss();
-      for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
+      partialdec->considerImplicits();
+      if( !partialdec->isComplete() )
       {
-         itr = partialdec->fixConsToMaster(itr);
-         assignedconss = true;
+         if( addpartialdec )
+         {
+            gcg::PARTIALDECOMP* partial = new gcg::PARTIALDECOMP(partialdec);
+            partial->setUsergiven(gcg::USERGIVEN::PARTIAL);
+            GCGconshdlrDecompAddPreexisitingPartialDec(scip, partial, FALSE);
+         }
+
+         auto& openconss = partialdec->getOpenconss();
+         for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
+         {
+            itr = partialdec->fixConsToMaster(itr);
+            assignedconss = true;
+         }
+         assert(partialdec->getUsergiven() == USERGIVEN::COMPLETED_CONSTOMASTER);
       }
-      partialdec->sort();
+      else
+      {
+         partialdec->setUsergiven(USERGIVEN::COMPLETE);
+      }
+   }
+   else
+   {
+      if( partialdec->isComplete() )
+         partialdec->setUsergiven(USERGIVEN::COMPLETE);
+      else
+         partialdec->setUsergiven(USERGIVEN::PARTIAL);
    }
 
    partialdec->prepare();
+
 #ifndef NDEBUG
    if( partialdec->getUsergiven() == USERGIVEN::COMPLETE || partialdec->getUsergiven() == USERGIVEN::COMPLETED_CONSTOMASTER )
       assert( partialdec->isComplete() );
 #endif
 
+   addPartialdec(scip, partialdec);
+
    if( partialdec->isComplete() )
    {
-      if( !assignedconss )
-         partialdec->setUsergiven( USERGIVEN::COMPLETE );
-      addPartialdec(scip, partialdec);
-
       /* if detprobdata for presolved problem already exist try to translate partialdec */
       if ( conshdlrdata->detprobdatapres != NULL && partialdec->isAssignedToOrigProb())
       {
@@ -3196,11 +3206,6 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
          }
       }
    }
-   else
-   {
-      partialdec->setUsergiven( USERGIVEN::PARTIAL );
-      addPartialdec(scip, partialdec);
-   }
 
    /* set statistics */
    int nvarstoblock = 0;
@@ -3211,9 +3216,6 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
       nvarstoblock += partialdec->getNVarsForBlock(b);
       nconsstoblock += partialdec->getNConssForBlock(b);
    }
-
-   partialdec->findVarsLinkingToMaster();
-   partialdec->findVarsLinkingToStairlinking();
 
    char const* usergiveninfo;
    char const* presolvedinfo;

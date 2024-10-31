@@ -276,17 +276,6 @@ void GCGconshdlrDecompAddCandidatesNBlocks(
 );
 
 /**
- * @brief adds the given decomposition structure
- * @returns scip return code
- */
-GCG_EXPORT
-SCIP_RETCODE GCGconshdlrDecompAddDecomp(
-   SCIP*                 scip,               /**< SCIP data structure */
-   GCG_DECOMP*           decomp,             /**< GCG_DECOMP data structure */
-   SCIP_Bool             select              /**< select the decomposition as candidate */
-   );
-
-/**
  * @brief creates and adds a basic partialdecomp (all cons/vars are assigned to master)
  *
  * @returns SCIP_RETCODE

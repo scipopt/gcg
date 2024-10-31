@@ -319,7 +319,6 @@ void DETPROBDATA::getTranslatedPartialdecs(
 
       if( translatesymmetry && otherpartialdec->getNBlocks() == newpartialdec->getNBlocks() && otherpartialdec->aggInfoCalculated() )
       {
-         assert(newpartialdec->getNLinkingvars() == 0);
          newpartialdec->setSymmetryInformation(
             [otherpartialdec] (int b)
             {

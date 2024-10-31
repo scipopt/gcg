@@ -113,6 +113,7 @@ private:
    std::vector<std::vector<int>> varsforblocks;                /**< varsforblocks[k] contains a vector of indices of all
                                                                  *< variables assigned to block k */
    std::vector<int> linkingvars;                               /**< vector containing indices of linking variables */
+   std::vector<std::vector<int>> linkingvarsforblocks;         /**< vector of vectors containing indices of linking variables for each block */
    std::vector<std::vector<int>> stairlinkingvars;             /**< vector containing indices of staircase linking variables
                                                                  *< of the blocks (stair-linking variables are registered only
                                                                  *< in their first block) */
@@ -127,7 +128,6 @@ private:
 
    std::vector<int>  ncoeffsforblock;                          /**< number of coeffs per block */
 
-   SCIP_Bool         calculatedncoeffsforblock;                /**< is the number of coeff per block already calculated*/
    int               ncoeffsformaster;                         /**< number of master coefficients */
    std::vector<std::vector<int>> ncoeffsforblockformastercons; /**< number of coeffs a block has in a certain master constraint */
 
@@ -151,10 +151,10 @@ private:
    bool isfinishedbyfinisher;                                   /**< was this partialdec finished by the finishpartialdec() method of a detector */
 
    /* aggregation information */
-   int                  nequivalenceclasses;                                    /**< number of equivalence classes */
-   std::vector<std::vector<int>> eqclasstoblocks;                          /**< translation of the equivalence classes to blocks (first block at index 0 is the representative block of the class) */
-   std::vector<int>     blockstoeqclasses;                                   /**< translation of the blocks to the equivalence classes */
-   std::vector<std::vector<std::vector<int> > > eqclassesvarmappings; /**< stores for each equivalence class (first index) and for each block of the class (second index) a mapping that maps the indices of the probvars (third index) of the block to the indices of the probvars (actual value) of the representative block */
+   int nequivalenceclasses;                                     /**< number of equivalence classes */
+   std::vector<std::vector<int>> eqclasstoblocks;               /**< translation of the equivalence classes to blocks (first block at index 0 is the representative block of the class) */
+   std::vector<int> blockstoeqclasses;                          /**< translation of the blocks to the equivalence classes */
+   std::vector<std::vector<std::vector<int>>> eqclassesvarmappings; /**< stores for each equivalence class (first index) and for each block of the class (second index) a mapping that maps the indices of the probvars (third index) of the block to the indices of the probvars (actual value) of the representative block */
 
    /* statistic information */
    std::vector<GCG_DETECTOR*> detectorchain;          /**< vector containing detectors that worked on that partialdec */
@@ -468,15 +468,16 @@ public:
       );
 
    /**
-    * @brief reassigns linking vars to stairlinkingvars if possible
+    * @brief reorders blocks for making a maximum number of linking vars stairlinking
     *
-    *  potentially reorders blocks for making a maximum number of linking vars stairlinking
+    *  reorders blocks for making a maximum number of linking vars stairlinking
     *  if all vars that connect exactly two blocks have a staircase structure, all of them become stairlinkingvars
     *  otherwise, the stairlinking assignment is done greedily
+    *  call PARTIALDEC::findVarsLinkingToStairlinking afterwards (this is also done by PARTIALDEC::prepare())
     *  @note precondition: partialdec does not have any stairlinking vars
     */
    GCG_EXPORT
-   void calcStairlinkingVars(
+   void reorderBlocksForStairlinkingVars(
         );
 
    /**
@@ -820,6 +821,16 @@ public:
     */
    GCG_EXPORT
    std::vector<int>& getLinkingvars();
+
+   /**
+    * @brief returns vector of all linking var indices contained by the block
+    * @return vector of var indices
+    * @note when accessed the vector is supposed to be sorted
+    */
+   GCG_EXPORT
+   std::vector<int>& getLinkingvarsForBlock(
+      int block
+      );
 
    /**
     * @brief Gets array containing all master conss indices
@@ -1382,6 +1393,18 @@ public:
    GCG_EXPORT
    bool isVarLinkingvar(
       int var
+      );
+
+   /**
+    * @brief Checks whether the var is a linking var contained by the block
+    * @param var id of var to check
+    * @param block id of block to check
+    * @return true iff the var is a linking var
+    */
+   GCG_EXPORT
+   bool isVarLinkingvarOfBlock(
+      int var,
+      int block
       );
 
    /**
@@ -2114,7 +2137,7 @@ private:
     * @brief calculates the number of nonzero coefficients for the blocks
     */
    void calcNCoeffsForBlocks(
-   );
+      );
 
    /**
     * @brief calculates the hash value of the partialdec for comparing
@@ -2163,6 +2186,12 @@ private:
     *  aggregation information: if there has been identified identical blocks
     */
    void displayAggregationInformation();
+
+   /**
+    * @brief calculates the linking vars for the blocks
+    */
+   void findLinkingvarBlocks(
+      );
 
    /**
     * @brief calculates potential stairlinking variables with their blocks

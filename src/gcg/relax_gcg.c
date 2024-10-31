@@ -673,13 +673,6 @@ SCIP_RETCODE checkIdenticalBlocks(
       return SCIP_OKAY;
    }
 
-   // @todo: do wee need this check?
-   if( relaxdata->nlinkingvars != 0 )
-   {
-      SCIPdebugMessage("aggregation is off in presence of linking vars\n");
-      return SCIP_OKAY;
-   }
-
    assert( SCIPgetNConss(scip) == GCGconshdlrDecompGetNFormerDetectionConssForID(scip, GCGdecompGetPartialdecID(relaxdata->decomp)) );
    SCIPdebugMessage( "nconss: %d; ndetectionconss: %d -> using partialdec information for identity test \n", SCIPgetNConss(scip), GCGconshdlrDecompGetNFormerDetectionConssForID(scip, GCGdecompGetPartialdecID(relaxdata->decomp) ) );
 
@@ -725,6 +718,7 @@ SCIP_RETCODE checkIdenticalBlocks(
             assert(GCGoriginalVarGetPricingVar(origvar) != NULL);
             GCGoriginalVarSetPricingVar(origvar, pricingvar);
             assert(GCGvarGetBlock(pricingvar) == rb);
+            assert(b == rb || !GCGoriginalVarIsLinking(origvar));
             SCIP_CALL( GCGpricingVarAddOrigVar(relaxdata->pricingprobs[rb], pricingvar, origvar) );
             SCIPdebugMessage("Var <%s> is mapped to <%s> (<%s>).\n", SCIPvarGetName(origvar), SCIPvarGetName(repvar),
                   SCIPvarGetName(pricingvar));
