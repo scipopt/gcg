@@ -38,6 +38,7 @@
 
 #include "heur_gcgdins.h"
 #include "gcg.h"
+#include "pricer_gcg.h"
 
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"
@@ -364,6 +365,7 @@ SCIP_RETCODE getRootRelaxSol(
    SCIP_VAR** mastervars;
    int nmastervars;
    int i;
+   SCIP_Bool violatesvarbnds;
 
    /* get master problem */
    masterprob = GCGgetMasterprob(scip);
@@ -382,7 +384,8 @@ SCIP_RETCODE getRootRelaxSol(
       SCIP_CALL( SCIPsetSolVal(masterprob, masterrootsol, mastervars[i], SCIPvarGetRootSol(mastervars[i])) );
 
    /* calculate original root LP solution */
-   SCIP_CALL( GCGtransformMastersolToOrigsol(scip, masterrootsol, rootsol, TRUE) );
+   SCIP_CALL( GCGtransformMastersolToOrigsol(scip, masterrootsol, rootsol, TRUE, &violatesvarbnds) );
+   assert(!violatesvarbnds || !GCGmasterIsSolValid(masterprob, masterrootsol));
 
    /* free memory */
    SCIP_CALL( SCIPfreeSol(masterprob, &masterrootsol) );

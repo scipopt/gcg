@@ -2110,7 +2110,7 @@ SCIP_RETCODE solveDiagonalBlocks(
 
    if( GCGgetDecompositionMode(scip) == GCG_DECMODE_ORIGINAL )
    {
-      SCIP_CALL( GCGtransformMastersolToOrigsol(scip, SCIPgetBestSol(relaxdata->masterprob), &newsol, FALSE) );
+      SCIP_CALL( GCGtransformMastersolToOrigsol(scip, SCIPgetBestSol(relaxdata->masterprob), &newsol, TRUE, NULL) );
    }
    else
    {
@@ -3079,7 +3079,7 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
 
          relaxdata->lastmastersol = SCIPgetBestSol(relaxdata->masterprob);
 
-         SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol, TRUE) );
+         SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol, TRUE, NULL) );
    #ifdef SCIP_DEBUG
          SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &stored) );
    #else
@@ -3190,7 +3190,7 @@ SCIP_RETCODE solveMasterProblemAndEvaluate(
 
       relaxdata->lastmastersol = SCIPgetBestSol(relaxdata->masterprob);
 
-      SCIP_CALL( GCGtransformMastersolToOrigsol(scip, SCIPgetBestSol(relaxdata->masterprob), &newsol, FALSE) );
+      SCIP_CALL( GCGtransformMastersolToOrigsol(scip, SCIPgetBestSol(relaxdata->masterprob), &newsol, TRUE, NULL) );
 #ifdef SCIP_DEBUG
       SCIP_CALL( SCIPtrySol(scip, newsol, TRUE, TRUE, TRUE, TRUE, TRUE, &stored) );
 #else
@@ -4620,7 +4620,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
 
       relaxdata->lastmastersol = SCIPgetBestSol(masterprob);
 
-      SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol, TRUE) );
+      SCIP_CALL( GCGtransformMastersolToOrigsol(scip, relaxdata->lastmastersol, &newsol, TRUE, NULL) );
 
       SCIP_CALL( SCIPtrySol(scip, newsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
       if( !stored )
@@ -4807,9 +4807,11 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
       {
          int i;
          int j;
+         SCIP_Bool violatesvarbnds;
 
          /* transform the master solution to the original variable space */
-         SCIP_CALL( GCGtransformMastersolToOrigsol(scip, mastersol, &(relaxdata->currentorigsol), FALSE) );
+         SCIP_CALL( GCGtransformMastersolToOrigsol(scip, mastersol, &(relaxdata->currentorigsol), FALSE, &violatesvarbnds) );
+         assert(!violatesvarbnds || !GCGmasterIsSolValid(relaxdata->masterprob, mastersol));
 
          /* store the solution as relaxation solution */
          SCIP_CALL( SCIPsetRelaxSolValsSol(scip, relax, relaxdata->currentorigsol, RELAX_INCLUDESLP) );

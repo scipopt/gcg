@@ -110,6 +110,7 @@ SCIP_DECL_EVENTEXEC(eventExecRelaxsol)
 {  /*lint --e{715}*/
    SCIP* origprob;
    SCIP_EVENTHDLRDATA* eventhdlrdata;
+   SCIP_Bool violatesvarbnds;
 
    /* get original problem */
    origprob = GCGmasterGetOrigprob(scip);
@@ -143,7 +144,8 @@ SCIP_DECL_EVENTEXEC(eventExecRelaxsol)
          foundbyheur ? SCIPheurGetName(SCIPsolGetHeur(sol)) : "relaxation");
 
       /* transform the master solution to the original variable space */
-      SCIP_CALL( GCGtransformMastersolToOrigsol(origprob, sol, &origsol, foundbyheur) );
+      SCIP_CALL( GCGtransformMastersolToOrigsol(origprob, sol, &origsol, foundbyheur, &violatesvarbnds) );
+      assert(!violatesvarbnds || !GCGmasterIsSolValid(scip, sol));
 
       SCIP_CALL( SCIPtrySolFree(origprob, &origsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
       SCIPdebugMessage("  ->%s stored\n", stored ? "" : " not");

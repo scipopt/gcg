@@ -168,7 +168,8 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_SOL*             mastersol,          /**< solution of the master problem */
    SCIP_SOL**            origsol,            /**< pointer to store the new created original problem's solution */
-   SCIP_Bool             ignorevarbnds       /**< ignore (possibly violated) varbounds */
+   SCIP_Bool             ignorelocalvarbnds, /**< check global or local varbounds */
+   SCIP_Bool*            violatesvarbnds     /**< pointer to variable to store whether the solution violates orig varbnds (can be NULL) */
    );
 
 /** Checks whether the constraint belongs to GCG or not
