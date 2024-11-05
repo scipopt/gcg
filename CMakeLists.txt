@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.11)
 
 # option() honors normal variables.
 if(POLICY CMP0077)
@@ -181,7 +181,7 @@ if(MSVC AND MT)
 endif()
 
 # create a target for updating the current git hash
-file(WRITE ${CMAKE_BINARY_DIR}/gcg_update_githash.cmake "
+file(WRITE ${PROJECT_BINARY_DIR}/gcg_update_githash.cmake "
 find_program(GIT git)
 if(EXISTS \${DST})
    file(STRINGS \${DST} GITHASH_OLD)
@@ -208,8 +208,8 @@ message(STATUS \"Git hash: \" \${GITHASH})
 ")
 add_custom_target(gcg_update_githash
    COMMAND ${CMAKE_COMMAND}
-      -DDST=${PROJECT_SOURCE_DIR}/src/gcg/githash.c
-      -P ${CMAKE_BINARY_DIR}/gcg_update_githash.cmake)
+      -DDST=${PROJECT_SOURCE_DIR}/src/githash.c
+      -P ${PROJECT_BINARY_DIR}/gcg_update_githash.cmake)
 
 # use C++11 standard
 set(CMAKE_CXX_STANDARD 11)

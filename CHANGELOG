@@ -64,6 +64,7 @@ Miscellaneous
 -------------
 
 - enable OpenMP by default
+- increased minimal cmake version to 3.11
 
 
 @page RN37 Release notes for GCG 3.7
