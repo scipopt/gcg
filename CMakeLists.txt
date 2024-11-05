@@ -170,7 +170,7 @@ message(STATUS \"Git hash: \" \${GITHASH})
 ")
 add_custom_target(gcg_update_githash
    COMMAND ${CMAKE_COMMAND}
-      -DDST=${PROJECT_SOURCE_DIR}/src/gcg/githash.c
+      -DDST=${PROJECT_SOURCE_DIR}/src/githash.c
       -P ${PROJECT_BINARY_DIR}/gcg_update_githash.cmake)
 
 # use C++11 standard
