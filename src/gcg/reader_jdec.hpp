@@ -25,16 +25,16 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   reader_ndec.hpp
- * @brief  ndec file reader for (nested) structure information
+/**@file   reader_jdec.hpp
+ * @brief  jdec file reader for (JSON formatted) structure information
  * @author Erik Muehmer
  * @ingroup FILEREADERS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_READER_NDEC_HPP__
-#define GCG_READER_NDEC_HPP__
+#ifndef GCG_READER_JDEC_HPP__
+#define GCG_READER_JDEC_HPP__
 
 #include <vector>
 #include <unordered_map>
@@ -87,4 +87,4 @@ struct NestedDecompositionData
 
 }
 
-#endif //GCG_READER_NDEC_HPP__
+#endif //GCG_READER_JDEC_HPP__

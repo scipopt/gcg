@@ -25,16 +25,16 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   reader_ndec.h
- * @brief  ndec file reader for (nested) structure information
+/**@file   reader_jdec.h
+ * @brief  jdec file reader for (JSON formatted) structure information
  * @author Erik Muehmer
  * @ingroup FILEREADERS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_READER_NDEC_H__
-#define GCG_READER_NDEC_H__
+#ifndef GCG_READER_JDEC_H__
+#define GCG_READER_JDEC_H__
 
 #include "scip/scip.h"
 #include "gcg/gcg.h"
@@ -45,7 +45,7 @@ extern "C" {
 
 /** includes the ndec file reader into SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeReaderNDec(
+SCIP_RETCODE SCIPincludeReaderJDec(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
@@ -53,4 +53,4 @@ SCIP_RETCODE SCIPincludeReaderNDec(
 }
 #endif
 
-#endif //GCG_READER_NDEC_H__
+#endif //GCG_READER_JDEC_H__

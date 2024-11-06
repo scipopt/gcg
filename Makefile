@@ -429,7 +429,7 @@ LIBOBJ		+=	gcg/solver_highs.o
 endif
 
 ifeq ($(JSON),true)
-LIBOBJ		+=	gcg/reader_ndec.o
+LIBOBJ		+=	gcg/reader_jdec.o
 endif
 
 MAINOBJ		=	main.o

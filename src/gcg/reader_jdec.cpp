@@ -25,8 +25,8 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   reader_ndec.cpp
- * @brief  ndec file reader for (nested) structure information
+/**@file   reader_jdec.cpp
+ * @brief  jdec file reader for (JSON formatted) structure information
  * @author Erik Muehmer
  * @ingroup FILEREADERS
  */
@@ -35,8 +35,8 @@
 
 // #define SCIP_DEBUG
 
-#include "reader_ndec.h"
-#include "reader_ndec.hpp"
+#include "reader_jdec.h"
+#include "reader_jdec.hpp"
 #include "class_partialdecomp.h"
 #include "class_detprobdata.h"
 #include "cons_decomp.hpp"
@@ -46,17 +46,17 @@
 #include <string>
 #include <jansson.h>
 
-#define READER_NAME             "ndecreader"
-#define READER_DESC             "file reader for blocks in ndec format"
-#define READER_EXTENSION        "ndec"
+#define READER_NAME             "jdecreader"
+#define READER_DESC             "jdec (JSON formatted structure information) file reader"
+#define READER_EXTENSION        "jdec"
 
-#define NDEC_VERSION             1
+#define JDEC_VERSION             1
 
 using namespace gcg;
 
 static constexpr bool checkVersion(int version)
 {
-   return version <= NDEC_VERSION;
+   return version <= JDEC_VERSION;
 }
 
 static constexpr bool checkJson(int returnvalue)
@@ -71,30 +71,37 @@ struct SCIP_ReaderData
 
 class AbstractElementParser;
 
-class NDecFileHandler
+/** writes and reads jdec files */
+class JDecFileHandler
 {
 public:
-   NDecFileHandler(SCIP* scip, const char* filename);
-   NDecFileHandler(SCIP* scip, FILE* wfile);
-   ~NDecFileHandler();
+   JDecFileHandler(SCIP* scip, const char* filename);
+   JDecFileHandler(SCIP* scip, FILE* wfile);
+   ~JDecFileHandler();
 
    SCIP_RETCODE initialize();
 
    bool parseElement(AbstractElementParser& elementparser, json_t* element);
 
-   bool readNDec(NestedDecompositionData& data);
+   bool readJDec(NestedDecompositionData& data);
 
-   bool writeNDec(PARTIALDECOMP* decomp);
+   bool writeJDec(PARTIALDECOMP* decomp);
 
 private:
    bool serializeBlock(json_t* json, PARTIALDECOMP* decomp, int block);
+
    bool serializeBlockStructure(json_t* json, PARTIALDECOMP* decomp, BLOCK_STRUCTURE* blockstructure);
+
    bool serializeBlockStructureBlock(json_t* json, PARTIALDECOMP* decomp, BLOCK_STRUCTURE* blockstructure, int block);
+
    bool serializeDecomposition(json_t* json, PARTIALDECOMP* decomp);
+
    bool setObjectValue(const char* key, json_t* value, json_t* object = NULL, bool decref = true);
+
    bool appendArrayValue(json_t* value, json_t* array, bool decref = true);
 
    static size_t jsonLoadCallback(void* buffer, size_t buflen, void* data);
+
    static int jsonDumpCallback(const char* buffer, size_t buflen, void* data);
 
    SCIP_FILE* rfile_;
@@ -107,7 +114,7 @@ private:
 class AbstractElementParser
 {
 public:
-   explicit AbstractElementParser(SCIP* scip, NDecFileHandler& filehandler)
+   explicit AbstractElementParser(SCIP* scip, JDecFileHandler& filehandler)
       : filehandler_(filehandler), scip_(scip), error_(false) {}
 
    virtual ~AbstractElementParser() = default;
@@ -122,7 +129,7 @@ public:
    }
 
 protected:
-   NDecFileHandler& filehandler_;
+   JDecFileHandler& filehandler_;
    SCIP* scip_;
    bool error_;
 };
@@ -130,7 +137,7 @@ protected:
 class AbstractNestedDecompositionElementParser : public AbstractElementParser
 {
 public:
-   AbstractNestedDecompositionElementParser(SCIP* scip, NDecFileHandler& filehandler, NestedDecompositionData& data)
+   AbstractNestedDecompositionElementParser(SCIP* scip, JDecFileHandler& filehandler, NestedDecompositionData& data)
       : AbstractElementParser(scip, filehandler), data_(data) {}
 
    ~AbstractNestedDecompositionElementParser() override = default;
@@ -144,7 +151,7 @@ protected:
 class BlockElementParser : public AbstractNestedDecompositionElementParser
 {
 public:
-   BlockElementParser(SCIP* scip, NDecFileHandler& filehandler, NestedDecompositionData& data,
+   BlockElementParser(SCIP* scip, JDecFileHandler& filehandler, NestedDecompositionData& data,
       BlockData& blockdata) : AbstractNestedDecompositionElementParser(scip, filehandler, data), blockdata_(blockdata),
       parsingconstraints(false) {}
 
@@ -162,7 +169,7 @@ private:
 class DecompositionElementParser : public AbstractNestedDecompositionElementParser
 {
 public:
-   DecompositionElementParser(SCIP* scip, NDecFileHandler& filehandler, NestedDecompositionData& data,
+   DecompositionElementParser(SCIP* scip, JDecFileHandler& filehandler, NestedDecompositionData& data,
       DecompositionData& decdata) : AbstractNestedDecompositionElementParser(scip, filehandler, data),
       decdata_(decdata), parsingmasterconstraints(false), parsingblocks(false), parsingsymmetry(false) {}
 
@@ -182,7 +189,7 @@ private:
 class RootElementParser : public AbstractNestedDecompositionElementParser
 {
 public:
-   RootElementParser(SCIP* scip, NDecFileHandler& filehandler, NestedDecompositionData& data)
+   RootElementParser(SCIP* scip, JDecFileHandler& filehandler, NestedDecompositionData& data)
       : AbstractNestedDecompositionElementParser(scip, filehandler, data) {}
 
    ~RootElementParser() override = default;
@@ -192,18 +199,18 @@ public:
    void handleValue(json_t* value) override;
 };
 
-/* reads ndec file */
+/* reads jdec file */
 static
-SCIP_RETCODE readNDec(
+SCIP_RETCODE readJDec(
    SCIP*                 scip,
    const char*           filename,
    SCIP_RESULT*          result
    )
 {
    NestedDecompositionData data;
-   NDecFileHandler filehandler(scip, filename);
+   JDecFileHandler filehandler(scip, filename);
    SCIP_CALL( filehandler.initialize() );
-   if( filehandler.readNDec(data) )
+   if( filehandler.readJDec(data) )
    {
       if( data.rootdecomposition )
       {
@@ -317,7 +324,7 @@ SCIP_RETCODE readNDec(
    return SCIP_OKAY;
 }
 
-/* write a ndec file for a given decomposition */
+/* write a jdec file for a given decomposition */
 static
 SCIP_RETCODE writePartialdec(
    SCIP*                 scip,
@@ -326,9 +333,9 @@ SCIP_RETCODE writePartialdec(
    SCIP_RESULT*          result
    )
 {
-   NDecFileHandler filehandler(scip, file);
+   JDecFileHandler filehandler(scip, file);
    SCIP_CALL( filehandler.initialize() );
-   if( filehandler.writeNDec(partialdec) )
+   if( filehandler.writeJDec(partialdec) )
    {
       *result = SCIP_SUCCESS;
    }
@@ -440,7 +447,7 @@ BLOCK_STRUCTURE* DecompositionData::createBlockStructure(
    return blockstructure;
 }
 
-NDecFileHandler::NDecFileHandler(
+JDecFileHandler::JDecFileHandler(
    SCIP* scip,
    const char* filename
    ) : wfile_(NULL), json_(NULL), error_(), scip_(scip)
@@ -448,14 +455,14 @@ NDecFileHandler::NDecFileHandler(
    rfile_ = SCIPfopen(filename, "r");
 }
 
-NDecFileHandler::NDecFileHandler(
+JDecFileHandler::JDecFileHandler(
    SCIP* scip,
    FILE* file
    ) : rfile_(NULL), wfile_(file), json_(NULL), error_(), scip_(scip)
 {
 }
 
-NDecFileHandler::~NDecFileHandler()
+JDecFileHandler::~JDecFileHandler()
 {
    if( json_ )
       json_decref(json_);
@@ -463,7 +470,7 @@ NDecFileHandler::~NDecFileHandler()
       SCIPfclose(rfile_);
 }
 
-SCIP_RETCODE NDecFileHandler::initialize()
+SCIP_RETCODE JDecFileHandler::initialize()
 {
    if( rfile_ )
    {
@@ -476,7 +483,7 @@ SCIP_RETCODE NDecFileHandler::initialize()
    return SCIP_OKAY;
 }
 
-bool NDecFileHandler::parseElement(
+bool JDecFileHandler::parseElement(
    AbstractElementParser& elementparser,
    json_t* element
    )
@@ -510,7 +517,7 @@ bool NDecFileHandler::parseElement(
    return !error;
 }
 
-bool NDecFileHandler::readNDec(
+bool JDecFileHandler::readJDec(
    NestedDecompositionData& data
    )
 {
@@ -540,12 +547,12 @@ bool NDecFileHandler::readNDec(
    return !error;
 }
 
-bool NDecFileHandler::writeNDec(
+bool JDecFileHandler::writeJDec(
    gcg::PARTIALDECOMP* decomp
    )
 {
    bool success = true;
-   success &= setObjectValue("version", json_integer(NDEC_VERSION));
+   success &= setObjectValue("version", json_integer(JDEC_VERSION));
    success &= setObjectValue("problem_name", json_string(SCIPgetProbName(scip_)));
    success &= setObjectValue("decomp_id", json_integer(decomp->getID()));
    success &= setObjectValue("presolved", json_boolean(!decomp->isAssignedToOrigProb()));
@@ -562,7 +569,7 @@ bool NDecFileHandler::writeNDec(
    return success;
 }
 
-bool NDecFileHandler::serializeBlock(
+bool JDecFileHandler::serializeBlock(
    json_t* json,
    gcg::PARTIALDECOMP* decomp,
    int block
@@ -581,7 +588,7 @@ bool NDecFileHandler::serializeBlock(
 
    if( decomp->aggInfoCalculated() )
    {
-      success &= setObjectValue("symmetrical_block", json_integer(decomp->getReprBlockForEqClass(decomp->getEqClassForBlock(block))), json);
+      success &= setObjectValue("symmetry_representative_block", json_integer(decomp->getReprBlockForEqClass(decomp->getEqClassForBlock(block))), json);
    }
 
    if( decomp->isNested() )
@@ -594,7 +601,7 @@ bool NDecFileHandler::serializeBlock(
    return success;
 }
 
-bool NDecFileHandler::serializeBlockStructure(
+bool JDecFileHandler::serializeBlockStructure(
    json_t* json,
    gcg::PARTIALDECOMP* decomp,
    gcg::BLOCK_STRUCTURE* blockstructure
@@ -620,12 +627,10 @@ bool NDecFileHandler::serializeBlockStructure(
    }
    success &= setObjectValue("blocks", jsonblocks, json);
 
-   // @todo: add "symmetry_mapping"
-
    return success;
 }
 
-bool NDecFileHandler::serializeBlockStructureBlock(
+bool JDecFileHandler::serializeBlockStructureBlock(
    json_t* json,
    PARTIALDECOMP* decomp,
    BLOCK_STRUCTURE* blockstructure,
@@ -643,7 +648,7 @@ bool NDecFileHandler::serializeBlockStructureBlock(
    }
    success &= setObjectValue("constraints", jsonconstraints, json);
 
-   // @todo: add "symmetrical_block"
+   // @todo: add "symmetry_representative_block"
 
    if( blockstructure->blockstructures[block] )
    {
@@ -655,7 +660,7 @@ bool NDecFileHandler::serializeBlockStructureBlock(
    return success;
 }
 
-bool NDecFileHandler::serializeDecomposition(
+bool JDecFileHandler::serializeDecomposition(
    json_t* json,
    gcg::PARTIALDECOMP* decomp
    )
@@ -706,13 +711,13 @@ bool NDecFileHandler::serializeDecomposition(
             }
          }
       }
-      success &= setObjectValue("symmetry_mapping", jsonsymmetry, json);
+      success &= setObjectValue("symmetry_var_mapping", jsonsymmetry, json);
    }
 
    return success;
 }
 
-bool NDecFileHandler::setObjectValue(
+bool JDecFileHandler::setObjectValue(
    const char* key,
    json_t* value,
    json_t* object,
@@ -740,7 +745,7 @@ bool NDecFileHandler::setObjectValue(
    return success;
 }
 
-bool NDecFileHandler::appendArrayValue(
+bool JDecFileHandler::appendArrayValue(
    json_t* value,
    json_t* array,
    bool decref
@@ -764,24 +769,24 @@ bool NDecFileHandler::appendArrayValue(
    return success;
 }
 
-size_t NDecFileHandler::jsonLoadCallback(
+size_t JDecFileHandler::jsonLoadCallback(
    void* buffer,
    size_t buflen,
    void* data
    )
 {
-   auto* filehandler = (NDecFileHandler*) data;
+   auto* filehandler = (JDecFileHandler*) data;
    size_t size_read = SCIPfread(buffer, 1, buflen, filehandler->rfile_);
    return (size_read == 0 && !SCIPfeof(filehandler->rfile_)) ? (size_t)-1 : size_read;
 }
 
-int NDecFileHandler::jsonDumpCallback(
+int JDecFileHandler::jsonDumpCallback(
    const char* buffer,
    size_t buflen,
    void* data
    )
 {
-   auto* filehandler = (NDecFileHandler*) data;
+   auto* filehandler = (JDecFileHandler*) data;
    assert(buflen <= INT_MAX);
    SCIPinfoMessage(filehandler->scip_, filehandler->wfile_, "%.*s", (int)buflen, buffer);
    // size_t size_written = SCIPfwrite(buffer, 1, buflen, filehandler->wfile_);
@@ -932,7 +937,7 @@ void DecompositionElementParser::handleKeyValuePair(
             error_ = true;
          }
       }
-      else if( strcmp(name, "symmetry_mapping") == 0 )
+      else if( strcmp(name, "symmetry_var_mapping") == 0 )
       {
          if( json_is_object(value) )
          {
@@ -992,7 +997,7 @@ void BlockElementParser::handleKeyValuePair(
    json_t* value
    )
 {
-   if( strcmp(name, "symmetrical_block") == 0 )
+   if( strcmp(name, "symmetry_representative_block") == 0 )
    {
       if( json_is_integer(value) )
       {
@@ -1060,7 +1065,7 @@ void BlockElementParser::handleValue(
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
 static
-SCIP_DECL_READERFREE(readerFreeNDec)
+SCIP_DECL_READERFREE(readerFreeJDec)
 {
    SCIP_READERDATA* readerdata;
 
@@ -1074,7 +1079,7 @@ SCIP_DECL_READERFREE(readerFreeNDec)
 
 /** problem reading method of reader */
 static
-SCIP_DECL_READERREAD(readerReadNDec)
+SCIP_DECL_READERREAD(readerReadJDec)
 {  /*lint --e{715}*/
 
    if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
@@ -1084,14 +1089,14 @@ SCIP_DECL_READERREAD(readerReadNDec)
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( readNDec(scip, filename, result) );
+   SCIP_CALL( readJDec(scip, filename, result) );
 
    return SCIP_OKAY;
 }
 
 /** problem writing method of reader */
 static
-SCIP_DECL_READERWRITE(readerWriteNDec)
+SCIP_DECL_READERWRITE(readerWriteJDec)
 {  /*lint --e{715}*/
    assert(scip != NULL);
    assert(reader != NULL);
@@ -1108,9 +1113,9 @@ SCIP_DECL_READERWRITE(readerWriteNDec)
    return SCIP_OKAY;
 }
 
-/* includes the ndec file reader into SCIP */
+/* includes the jdec file reader into SCIP */
 extern
-SCIP_RETCODE SCIPincludeReaderNDec(
+SCIP_RETCODE SCIPincludeReaderJDec(
    SCIP*                 scip
    )
 {
@@ -1119,9 +1124,9 @@ SCIP_RETCODE SCIPincludeReaderNDec(
    /* create dec reader data */
    SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
 
-   /* include dec reader */
-   SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL, readerFreeNDec,
-      readerReadNDec, readerWriteNDec, readerdata));
+   /* include jdec reader */
+   SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL, readerFreeJDec,
+      readerReadJDec, readerWriteJDec, readerdata));
 
    return SCIP_OKAY;
 }

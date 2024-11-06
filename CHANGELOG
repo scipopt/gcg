@@ -6,6 +6,8 @@ New features:
 -------------
 
 - Solver plugin for HiGHS. Allows user to select HiGHS as a pricing problem solver.
+- new pricing solver ("gcg") that calls GCG to solve (structured) pricing problems
+- new (JSON formatted) decomposition file format ("jdec") supporting nested/recursive decompositions
 
 New/modified/removed structures, defines, and classes:
 ---------------------------

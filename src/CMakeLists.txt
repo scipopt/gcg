@@ -427,11 +427,11 @@ endif()
 
 if(JANSSON_FOUND)
     set(gcgsources ${gcgsources}
-        gcg/reader_ndec.cpp
+        gcg/reader_jdec.cpp
     )
     set(gcgheaders ${gcgheaders}
-        gcg/reader_ndec.h
-        gcg/reader_ndec.hpp
+        gcg/reader_jdec.h
+        gcg/reader_jdec.hpp
     )
 endif()
 
