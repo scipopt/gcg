@@ -36,7 +36,6 @@
 // #define SCIP_DEBUG
 
 #include "reader_jdec.h"
-#include "reader_jdec.hpp"
 #include "class_partialdecomp.h"
 #include "class_detprobdata.h"
 #include "cons_decomp.hpp"
@@ -67,6 +66,47 @@ static constexpr bool checkJson(int returnvalue)
 /** data for dec reader */
 struct SCIP_ReaderData
 {
+};
+
+struct DecompositionData;
+
+struct BlockData
+{
+   BlockData(int blocknr) : decomposition(NULL), symmetricalblock(blocknr), probnr(blocknr) {}
+   BlockData(const BlockData&) = delete;
+   BlockData(BlockData&&) noexcept;
+   ~BlockData();
+   BlockData& operator=(const BlockData&) = delete;
+
+   std::vector<std::string> constraints;
+   DecompositionData* decomposition;
+   int symmetricalblock;
+   int probnr;
+};
+
+struct DecompositionData
+{
+   DecompositionData() = default;
+   ~DecompositionData() = default;
+   BLOCK_STRUCTURE* createBlockStructure(SCIP* scip, DETPROBDATA* detprobdata);
+
+   std::vector<std::string> masterconstraints;
+   std::vector<BlockData> blocks;
+   std::unordered_map<std::string, std::string> symmetrydata;
+};
+
+struct NestedDecompositionData
+{
+   NestedDecompositionData() : version(0), presolved(false), rootdecomposition(NULL) {}
+   NestedDecompositionData(const NestedDecompositionData&) = delete;
+   ~NestedDecompositionData();
+   NestedDecompositionData& operator=(const NestedDecompositionData&) = delete;
+
+   int version;
+   std::string name;
+   bool presolved;
+   std::string description;
+   DecompositionData* rootdecomposition;
 };
 
 class AbstractElementParser;

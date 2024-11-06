@@ -431,7 +431,6 @@ if(JANSSON_FOUND)
     )
     set(gcgheaders ${gcgheaders}
         gcg/reader_jdec.h
-        gcg/reader_jdec.hpp
     )
 endif()
 
