@@ -505,12 +505,12 @@ DCXXFLAGS=$(CXXFLAGS)
 
 .PHONY: all
 all:       	$(SCIPDIR)
-		@-$(MAKE) libs
-		@-$(MAKE) mainfiles
+		@$(MAKE) libs
+		@$(MAKE) mainfiles
 
 .PHONY: mainfiles
 mainfiles:
-		@-$(MAKE) $(MAINFILE) $(MAINLINK) $(MAINSHORTLINK)
+		@$(MAKE) $(MAINFILE) $(MAINLINK) $(MAINSHORTLINK)
 
 $(SCIPDIR)/make/make.project: |$(SCIPDIR)
 
