@@ -53,11 +53,13 @@
 
 using namespace gcg;
 
+/** checks version */
 static constexpr bool checkVersion(int version)
 {
    return version <= JDEC_VERSION;
 }
 
+/** checks return value of json lib calls */
 static constexpr bool checkJson(int returnvalue)
 {
    return returnvalue == 0;
@@ -68,45 +70,69 @@ struct SCIP_ReaderData
 {
 };
 
-struct DecompositionData;
+struct NestedDecompositionData;
 
+/** struct to store block information (read from file) */
 struct BlockData
 {
-   BlockData(int blocknr) : decomposition(NULL), symmetricalblock(blocknr), probnr(blocknr) {}
+   /** constructor */
+   BlockData(
+      int nr                                 /**< number of block */
+      )
+      : decomposition(NULL),
+        symmetricalblock(nr),
+        blocknr(nr) {}
+
+   /** delete copy constructor */
    BlockData(const BlockData&) = delete;
+
+   /** move constructor */
    BlockData(BlockData&&) noexcept;
+
+   /** destructor */
    ~BlockData();
+
+   /** delete assignment operator */
    BlockData& operator=(const BlockData&) = delete;
 
-   std::vector<std::string> constraints;
-   DecompositionData* decomposition;
-   int symmetricalblock;
-   int probnr;
+   std::vector<std::string> constraints;     /**< names of constraints */
+   NestedDecompositionData* decomposition;   /**< pointer to decomposition object */
+   int symmetricalblock;                     /**< number of representative/symmetrical block */
+   int blocknr;                              /**< number of block/subproblem */
 };
 
-struct DecompositionData
+/** struct to store (nested) decomposition data (read from file) */
+struct NestedDecompositionData
 {
-   DecompositionData() = default;
-   ~DecompositionData() = default;
-   BLOCK_STRUCTURE* createBlockStructure(SCIP* scip, DETPROBDATA* detprobdata);
+   /** constructor */
+   NestedDecompositionData() = default;
+
+   /** destructor */
+   ~NestedDecompositionData() = default;
+
+   /** creates a block structure object */
+   BLOCK_STRUCTURE* createBlockStructure(
+      SCIP* scip,                            /**< scip object */
+      DETPROBDATA* detprobdata               /**< detprobdata used to create the block structure object */
+      );
 
    std::vector<std::string> masterconstraints;
    std::vector<BlockData> blocks;
-   std::unordered_map<std::string, std::string> symmetrydata;
+   std::unordered_map<std::string, std::string> symmetryvardata;
 };
 
-struct NestedDecompositionData
+struct JDecData
 {
-   NestedDecompositionData() : version(0), presolved(false), rootdecomposition(NULL) {}
-   NestedDecompositionData(const NestedDecompositionData&) = delete;
-   ~NestedDecompositionData();
-   NestedDecompositionData& operator=(const NestedDecompositionData&) = delete;
+   JDecData() : version(0), presolved(false), rootdecomposition(NULL) {}
+   JDecData(const JDecData&) = delete;
+   ~JDecData();
+   JDecData& operator=(const JDecData&) = delete;
 
    int version;
    std::string name;
    bool presolved;
    std::string description;
-   DecompositionData* rootdecomposition;
+   NestedDecompositionData* rootdecomposition;
 };
 
 class AbstractElementParser;
@@ -123,7 +149,7 @@ public:
 
    bool parseElement(AbstractElementParser& elementparser, json_t* element);
 
-   bool readJDec(NestedDecompositionData& data);
+   bool readJDec(JDecData& data);
 
    bool writeJDec(PARTIALDECOMP* decomp);
 
@@ -177,21 +203,21 @@ protected:
 class AbstractNestedDecompositionElementParser : public AbstractElementParser
 {
 public:
-   AbstractNestedDecompositionElementParser(SCIP* scip, JDecFileHandler& filehandler, NestedDecompositionData& data)
+   AbstractNestedDecompositionElementParser(SCIP* scip, JDecFileHandler& filehandler, JDecData& data)
       : AbstractElementParser(scip, filehandler), data_(data) {}
 
    ~AbstractNestedDecompositionElementParser() override = default;
 
 protected:
-   DecompositionData* parseDecomposition(json_t* value);
+   NestedDecompositionData* parseDecomposition(json_t* value);
 
-   NestedDecompositionData& data_;
+   JDecData& data_;
 };
 
 class BlockElementParser : public AbstractNestedDecompositionElementParser
 {
 public:
-   BlockElementParser(SCIP* scip, JDecFileHandler& filehandler, NestedDecompositionData& data,
+   BlockElementParser(SCIP* scip, JDecFileHandler& filehandler, JDecData& data,
       BlockData& blockdata) : AbstractNestedDecompositionElementParser(scip, filehandler, data), blockdata_(blockdata),
       parsingconstraints(false) {}
 
@@ -209,8 +235,8 @@ private:
 class DecompositionElementParser : public AbstractNestedDecompositionElementParser
 {
 public:
-   DecompositionElementParser(SCIP* scip, JDecFileHandler& filehandler, NestedDecompositionData& data,
-      DecompositionData& decdata) : AbstractNestedDecompositionElementParser(scip, filehandler, data),
+   DecompositionElementParser(SCIP* scip, JDecFileHandler& filehandler, JDecData& data,
+      NestedDecompositionData& decdata) : AbstractNestedDecompositionElementParser(scip, filehandler, data),
       decdata_(decdata), parsingmasterconstraints(false), parsingblocks(false), parsingsymmetry(false) {}
 
    ~DecompositionElementParser() override = default;
@@ -220,7 +246,7 @@ public:
    void handleValue(json_t* value) override;
 
 private:
-   DecompositionData& decdata_;
+   NestedDecompositionData& decdata_;
    bool parsingmasterconstraints;
    bool parsingblocks;
    bool parsingsymmetry;
@@ -229,7 +255,7 @@ private:
 class RootElementParser : public AbstractNestedDecompositionElementParser
 {
 public:
-   RootElementParser(SCIP* scip, JDecFileHandler& filehandler, NestedDecompositionData& data)
+   RootElementParser(SCIP* scip, JDecFileHandler& filehandler, JDecData& data)
       : AbstractNestedDecompositionElementParser(scip, filehandler, data) {}
 
    ~RootElementParser() override = default;
@@ -238,154 +264,6 @@ public:
 
    void handleValue(json_t* value) override;
 };
-
-/* reads jdec file */
-static
-SCIP_RETCODE readJDec(
-   SCIP*                 scip,
-   const char*           filename,
-   SCIP_RESULT*          result
-   )
-{
-   NestedDecompositionData data;
-   JDecFileHandler filehandler(scip, filename);
-   SCIP_CALL( filehandler.initialize() );
-   if( filehandler.readJDec(data) )
-   {
-      if( data.rootdecomposition )
-      {
-         int nblocks = (int)data.rootdecomposition->blocks.size();
-
-         if( data.presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
-         {
-            SCIPinfoMessage(scip, NULL,
-               "Reading presolved decomposition but problem is not presolved yet. Calling SCIPpresolve()\n");
-            SCIPpresolve(scip);
-         }
-
-         PARTIALDECOMP* partialdec = new PARTIALDECOMP(scip, !data.presolved);
-         DETPROBDATA* detprobdata = partialdec->getDetprobdata();
-         for( auto& cons : data.rootdecomposition->masterconstraints )
-         {
-            if( !partialdec->fixConsToMasterByName(cons.c_str()) )
-               SCIPwarningMessage(scip, "Could not set constraint %s as master constraint.\n", cons.c_str());
-         }
-         partialdec->setNBlocks(nblocks);
-         for( int block = 0; block < nblocks; ++block )
-         {
-            BlockData& blockdata = data.rootdecomposition->blocks[block];
-            for( auto& cons : blockdata.constraints )
-            {
-               if( !partialdec->fixConsToBlockByName(cons.c_str(), block) )
-                  SCIPwarningMessage(scip, "Could not set constraint %s as block constraint.\n", cons.c_str());
-            }
-            if( blockdata.decomposition )
-            {
-               BLOCK_STRUCTURE* nestedstructure = blockdata.decomposition->createBlockStructure(scip, detprobdata);
-               partialdec->setBlockStructure(block, nestedstructure);
-            }
-            else
-            {
-               partialdec->setBlockStructure(block, NULL);
-            }
-         }
-         GCGconshdlrDecompAddPreexisitingPartialDec(scip, partialdec);
-
-         if( !data.rootdecomposition->symmetrydata.empty() )
-         {
-            bool success = true;
-            auto& symmetrydata = data.rootdecomposition->symmetrydata;
-
-            // check symmetry data
-            for( int b = 0; b < partialdec->getNBlocks() && success; ++b )
-            {
-               int symmetricalblock = data.rootdecomposition->blocks[b].symmetricalblock;
-               for( int vi = 0; vi < partialdec->getNVarsForBlock(b) && success; ++vi )
-               {
-                  SCIP_VAR* var = detprobdata->getVar(partialdec->getVarsForBlock(b)[vi]);
-                  assert(var != NULL);
-                  const auto& it = symmetrydata.find(SCIPvarGetName(var));
-                  if( symmetricalblock == b )
-                  {
-                     success = (it == symmetrydata.end() || it->first == it->second);
-                     assert(success);
-                  }
-                  else if( it != symmetrydata.end() )
-                  {
-                     SCIP_VAR* reprvar = SCIPfindVar(scip, it->second.c_str());
-                     success = (reprvar != NULL &&
-                        partialdec->getVarProbindexForBlock(detprobdata->getIndexForVar(reprvar), symmetricalblock) >= 0);
-                     assert(success);
-                  }
-                  else
-                  {
-                     success = false;
-                     assert(success);
-                  }
-               }
-            }
-
-            // if successful, set symmetry data
-            if( success )
-            {
-               success = partialdec->setSymmetryInformation(
-                  [&] (int b)
-                  {
-                     assert(b < (int)data.rootdecomposition->blocks.size());
-                     return data.rootdecomposition->blocks[b].symmetricalblock;
-                  },
-                  [&] (int b, int vi)
-                  {
-                     SCIP_VAR* var = detprobdata->getVar(partialdec->getVarsForBlock(b)[vi]);
-                     assert(var != NULL);
-                     assert(symmetrydata.find(SCIPvarGetName(var)) != symmetrydata.end());
-                     int ri = detprobdata->getIndexForVar(symmetrydata[SCIPvarGetName(var)].c_str());
-                     assert(partialdec->getVarProbindexForBlock(ri, data.rootdecomposition->blocks[b].symmetricalblock) >= 0);
-                     return partialdec->getVarProbindexForBlock(ri, data.rootdecomposition->blocks[b].symmetricalblock);
-                  }
-               );
-            }
-            if( !success )
-            {
-               SCIPwarningMessage(scip, "Could not set symmetry information.\n");
-            }
-         }
-      }
-      else
-         SCIPwarningMessage(scip, "No root decomposition is specified.\n");
-      *result = SCIP_SUCCESS;
-   }
-   else
-   {
-      *result = SCIP_DIDNOTRUN;
-      return SCIP_READERROR;
-   }
-
-   return SCIP_OKAY;
-}
-
-/* write a jdec file for a given decomposition */
-static
-SCIP_RETCODE writePartialdec(
-   SCIP*                 scip,
-   FILE*                 file,
-   gcg::PARTIALDECOMP*   partialdec,
-   SCIP_RESULT*          result
-   )
-{
-   JDecFileHandler filehandler(scip, file);
-   SCIP_CALL( filehandler.initialize() );
-   if( filehandler.writeJDec(partialdec) )
-   {
-      *result = SCIP_SUCCESS;
-   }
-   else
-   {
-      *result = SCIP_DIDNOTRUN;
-      return SCIP_WRITEERROR;
-   }
-   return SCIP_OKAY;
-}
 
 BlockData::BlockData(BlockData&& block) noexcept
 {
@@ -400,12 +278,12 @@ BlockData::~BlockData()
    delete decomposition;
 }
 
-NestedDecompositionData::~NestedDecompositionData()
+JDecData::~JDecData()
 {
    delete rootdecomposition;
 }
 
-BLOCK_STRUCTURE* DecompositionData::createBlockStructure(
+BLOCK_STRUCTURE* NestedDecompositionData::createBlockStructure(
    SCIP* scip,
    DETPROBDATA* detprobdata
    )
@@ -439,7 +317,7 @@ BLOCK_STRUCTURE* DecompositionData::createBlockStructure(
    }
 
    // symmetry
-   if( !symmetrydata.empty() )
+   if( !symmetryvardata.empty() )
    {
       bool success = true;
       for( auto& blockdata : blocks )
@@ -459,20 +337,20 @@ BLOCK_STRUCTURE* DecompositionData::createBlockStructure(
       if( success )
       {
          int idx2;
-         blockstructure->symmetrydata = std::move(blockstructure->symmetrydata);
-         for( auto& it : symmetrydata )
+         blockstructure->symmetryvardata = std::move(blockstructure->symmetryvardata);
+         for( auto& it : symmetryvardata )
          {
             idx = detprobdata->getIndexForVar(it.first.c_str());
             idx2 = detprobdata->getIndexForVar(it.second.c_str());
             if( idx >= 0 && idx2 >= 0 )
             {
-               blockstructure->symmetrydata.emplace(idx, idx2);
+               blockstructure->symmetryvardata.emplace(idx, idx2);
             }
             else
             {
                SCIPwarningMessage(scip, "Got invalid variable mapping: <%s> -> <%s>.\n", it.first.c_str(), it.second.c_str());
                success = false;
-               blockstructure->symmetrydata.clear();
+               blockstructure->symmetryvardata.clear();
                break;
             }
          }
@@ -558,7 +436,7 @@ bool JDecFileHandler::parseElement(
 }
 
 bool JDecFileHandler::readJDec(
-   NestedDecompositionData& data
+   JDecData& data
    )
 {
    bool error = false;
@@ -834,9 +712,9 @@ int JDecFileHandler::jsonDumpCallback(
    return 0;
 }
 
-DecompositionData* AbstractNestedDecompositionElementParser::parseDecomposition(json_t* value)
+NestedDecompositionData* AbstractNestedDecompositionElementParser::parseDecomposition(json_t* value)
 {
-   DecompositionData* decompdata = new DecompositionData();
+   NestedDecompositionData* decompdata = new NestedDecompositionData();
    DecompositionElementParser decompositionparser(scip_, filehandler_, data_, *decompdata);
    if( !filehandler_.parseElement(decompositionparser, value) )
       error_ = true;
@@ -937,7 +815,7 @@ void DecompositionElementParser::handleKeyValuePair(
    {
       if( json_is_string(value) )
       {
-         decdata_.symmetrydata.emplace(std::string(name), std::string(json_string_value(value)));
+         decdata_.symmetryvardata.emplace(std::string(name), std::string(json_string_value(value)));
       }
       else
       {
@@ -1099,6 +977,154 @@ void BlockElementParser::handleValue(
    }
 }
 
+/* reads jdec file */
+static
+SCIP_RETCODE readJDec(
+   SCIP*                 scip,               /**< scip data structure */
+   const char*           filename,           /**< path of file */
+   SCIP_RESULT*          result              /**< pointer to scip result */
+   )
+{
+   JDecData data;
+   JDecFileHandler filehandler(scip, filename);
+   SCIP_CALL( filehandler.initialize() );
+   if( filehandler.readJDec(data) )
+   {
+      if( data.rootdecomposition )
+      {
+         int nblocks = (int)data.rootdecomposition->blocks.size();
+
+         if( data.presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
+         {
+            SCIPinfoMessage(scip, NULL,
+               "Reading presolved decomposition but problem is not presolved yet. Calling SCIPpresolve()\n");
+            SCIPpresolve(scip);
+         }
+
+         PARTIALDECOMP* partialdec = new PARTIALDECOMP(scip, !data.presolved);
+         DETPROBDATA* detprobdata = partialdec->getDetprobdata();
+         for( auto& cons : data.rootdecomposition->masterconstraints )
+         {
+            if( !partialdec->fixConsToMasterByName(cons.c_str()) )
+               SCIPwarningMessage(scip, "Could not set constraint %s as master constraint.\n", cons.c_str());
+         }
+         partialdec->setNBlocks(nblocks);
+         for( int block = 0; block < nblocks; ++block )
+         {
+            BlockData& blockdata = data.rootdecomposition->blocks[block];
+            for( auto& cons : blockdata.constraints )
+            {
+               if( !partialdec->fixConsToBlockByName(cons.c_str(), block) )
+                  SCIPwarningMessage(scip, "Could not set constraint %s as block constraint.\n", cons.c_str());
+            }
+            if( blockdata.decomposition )
+            {
+               BLOCK_STRUCTURE* nestedstructure = blockdata.decomposition->createBlockStructure(scip, detprobdata);
+               partialdec->setBlockStructure(block, nestedstructure);
+            }
+            else
+            {
+               partialdec->setBlockStructure(block, NULL);
+            }
+         }
+         GCGconshdlrDecompAddPreexisitingPartialDec(scip, partialdec);
+
+         if( !data.rootdecomposition->symmetryvardata.empty() )
+         {
+            bool success = true;
+            auto& symmetryvardata = data.rootdecomposition->symmetryvardata;
+
+            // check symmetry data
+            for( int b = 0; b < partialdec->getNBlocks() && success; ++b )
+            {
+               int symmetricalblock = data.rootdecomposition->blocks[b].symmetricalblock;
+               for( int vi = 0; vi < partialdec->getNVarsForBlock(b) && success; ++vi )
+               {
+                  SCIP_VAR* var = detprobdata->getVar(partialdec->getVarsForBlock(b)[vi]);
+                  assert(var != NULL);
+                  const auto& it = symmetryvardata.find(SCIPvarGetName(var));
+                  if( symmetricalblock == b )
+                  {
+                     success = (it == symmetryvardata.end() || it->first == it->second);
+                     assert(success);
+                  }
+                  else if( it != symmetryvardata.end() )
+                  {
+                     SCIP_VAR* reprvar = SCIPfindVar(scip, it->second.c_str());
+                     success = (reprvar != NULL &&
+                        partialdec->getVarProbindexForBlock(detprobdata->getIndexForVar(reprvar), symmetricalblock) >= 0);
+                     assert(success);
+                  }
+                  else
+                  {
+                     success = false;
+                     assert(success);
+                  }
+               }
+            }
+
+            // if successful, set symmetry data
+            if( success )
+            {
+               success = partialdec->setSymmetryInformation(
+                  [&] (int b)
+                  {
+                     assert(b < (int)data.rootdecomposition->blocks.size());
+                     return data.rootdecomposition->blocks[b].symmetricalblock;
+                  },
+                  [&] (int b, int vi)
+                  {
+                     SCIP_VAR* var = detprobdata->getVar(partialdec->getVarsForBlock(b)[vi]);
+                     assert(var != NULL);
+                     assert(symmetryvardata.find(SCIPvarGetName(var)) != symmetryvardata.end());
+                     int ri = detprobdata->getIndexForVar(symmetryvardata[SCIPvarGetName(var)].c_str());
+                     assert(partialdec->getVarProbindexForBlock(ri, data.rootdecomposition->blocks[b].symmetricalblock) >= 0);
+                     return partialdec->getVarProbindexForBlock(ri, data.rootdecomposition->blocks[b].symmetricalblock);
+                  }
+               );
+            }
+            if( !success )
+            {
+               SCIPwarningMessage(scip, "Could not set symmetry information.\n");
+            }
+         }
+      }
+      else
+         SCIPwarningMessage(scip, "No root decomposition is specified.\n");
+      *result = SCIP_SUCCESS;
+   }
+   else
+   {
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_READERROR;
+   }
+
+   return SCIP_OKAY;
+}
+
+/* writes a jdec file for a given decomposition */
+static
+SCIP_RETCODE writePartialdec(
+   SCIP*                 scip,               /**< scip data structure */
+   FILE*                 file,               /**< file pointer */
+   gcg::PARTIALDECOMP*   partialdec,         /**< partialdec to be written */
+   SCIP_RESULT*          result              /**< pointer to scip result */
+   )
+{
+   JDecFileHandler filehandler(scip, file);
+   SCIP_CALL( filehandler.initialize() );
+   if( filehandler.writeJDec(partialdec) )
+   {
+      *result = SCIP_SUCCESS;
+   }
+   else
+   {
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_WRITEERROR;
+   }
+   return SCIP_OKAY;
+}
+
 /*
  * Callback methods of reader
  */
@@ -1153,7 +1179,6 @@ SCIP_DECL_READERWRITE(readerWriteJDec)
    return SCIP_OKAY;
 }
 
-/* includes the jdec file reader into SCIP */
 extern
 SCIP_RETCODE SCIPincludeReaderJDec(
    SCIP*                 scip

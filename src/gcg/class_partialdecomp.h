@@ -75,19 +75,35 @@ class DETPROBDATA;
 class PARTIALDECOMP;
 
 /**
- * @brief a lightweight struct that stores nested structure information
+ * a lightweight struct that stores nested structure information of a block
  */
 struct BLOCK_STRUCTURE
 {
+   /** destructor */
    ~BLOCK_STRUCTURE();
-   PARTIALDECOMP* createPartialdec(PARTIALDECOMP* parentpartialdec, DETPROBDATA* newdetprobdata, int probnr);
-   BLOCK_STRUCTURE* translateStructure(std::vector<int>& rowmapping, std::vector<int>& colmapping, SCIP_Bool translatesymmetry);
 
-   std::vector<int> masterconss;
-   std::vector<std::vector<int>> blockconss;
-   std::vector<BLOCK_STRUCTURE*> blockstructures;
-   std::vector<int> symmetricalblocks;
-   std::unordered_map<int, int> symmetrydata;
+   /**
+    * Creates a partialdec using the stored structure information.
+    * The new partialdec is created using the constraint and variable names of a pricing problem created by GCG.
+   */
+   PARTIALDECOMP* createPartialdec(
+      DETPROBDATA* parentdetprobdata,              /**< parent detprobdata (the one that fits to the stored con/var ids) */
+      DETPROBDATA* newdetprobdata,                 /**< detprobdata used to create the new partialdec */
+      int probnr                                   /**< the number of the pricing problem the partialdec is created for */
+      );
+
+   /** translates the structure using provided mappings */
+   BLOCK_STRUCTURE* translateStructure(
+      std::vector<int>& rowmapping,
+      std::vector<int>& colmapping,
+      SCIP_Bool translatesymmetry
+      );
+
+   std::vector<int> masterconss;                   /**< vector containing the master constraints */
+   std::vector<std::vector<int>> blockconss;       /**< vector of vectors (for each block) containing the block constraints */
+   std::vector<BLOCK_STRUCTURE*> blockstructures;  /**< vector containing pointers to block structures for each block (if available) */
+   std::vector<int> symmetricalblocks;             /**< vector containing for each block an id of a block that is symmetrical */
+   std::unordered_map<int, int> symmetryvardata;   /**< symmetry information of variables (mapping) */
 };
 
 

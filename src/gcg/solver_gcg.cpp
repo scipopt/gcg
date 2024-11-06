@@ -352,7 +352,7 @@ SCIP_RETCODE buildProblem(
    {
       gcg::DETPROBDATA* detprobdata = GCGconshdlrDecompGetDetprobdataOrig(subgcg);
       assert(subgcg == detprobdata->getScip());
-      (void) blockstructure->createPartialdec(partialdec, detprobdata, probnr);
+      (void) blockstructure->createPartialdec(partialdec->getDetprobdata(), detprobdata, probnr);
    }
    else
    {

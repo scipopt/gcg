@@ -96,22 +96,21 @@ BLOCK_STRUCTURE::~BLOCK_STRUCTURE()
 
 
 PARTIALDECOMP* BLOCK_STRUCTURE::createPartialdec(
-   PARTIALDECOMP* parentpartialdec,
+   DETPROBDATA* parentdetprobdata,
    DETPROBDATA* newdetprobdata,
    int probnr
    )
 {
-   DETPROBDATA* olddetprobdata = parentpartialdec->getDetprobdata();
    PARTIALDECOMP* partialdec = new PARTIALDECOMP(newdetprobdata->getScip(), newdetprobdata->isAssignedToOrigProb());
    int nblocks = blockconss.size();
    char buffer[SCIP_MAXSTRLEN];
-   std::vector<int> rowmapping(olddetprobdata->getNConss(), -1);
-   std::vector<int> colmapping(olddetprobdata->getNVars(), -1);
+   std::vector<int> rowmapping(parentdetprobdata->getNConss(), -1);
+   std::vector<int> colmapping(parentdetprobdata->getNVars(), -1);
    std::vector<int> reversecolmapping(newdetprobdata->getNVars(), -1);
 
    for( int cons = 0; cons < (int)rowmapping.size(); ++cons)
    {
-      SCIPsnprintf(buffer, SCIP_MAXSTRLEN, "p%d_%s", probnr, SCIPconsGetName(olddetprobdata->getCons(cons)));
+      SCIPsnprintf(buffer, SCIP_MAXSTRLEN, "p%d_%s", probnr, SCIPconsGetName(parentdetprobdata->getCons(cons)));
       int idx = newdetprobdata->getIndexForCons(buffer);
       if( idx >= 0 )
          rowmapping[cons] = idx;
@@ -119,7 +118,7 @@ PARTIALDECOMP* BLOCK_STRUCTURE::createPartialdec(
 
    for( int var = 0; var < (int)colmapping.size(); ++var)
    {
-      SCIPsnprintf(buffer, SCIP_MAXSTRLEN, "pr%d_%s", probnr, SCIPvarGetName(olddetprobdata->getVar(var)));
+      SCIPsnprintf(buffer, SCIP_MAXSTRLEN, "pr%d_%s", probnr, SCIPvarGetName(parentdetprobdata->getVar(var)));
       int idx = newdetprobdata->getIndexForVar(buffer);
       if( idx >= 0 )
       {
@@ -159,7 +158,7 @@ PARTIALDECOMP* BLOCK_STRUCTURE::createPartialdec(
 
    GCGconshdlrDecompAddPreexisitingPartialDec(newdetprobdata->getScip(), partialdec);
 
-   if( !symmetrydata.empty() )
+   if( !symmetryvardata.empty() )
    {
       bool success = true;
       success = partialdec->setSymmetryInformation(
@@ -171,9 +170,9 @@ PARTIALDECOMP* BLOCK_STRUCTURE::createPartialdec(
          [&] (int b, int vi)
          {
             int var = reversecolmapping[partialdec->getVarsForBlock(b)[vi]];
-            assert(symmetrydata.find(var) != symmetrydata.end());
-            assert(symmetrydata[var] >= 0);
-            int repvar = colmapping[symmetrydata[var]];
+            assert(symmetryvardata.find(var) != symmetryvardata.end());
+            assert(symmetryvardata[var] >= 0);
+            int repvar = colmapping[symmetryvardata[var]];
             assert(partialdec->getVarProbindexForBlock(repvar, symmetricalblocks[b]) >= 0);
             return partialdec->getVarProbindexForBlock(repvar, symmetricalblocks[b]);
          }
@@ -182,7 +181,7 @@ PARTIALDECOMP* BLOCK_STRUCTURE::createPartialdec(
 
       if( !success )
       {
-         SCIPwarningMessage(olddetprobdata->getScip(), "Could not set symmetry information.\n");
+         SCIPwarningMessage(parentdetprobdata->getScip(), "Could not set symmetry information.\n");
       }
    }
 
@@ -220,13 +219,13 @@ BLOCK_STRUCTURE* BLOCK_STRUCTURE::translateStructure(
    {
       blockstructure->symmetricalblocks = symmetricalblocks;
 
-      for( auto& it : symmetrydata )
+      for( auto& it : symmetryvardata )
       {
          int idx1 = colmapping[it.first];
          int idx2 = colmapping[it.second];
          assert((idx1 >= 0 && idx2 >= 0) || (idx1 < 0 && idx2 < 0));
          if( idx1 >= 0 && idx2 >= 0 )
-            blockstructure->symmetrydata.emplace(idx1, idx2);
+            blockstructure->symmetryvardata.emplace(idx1, idx2);
       }
    }
 
