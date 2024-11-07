@@ -3141,9 +3141,10 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
    assert(conshdlrdata != NULL);
    assert(partialdec != NULL);
 
+   partialdec->considerImplicits();
+
    if( partialdec->shouldCompletedByConsToMaster() )
    {
-      partialdec->considerImplicits();
       if( !partialdec->isComplete() )
       {
          if( addpartialdec )
