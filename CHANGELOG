@@ -40,7 +40,12 @@ New/modified/removed API functions:
 - renamed function 'PARTIALDECOMP::getRepForBlock' to 'PARTIALDECOMP::getEqClassForBlock'
 - added function 'GCGgetColpool'
 - added function 'GCGcolpoolPropagateGlobalBounds'
-- modified function 'GCGtransformMastersolToOrigsol': added an argument that disables varbound checks
+- modified function 'GCGtransformMastersolToOrigsol'
+- added 'GCGpricerAddColResult', 'GCGpricerGetMaxNThreads', 'GCGpricestoreGetNColsTotal'
+- changed 'GCGpricestoreCreate', 'GCGpricestoreAddCol', 'GCGpricestoreGetCols', 'GCGpricestoreGetNCols'
+- removed 'GCGpricestoreRemoveInefficaciousCols', 'GCGpricestoreGetTime'
+- changed 'GCGcolpoolAddCol', 'GCGcolpoolPrice'
+- added 'GCGhashGetKeyCol', 'GCGhashKeyEqCol', 'GCGhashKeyValCol'
 
 Code cleanup:
 -------------
@@ -52,15 +57,6 @@ New/changed parameters:
 -----------------------
 
 - renamed parameter 'pricing/masterpricer/threads' to 'pricing/masterpricer/nthreads' (default value: 1)
-
-New/modified/removed API functions:
----------------------------
-
-- added 'GCGpricerAddColResult', 'GCGpricerGetMaxNThreads', 'GCGpricestoreGetNColsTotal'
-- changed 'GCGpricestoreCreate', 'GCGpricestoreAddCol', 'GCGpricestoreGetCols', 'GCGpricestoreGetNCols'
-- removed 'GCGpricestoreRemoveInefficaciousCols', 'GCGpricestoreGetTime'
-- changed 'GCGcolpoolAddCol', 'GCGcolpoolPrice'
-- added 'GCGhashGetKeyCol', 'GCGhashKeyEqCol', 'GCGhashKeyValCol'
 
 Miscellaneous
 -------------
