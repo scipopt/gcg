@@ -70,45 +70,45 @@ struct SCIP_ReaderData
 {
 };
 
-struct NestedDecompositionData;
+struct JDecDecompositionData;
 
 /** struct to store block information (read from file) */
-struct BlockData
+struct JDecBlockData
 {
    /** constructor */
-   BlockData(
+   JDecBlockData(
       int nr                                 /**< number of block */
       )
       : decomposition(NULL),
         symmetricalblock(nr),
         blocknr(nr) {}
 
-   /** delete copy constructor */
-   BlockData(const BlockData&) = delete;
+   /** deleted copy constructor */
+   JDecBlockData(const JDecBlockData&) = delete;
 
    /** move constructor */
-   BlockData(BlockData&&) noexcept;
+   JDecBlockData(JDecBlockData&&) noexcept;
 
    /** destructor */
-   ~BlockData();
+   ~JDecBlockData();
 
-   /** delete assignment operator */
-   BlockData& operator=(const BlockData&) = delete;
+   /** deleted assignment operator */
+   JDecBlockData& operator=(const JDecBlockData&) = delete;
 
    std::vector<std::string> constraints;     /**< names of constraints */
-   NestedDecompositionData* decomposition;   /**< pointer to decomposition object */
+   JDecDecompositionData* decomposition;     /**< pointer to decomposition object */
    int symmetricalblock;                     /**< number of representative/symmetrical block */
    int blocknr;                              /**< number of block/subproblem */
 };
 
 /** struct to store (nested) decomposition data (read from file) */
-struct NestedDecompositionData
+struct JDecDecompositionData
 {
    /** constructor */
-   NestedDecompositionData() = default;
+   JDecDecompositionData() = default;
 
    /** destructor */
-   ~NestedDecompositionData() = default;
+   ~JDecDecompositionData() = default;
 
    /** creates a block structure object */
    BLOCK_STRUCTURE* createBlockStructure(
@@ -116,156 +116,306 @@ struct NestedDecompositionData
       DETPROBDATA* detprobdata               /**< detprobdata used to create the block structure object */
       );
 
-   std::vector<std::string> masterconstraints;
-   std::vector<BlockData> blocks;
-   std::unordered_map<std::string, std::string> symmetryvardata;
+   std::vector<std::string> masterconstraints;                    /**< vector containing names of master constraints */
+   std::vector<JDecBlockData> blocks;                             /**< vector containing block data of each block */
+   std::unordered_map<std::string, std::string> symmetryvardata;  /**< symmetry mapping for variables: name of variable -> name of its representative variable */
 };
 
+/** struct that stores the metadata of the read decomposition and a pointer to the actual decomposition */
 struct JDecData
 {
+   /** constructor */
    JDecData() : version(0), presolved(false), rootdecomposition(NULL) {}
+   
+   /** deleted copy constructor */
    JDecData(const JDecData&) = delete;
+
+   /** destructor */
    ~JDecData();
+
+   /** deleted assignment operator */
    JDecData& operator=(const JDecData&) = delete;
 
-   int version;
-   std::string name;
-   bool presolved;
-   std::string description;
-   NestedDecompositionData* rootdecomposition;
+   int version;                              /** version of jdec file */
+   std::string name;                         /** decomposition's name */
+   bool presolved;                           /** is this a decomposition of a presolved model? */
+   std::string description;                  /** decomposition's description */
+   JDecDecompositionData* rootdecomposition; /** actual decomposition */
 };
 
-class AbstractElementParser;
+class AbstractJDecElementParser;
 
 /** writes and reads jdec files */
 class JDecFileHandler
 {
 public:
-   JDecFileHandler(SCIP* scip, const char* filename);
-   JDecFileHandler(SCIP* scip, FILE* wfile);
+   /** constructor creating an object ready to read a jdec file */
+   JDecFileHandler(
+      SCIP* scip,                            /**< scip data structure */
+      const char* filename                   /**< path of the jdec file to be read */
+      );
+
+   /** constructor creating an object ready to write a jdec file */
+   JDecFileHandler(
+      SCIP* scip,                            /**< scip data structure */
+      FILE* wfile                            /**< file pointer used to write the jdec file */
+      );
+
+   /** destructor */
    ~JDecFileHandler();
 
-   SCIP_RETCODE initialize();
+   /** parses a json element using an element parser, returns a bool indicating success/failure */
+   bool parseElement(
+      AbstractJDecElementParser& elementparser, /**< the element parser */
+      json_t* element                        /**< pointer to the json element */
+      );
 
-   bool parseElement(AbstractElementParser& elementparser, json_t* element);
+   /** 
+    * reads a jdec file an stores the information in a data object, returns a bool indicating success/failure
+    * 
+    * @note must be constructed as reader
+    */
+   bool readJDec(
+      JDecData& data                         /**< JDecData object used to store the read information */
+      );
 
-   bool readJDec(JDecData& data);
-
-   bool writeJDec(PARTIALDECOMP* decomp);
+   /**
+    * writes a partialldec to a jdec file, returns a bool indicating success/failure, returns a bool indicating success/failure
+    * 
+    * @note must be constructed as writer
+    */
+   bool writeJDec(
+      PARTIALDECOMP* decomp                  /**< partialdec that will be written to the jdec file */
+      );
 
 private:
-   bool serializeBlock(json_t* json, PARTIALDECOMP* decomp, int block);
+   /** initialize the handler */
+   void initialize();
 
-   bool serializeBlockStructure(json_t* json, PARTIALDECOMP* decomp, BLOCK_STRUCTURE* blockstructure);
+   /** serializes a specific block of a partialdec and puts it into an existing json object, returns a bool indicating success/failure */
+   bool serializeBlock(
+      json_t* json,                          /**< pointer to json struct that is already initialized as json object */
+      PARTIALDECOMP* decomp,                 /**< pointer to partialdec */
+      int block                              /**< number of block that should be serialized */
+      );
 
-   bool serializeBlockStructureBlock(json_t* json, PARTIALDECOMP* decomp, BLOCK_STRUCTURE* blockstructure, int block);
+   /** serializes a block structure and puts it into an existing json object, returns a bool indicating success/failure */
+   bool serializeBlockStructure(
+      json_t* json,                          /**< pointer to json struct that is already initialized as json object */
+      PARTIALDECOMP* decomp,                 /**< pointer to partialdec the block structure belongs to */
+      BLOCK_STRUCTURE* blockstructure        /**< pointer to block structure */
+      );
 
-   bool serializeDecomposition(json_t* json, PARTIALDECOMP* decomp);
+   /** serializes a block of a block structure and puts it into an existing json object, returns a bool indicating success/failure */
+   bool serializeBlockStructureBlock(
+      json_t* json,                          /**< pointer to json struct that is already initialized as json object */
+      PARTIALDECOMP* decomp,                 /**< pointer to partialdec the block structure belongs to */
+      BLOCK_STRUCTURE* blockstructure,       /**< pointer to block structure */
+      int block                              /**< number of block that should be serialized */
+      );
 
-   bool setObjectValue(const char* key, json_t* value, json_t* object = NULL, bool decref = true);
+   /** serializes a partialdec and puts it into an existing json object, returns a bool indicating success/failure */
+   bool serializeDecomposition(
+      json_t* json,                          /**< pointer to json struct that is already initialized as json object */
+      PARTIALDECOMP* decomp                  /**< pointer to partialdec that should be serialized */
+      );
 
-   bool appendArrayValue(json_t* value, json_t* array, bool decref = true);
+   /** sets a value of the root or a provided json object for a specific key (key-value pair), returns a bool indicating success/failure */
+   bool setObjectValue(
+      const char* key,                       /**< the key used to store the value */
+      json_t* value,                         /**< pointer to a json struct that will be set as value */
+      json_t* object = NULL,                 /**< pointer to json object that will be modified, if NULL the root json object of the handler will be modified */
+      bool decref = true                     /**< should the reference counter of the value json struct be decreased? (see JANSSON API documentation) */
+      );
 
-   static size_t jsonLoadCallback(void* buffer, size_t buflen, void* data);
+   /** appends a value to an json array, returns a bool indicating success/failure */
+   bool appendArrayValue(
+      json_t* value,                         /**< pointer to a json struct that will be set as value */
+      json_t* array,                         /**< pointer to the json array */
+      bool decref = true                     /**< should the reference counter of the value json struct be decreased? (see JANSSON API documentation) */
+      );
 
-   static int jsonDumpCallback(const char* buffer, size_t buflen, void* data);
+   /** (static) callback provided to JANSSON used to read data: when called it writes at most buflen bytes to buffer and returns the number of bytes written */
+   static size_t jsonLoadCallback(
+      void* buffer,                          /**< pointer to buffer */
+      size_t buflen,                         /**< length of buffer */
+      void* data                             /**< pointer to user data, will point to the handler itself */
+      );
 
-   SCIP_FILE* rfile_;
-   FILE* wfile_;
-   json_t* json_;
-   json_error_t error_;
-   SCIP* scip_;
+   /** (static) callback provided to JANSSON used to write data: when called it writes the output contained in buffer to the jdec file and returns 0 on success or -1 else */
+   static int jsonDumpCallback(
+      const char* buffer,                    /**< pointer to buffer */
+      size_t buflen,                         /**< length of buffer */
+      void* data                             /**< pointer to user data, will point to the handler itself */
+      );
+
+   SCIP_FILE* rfile_;                        /**< SCIP file pointer to read from */
+   FILE* wfile_;                             /**< file pointer to write to */
+   json_t* json_;                            /**< root json object */
+   json_error_t error_;                      /**< will contain error information of JANSSON if decoding fails */
+   SCIP* scip_;                              /**< SCIP data structure */
 };
 
-class AbstractElementParser
+/** abstract element parser class used to process data read by the jdec file handler */
+class AbstractJDecElementParser
 {
 public:
-   explicit AbstractElementParser(SCIP* scip, JDecFileHandler& filehandler)
-      : filehandler_(filehandler), scip_(scip), error_(false) {}
+   /** constructor */
+   explicit AbstractJDecElementParser(
+      SCIP* scip,                            /**< scip data structure */
+      JDecFileHandler& filehandler           /**< jdec file handler that uses this parser*/
+      ) : filehandler_(filehandler), scip_(scip), error_(false) {}
 
-   virtual ~AbstractElementParser() = default;
+   /** destructor */
+   virtual ~AbstractJDecElementParser() = default;
 
-   virtual void handleKeyValuePair(const char* name, json_t* value) = 0;
+   /** abstract method that will be called for each key-value pair read by the handler */
+   virtual void handleKeyValuePair(
+      const char* name,                      /**< name/key of the value read */
+      json_t* value                          /**< pointer to the value */
+      ) = 0;
 
-   virtual void handleValue(json_t* value) = 0;
+   /** abstract method that will be called for each value read by the handler */
+   virtual void handleValue(
+      json_t* value                          /**< pointer to the value */
+      ) = 0;
 
+   /** returns true if an error occured during parsing or false otherwise */
    bool error() const
    {
       return error_;
    }
 
 protected:
-   JDecFileHandler& filehandler_;
-   SCIP* scip_;
-   bool error_;
+   JDecFileHandler& filehandler_;            /**< the file handler that uses this parser */
+   SCIP* scip_;                              /**< scip data structure */
+   bool error_;                              /**< should be set to true if an error ocurred */
 };
 
-class AbstractNestedDecompositionElementParser : public AbstractElementParser
+/** abstract decomposition element parser */
+class AbstractJDecDecompositionElementParser : public AbstractJDecElementParser
 {
 public:
-   AbstractNestedDecompositionElementParser(SCIP* scip, JDecFileHandler& filehandler, JDecData& data)
-      : AbstractElementParser(scip, filehandler), data_(data) {}
+   /** constructor */
+   AbstractJDecDecompositionElementParser(
+      SCIP* scip,                            /**< scip data structure */
+      JDecFileHandler& filehandler           /**< jdec file handler using this parser */
+      ) : AbstractJDecElementParser(scip, filehandler) {}
 
-   ~AbstractNestedDecompositionElementParser() override = default;
+   /** destructor */
+   ~AbstractJDecDecompositionElementParser() override = default;
 
 protected:
-   NestedDecompositionData* parseDecomposition(json_t* value);
-
-   JDecData& data_;
+   /** parses/deserializes the decomposition contained by a json object and returns the created decomposition data*/
+   JDecDecompositionData* parseDecomposition(
+      json_t* value                          /**< the json object */
+      );
 };
 
-class BlockElementParser : public AbstractNestedDecompositionElementParser
+/** block element parser, parses/deserializes blocks of decompositions */
+class JDecBlockElementParser : public AbstractJDecDecompositionElementParser
 {
 public:
-   BlockElementParser(SCIP* scip, JDecFileHandler& filehandler, JDecData& data,
-      BlockData& blockdata) : AbstractNestedDecompositionElementParser(scip, filehandler, data), blockdata_(blockdata),
-      parsingconstraints(false) {}
+   /** constructor */
+   JDecBlockElementParser(
+      SCIP* scip,                            /**< scip data structure */
+      JDecFileHandler& filehandler,          /**< file handler using this parser */
+      JDecBlockData& blockdata               /**< block data structure the data is stored in */
+      )
+      : AbstractJDecDecompositionElementParser(scip, filehandler),
+        blockdata_(blockdata),
+        parsingconstraints(false)
+      {}
 
-   ~BlockElementParser() override = default;
+   /** destructor */
+   ~JDecBlockElementParser() override = default;
 
-   void handleKeyValuePair(const char* name, json_t* value) override;
+   /** implements the corresponding abstract function */
+   void handleKeyValuePair(
+      const char* name,
+      json_t* value
+      ) override;
 
-   void handleValue(json_t* value) override;
+   /** implements the corresponding abstract function */
+   void handleValue(
+      json_t* value
+      ) override;
 
 private:
-   BlockData& blockdata_;
-   bool parsingconstraints;
+   JDecBlockData& blockdata_;                /**< block data struct used to store the parsed data */
+   bool parsingconstraints;                  /**< are we currently parsing the constraint array? */
 };
 
-class DecompositionElementParser : public AbstractNestedDecompositionElementParser
+/** actual decomposition element parser, parses/deserializes a decomposition */
+class JDecDecompositionElementParser : public AbstractJDecDecompositionElementParser
 {
 public:
-   DecompositionElementParser(SCIP* scip, JDecFileHandler& filehandler, JDecData& data,
-      NestedDecompositionData& decdata) : AbstractNestedDecompositionElementParser(scip, filehandler, data),
-      decdata_(decdata), parsingmasterconstraints(false), parsingblocks(false), parsingsymmetry(false) {}
+   /** constructor */
+   JDecDecompositionElementParser(
+      SCIP* scip,                            /**< scip data structure */
+      JDecFileHandler& filehandler,          /**< file handler using this parser */
+      JDecDecompositionData& decdata         /**< decomposition data structure the data is stored in */
+      )
+      : AbstractJDecDecompositionElementParser(scip, filehandler),
+        decdata_(decdata),
+        parsingmasterconstraints(false),
+        parsingblocks(false),
+        parsingsymmetry(false)
+      {}
 
-   ~DecompositionElementParser() override = default;
+   /** destructor */
+   ~JDecDecompositionElementParser() override = default;
 
-   void handleKeyValuePair(const char* name, json_t* value) override;
+   /** implements the corresponding abstract function */
+   void handleKeyValuePair(
+      const char* name,
+      json_t* value
+      ) override;
 
-   void handleValue(json_t* value) override;
+   /** implements the corresponding abstract function */
+   void handleValue(
+      json_t* value
+      ) override;
 
 private:
-   NestedDecompositionData& decdata_;
-   bool parsingmasterconstraints;
-   bool parsingblocks;
-   bool parsingsymmetry;
+   JDecDecompositionData& decdata_;          /**< decomposition data struct used to store the parsed data */
+   bool parsingmasterconstraints;            /**< are we currently parsing the master constraints? */
+   bool parsingblocks;                       /**< are we currently parsing the blocks? */
+   bool parsingsymmetry;                     /**< are we currently parsing the symmetry mapping of the variables? */
 };
 
-class RootElementParser : public AbstractNestedDecompositionElementParser
+/** root element parser, parses/deserializes the root object of a jdec file */
+class JDecRootElementParser : public AbstractJDecDecompositionElementParser
 {
 public:
-   RootElementParser(SCIP* scip, JDecFileHandler& filehandler, JDecData& data)
-      : AbstractNestedDecompositionElementParser(scip, filehandler, data) {}
+   /** constructor */
+   JDecRootElementParser(
+      SCIP* scip,                            /**< scip data structure */
+      JDecFileHandler& filehandler,          /**< file handler using this parser */
+      JDecData& data                         /**< jdec data structure the data is stored in */
+      ) : AbstractJDecDecompositionElementParser(scip, filehandler), data_(data) {}
 
-   ~RootElementParser() override = default;
+   /** destructor */
+   ~JDecRootElementParser() override = default;
 
-   void handleKeyValuePair(const char* name, json_t* value) override;
+   /** implements the corresponding abstract function */
+   void handleKeyValuePair(
+      const char* name,
+      json_t* value
+      ) override;
 
-   void handleValue(json_t* value) override;
+   /** implements the corresponding abstract function */
+   void handleValue(
+      json_t* value
+      ) override;
+
+private:
+   JDecData& data_;                          /**< the jdec data structure used for storing the parsed data */
 };
 
-BlockData::BlockData(BlockData&& block) noexcept
+JDecBlockData::JDecBlockData(
+   JDecBlockData&& block
+   ) noexcept
 {
    symmetricalblock = block.symmetricalblock;
    constraints = std::move(block.constraints);
@@ -273,7 +423,7 @@ BlockData::BlockData(BlockData&& block) noexcept
    block.decomposition = NULL;
 }
 
-BlockData::~BlockData()
+JDecBlockData::~JDecBlockData()
 {
    delete decomposition;
 }
@@ -283,7 +433,7 @@ JDecData::~JDecData()
    delete rootdecomposition;
 }
 
-BLOCK_STRUCTURE* NestedDecompositionData::createBlockStructure(
+BLOCK_STRUCTURE* JDecDecompositionData::createBlockStructure(
    SCIP* scip,
    DETPROBDATA* detprobdata
    )
@@ -368,16 +518,27 @@ BLOCK_STRUCTURE* NestedDecompositionData::createBlockStructure(
 JDecFileHandler::JDecFileHandler(
    SCIP* scip,
    const char* filename
-   ) : wfile_(NULL), json_(NULL), error_(), scip_(scip)
+   )
+   : wfile_(NULL),
+     json_(NULL),
+     error_(),
+     scip_(scip)
 {
    rfile_ = SCIPfopen(filename, "r");
+   initialize();
 }
 
 JDecFileHandler::JDecFileHandler(
    SCIP* scip,
    FILE* file
-   ) : rfile_(NULL), wfile_(file), json_(NULL), error_(), scip_(scip)
+   )
+   : rfile_(NULL),
+     wfile_(file),
+     json_(NULL),
+     error_(),
+     scip_(scip)
 {
+   initialize();
 }
 
 JDecFileHandler::~JDecFileHandler()
@@ -388,7 +549,7 @@ JDecFileHandler::~JDecFileHandler()
       SCIPfclose(rfile_);
 }
 
-SCIP_RETCODE JDecFileHandler::initialize()
+void JDecFileHandler::initialize()
 {
    if( rfile_ )
    {
@@ -398,11 +559,10 @@ SCIP_RETCODE JDecFileHandler::initialize()
    {
       json_ = json_object();
    }
-   return SCIP_OKAY;
 }
 
 bool JDecFileHandler::parseElement(
-   AbstractElementParser& elementparser,
+   AbstractJDecElementParser& elementparser,
    json_t* element
    )
 {
@@ -441,12 +601,12 @@ bool JDecFileHandler::readJDec(
 {
    bool error = false;
 
-   if( !rfile_ )
+   if( rfile_ == NULL )
    {
       SCIPwarningMessage(scip_, "JSON parser is not initialized.");
       error = true;
    }
-   else if( !json_ )
+   else if( json_ == NULL )
    {
       SCIPwarningMessage(scip_, "Could not parse JSON, line %d: %s\n", error_.line, error_.text);
       error = true;
@@ -458,7 +618,7 @@ bool JDecFileHandler::readJDec(
    }
    else
    {
-      RootElementParser rootparser(scip_, *this, data);
+      JDecRootElementParser rootparser(scip_, *this, data);
       error = !parseElement(rootparser, json_);
    }
 
@@ -469,16 +629,23 @@ bool JDecFileHandler::writeJDec(
    gcg::PARTIALDECOMP* decomp
    )
 {
-   bool success = true;
-   success &= setObjectValue("version", json_integer(JDEC_VERSION));
-   success &= setObjectValue("problem_name", json_string(SCIPgetProbName(scip_)));
-   success &= setObjectValue("decomp_id", json_integer(decomp->getID()));
-   success &= setObjectValue("presolved", json_boolean(!decomp->isAssignedToOrigProb()));
-   success &= setObjectValue("num_blocks", json_integer(decomp->getNBlocks()));
+   bool success = (wfile_ != NULL && json_ != NULL);
+   if( success )
+   {
+      success &= setObjectValue("version", json_integer(JDEC_VERSION));
+      success &= setObjectValue("problem_name", json_string(SCIPgetProbName(scip_)));
+      success &= setObjectValue("decomp_id", json_integer(decomp->getID()));
+      success &= setObjectValue("presolved", json_boolean(!decomp->isAssignedToOrigProb()));
+      success &= setObjectValue("num_blocks", json_integer(decomp->getNBlocks()));
 
-   json_t* jsondecomp = json_object();
-   success &= serializeDecomposition(jsondecomp, decomp);
-   success &= setObjectValue("decomposition", jsondecomp);
+      json_t* jsondecomp = json_object();
+      success &= serializeDecomposition(jsondecomp, decomp);
+      success &= setObjectValue("decomposition", jsondecomp);
+   }
+   else
+   {
+      SCIPwarningMessage(scip_, "JSON parser is not initialized.");
+   }
 
    if( success )
    {
@@ -706,22 +873,25 @@ int JDecFileHandler::jsonDumpCallback(
 {
    auto* filehandler = (JDecFileHandler*) data;
    assert(buflen <= INT_MAX);
+   // not sure if this is the best function to call but SCIP's readers use it too
    SCIPinfoMessage(filehandler->scip_, filehandler->wfile_, "%.*s", (int)buflen, buffer);
    // size_t size_written = SCIPfwrite(buffer, 1, buflen, filehandler->wfile_);
    // return (size_written == 0) ? 1 : 0;
    return 0;
 }
 
-NestedDecompositionData* AbstractNestedDecompositionElementParser::parseDecomposition(json_t* value)
+JDecDecompositionData* AbstractJDecDecompositionElementParser::parseDecomposition(
+   json_t* value
+   )
 {
-   NestedDecompositionData* decompdata = new NestedDecompositionData();
-   DecompositionElementParser decompositionparser(scip_, filehandler_, data_, *decompdata);
+   JDecDecompositionData* decompdata = new JDecDecompositionData();
+   JDecDecompositionElementParser decompositionparser(scip_, filehandler_, *decompdata);
    if( !filehandler_.parseElement(decompositionparser, value) )
       error_ = true;
    return decompdata;
 }
 
-void RootElementParser::handleKeyValuePair(
+void JDecRootElementParser::handleKeyValuePair(
    const char* name,
    json_t* value
    )
@@ -800,13 +970,13 @@ void RootElementParser::handleKeyValuePair(
    }
 }
 
-void RootElementParser::handleValue(
+void JDecRootElementParser::handleValue(
    json_t* value
    )
 {
 }
 
-void DecompositionElementParser::handleKeyValuePair(
+void JDecDecompositionElementParser::handleKeyValuePair(
    const char* name,
    json_t* value
    )
@@ -830,7 +1000,7 @@ void DecompositionElementParser::handleKeyValuePair(
          if( json_is_array(value))
          {
             parsingmasterconstraints = true;
-            if( !filehandler_.parseElement(*this, value))
+            if( !filehandler_.parseElement(*this, value) )
                error_ = true;
             parsingmasterconstraints = false;
          }
@@ -845,7 +1015,7 @@ void DecompositionElementParser::handleKeyValuePair(
          if( json_is_array(value))
          {
             parsingblocks = true;
-            if( !filehandler_.parseElement(*this, value))
+            if( !filehandler_.parseElement(*this, value) )
                error_ = true;
             parsingblocks = false;
          }
@@ -860,7 +1030,7 @@ void DecompositionElementParser::handleKeyValuePair(
          if( json_is_object(value) )
          {
             parsingsymmetry = true;
-            if( !filehandler_.parseElement(*this, value))
+            if( !filehandler_.parseElement(*this, value) )
                error_ = true;
             parsingsymmetry = false;
          }
@@ -877,7 +1047,7 @@ void DecompositionElementParser::handleKeyValuePair(
    }
 }
 
-void DecompositionElementParser::handleValue(
+void JDecDecompositionElementParser::handleValue(
    json_t* value
    )
 {
@@ -886,7 +1056,7 @@ void DecompositionElementParser::handleValue(
       if( json_is_object(value) )
       {
          decdata_.blocks.emplace_back(decdata_.blocks.size());
-         BlockElementParser blockparser(scip_, filehandler_, data_, decdata_.blocks.back());
+         JDecBlockElementParser blockparser(scip_, filehandler_, decdata_.blocks.back());
          if( !filehandler_.parseElement(blockparser, value))
             error_ = true;
       }
@@ -910,7 +1080,7 @@ void DecompositionElementParser::handleValue(
    }
 }
 
-void BlockElementParser::handleKeyValuePair(
+void JDecBlockElementParser::handleKeyValuePair(
    const char* name,
    json_t* value
    )
@@ -959,7 +1129,7 @@ void BlockElementParser::handleKeyValuePair(
    }
 }
 
-void BlockElementParser::handleValue(
+void JDecBlockElementParser::handleValue(
    json_t* value
    )
 {
@@ -987,7 +1157,7 @@ SCIP_RETCODE readJDec(
 {
    JDecData data;
    JDecFileHandler filehandler(scip, filename);
-   SCIP_CALL( filehandler.initialize() );
+
    if( filehandler.readJDec(data) )
    {
       if( data.rootdecomposition )
@@ -1011,7 +1181,7 @@ SCIP_RETCODE readJDec(
          partialdec->setNBlocks(nblocks);
          for( int block = 0; block < nblocks; ++block )
          {
-            BlockData& blockdata = data.rootdecomposition->blocks[block];
+            JDecBlockData& blockdata = data.rootdecomposition->blocks[block];
             for( auto& cons : blockdata.constraints )
             {
                if( !partialdec->fixConsToBlockByName(cons.c_str(), block) )
@@ -1112,7 +1282,7 @@ SCIP_RETCODE writePartialdec(
    )
 {
    JDecFileHandler filehandler(scip, file);
-   SCIP_CALL( filehandler.initialize() );
+
    if( filehandler.writeJDec(partialdec) )
    {
       *result = SCIP_SUCCESS;
