@@ -37,7 +37,7 @@
 #-----------------------------------------------------------------------------
 VERSION         :=	4.0.0
 GCGGITHASH	=
-SCIPDIR         =   lib/scip
+SCIPDIR         =   $(CURDIR)/lib/scip
 
 #-----------------------------------------------------------------------------
 # necessary information
@@ -411,11 +411,11 @@ endif
 
 ifeq ($(NAUTY),true)
 LIBOBJ		+=	symmetry/automorphism_nauty.o \
-			$(SCIPDIR)/src/nauty/nauty.o \
-			$(SCIPDIR)/src/nauty/nautil.o \
-			$(SCIPDIR)/src/nauty/nausparse.o \
-			$(SCIPDIR)/src/nauty/schreier.o \
-			$(SCIPDIR)/src/nauty/naurng.o
+			nauty/nauty.o \
+			nauty/nautil.o \
+			nauty/nausparse.o \
+			nauty/schreier.o \
+			nauty/naurng.o
 FLAGS		+=	-DWITH_NAUTY -I$(SCIPDIR)/src/nauty
 endif
 
@@ -445,7 +445,7 @@ MAINOBJFILES	=	$(addprefix $(OBJDIR)/,$(MAINOBJ))
 LIBOBJDIR	=	$(OBJDIR)/lib
 OBJSUBDIRS	= 	gcg graph symmetry
 ifeq ($(NAUTY),true)
-OBJSUBDIRS	+=	lib/scip/src/nauty
+OBJSUBDIRS	+=	nauty
 endif
 LIBOBJSUBDIRS   =       $(addprefix $(LIBOBJDIR)/,$(OBJSUBDIRS))
 
@@ -676,7 +676,7 @@ $(LIBOBJDIR)/%.o:	$(SRCDIR)/%.c | $(LIBOBJDIR) $(LIBOBJSUBDIRS)
 		$(CC) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CFLAGS) $(CC_c)$< $(CC_o)$@
 
 ifeq ($(NAUTY),true)
-$(LIBOBJDIR)/lib/scip/%.o:	$(SCIPDIR)/%.c | $(LIBOBJDIR) $(LIBOBJSUBDIRS)
+$(LIBOBJDIR)/nauty/%.o:	$(SCIPDIR)/src/nauty/%.c | $(LIBOBJDIR) $(LIBOBJSUBDIRS)
 		@echo "-> compiling $@"
 		$(CC) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CFLAGS) $(CC_c)$< $(CC_o)$@
 endif

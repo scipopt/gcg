@@ -45,6 +45,8 @@
 #define NODESEL_DESC             "orig master coordination"
 #define NODESEL_STDPRIORITY           0
 #define NODESEL_MEMSAVEPRIORITY  100000
+#define EVENTHDLR_NAME           "masterfocusnode"
+#define EVENTHDLR_DESC           "event handler to transfer dual bounds from orig to master"
 
 
 /** node selector data */
@@ -162,9 +164,6 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
          SCIPerrorMessage("nodesel_master could not find a node corresponding to the current original node!\n");
       }
       assert(*selnode != NULL);
-
-      /* set the dual bound to the lower bound of the corresponding original node */
-      SCIP_CALL( SCIPupdateNodeDualbound(scip, *selnode, SCIPgetNodeLowerbound(origscip, SCIPgetCurrentNode(origscip))) );
    }
    else
    {
@@ -210,6 +209,59 @@ SCIP_DECL_NODESELCOMP(nodeselCompMaster)
       return -1;
 }
 
+
+/** initialization method of event handler (called after problem was transformed) */
+static
+SCIP_DECL_EVENTINIT(eventInitFocusnode)
+{  /*lint --e{715}*/
+   assert(scip != NULL);
+   assert(eventhdlr != NULL);
+
+   /* catch SCIP_EVENTTYPE_NODEFOCUSED events */
+   SCIP_CALL( SCIPcatchEvent(scip, SCIP_EVENTTYPE_NODEFOCUSED, eventhdlr, NULL, NULL) );
+
+   return SCIP_OKAY;
+}
+
+
+/** deinitialization method of event handler (called before transformed problem is freed) */
+static
+SCIP_DECL_EVENTEXIT(eventExitFocusnode)
+{  /*lint --e{715}*/
+   assert(scip != NULL);
+   assert(eventhdlr != NULL);
+
+   /* stop event handling */
+   SCIP_CALL( SCIPdropEvent(scip, SCIP_EVENTTYPE_NODEFOCUSED, eventhdlr, NULL, -1) );
+
+   return SCIP_OKAY;
+}
+
+
+/** execution method of event handler */
+static
+SCIP_DECL_EVENTEXEC(eventExecFocusnode)
+{  /*lint --e{715}*/
+   SCIP* origscip;
+   SCIP_NODE* focusnode;
+   assert(scip != NULL);
+   assert(eventhdlr != NULL);
+   assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
+
+   origscip = GCGgetOriginalprob(scip);
+   assert(origscip != NULL);
+   focusnode = SCIPeventGetNode(event);
+   assert(focusnode != NULL);
+
+   /* set the dual bound to the lower bound of the corresponding original node */
+   SCIP_CALL( SCIPupdateNodeDualbound(scip, focusnode, SCIPgetNodeLowerbound(origscip, SCIPgetCurrentNode(origscip))) );
+   assert((SCIPgetRootNode(scip) == focusnode && SCIPgetRootNode(origscip) == SCIPgetCurrentNode(origscip))
+      || focusnode == GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(GCGconsOrigbranchGetActiveCons(origscip))));
+
+   return SCIP_OKAY;
+}
+
+
 /*
  * master specific interface methods
  */
@@ -220,6 +272,7 @@ SCIP_RETCODE SCIPincludeNodeselMaster(
 )
 {
    SCIP_NODESELDATA* nodeseldata;
+   SCIP_EVENTHDLR* eventhdlr;
 
    /* create master node selector data */
    SCIP_CALL( SCIPallocMemory(scip, &nodeseldata) );
@@ -232,6 +285,13 @@ SCIP_RETCODE SCIPincludeNodeselMaster(
       nodeselInitsolMaster, nodeselExitsolMaster, nodeselSelectMaster, nodeselCompMaster,
       nodeseldata) );
 
+   /* include event handler into SCIP */
+   SCIP_CALL( SCIPincludeEventhdlrBasic(scip, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC, eventExecFocusnode, NULL) );
+   assert(eventhdlr != NULL);
+
+   /* set non fundamental callbacks via setter functions */
+   SCIP_CALL( SCIPsetEventhdlrInit(scip, eventhdlr, eventInitFocusnode) );
+   SCIP_CALL( SCIPsetEventhdlrExit(scip, eventhdlr, eventExitFocusnode) );
+
    return SCIP_OKAY;
 }
-
