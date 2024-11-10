@@ -32,6 +32,10 @@
  *
  * This is an implementation of the component bound branching rule based on the papers:
  *
+ * F. Vanderbeck. 
+ * On Dantzig-Wolfe decomposition in integer programming and ways to perform branching in a branch-and-price algorithm. 
+ * Oper. Res. 48(1):111-128 (2000)
+ * 
  * J. Desrosiers, M. L¨ubbecke, G. Desaulniers,
  * J. B. Gauthier (Juin 2024). Branch-and-Price, Technical report,
  * Les Cahiers du GERAD G–2024–36, GERAD, HEC Montr´eal, Canada.
@@ -103,7 +107,7 @@ struct SCIP_BranchruleData
 /** branching data */
 struct GCG_BranchData
 {
-   GCG_BRANCH_TYPE       branchtype;         /**< type of branching */
+   GCG_BRANCH_TYPE       branchtype;         /**< type of branching, up or down */
    int                   constant;           /**< constant value of the branching constraint in the master problem - either lhs or rhs, depending on branchtype */
    GCG_COMPBND*          B;                  /**< component bound sequence which induce the current branching constraint */
    int                   Bsize;              /**< size of the component bound sequence B */
@@ -529,6 +533,11 @@ SCIP_RETCODE createBranchingCons(
    SCIP_CALL( GCGcreateInferredPricingVar(pricingscip, &coefvar, pricingvarname, 0.0, 1.0, 0.0, SCIP_VARTYPE_BINARY, branchdata->blocknr) );
 
    // create the y_j variables
+
+   /* @todo: when the pricing problem only contains binary variables, simplifications apply:
+    *        we may not even need extra y_j variables to enforce the correct value of the y variable
+    */
+
    nadditionalvars = branchdata->Bsize;
    SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &additionalvars, nadditionalvars) );
    for (i = 0; i < branchdata->Bsize; ++i)
@@ -1192,6 +1201,8 @@ SCIP_RETCODE createInitialSetX(
 
    return SCIP_OKAY;
 }
+
+/* @todo: Vanderbeck (2000) suggests other (also optimal?) algorithms to find a good (best?) component bound sequence; we should check that */
 
 /** choose to separate on original variable where max-min is maximal */
 static
@@ -1861,7 +1872,9 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpCompBnd)
 
    *result = SCIP_DIDNOTRUN;
 
-   /* the branching scheme only works for the discretization approach */
+   /* the branching scheme only works for the discretization approach 
+    * actually, this branching scheme _enforces_ a discretization concept
+    */
    SCIP_CALL( SCIPgetBoolParam(origscip, "relaxing/gcg/discretization", &discretization) );
    if( !discretization )
    {
