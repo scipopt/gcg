@@ -11,9 +11,9 @@ We currently offer 4 different branching rules, as well as one empty branching r
 branching process between SCIP and GCG.
 
 - **Vanderbeck Generic Branching** \n
-branching rule for original problem in GCG while real branching is in the master
+branching rule for original problem in GCG while real branching is in the master @cite vanderbeck2011branching
 - **Component Bound Branching** \n
-branching rule for original problem in GCG while real branching is in the master
+branching rule for original problem in GCG while real branching is in the master @cite vanderbeck2000dantzig
 - **Original Variable Branching** \n
 branching rule to branch on integral variables of the original problem which were assigned a fractional solution value
 - **Ryan Foster Branching** \n

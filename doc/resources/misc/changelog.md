@@ -4,6 +4,7 @@ New features, performance improvements, and interface changes between different 
 release notes:
 
 - @subpage RN40
+- @subpage RN37
 - @subpage RN36
 - @subpage RN35
 - @subpage RN30
