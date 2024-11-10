@@ -119,7 +119,7 @@ struct GCG_BranchData
 
 
 /** define the signature of functions to choose the component bound */
-#define CHOOSE_COMPBND(x) SCIP_RETCODE x (SCIP* masterscip, SCIP_VAR** satisfyingMastervars, int satisfyingMastervarsSize, SCIP_VAR** indexSet, int indexSetSize, GCG_COMPBND* compBndSeq, int compBndSeqSize, int blocknr, SCIP_VAR** selected_origvar, SCIP_Real* value)
+#define CHOOSE_COMPBND(x) SCIP_RETCODE x (SCIP* masterscip, SCIP_VAR** satisfyingMastervars, int satisfyingMastervarsSize, SCIP_VAR** indexSet, int indexSetSize, GCG_COMPBND* compBndSeq, int compBndSeqSize, int blocknr, SCIP_VAR** selectedOrigvar, SCIP_Real* value)
 
 /** define the signature of functions that chose one component bound sequence out of many */
 #define CHOOSE_COMPBNDSEQ(x) SCIP_RETCODE x (SCIP* masterscip, GCG_COMPBND** compBndSeqList, int* compBndSeqSizeList, int compBndListSize, int blocknr, GCG_COMPBND** selectedCompBndSeq, int* selectedCompBndSeqSize)
@@ -186,7 +186,7 @@ SCIP_RETCODE simplifyComponentBoundSequence(
 {
    GCG_COMPBND* newCompBndSeq;
    int newCompBndSeqSize;
-   SCIP_Bool* already_added;
+   SCIP_Bool* alreadyAdded;
    int i;
    int j;
 
@@ -194,16 +194,16 @@ SCIP_RETCODE simplifyComponentBoundSequence(
 
    newCompBndSeq = NULL;
    newCompBndSeqSize = 0;
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &already_added, *compBndSeqSize) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &alreadyAdded, *compBndSeqSize) );
    for( i = 0; i < *compBndSeqSize; ++i )
    {
-      already_added[i] = FALSE;
+      alreadyAdded[i] = FALSE;
    }
 
 
    for( i=0; i<*compBndSeqSize; ++i )
    {
-      if( already_added[i] )
+      if( alreadyAdded[i] )
          continue;
 
       SCIP_VAR* component = (*compBndSeq)[i].component;
@@ -217,7 +217,7 @@ SCIP_RETCODE simplifyComponentBoundSequence(
          if( (*compBndSeq)[i].sense != (*compBndSeq)[j].sense )
             continue;
 
-         already_added[j] = TRUE;
+         alreadyAdded[j] = TRUE;
 
          if( (*compBndSeq)[i].sense == GCG_COMPBND_SENSE_LE )
          {
@@ -229,7 +229,7 @@ SCIP_RETCODE simplifyComponentBoundSequence(
          }
       }
 
-      already_added[i] = TRUE;
+      alreadyAdded[i] = TRUE;
 
       if( newCompBndSeqSize == 0 )
       {
@@ -255,8 +255,8 @@ SCIP_RETCODE simplifyComponentBoundSequence(
                         newCompBndSeq[i].bound);
    }
 
-   SCIPfreeBlockMemoryArray(scip, &already_added, *compBndSeqSize);
-   assert(already_added == NULL);
+   SCIPfreeBlockMemoryArray(scip, &alreadyAdded, *compBndSeqSize);
+   assert(alreadyAdded == NULL);
 
    // free old compBndSeq and replace it with newB
    freeComponentBoundSequence(scip, compBndSeq, compBndSeqSize);
@@ -1022,11 +1022,11 @@ SCIP_RETCODE _separation(
    int indexSetSize = 0;
    SCIP_CALL( initIndexSet(masterscip, &indexSet, &indexSetSize, satisfyingMastervars, satisfyingMastervarsSize) );
 
-   SCIP_VAR* selected_origvar = NULL;
+   SCIP_VAR* selectedOrigvar = NULL;
    SCIP_Real value = 0.0;
-   SCIP_CALL( chooseCompBnd(masterscip, satisfyingMastervars, satisfyingMastervarsSize, indexSet, indexSetSize, compBndSeq, compBndSeqSize, blocknr, &selected_origvar, &value) );
-   assert(selected_origvar != NULL);
-   assert(SCIPvarGetLbGlobal(selected_origvar) < value && value < SCIPvarGetUbGlobal(selected_origvar));
+   SCIP_CALL( chooseCompBnd(masterscip, satisfyingMastervars, satisfyingMastervarsSize, indexSet, indexSetSize, compBndSeq, compBndSeqSize, blocknr, &selectedOrigvar, &value) );
+   assert(selectedOrigvar != NULL);
+   assert(SCIPvarGetLbGlobal(selectedOrigvar) < value && value < SCIPvarGetUbGlobal(selectedOrigvar));
 
    SCIPfreeBlockMemoryArray(masterscip, &indexSet, indexSetSize);
    indexSetSize = 0;
@@ -1046,8 +1046,8 @@ SCIP_RETCODE _separation(
       highCompBndSeq[i] = compBndSeq[i];
    }
    // add the new component bounds to lowCompBndSeq and highCompBndSeq
-   lowCompBndSeq[compBndSeqSize] = (GCG_COMPBND){selected_origvar, GCG_COMPBND_SENSE_LE, FLOOR(masterscip, value)};
-   highCompBndSeq[compBndSeqSize] = (GCG_COMPBND){selected_origvar, GCG_COMPBND_SENSE_GE, FLOOR(masterscip, value) + 1};
+   lowCompBndSeq[compBndSeqSize] = (GCG_COMPBND){selectedOrigvar, GCG_COMPBND_SENSE_LE, FLOOR(masterscip, value)};
+   highCompBndSeq[compBndSeqSize] = (GCG_COMPBND){selectedOrigvar, GCG_COMPBND_SENSE_GE, FLOOR(masterscip, value) + 1};
 
    freeComponentBoundSequence(masterscip, &compBndSeq, &compBndSeqSize);
    assert(compBndSeq == NULL);
@@ -1206,71 +1206,71 @@ static
 CHOOSE_COMPBND(chooseMaxMin)
 {
    // Task: Find fractional mastervarMin, mastervarMax, indexed by x1, x2, s.t. for some j, xj1 < xj2
-   SCIP_VAR* current_mastervar;
-   SCIP_Real current_solution_value; // of the currMastervar
-   SCIP_VAR* current_origvar;
-   SCIP_Real current_min;
-   SCIP_Real current_max;
-   SCIP_Real current_diff;
-   SCIP_Real largest_diff_min;
-   SCIP_Real largest_diff_max;
-   SCIP_Real largest_diff = -SCIPinfinity(masterscip);
+   SCIP_VAR* currentMastervar;
+   SCIP_Real currentSolutionValue; // of the currMastervar
+   SCIP_VAR* currentOrigvar;
+   SCIP_Real currentMin;
+   SCIP_Real currentMax;
+   SCIP_Real currentDiff;
+   SCIP_Real largestDiffMin;
+   SCIP_Real largestDiffMax;
+   SCIP_Real largestDiff = -SCIPinfinity(masterscip);
    int i;
    int j;
    SCIP_Real generatorentry;
    SCIP_Bool found = FALSE;
 
 #ifndef NDEBUG
-   SCIP_Real given_min;
-   SCIP_Real given_max;
+   SCIP_Real givenMin;
+   SCIP_Real givenMax;
 #endif
 
    for( j=0; j<indexSetSize; ++j )
    {
-      current_origvar = indexSet[j];
+      currentOrigvar = indexSet[j];
 #ifndef NDEBUG
-      given_min = getLowerBound(masterscip, current_origvar, compBndSeq, compBndSeqSize);
-      given_max = getUpperBound(masterscip, current_origvar, compBndSeq, compBndSeqSize);
-      assert(SCIPisFeasLE(masterscip, given_min, given_max));
+      givenMin = getLowerBound(masterscip, currentOrigvar, compBndSeq, compBndSeqSize);
+      givenMax = getUpperBound(masterscip, currentOrigvar, compBndSeq, compBndSeqSize);
+      assert(SCIPisFeasLE(masterscip, givenMin, givenMax));
 #endif
-      current_min = SCIPinfinity(masterscip);
-      current_max = -SCIPinfinity(masterscip);
+      currentMin = SCIPinfinity(masterscip);
+      currentMax = -SCIPinfinity(masterscip);
       for( i=0; i<satisfyingMastervarsSize; ++i )
       {
-         current_mastervar = satisfyingMastervars[i];
+         currentMastervar = satisfyingMastervars[i];
 
          // Current solution value of the master variable must be fractional and > 0
-         current_solution_value = SCIPgetSolVal(masterscip, NULL, current_mastervar);
-         if ( !SCIPisFeasPositive(masterscip, current_solution_value) || SCIPisFeasIntegral(masterscip, current_solution_value) ) {
+         currentSolutionValue = SCIPgetSolVal(masterscip, NULL, currentMastervar);
+         if ( !SCIPisFeasPositive(masterscip, currentSolutionValue) || SCIPisFeasIntegral(masterscip, currentSolutionValue) ) {
             // skip
             continue;
          }
 
-         generatorentry = getGeneratorEntry(current_mastervar, current_origvar);
+         generatorentry = getGeneratorEntry(currentMastervar, currentOrigvar);
 
          // first, check if we can update the min and max values
-         if( SCIPisInfinity(masterscip, current_min) )
+         if( SCIPisInfinity(masterscip, currentMin) )
          {
-            assert(SCIPisInfinity(masterscip, -current_max));
-            current_min = generatorentry;
-            current_max = generatorentry;
+            assert(SCIPisInfinity(masterscip, -currentMax));
+            currentMin = generatorentry;
+            currentMax = generatorentry;
          }
-         else if( SCIPisLT(masterscip, generatorentry, current_min) )
-            current_min = generatorentry;
-         else if( SCIPisLT(masterscip, current_max, generatorentry) )
-            current_max = generatorentry;
+         else if( SCIPisLT(masterscip, generatorentry, currentMin) )
+            currentMin = generatorentry;
+         else if( SCIPisLT(masterscip, currentMax, generatorentry) )
+            currentMax = generatorentry;
 
          // now could be that min<max
-         if( SCIPisLT(masterscip, current_min, current_max) )
+         if( SCIPisLT(masterscip, currentMin, currentMax) )
          {
             found = TRUE;
-            current_diff = current_max - current_min;
-            if( SCIPisGT(masterscip, current_diff, largest_diff) )
+            currentDiff = currentMax - currentMin;
+            if( SCIPisGT(masterscip, currentDiff, largestDiff) )
             {
-               largest_diff_min = current_min;
-               largest_diff_max = current_max;
-               largest_diff = current_diff;
-               *selected_origvar = current_origvar;
+               largestDiffMin = currentMin;
+               largestDiffMax = currentMax;
+               largestDiff = currentDiff;
+               *selectedOrigvar = currentOrigvar;
             }
          }
       }
@@ -1281,14 +1281,14 @@ CHOOSE_COMPBND(chooseMaxMin)
       return SCIP_ERROR;
    }
 
-   assert(largest_diff_min < largest_diff_max);
-   assert(largest_diff > 0);
-   assert(SCIPisFeasLE(masterscip, SCIPvarGetLbGlobal(*selected_origvar), largest_diff_min));
-   assert(SCIPisFeasLE(masterscip, largest_diff_max, SCIPvarGetUbGlobal(*selected_origvar)));
-   SCIPdebugMessage("Found %d for origvar %s, j=%d, min=%f, max=%f\n", found, SCIPvarGetName(*selected_origvar), j, largest_diff_min, largest_diff_max);
+   assert(largestDiffMin < largestDiffMax);
+   assert(largestDiff > 0);
+   assert(SCIPisFeasLE(masterscip, SCIPvarGetLbGlobal(*selectedOrigvar), largestDiffMin));
+   assert(SCIPisFeasLE(masterscip, largestDiffMax, SCIPvarGetUbGlobal(*selectedOrigvar)));
+   SCIPdebugMessage("Found %d for origvar %s, j=%d, min=%f, max=%f\n", found, SCIPvarGetName(*selectedOrigvar), j, largestDiffMin, largestDiffMax);
 
    // j and origivar are still set to the correct values after execution of the loop
-   *value = (largest_diff_min+largest_diff_max)/2;
+   *value = (largestDiffMin+largestDiffMax)/2;
 
    return SCIP_OKAY;
 }
@@ -1297,10 +1297,10 @@ CHOOSE_COMPBND(chooseMaxMin)
 static
 CHOOSE_COMPBND(chooseMostDistinctValuesMedian)
 {
-   int selected_numDistinctValues = 0;
+   int selectedNumDistinctValues = 0;
 
-   SCIP_VAR* current_origvar;
-   int current_numDistinctValues;
+   SCIP_VAR* currentOrigvar;
+   int currentNumDistinctValues;
    SCIP_Real* distinctValues = NULL;
    int distinctValuesSize = 0;
 
@@ -1312,14 +1312,14 @@ CHOOSE_COMPBND(chooseMostDistinctValuesMedian)
    int k;
    int l;
 
-   assert(*selected_origvar == NULL);
+   assert(*selectedOrigvar == NULL);
 
    SCIP_Real generatorentry;
 
    for( j=0; j<indexSetSize; ++j )
    {
-      current_origvar = indexSet[j];
-      current_numDistinctValues = 0;
+      currentOrigvar = indexSet[j];
+      currentNumDistinctValues = 0;
 
       for( i=0; i<satisfyingMastervarsSize; ++i )
       {
@@ -1332,24 +1332,24 @@ CHOOSE_COMPBND(chooseMostDistinctValuesMedian)
             continue;
          }
 
-         generatorentry = getGeneratorEntry(current_mastervar, current_origvar);
+         generatorentry = getGeneratorEntry(current_mastervar, currentOrigvar);
 
          // insert sorted, if the value is not already in the array
          if( distinctValuesSize == 0 )
          {
             assert(distinctValues == NULL);
-            assert(current_numDistinctValues == 0);
+            assert(currentNumDistinctValues == 0);
             distinctValuesSize = SCIPcalcMemGrowSize(masterscip, 1);
             SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &distinctValues, distinctValuesSize) );
             distinctValues[0] = generatorentry;
-            current_numDistinctValues = 1;
+            currentNumDistinctValues = 1;
          }
          else
          {
             // current_distinctValues is sorted ascendingly
             inserted = FALSE;
             duplicate = FALSE;
-            for( k=0; k<current_numDistinctValues; ++k )
+            for( k=0; k<currentNumDistinctValues; ++k )
             {
                if( SCIPisEQ(masterscip, generatorentry, distinctValues[k]) )
                {
@@ -1360,20 +1360,20 @@ CHOOSE_COMPBND(chooseMostDistinctValuesMedian)
                if( SCIPisLT(masterscip, generatorentry, distinctValues[k]) )
                {
                   // insert at position k
-                  if( current_numDistinctValues == distinctValuesSize )
+                  if( currentNumDistinctValues == distinctValuesSize )
                   {
-                     int new_current_distinctValuesSize = SCIPcalcMemGrowSize(masterscip, current_numDistinctValues + 1);
+                     int new_current_distinctValuesSize = SCIPcalcMemGrowSize(masterscip, currentNumDistinctValues + 1);
                      SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &distinctValues, distinctValuesSize, new_current_distinctValuesSize) );
                      distinctValuesSize = new_current_distinctValuesSize;
                   }
 
-                  for( l = current_numDistinctValues; l > k; --l )
+                  for( l = currentNumDistinctValues; l > k; --l )
                   {
                      distinctValues[l] = distinctValues[l-1];
                   }
 
                   distinctValues[k] = generatorentry;
-                  current_numDistinctValues += 1;
+                  currentNumDistinctValues += 1;
 
                   inserted = TRUE;
                   break;
@@ -1383,38 +1383,38 @@ CHOOSE_COMPBND(chooseMostDistinctValuesMedian)
             if( !inserted && !duplicate )
             {
                // insert at the end
-               if( current_numDistinctValues == distinctValuesSize )
+               if( currentNumDistinctValues == distinctValuesSize )
                {
-                  int new_current_distinctValuesSize = SCIPcalcMemGrowSize(masterscip, current_numDistinctValues + 1);
+                  int new_current_distinctValuesSize = SCIPcalcMemGrowSize(masterscip, currentNumDistinctValues + 1);
                   SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &distinctValues, distinctValuesSize, new_current_distinctValuesSize) );
                   distinctValuesSize = new_current_distinctValuesSize;
                }
 
-               distinctValues[current_numDistinctValues] = generatorentry;
-               current_numDistinctValues += 1;
+               distinctValues[currentNumDistinctValues] = generatorentry;
+               currentNumDistinctValues += 1;
             }
          }
       }
 
-      if( current_numDistinctValues > 1 && current_numDistinctValues > selected_numDistinctValues )
+      if( currentNumDistinctValues > 1 && currentNumDistinctValues > selectedNumDistinctValues )
       {
-         assert(current_numDistinctValues > 1);
-         *selected_origvar = current_origvar;
-         selected_numDistinctValues = current_numDistinctValues;
+         assert(currentNumDistinctValues > 1);
+         *selectedOrigvar = currentOrigvar;
+         selectedNumDistinctValues = currentNumDistinctValues;
 
          // calculate median
-         if( current_numDistinctValues % 2 == 0 )
+         if( currentNumDistinctValues % 2 == 0 )
          {
-            *value = 0.5 * (distinctValues[current_numDistinctValues / 2] + distinctValues[current_numDistinctValues / 2 - 1]);
+            *value = 0.5 * (distinctValues[currentNumDistinctValues / 2] + distinctValues[currentNumDistinctValues / 2 - 1]);
          }
          else
          {
-            *value = distinctValues[current_numDistinctValues / 2];
+            *value = distinctValues[currentNumDistinctValues / 2];
          }
       }
    }
 
-   assert(*selected_origvar != NULL);
+   assert(*selectedOrigvar != NULL);
 
    SCIPfreeBlockMemoryArrayNull(masterscip, &distinctValues, distinctValuesSize);
 
@@ -1460,9 +1460,9 @@ CHOOSE_COMPBNDSEQ(chooseClosestToKHalf)
    SCIP* origscip;
    int i;
    SCIP_Real sum;
-   SCIP_Real K_half;
+   SCIP_Real kHalf;
 
-   int best_index = -1;
+   int bestIndex = -1;
    SCIP_Real best = SCIPinfinity(masterscip);
 
    assert(masterscip != NULL);
@@ -1474,23 +1474,23 @@ CHOOSE_COMPBNDSEQ(chooseClosestToKHalf)
    origscip = GCGmasterGetOrigprob(masterscip);
    assert(origscip != NULL);
 
-   K_half = GCGgetNIdenticalBlocks(origscip, blocknr) * 0.5;
+   kHalf = GCGgetNIdenticalBlocks(origscip, blocknr) * 0.5;
 
    for( i = 0; i < compBndListSize; ++i )
    {
-      sum = ABS(calcSum(masterscip, compBndSeqList[i], compBndSeqSizeList[i], blocknr) - K_half);
+      sum = ABS(calcSum(masterscip, compBndSeqList[i], compBndSeqSizeList[i], blocknr) - kHalf);
 
       if( sum < best )
       {
          best = sum;
-         best_index = i;
+         bestIndex = i;
       }
    }
 
-   assert(best_index >= 0);
+   assert(bestIndex >= 0);
 
-   *selectedCompBndSeq = compBndSeqList[best_index];
-   *selectedCompBndSeqSize = compBndSeqSizeList[best_index];
+   *selectedCompBndSeq = compBndSeqList[bestIndex];
+   *selectedCompBndSeqSize = compBndSeqSizeList[bestIndex];
 
    return SCIP_OKAY;
 }
@@ -1503,7 +1503,7 @@ CHOOSE_COMPBNDSEQ(chooseMostFractional)
    SCIP_Real sum;
    SCIP_Real fractionality;
 
-   int best_index = -1;
+   int bestIndex = -1;
    SCIP_Real best = 0.0;
 
    assert(masterscip != NULL);
@@ -1522,14 +1522,14 @@ CHOOSE_COMPBNDSEQ(chooseMostFractional)
       if( best < fractionality )
       {
          best = fractionality;
-         best_index = i;
+         bestIndex = i;
       }
    }
 
-   assert(best_index >= 0);
+   assert(bestIndex >= 0);
 
-   *selectedCompBndSeq = compBndSeqList[best_index];
-   *selectedCompBndSeqSize = compBndSeqSizeList[best_index];
+   *selectedCompBndSeq = compBndSeqList[bestIndex];
+   *selectedCompBndSeqSize = compBndSeqSizeList[bestIndex];
 
    return SCIP_OKAY;
 }
@@ -1539,7 +1539,7 @@ static
 CHOOSE_COMPBNDSEQ(chooseSmallestSize)
 {
    int i;
-   int smallest_size = INT_MAX;
+   int smallestSize = INT_MAX;
 
    GCG_COMPBND** newCompBndSeqList = NULL;
    int* newCompBndSeqSizeList = NULL;
@@ -1554,17 +1554,17 @@ CHOOSE_COMPBNDSEQ(chooseSmallestSize)
    // step 1: find smallest size
    for( i = 0; i < compBndListSize; ++i )
    {
-      if( compBndSeqSizeList[i] < smallest_size )
+      if( compBndSeqSizeList[i] < smallestSize )
       {
-         smallest_size = compBndSeqSizeList[i];
+         smallestSize = compBndSeqSizeList[i];
       }
    }
-   assert(smallest_size > 0);
+   assert(smallestSize > 0);
 
    // step 2: create new Blist with smallest size
    for( i = 0; i < compBndListSize; ++i )
    {
-      if( compBndSeqSizeList[i] == smallest_size )
+      if( compBndSeqSizeList[i] == smallestSize )
       {
          if( newCompBndSeqListSize == 0 )
          {
