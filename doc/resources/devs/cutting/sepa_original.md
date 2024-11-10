@@ -50,5 +50,5 @@ s.t. & Dx &\ge d \\
 \f}
 
 ### Implementation
-The separator original does implement exactly the above described procedure. In case we do not have an aggregated pricing problem, the separator calls the intern SCIP separators for the original problem and then transfers the found cuts to the master problems.
+The separator 'original' does implement exactly the above described procedure. In case we do not have an aggregated pricing problem, the separator calls the intern SCIP separators for the original problem and then transfers the found cuts to the master problem.
 This separator can be tuned like any normal SCIP separator, see the [SCIP documentation](https://www.scipopt.org/doc-7.0.1/html/SEPA.php). **Please disable this separator if you implemented an own solver for the pricing problems**, because it can unintentionally destroy the special structure you want to use.
