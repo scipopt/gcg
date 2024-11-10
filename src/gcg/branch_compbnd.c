@@ -949,7 +949,7 @@ SCIP_Real getUpperBound(
 
 /** separation algorithm determining multiple component bound sequences one could branch on */
 static
-SCIP_RETCODE _separation(
+SCIP_RETCODE separation_helper(
    SCIP*                 masterscip,              /**< SCIP data structure */
    SCIP_VAR**            satisfyingMastervars,    /**< mastervariables currently satisfying the component bound sequence in the specified block */
    int                   satisfyingMastervarsSize,/**< size of mastervars */
@@ -1125,13 +1125,13 @@ SCIP_RETCODE _separation(
 #endif
 
    // recursive call
-   SCIP_CALL( _separation(masterscip, lowMastervars, lowMastervarsSize, lowCompBndSeq, newCompBndSeqSize, blocknr, chooseCompBnd, foundCompBndSeqList, foundCompBndSeqSizeList, foundCompBndSeqListSize, result) );
+   SCIP_CALL( separation_helper(masterscip, lowMastervars, lowMastervarsSize, lowCompBndSeq, newCompBndSeqSize, blocknr, chooseCompBnd, foundCompBndSeqList, foundCompBndSeqSizeList, foundCompBndSeqListSize, result) );
 
    SCIPfreeBlockMemoryArray(masterscip, &lowMastervars, lowMastervarsSize);
    lowMastervarsSize = 0;
    assert(lowMastervars == NULL);
 
-   SCIP_CALL( _separation(masterscip, highMastervars, highMastervarsSize, highCompBndSeq, newCompBndSeqSize, blocknr, chooseCompBnd, foundCompBndSeqList, foundCompBndSeqSizeList, foundCompBndSeqListSize, result) );
+   SCIP_CALL( separation_helper(masterscip, highMastervars, highMastervarsSize, highCompBndSeq, newCompBndSeqSize, blocknr, chooseCompBnd, foundCompBndSeqList, foundCompBndSeqSizeList, foundCompBndSeqListSize, result) );
 
    SCIPfreeBlockMemoryArray(masterscip, &highMastervars, highMastervarsSize);
    highMastervarsSize = 0;
@@ -1639,7 +1639,7 @@ SCIP_RETCODE separation(
 
    if( branchruledata->useMaxRangeMidrangeHeuristic )
    {
-      SCIP_CALL( _separation(masterscip, satisfyingMastervars, satisfyingMastervarsSize, NULL, 0, blocknr, chooseMaxMin, &compBndSeqList, &compBndSeqSizeList, &compBndSeqListSize, result) );
+      SCIP_CALL( separation_helper(masterscip, satisfyingMastervars, satisfyingMastervarsSize, NULL, 0, blocknr, chooseMaxMin, &compBndSeqList, &compBndSeqSizeList, &compBndSeqListSize, result) );
 #ifndef NDEBUG
       assert(satisfyingMastervarsSize == satisfyingMastervarsSizeCopy);
       assert(compBndSeqListSize > BlistsizeCopy);
@@ -1649,7 +1649,7 @@ SCIP_RETCODE separation(
 
    if( branchruledata->useMostDistinctMedianHeuristic )
    {
-      SCIP_CALL( _separation(masterscip, satisfyingMastervars, satisfyingMastervarsSize, NULL, 0, blocknr, chooseMostDistinctValuesMedian, &compBndSeqList, &compBndSeqSizeList, &compBndSeqListSize, result) );
+      SCIP_CALL( separation_helper(masterscip, satisfyingMastervars, satisfyingMastervarsSize, NULL, 0, blocknr, chooseMostDistinctValuesMedian, &compBndSeqList, &compBndSeqSizeList, &compBndSeqListSize, result) );
 #ifndef NDEBUG
       assert(satisfyingMastervarsSize == satisfyingMastervarsSizeCopy);
       assert(compBndSeqListSize > BlistsizeCopy);
