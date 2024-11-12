@@ -41,6 +41,7 @@
 #include "cons_decomp.hpp"
 #include "scip/scip_mem.h"
 
+#include <algorithm>
 #include <cassert>
 #include <string>
 #include <jansson.h>
@@ -56,7 +57,7 @@ using namespace gcg;
 /** checks version */
 static constexpr bool checkVersion(int version)
 {
-   return version <= JDEC_VERSION;
+   return version > 0 && version <= JDEC_VERSION;
 }
 
 /** checks return value of json lib calls */
@@ -77,17 +78,19 @@ struct JDecBlockData
 {
    /** constructor */
    JDecBlockData(
-      int nr                                 /**< number of block */
+      int number                             /**< number of block */
       )
       : decomposition(NULL),
-        symmetricalblock(nr),
-        blocknr(nr) {}
+        symmetricalblock(number),
+        blocknumber(number) {}
 
    /** deleted copy constructor */
    JDecBlockData(const JDecBlockData&) = delete;
 
    /** move constructor */
-   JDecBlockData(JDecBlockData&&) noexcept;
+   JDecBlockData(
+      JDecBlockData&& block                  /**< other block data */
+      ) noexcept;
 
    /** destructor */
    ~JDecBlockData();
@@ -95,17 +98,27 @@ struct JDecBlockData
    /** deleted assignment operator */
    JDecBlockData& operator=(const JDecBlockData&) = delete;
 
+   /** move assignment */
+   JDecBlockData& operator=(
+      JDecBlockData&& block                  /**< other block data */
+      );
+
+   /** less than operator to order block by their indices */
+   bool operator<(
+      const JDecBlockData& block             /**< other block to compare against */
+      ) const;
+
    std::vector<std::string> constraints;     /**< names of constraints */
    JDecDecompositionData* decomposition;     /**< pointer to decomposition object */
    int symmetricalblock;                     /**< number of representative/symmetrical block */
-   int blocknr;                              /**< number of block/subproblem */
+   int blocknumber;                          /**< number of block/subproblem */
 };
 
 /** struct to store (nested) decomposition data (read from file) */
 struct JDecDecompositionData
 {
    /** constructor */
-   JDecDecompositionData() = default;
+   JDecDecompositionData() : presolved(false), masterconstraints(), blocks(), symmetryvardata() {}
 
    /** destructor */
    ~JDecDecompositionData() = default;
@@ -116,6 +129,7 @@ struct JDecDecompositionData
       DETPROBDATA* detprobdata               /**< detprobdata used to create the block structure object */
       );
 
+   bool presolved;                                                /** is this a decomposition of a presolved model? */
    std::vector<std::string> masterconstraints;                    /**< vector containing names of master constraints */
    std::vector<JDecBlockData> blocks;                             /**< vector containing block data of each block */
    std::unordered_map<std::string, std::string> symmetryvardata;  /**< symmetry mapping for variables: name of variable -> name of its representative variable */
@@ -125,7 +139,7 @@ struct JDecDecompositionData
 struct JDecData
 {
    /** constructor */
-   JDecData() : version(0), presolved(false), rootdecomposition(NULL) {}
+   JDecData() : version(0), rootdecomposition(NULL) {}
    
    /** deleted copy constructor */
    JDecData(const JDecData&) = delete;
@@ -138,7 +152,6 @@ struct JDecData
 
    int version;                              /** version of jdec file */
    std::string name;                         /** decomposition's name */
-   bool presolved;                           /** is this a decomposition of a presolved model? */
    std::string description;                  /** decomposition's description */
    JDecDecompositionData* rootdecomposition; /** actual decomposition */
 };
@@ -417,6 +430,7 @@ JDecBlockData::JDecBlockData(
    JDecBlockData&& block
    ) noexcept
 {
+   blocknumber = block.blocknumber;
    symmetricalblock = block.symmetricalblock;
    constraints = std::move(block.constraints);
    decomposition = block.decomposition;
@@ -426,6 +440,27 @@ JDecBlockData::JDecBlockData(
 JDecBlockData::~JDecBlockData()
 {
    delete decomposition;
+}
+
+JDecBlockData& JDecBlockData::operator=(
+   JDecBlockData&& block
+   )
+{
+   blocknumber = block.blocknumber;
+   symmetricalblock = block.symmetricalblock;
+   constraints = std::move(block.constraints);
+   if( decomposition != NULL )
+      delete decomposition;
+   decomposition = block.decomposition;
+   block.decomposition = NULL;
+   return *this;
+}
+
+bool JDecBlockData::operator<(
+   const JDecBlockData& block
+   ) const
+{
+   return blocknumber < block.blocknumber;
 }
 
 JDecData::~JDecData()
@@ -441,13 +476,17 @@ BLOCK_STRUCTURE* JDecDecompositionData::createBlockStructure(
    BLOCK_STRUCTURE* blockstructure = new BLOCK_STRUCTURE();
    int idx;
 
+   if( presolved )
+   {
+      SCIPwarningMessage(scip, "Decomposition of blocks must not belong to a presolved model, ignoring.");
+   }
+
    // master
    for( auto& cons : masterconstraints )
    {
       idx = detprobdata->getIndexForCons(cons.c_str());
       if( idx >= 0 )
          blockstructure->masterconss.push_back(idx);
-
    }
 
    // blocks
@@ -622,6 +661,12 @@ bool JDecFileHandler::readJDec(
       error = !parseElement(rootparser, json_);
    }
 
+   if( !error && !checkVersion(data.version) )
+   {
+      error = true;
+      SCIPwarningMessage(scip_, "Invalid version.\n");
+   }
+
    return !error;
 }
 
@@ -634,9 +679,7 @@ bool JDecFileHandler::writeJDec(
    {
       success &= setObjectValue("version", json_integer(JDEC_VERSION));
       success &= setObjectValue("problem_name", json_string(SCIPgetProbName(scip_)));
-      success &= setObjectValue("decomp_id", json_integer(decomp->getID()));
-      success &= setObjectValue("presolved", json_boolean(!decomp->isAssignedToOrigProb()));
-      success &= setObjectValue("num_blocks", json_integer(decomp->getNBlocks()));
+      success &= setObjectValue("decomposition_id", json_integer(decomp->getID()));
 
       json_t* jsondecomp = json_object();
       success &= serializeDecomposition(jsondecomp, decomp);
@@ -664,6 +707,8 @@ bool JDecFileHandler::serializeBlock(
    auto* detprobdata = decomp->getDetprobdata();
    json_t* jsonconstraints = json_array();
 
+   success &= setObjectValue("index", json_integer(block), json);
+
    for( int i: decomp->getConssForBlock(block) )
    {
       auto* cons = detprobdata->getCons(i);
@@ -676,7 +721,7 @@ bool JDecFileHandler::serializeBlock(
       success &= setObjectValue("symmetry_representative_block", json_integer(decomp->getReprBlockForEqClass(decomp->getEqClassForBlock(block))), json);
    }
 
-   if( decomp->isNested() )
+   if( decomp->isNested() && decomp->getBlockStructure(block) != NULL )
    {
       json_t* jsonblockstructure = json_object();
       serializeBlockStructure(jsonblockstructure, decomp, decomp->getBlockStructure(block));
@@ -694,6 +739,8 @@ bool JDecFileHandler::serializeBlockStructure(
 {
    bool success = true;
    auto* detprobdata = decomp->getDetprobdata();
+
+   assert(blockstructure != NULL);
 
    json_t* jsonmasterconstraints = json_array();
    for( int i: blockstructure->masterconss )
@@ -752,6 +799,9 @@ bool JDecFileHandler::serializeDecomposition(
 {
    bool success = true;
    auto* detprobdata = decomp->getDetprobdata();
+
+   success &= setObjectValue("presolved", json_boolean(!decomp->isAssignedToOrigProb()), json);
+   success &= setObjectValue("n_blocks", json_integer(decomp->getNBlocks()), json);
 
    json_t* jsonmasterconstraints = json_array();
    for( int i: decomp->getMasterconss() )
@@ -932,26 +982,6 @@ void JDecRootElementParser::handleKeyValuePair(
          data_.description = std::string(json_string_value(value));
       }
    }
-   else if( strcmp(name, "presolved") == 0 )
-   {
-      if( json_is_string(value) )
-      {
-         data_.presolved = strcmp(json_string_value(value), "true") == 0 ||
-                           strcmp(json_string_value(value), "t") == 0 ||
-                           strcmp(json_string_value(value), "yes") == 0 ||
-                           strcmp(json_string_value(value), "y") == 0 ||
-                           strcmp(json_string_value(value), "1") == 0;
-      }
-      else if ( json_is_boolean(value) )
-      {
-         data_.presolved = json_boolean_value(value);
-      }
-      else
-      {
-         SCIPwarningMessage(scip_, "Could not parse value of 'presolved'.");
-         error_ = true;
-      }
-   }
    else if( strcmp(name, "decomposition") == 0 )
    {
       if( json_is_object(value) )
@@ -1017,6 +1047,8 @@ void JDecDecompositionElementParser::handleKeyValuePair(
             parsingblocks = true;
             if( !filehandler_.parseElement(*this, value) )
                error_ = true;
+            // sort blocks as users can assign indices which may not be sorted
+            std::sort(decdata_.blocks.begin(), decdata_.blocks.end());
             parsingblocks = false;
          }
          else
@@ -1037,6 +1069,26 @@ void JDecDecompositionElementParser::handleKeyValuePair(
          else
          {
             SCIPwarningMessage(scip_, "Symmetry information must be a mapping of strings.\n");
+            error_ = true;
+         }
+      }
+      else if( strcmp(name, "presolved") == 0 )
+      {
+         if( json_is_string(value) )
+         {
+            decdata_.presolved = strcmp(json_string_value(value), "true") == 0 ||
+                              strcmp(json_string_value(value), "t") == 0 ||
+                              strcmp(json_string_value(value), "yes") == 0 ||
+                              strcmp(json_string_value(value), "y") == 0 ||
+                              strcmp(json_string_value(value), "1") == 0;
+         }
+         else if ( json_is_boolean(value) )
+         {
+            decdata_.presolved = json_boolean_value(value);
+         }
+         else
+         {
+            SCIPwarningMessage(scip_, "Could not parse value of 'presolved'.");
             error_ = true;
          }
       }
@@ -1085,7 +1137,20 @@ void JDecBlockElementParser::handleKeyValuePair(
    json_t* value
    )
 {
-   if( strcmp(name, "symmetry_representative_block") == 0 )
+   if( strcmp(name, "index") == 0 )
+   {
+      if( json_is_integer(value) )
+      {
+         blockdata_.blocknumber = (int)json_integer_value(value);
+         assert(blockdata_.blocknumber >= 0);
+      }
+      else
+      {
+         SCIPwarningMessage(scip_, "Could not parse block index.\n");
+         error_ = true;
+      }
+   }
+   else if( strcmp(name, "symmetry_representative_block") == 0 )
    {
       if( json_is_integer(value) )
       {
@@ -1093,7 +1158,7 @@ void JDecBlockElementParser::handleKeyValuePair(
       }
       else
       {
-         SCIPwarningMessage(scip_, "Could not parse block number.\n");
+         SCIPwarningMessage(scip_, "Could not parse block number of representative block (symmetry).\n");
          error_ = true;
       }
    }
@@ -1164,14 +1229,14 @@ SCIP_RETCODE readJDec(
       {
          int nblocks = (int)data.rootdecomposition->blocks.size();
 
-         if( data.presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
+         if( data.rootdecomposition->presolved && SCIPgetStage(scip) < SCIP_STAGE_PRESOLVED )
          {
             SCIPinfoMessage(scip, NULL,
                "Reading presolved decomposition but problem is not presolved yet. Calling SCIPpresolve()\n");
             SCIPpresolve(scip);
          }
 
-         PARTIALDECOMP* partialdec = new PARTIALDECOMP(scip, !data.presolved);
+         PARTIALDECOMP* partialdec = new PARTIALDECOMP(scip, !data.rootdecomposition->presolved);
          DETPROBDATA* detprobdata = partialdec->getDetprobdata();
          for( auto& cons : data.rootdecomposition->masterconstraints )
          {
@@ -1182,6 +1247,7 @@ SCIP_RETCODE readJDec(
          for( int block = 0; block < nblocks; ++block )
          {
             JDecBlockData& blockdata = data.rootdecomposition->blocks[block];
+            assert(block == blockdata.blocknumber);
             for( auto& cons : blockdata.constraints )
             {
                if( !partialdec->fixConsToBlockByName(cons.c_str(), block) )
