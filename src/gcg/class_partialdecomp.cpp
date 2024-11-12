@@ -5380,12 +5380,15 @@ void PARTIALDECOMP::setBlockStructure(
    BLOCK_STRUCTURE* blockstructure
    )
 {
-   if( block >= nblocks )
-      setNBlocks(block+1);
-   assert(block >= 0 && block < nblocks);
-   if( blockstructures.empty() )
-      blockstructures.resize(nblocks, NULL);
-   blockstructures[block] = blockstructure;
+   if( !blockstructures.empty() || blockstructure != NULL )
+   {
+      if( block >= nblocks )
+         setNBlocks(block+1);
+      assert(block >= 0 && block < nblocks);
+      if( blockstructures.empty() )
+         blockstructures.resize(nblocks, NULL);
+      blockstructures[block] = blockstructure;
+   }
 }
 
 
