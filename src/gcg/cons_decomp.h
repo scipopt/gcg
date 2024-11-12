@@ -708,7 +708,7 @@ int GCGconshdlrDecompPartialdecGetNOpenConss(
  */
 GCG_EXPORT
 int GCGconshdlrDecompPartialdecGetNOpenVars(
-   PARTIALDECOMP_C*        partialdec    /**< partialdec */
+   PARTIALDECOMP_C*        partialdecomp        /**< partialdec */
    );
 
 /** @brief returns the original variable for a block and index

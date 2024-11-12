@@ -2856,8 +2856,8 @@ static
 SCIP_RETCODE setMasterLimits(
    SCIP*                 scip,               /**< the SCIP data structure */
    SCIP*                 masterprob,         /**< the master problem SCIP instance */
-   SCIP_Real             origtimelimit,
-   SCIP_Real             origgaplimit
+   SCIP_Real             origtimelimit,      /**< time limit fo the original problem */
+   SCIP_Real             origgaplimit        /**< gap limit of the original problem */
    )
 {
    SCIP_Real mastertimelimit = SCIPinfinity(scip);

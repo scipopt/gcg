@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   solver_gcg.c
+/**@file   solver_gcg.cpp
  * @brief  gcg solver for pricing problem
  * @author Erik Muehmer
  */
@@ -522,7 +522,7 @@ SCIP_RETCODE updateBranchingConss(
 static
 SCIP_RETCODE solveProblem(
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
-   SCIP*                 subgcg,
+   SCIP*                 subgcg,             /**< nested gcg pricing problem SCIP data structure */
    int                   probnr,             /**< problem number */
    GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
    SCIP_Real*            lowerbound,         /**< pointer to store lower bound */
