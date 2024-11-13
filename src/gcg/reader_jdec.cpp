@@ -478,7 +478,7 @@ BLOCK_STRUCTURE* JDecDecompositionData::createBlockStructure(
 
    if( presolved )
    {
-      SCIPwarningMessage(scip, "Decomposition of blocks must not belong to a presolved model, ignoring.");
+      SCIPwarningMessage(scip, "Decomposition of blocks must not belong to a presolved model, ignoring this flag.\n");
    }
 
    // master
@@ -922,9 +922,16 @@ int JDecFileHandler::jsonDumpCallback(
    )
 {
    auto* filehandler = (JDecFileHandler*) data;
-   assert(buflen <= INT_MAX);
-   // not sure if this is the best function to call but SCIP's readers use it too
-   SCIPinfoMessage(filehandler->scip_, filehandler->wfile_, "%.*s", (int)buflen, buffer);
+   size_t pos = 0;
+   
+   // not sure if SCIPinfoMessage is the best function to call but SCIP's readers use it too
+   while( (buflen - pos) > (SCIP_MAXSTRLEN - 1) )
+   {
+      SCIPinfoMessage(filehandler->scip_, filehandler->wfile_, "%.*s", (SCIP_MAXSTRLEN - 1), &buffer[pos]);
+      pos += (SCIP_MAXSTRLEN - 1);
+   }
+   SCIPinfoMessage(filehandler->scip_, filehandler->wfile_, "%.*s", (buflen - pos), &buffer[pos]);
+
    // size_t size_written = SCIPfwrite(buffer, 1, buflen, filehandler->wfile_);
    // return (size_written == 0) ? 1 : 0;
    return 0;
