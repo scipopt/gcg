@@ -81,7 +81,7 @@ struct JDecBlockData
       int number                             /**< number of block */
       )
       : decomposition(NULL),
-        symmetricalblock(number),
+        symmetricalblock(-1),
         blocknumber(number) {}
 
    /** deleted copy constructor */
@@ -526,7 +526,6 @@ BLOCK_STRUCTURE* JDecDecompositionData::createBlockStructure(
       if( success )
       {
          int idx2;
-         blockstructure->symmetryvardata = std::move(blockstructure->symmetryvardata);
          for( auto& it : symmetryvardata )
          {
             idx = detprobdata->getIndexForVar(it.first.c_str());
@@ -614,6 +613,8 @@ bool JDecFileHandler::parseElement(
       json_object_foreach(element, key, value)
       {
          elementparser.handleKeyValuePair(key, value);
+         if( elementparser.error() )
+            break;
       }
    }
    else if (json_is_array(element))
@@ -622,6 +623,8 @@ bool JDecFileHandler::parseElement(
       json_array_foreach(element, index, value)
       {
          elementparser.handleValue(value);
+         if( elementparser.error() )
+            break;
       }
    }
    else
@@ -1056,6 +1059,19 @@ void JDecDecompositionElementParser::handleKeyValuePair(
                error_ = true;
             // sort blocks as users can assign indices which may not be sorted
             std::sort(decdata_.blocks.begin(), decdata_.blocks.end());
+            // set missing numbers of block representatives, check block numbers
+            for( int b = 0; b < (int)decdata_.blocks.size(); ++b )
+            {
+               auto& block = decdata_.blocks[b];
+               if( b != block.blocknumber )
+               {
+                  error_ = true;
+                  SCIPwarningMessage(scip_, "Block indices are not consistent.\n");
+                  break;
+               }
+               if( block.symmetricalblock < 0 )
+                  block.symmetricalblock = block.blocknumber;
+            }
             parsingblocks = false;
          }
          else
@@ -1116,8 +1132,10 @@ void JDecDecompositionElementParser::handleValue(
       {
          decdata_.blocks.emplace_back(decdata_.blocks.size());
          JDecBlockElementParser blockparser(scip_, filehandler_, decdata_.blocks.back());
-         if( !filehandler_.parseElement(blockparser, value))
+         if( !filehandler_.parseElement(blockparser, value) )
+         {
             error_ = true;
+         }
       }
       else
       {

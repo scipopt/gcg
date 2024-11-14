@@ -4,17 +4,17 @@
 > It may be extended in the future.
 
 This page will give a short introduction to the `.jdec` file format by means of an example
-and an extensive list of possible declarations.
+and an overview of the structure of the file format.
 
 ## Features
 This file format was introduced with GCG 4.0. Currently it supports the following features:
 * JSON compatible file format (i.e., all general JSON file format rules apply)
 * complete and partial decompositions
-* problems can be presolved
-* assinging constraints to blocks or declaring them as master constraints
-* specifying symmetry information used to aggregate pricing problems
-* nested decompositions (decompositions for blocks can be specified, utilized by the GCG @ref pricing-solvers "pricing solver")
-The reading and writing work as for the `.dec` @ref dec-file "file format".
+* decompositions of resolved problems
+* block constraints and master constraints
+* symmetry information used to aggregate pricing problems
+* nested decompositions (decompositions for blocks can be specified, utilized by the @ref pricing-solvers "GCG pricing solver")
+The reading and writing process works as for the `.dec` @ref dec-file "file format".
 As it is based on JSON, you can read and write it with JSON libraries.
 
 ## Example
@@ -55,6 +55,7 @@ Using the names defined in the model, you can specify a decomposition like that:
     ],
     "blocks": [
       {
+        "index": 0,
         "constraints": [
           "cap_0",
           "cap_1",
@@ -68,11 +69,13 @@ Using the names defined in the model, you can specify a decomposition like that:
           ],
           "blocks": [
             {
+              "index": 0,
               "constraints": [
                 "cap_0"
               ]
             },
             {
+              "index": 1,
               "constraints": [
                 "cap_1"
               ]
@@ -82,6 +85,7 @@ Using the names defined in the model, you can specify a decomposition like that:
         "symmetry_representative_block": 0
       },
       {
+        "index": 1,
         "constraints": [
           "cap_2",
           "cap_3",
@@ -95,11 +99,13 @@ Using the names defined in the model, you can specify a decomposition like that:
           ],
           "blocks": [
             {
+              "index": 0,
               "constraints": [
                 "cap_2"
               ]
             },
             {
+              "index": 1,
               "constraints": [
                 "cap_3"
               ]
@@ -145,6 +151,7 @@ A decomposition object supports the following data fields:
 | `presolved`               |           | boolean   | `false` | indicates whether the decomposition refers to a presolved problem (must be `false` for a decomposition of a block) |
 | `master_constraints`      | X         | list      |         | list of master constraints |
 | `blocks`                  | X         | list      |         | list of block objects (see below) |
+| `symmetry_var_mapping`    |           | object    |         | a mapping that maps all variables to their representatives |
 
 A block object supports the following data fields:
 | Name                      | Mandatory | Type      | Default | Description |
@@ -152,3 +159,9 @@ A block object supports the following data fields:
 | `index`                   |           | integer   |         | index (starting at 0) of the block (note: if set, it has to be set for all blocks of a decomposition) |
 | `constraints`             | X         | list      |         | list of constraints assigned to the block |
 | `decomposition`           |           | object    |         | decomposition (object) of the block |
+| `symmetry_representative_block`|      | integer   |         | index of the representative block this block should be mapped to |
+
+> Note: The provided symmetry information has to be consistent. GCG does not validate the mappings in detail.
+> Representative blocks must be the blocks with the lowest indices of the blocks that should be aggregated (and are symmetrical).
+> Variable mappings have to map the block variables of the blocks to the corresponding representative variable of the representative block.
+> The mappings of the representative blocks/variables to themself can be omitted.
