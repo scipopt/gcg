@@ -310,7 +310,7 @@ int pricestoreFindEqualCol(
 /**< re-computes the values of inferred pricing variables of column from column pool
  * (in case the cut was not yet present during creation of of column) */
 static
-SCIP_RETCODE correctAuxiliaryPricingVariables(
+SCIP_RETCODE correctInferredPricingVariables(
    SCIP*                 scip,               /**<* SCIP data structure */
    GCG_COL*              gcgcol,             /**<* GCG column */
    GCG_PRICESTORE*       pricestore         /**< price storage */
@@ -359,7 +359,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
          Some inferred pricing variables might not have existed when the column was created
          As a consequence, some column related data (e.g. norm) might be invalid
       */
-      SCIP_CALL( correctAuxiliaryPricingVariables(scip, col, pricestore) );
+      SCIP_CALL( correctInferredPricingVariables(scip, col, pricestore) );
    }
 
    /* a col is forced to enter the LP if

@@ -22,7 +22,8 @@ the master constraint for each new column. In doing so, we can also consider the
 constraint in the pricing problem, ensuring only columns with negative reduced cost are generated.
 For this we create a new variable \(y\), the _coefficient variable_ in the pricing problem, which
 we will force to take the coefficient value of the new column in the master constraint. Expressing
-this constraint \(y = f(x)\) might require additional constraints and auxiliary variables.
+this constraint \(y = f(x)\) might require additional constraints and auxiliary variables. We called
+these variables _inferred pricing variables_, as they are inferred from the generic master cut.
 
 \f{align}{
 & \text{min}
@@ -38,8 +39,9 @@ In \GCG, a generic mastercut (`GCG_MASTERCUTDATA`) is a wrapper around either a 
 `SCIP_ROW` to be added to the master problem, in addition to one set of pricing modifications
 (`GCG_PRICINGMODIFICATION`) for each relevant pricing problem. A pricing problem consists of a
 coefficient variable (`SCIP_VAR`), as well as any additional constraints (`SCIP_CONS`) and auxiliary
-variables (`SCIP_VAR`) required to express the constraint \(y = f(x)\). It is required that these
-variables have the type `GCG_VARTYPE_INFERREDPRICING`. We advise using the following interfaces:
+variables (`SCIP_VAR`), _inferred pricing variables_, required to express the constraint \(y = f(x)\).
+It is required that these variables have the type `GCG_VARTYPE_INFERREDPRICING`.
+We advise using the following interfaces:
  - create inferred pricing variables with `GCGcreateInferredPricingVar()`
  - create modifications with `GCGpricingmodificationCreate()`
  - create a generic mastercut around a `SCIP_CONS` with `GCGmastercutCreateFromCons()`
@@ -63,7 +65,7 @@ char coefvarName[SCIP_MAXSTRLEN];
 // here, we create a binary variable
 SCIP_CALL( GCGcreateInferredPricingVar(pricingscip, coefvar, coefvarName, 0.0, 1.0, 0.0, SCIP_VARTYPE_BINARY, blocknr) );
 
-/* create additional constraints (and auxiliary variables) */
+/* create additional constraints (and inferred pricing variables) */
 SCIP_CONS** additionalcons = NULL;
 int nadditionalcons = 2;
 SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &additionalcons, nadditionalcons) );
@@ -86,7 +88,7 @@ SCIP_CALL( GCGpricingmodificationCreate(
    &pricingmods[0],
    blocknr,
    coefvar,
-   NULL, // we have no auxiliary variables
+   NULL, // we have no inferred pricing variables
    0,
    additionalcons,
    nadditionalcons
