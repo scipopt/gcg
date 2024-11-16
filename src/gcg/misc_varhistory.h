@@ -34,8 +34,8 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 
-#ifndef GCG_HEUR_XPRINS_H__
-#define GCG_HEUR_XPRINS_H__
+#ifndef GCG_MISC_VARHISTORY_H__
+#define GCG_MISC_VARHISTORY_H__
 
 #include "scip/scip.h"
 #include "def.h"
