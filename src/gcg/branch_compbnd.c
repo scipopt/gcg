@@ -790,11 +790,7 @@ SCIP_Real calcFractionality(
    for( i = 0; i < nmastervars; ++i )
    {
       SCIP_Real solval = SCIPgetSolVal(masterscip, NULL, mastervars[i]);
-      // We do this check to avoid numerical issues
-      if( !SCIPisFeasIntegral(masterscip, solval) )
-      {
-         fractionality += solval - SCIPfloor(masterscip, solval);
-      }
+      fractionality += SCIPfrac(masterscip, solval);
    }
 
    return fractionality;
