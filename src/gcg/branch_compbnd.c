@@ -796,7 +796,10 @@ SCIP_Real calcFractionality(
    return fractionality;
 }
 
-/** method for initializing the set of respected indices */
+/** method for initializing the indexSet for a given set of master variables
+  *
+  * the index set denotes the set of all integral original variables contained in the provided master variables
+  */
 static
 SCIP_RETCODE initIndexSet(
    SCIP*                 scip,               /**< SCIP data structure */
@@ -856,7 +859,7 @@ SCIP_RETCODE initIndexSet(
 
             for( k = 0; k < oldsize; ++k )
             {
-               /*  if variable already in union */
+               /*  if variable already in set */
                if( (*indexSet)[k] == origvars[j] )
                   break;
 
