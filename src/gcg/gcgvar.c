@@ -177,7 +177,9 @@ SCIP_Bool GCGvarIsMaster(
 #endif
 
 #ifndef NDEBUG
-/** returns TRUE or FALSE whether variable is a inferred pricing variable or not */
+/** returns TRUE or FALSE whether variable is a inferred pricing variable or not
+  *
+  * inferred pricing variables are auxilary variables that are required by specific generic mastercuts */
 GCG_EXPORT
 SCIP_Bool GCGvarIsInferredPricing(
    SCIP_VAR*             var                 /**< SCIP variable structure */
