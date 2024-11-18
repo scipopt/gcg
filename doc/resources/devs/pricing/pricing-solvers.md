@@ -20,18 +20,16 @@ crucial for the performance of every Branch-and-Price solver, since we have to s
 and that in each node of the branch-and-bound tree.
 
 ## List of Pricing Solvers
-We currently have three different pricing solvers:
+We currently have these different pricing solvers:
 
 | Name | Description | Priority |
 | -- | -- | -- |
 | Knapsack ([Documentation](solver__knapsack_8c.html)) | Knapsack program solving using a dynamic programming approach | 200 |
 | Cliquer ([Documentation](solver__knapsack_8c.html))  | Independent set problem solving using a heuristic (external) solver | 150 |
-| GCG ([Documentation](solver__gcg_8c.html))      | Call GCG solver | 110 |
+| GCG ([Documentation](solver__gcg_8cpp.html))      | Call GCG solver | 110 |
 | HiGHS ([Documentation](solver__highs_8c.html))      | Call (external) HiGHS solver | 100 |
 | CPLEX ([Documentation](solver__cplex_8c.html))      | Call (external) CPLEX solver | 100 |
-| MIP ([Documentation](solver__knapsack_8c.html))      | Simply call MIP solver again (expensive) | 0 |
-
-All three of those can solve pricing problems heuristically or exact.
+| MIP ([Documentation](solver__knapsack_8c.html))      | Simply call MIP solver again (SCIP) | 0 |
 
 ### Knapsack Solver
 In very many cases, we can see variants of the so-called knapsack constraint \f$\sum_{i=1}^n x_i w_i \leq b\f$
@@ -40,7 +38,8 @@ and use this constraint as the only constraint of the pricing problem. By doing 
 a commonly known dynamic programming approach to solve a knapsack problem optimally and very efficiently.
 
 ### Cliquer Solver
-This solver can be used for independent set problems. It makes use of the external software "Cliquer".  
+This solver can be used for independent set problems. It makes use of the external software "Cliquer".
+It supports only heuristic pricing.
 For installation instructions, please consult the @ref install-manually "installation guide". Note that
 for the Cliquer solver to work, GCG must have been compiled with the enabled `CLIQUER` flag.
 
@@ -52,7 +51,9 @@ the usual solving. This consequentially leads to poor performance on many instan
 This pricing solver uses GCG recursively to solve the pricing problems.
 The solver is disabled by default. It can be enabled by setting the maximum (recursion) depth parameter `pricingsolver/gcg/maxdepth` to a value greater than 0.
 I.e., setting this parameter to 1 means that the GCG solver is used to solve the root pricing problems, but is disabled for the nested pricing problems.
-The solver either uses a nested decomposition provided by the user, or tries to detect a structure if no nested structure information is available.
+The solver either uses a nested decomposition provided by the user, or tries to detect a structure if no nested decomposition is available.
+This means that the automatic detection will only be performed by the pricing solver if no nested decomposition is available at the current depth (e.g., `pricingsolver/gcg/maxdepth` is set to 1, but no decomposition of any block of the root decomposition is available).
+If the user provides a nested decomposition that does not specify decompositioins for all blocks (but for at least one), these blocks will be ignored by the GCG pricing solver.
 
 ### HiGHS Solver
 This pricing solver uses the HiGHS shared library to solve the pricing problems.

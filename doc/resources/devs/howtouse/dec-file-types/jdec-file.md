@@ -10,10 +10,11 @@ and an overview of the structure of the file format.
 This file format was introduced with GCG 4.0. Currently it supports the following features:
 * JSON compatible file format (i.e., all general JSON file format rules apply)
 * complete and partial decompositions
-* decompositions of resolved problems
+* decompositions of presolved problems
 * block constraints and master constraints
 * symmetry information used to aggregate pricing problems
 * nested decompositions (decompositions for blocks can be specified, utilized by the @ref pricing-solvers "GCG pricing solver")
+
 The reading and writing process works as for the `.dec` @ref dec-file "file format".
 As it is based on JSON, you can read and write it with JSON libraries.
 
@@ -24,9 +25,9 @@ Minimize
  cost:  + y#0 + y#1 + y#2 + y#3
 Subject to
  assign_0:
-  + x#0#0 + x#1#0 >= 1
+  + x#0#0 + x#1#0 + x#2#0 + x#3#0 >= 1
  assign_1:
-  + x#0#1 + x#1#1 >= 1
+  + x#0#1 + x#1#1 + x#2#1 + x#3#1 >= 1
  link_0:
   - y#0 + y#1 >= 0
  link_1:
@@ -117,17 +118,17 @@ Using the names defined in the model, you can specify a decomposition like that:
     ],
     "symmetry_var_mapping": {
       "y_0": "y_0",
+      "x_0_0": "x_0_0",
       "x_0_1": "x_0_1",
-      "x_0_2": "x_0_2",
       "y_1": "y_0",
+      "x_1_0": "x_0_0",
       "x_1_1": "x_0_1",
-      "x_1_2": "x_0_2",
       "y_2": "y_0",
+      "x_2_0": "x_0_0",
       "x_2_1": "x_0_1",
-      "x_2_2": "x_0_2",
       "y_3": "y_0",
-      "x_3_1": "x_0_1",
-      "x_3_2": "x_0_2"
+      "x_3_0": "x_0_0",
+      "x_3_1": "x_0_1"
     }
   }
 }
