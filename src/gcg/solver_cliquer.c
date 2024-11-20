@@ -1108,15 +1108,6 @@ SCIP_RETCODE solveCliquer(
    int               j;
    int               k;
 
-   // TODO: REMOVE
-#ifdef SCIP_DEBUG
-   static int no_model = -1;
-   no_model++;
-   printf("Model no. cliquer: %i\n", no_model);
-   if( no_model >= 937 )
-      printf("asdf\n");
-#endif
-
    assert(scip != NULL);
    assert(pricingprob != NULL);
    assert(solver != NULL);
@@ -1197,13 +1188,6 @@ SCIP_RETCODE solveCliquer(
 
    SCIPdebugMessage( "Number of variables fixed by bound (before propagation): %d (of %d).\n", nfixedvars, npricingprobvars );
 
-   //TODO: REMOVE!
-#ifdef SCIP_DEBUG
-   char path[300];
-   snprintf(path, sizeof(path), "/home/johannes/Projects/work-or/test_problems/cliquer_bug/pps_r1005gcol/model_%d.lp", no_model);
-   SCIPwriteOrigProblem(pricingprob, path, "lp", FALSE);
-#endif
-
    for( i = 0; i < nconss; i++ )
    {
       consvarsfixedcount[i] = 0;       /* Initialize array to count the number of fixed vars per constraint. */
@@ -1260,39 +1244,55 @@ SCIP_RETCODE solveCliquer(
 
 
    /* Count number of fixed variables and fixed-to-0 variables per constraint. */
-   // TODO: optimize for case of 0 fixed variables.
    for( i = 0; i < nconss; i++ )
    {
-      assert(constraints[i] != NULL);
-      conshdlr = SCIPconsGetHdlr(constraints[i]);
-      assert(conshdlr != NULL);
-
-      if( strcmp(SCIPconshdlrGetName(conshdlr), "linear") == 0 )
-      {
-         lconsvars = SCIPgetVarsLinear(pricingprob,constraints[i]);
-         SCIPgetConsNVars(pricingprob,constraints[i],&nvars,&retcode);
-      }
-      else if( strcmp(SCIPconshdlrGetName(conshdlr), "varbound") == 0 )
-      {
-         vconsvars[0] = SCIPgetVarVarbound(pricingprob,constraints[i]);
-         vconsvars[1] = SCIPgetVbdvarVarbound(pricingprob,constraints[i]);
-         lconsvars = vconsvars;
-         nvars = 2;
-      }
-
       consvarsfixedtozerocount[i] = 0;
+
+      /* Skip if there are no fixed variables. */
+      if( nlinkedvars <= 0)
+         continue;
+
+      /* Get variables of the constraint in dependence of the constraint handler */
+      switch( cliquerconstypes[i] )
+      {
+         case LINEAR_IS:
+         case LINEAR_IS_LIKE:
+         case LINEAR_CLIQUE:
+         case LINEAR_COUPLING_DECORATIVE:
+         case LINEAR_COUPLING_CLIQUE:
+            lconsvars = SCIPgetVarsLinear(pricingprob,constraints[i]);
+            SCIPgetConsNVars(pricingprob,constraints[i],&nvars,&retcode);
+            break;
+         case VARBND_SAME:
+         case VARBND_STD:
+         case VARBND_IS:
+            vconsvars[0] = SCIPgetVarVarbound(pricingprob,constraints[i]);
+            vconsvars[1] = SCIPgetVbdvarVarbound(pricingprob,constraints[i]);
+            lconsvars = vconsvars;
+            nvars = 2;
+            break;
+      }
+
+      /* Count variables fixed to 0. */
       for( j = 0; j < nvars; j++ )
       {
          if( solvals[SCIPvarGetProbindex(lconsvars[j])] == 0 )
             consvarsfixedtozerocount[i]++;
       }
 
+      if( consvarsfixedtozerocount[i] == 0 )
+      {
+         /* Count of fixed variables is still correct. */
+         continue;
+      }
       if( consvarsfixedcount[i] < nvars && consvarsfixedtozerocount[i] == nvars )
       {
+         /* All variables fixed to 0. */
          consvarsfixedcount[i] = consvarsfixedtozerocount[i];
       }
       else if( consvarsfixedcount[i] < nvars )
       {
+         /* Need to recount the overall number of fixed variables. */
          consvarsfixedcount[i] = 0;
          for( j = 0; j < nvars; j++ )
          {
@@ -1452,7 +1452,9 @@ SCIP_RETCODE solveCliquer(
             /* If none of the nodes are relevant, force x to be zero, since the constraint would be violated if x = 1 and y = 0 */
             else
             {
-               // TODO: Check if correct. Before, the following was not in the else-statement. Also: Is this correct generally?
+               /* This logic might not always be correct. These vairables might be set to 1 in an optimal solution if, e.g.,
+                * they appear as coupling variables in other constraints. Even if they are both not "relevant".
+                */
                setLinkedSolvals(pricingprob, solvals, linkmatrix, linkedvars, nlinkedvars, vconsvars[0], 0.0);
             }
          }
@@ -1511,7 +1513,7 @@ SCIP_RETCODE solveCliquer(
       goto TERMINATE;
    }
 
-   SCIPdebugMessage("Graph size: %d.\n", indexcount);
+   SCIPdebugMessage("Graph size: %d ; Graph density: %g.\n",indexcount,(float)nedges / ((float)(g->n - 1) * (g->n) / 2));
 
    ASSERT( indexcount <= npricingprobvars );
 
