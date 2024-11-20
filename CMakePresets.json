@@ -28,6 +28,10 @@
                 "PAPILO": {
                     "type": "BOOL",
                     "value": "OFF"
+                },
+                "HMETIS": {
+                    "type": "BOOL",
+                    "value": "ON"
                 }
             }
         },
@@ -82,7 +86,11 @@
             "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang",
-                "CMAKE_CXX_COMPILER": "clang++"
+                "CMAKE_CXX_COMPILER": "clang++",
+                "HMETIS": {
+                    "type": "BOOL",
+                    "value": "OFF"
+                }
             },
             "condition": {
                 "type": "inList",
@@ -101,6 +109,10 @@
                 "CMAKE_TOOLCHAIN_FILE": {
                     "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
                     "type": "FILEPATH"
+                },
+                "HMETIS": {
+                    "type": "BOOL",
+                    "value": "OFF"
                 }
             },
             "condition": {
