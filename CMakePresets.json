@@ -28,6 +28,10 @@
                 "PAPILO": {
                     "type": "BOOL",
                     "value": "OFF"
+                },
+                "HMETIS": {
+                    "type": "BOOL",
+                    "value": "ON"
                 }
             }
         },
@@ -82,7 +86,11 @@
             "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang",
-                "CMAKE_CXX_COMPILER": "clang++"
+                "CMAKE_CXX_COMPILER": "clang++",
+                "HMETIS": {
+                    "type": "BOOL",
+                    "value": "OFF"
+                }
             },
             "condition": {
                 "type": "inList",
@@ -101,6 +109,10 @@
                 "CMAKE_TOOLCHAIN_FILE": {
                     "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
                     "type": "FILEPATH"
+                },
+                "HMETIS": {
+                    "type": "BOOL",
+                    "value": "OFF"
                 }
             },
             "condition": {
@@ -114,8 +126,8 @@
         {
             "name": "gcg-linux-debug",
             "inherits": [
-                "gcg-debug",
-                "gcg-linux"
+                "gcg-linux",
+                "gcg-debug"
             ],
             "displayName": "GCG Linux Debug Config",
             "description": "GCG Linux development debug build configuration",
@@ -127,8 +139,8 @@
         {
             "name": "gcg-linux-release",
             "inherits": [
-                "gcg-release",
-                "gcg-linux"
+                "gcg-linux",
+                "gcg-release"
             ],
             "displayName": "GCG Linux Release Config",
             "description": "GCG Linux development release build configuration",
@@ -140,8 +152,8 @@
         {
             "name": "gcg-linux-relwithdebinfo",
             "inherits": [
-                "gcg-release",
-                "gcg-linux"
+                "gcg-linux",
+                "gcg-release"
             ],
             "displayName": "GCG Linux RelWithDebInfo Config",
             "description": "GCG Linux development release with debug info build configuration",
@@ -153,8 +165,8 @@
         {
             "name": "gcg-macos-debug",
             "inherits": [
-                "gcg-debug",
-                "gcg-macos"
+                "gcg-macos",
+                "gcg-debug"
             ],
             "displayName": "GCG macOS Debug Config",
             "description": "GCG macOS development debug build configuration",
@@ -166,8 +178,8 @@
         {
             "name": "gcg-macos-release",
             "inherits": [
-                "gcg-release",
-                "gcg-macos"
+                "gcg-macos",
+                "gcg-release"
             ],
             "displayName": "GCG macOS Release Config",
             "description": "GCG macOS development release build configuration",
@@ -179,8 +191,8 @@
         {
             "name": "gcg-macos-relwithdebinfo",
             "inherits": [
-                "gcg-release",
-                "gcg-macos"
+                "gcg-macos",
+                "gcg-release"
             ],
             "displayName": "GCG macOS RelWithDebInfo Config",
             "description": "GCG macOS development release with debug info build configuration",
@@ -192,8 +204,8 @@
         {
             "name": "gcg-windows-debug",
             "inherits": [
-                "gcg-debug",
-                "gcg-windows"
+                "gcg-windows",
+                "gcg-debug"
             ],
             "displayName": "GCG Windows Debug Config",
             "description": "GCG Windows development debug build configuration"
@@ -201,8 +213,8 @@
         {
             "name": "gcg-windows-release",
             "inherits": [
-                "gcg-release",
-                "gcg-windows"
+                "gcg-windows",
+                "gcg-release"
             ],
             "displayName": "GCG Windows Release Config",
             "description": "GCG Windows development release build configuration"
