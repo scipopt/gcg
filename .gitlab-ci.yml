@@ -97,9 +97,9 @@ build:make_release:
     - ln -sfn hmetis-2.0pre1/Linux-x86_64/hmetis2.0pre1 hmetis
     - sed -i.bak "s/HMETIS_EXECUTABLE \"hmetis\"/HMETIS_EXECUTABLE \"\.\/hmetis\"/g" src/gcg/dec_h*partition.cpp
     # generate 'opt' binary
-    - make deps OPT=opt CLIQUER=true BLISS=true
+    - make deps OPT=opt CLIQUER=true
     - ln -sfn ../cliquer-git/libcliquer.a lib/static/libcliquer.a
-    - make OPT=opt CLIQUER=true BLISS=true
+    - make OPT=opt CLIQUER=true HMETIS=true
   artifacts:
     expire_in: 3 days
     paths:
@@ -139,9 +139,9 @@ build:make_debug:
     - ln -sfn hmetis-2.0pre1/Linux-x86_64/hmetis2.0pre1 hmetis
     - sed -i.bak "s/HMETIS_EXECUTABLE \"hmetis\"/HMETIS_EXECUTABLE \"\.\/hmetis\"/g" src/gcg/dec_h*partition.cpp
     # generate 'dbg' binary
-    - make deps OPT=dbg CLIQUER=true BLISS=true
+    - make deps OPT=dbg CLIQUER=true
     - ln -sfn ../cliquer-git/libcliquer.a lib/static/libcliquer.a
-    - make OPT=dbg CLIQUER=true BLISS=true
+    - make OPT=dbg CLIQUER=true HMETIS=true
   artifacts:
     expire_in: 3 days
     paths:
@@ -167,8 +167,11 @@ build:cmake_release:
   script:
     - mkdir build
     - cd build
+    # download and unpack cliquer
+    - wget http://users.aalto.fi/~pat/cliquer/cliquer-1.21.tar.gz
+    - tar xvfz cliquer-1.21.tar.gz
     # main compilation (build type: debug)
-    - cmake -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=cliquer-1.21/ ..
+    - cmake -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=cliquer-1.21/ -DHMETIS=ON ..
     - make -j 4
     - cd ..
   artifacts:
@@ -192,11 +195,11 @@ build:cmake_debug:
   script:
     - mkdir build
     - cd build
-    # download and unpack cliquer (bliss and hmetis already exist)
+    # download and unpack cliquer
     - wget http://users.aalto.fi/~pat/cliquer/cliquer-1.21.tar.gz
     - tar xvfz cliquer-1.21.tar.gz
     # main compilation (build type: debug)
-    - cmake -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=cliquer-1.21/ -DCMAKE_BUILD_TYPE=Debug ..
+    - cmake -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=cliquer-1.21/ -DHMETIS=ON -DCMAKE_BUILD_TYPE=Debug ..
     - make -j 4
     - cd ..
   artifacts:
@@ -470,7 +473,7 @@ experiment:master:
     - *init_ssh2
   script:
     # recompile with STATISTICS=true to also print pricing statistics
-    - make STATISTICS=true OPT=opt CLIQUER=true BLISS=true
+    - make STATISTICS=true OPT=opt CLIQUER=true
     # copy over the whole repository
     - FOLDER="gcg_experiment/${CI_JOB_ID}"
     - ssh gcgci@clustor "rm -rf ~/$FOLDER"
@@ -508,7 +511,6 @@ benchmark:feature:
   before_script:
     - *init_ssh2
   script:
-    # benchmark stage does not use bliss, cliquer or htmetis
     # copy over the whole repository
     - FOLDER="gcg_experiment/${CI_JOB_ID}"
     - ssh gcgci@clustor "rm -rf ~/$FOLDER"
@@ -548,7 +550,7 @@ experiment:feature:
     - *init_ssh2
   script:
     # recompile with STATISTICS=true to also print pricing statistics
-    - make STATISTICS=true OPT=opt CLIQUER=true BLISS=true
+    - make STATISTICS=true OPT=opt CLIQUER=true
     # copy over the whole repository
     - FOLDER="gcg_experiment/${CI_JOB_ID}"
     - ssh gcgci@clustor "rm -rf ~/$FOLDER"
