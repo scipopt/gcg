@@ -543,8 +543,8 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIPfreeBufferArray(scip, &blockvalue);
 
    /* if the solution violates one of its bounds by more than feastol
-      * and less than 10*feastol, round it and print a warning
-      */
+    * and less than 10*feastol, round it and print a warning
+    */
    SCIP_CALL( SCIPgetVarsData(scip, &vars, &nvars, NULL, NULL, NULL, NULL) );
    SCIP_CALL( SCIPgetRealParam(scip, "numerics/feastol", &feastol) );
 

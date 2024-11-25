@@ -203,14 +203,14 @@ def parseOutfiles(outfiles):
                 opstat = True
 
             # get instance lp
-            if line.startswith("read problem") and '.dec' not in line and '.ndec' not in line and '.blk' not in line:
+            if line.startswith("read problem") and '.dec' not in line and '.jdec' not in line and '.blk' not in line:
                 if line.split()[2][1:-1].startswith("/") and "/check/" in line.split()[2][1:-1]:
                     data['LP FILE'].append(line.split()[2][1:-1].split("/check/")[1])
                 else:
                     data['LP FILE'].append(line.split()[2][1:-1])
 
             # get instance dec
-            if line.startswith("read problem") and ('.dec' in line or '.ndec' in line or '.blk' in line) and not SCIPlog:
+            if line.startswith("read problem") and ('.dec' in line or '.jdec' in line or '.blk' in line) and not SCIPlog:
                 if line.split()[2][1:-1].startswith("/") and "/check/" in line.split()[2][1:-1]:
                     data['DEC FILE'].append(line.split()[2][1:-1].split("/check/")[1])
                 else:

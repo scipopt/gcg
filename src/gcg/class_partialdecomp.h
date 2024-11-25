@@ -94,9 +94,9 @@ struct BLOCK_STRUCTURE
 
    /** translates the structure using provided mappings */
    BLOCK_STRUCTURE* translateStructure(
-      std::vector<int>& rowmapping,
-      std::vector<int>& colmapping,
-      SCIP_Bool translatesymmetry
+      std::vector<int>& rowmapping,                /**< row mapping used to translate data */
+      std::vector<int>& colmapping,                /**< column mapping used to translate data */
+      SCIP_Bool translatesymmetry                  /**< translate symmetry information? */
       );
 
    std::vector<int> masterconss;                   /**< vector containing the master constraints */
