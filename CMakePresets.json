@@ -49,7 +49,8 @@
                 "SANITIZE_UNDEFINED": {
                     "type": "BOOL",
                     "value": "ON"
-                }
+                },
+                "CMAKE_BUILD_TYPE": "Debug"
             }
         },
         {
@@ -58,7 +59,19 @@
             "displayName": "GCG Default Release Config",
             "description": "Default GCG development release build configuration",
             "hidden": true,
-            "cacheVariables": {}
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "gcg-relwithdebinfo",
+            "inherits": "gcg-default",
+            "displayName": "GCG Default RelWithDebInfo Config",
+            "description": "Default GCG development release with debug info build configuration",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
         },
         {
             "name": "gcg-linux",
@@ -131,10 +144,7 @@
             ],
             "displayName": "GCG Linux Debug Config",
             "description": "GCG Linux development debug build configuration",
-            "generator": "Unix Makefiles",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
+            "generator": "Unix Makefiles"
         },
         {
             "name": "gcg-linux-release",
@@ -144,23 +154,17 @@
             ],
             "displayName": "GCG Linux Release Config",
             "description": "GCG Linux development release build configuration",
-            "generator": "Unix Makefiles",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
-            }
+            "generator": "Unix Makefiles"
         },
         {
             "name": "gcg-linux-relwithdebinfo",
             "inherits": [
                 "gcg-linux",
-                "gcg-release"
+                "gcg-relwithdebinfo"
             ],
             "displayName": "GCG Linux RelWithDebInfo Config",
             "description": "GCG Linux development release with debug info build configuration",
-            "generator": "Unix Makefiles",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-            }
+            "generator": "Unix Makefiles"
         },
         {
             "name": "gcg-macos-debug",
@@ -170,10 +174,7 @@
             ],
             "displayName": "GCG macOS Debug Config",
             "description": "GCG macOS development debug build configuration",
-            "generator": "Unix Makefiles",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
+            "generator": "Unix Makefiles"
         },
         {
             "name": "gcg-macos-release",
@@ -183,23 +184,17 @@
             ],
             "displayName": "GCG macOS Release Config",
             "description": "GCG macOS development release build configuration",
-            "generator": "Unix Makefiles",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
-            }
+            "generator": "Unix Makefiles"
         },
         {
             "name": "gcg-macos-relwithdebinfo",
             "inherits": [
                 "gcg-macos",
-                "gcg-release"
+                "gcg-relwithdebinfo"
             ],
             "displayName": "GCG macOS RelWithDebInfo Config",
             "description": "GCG macOS development release with debug info build configuration",
-            "generator": "Unix Makefiles",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-            }
+            "generator": "Unix Makefiles"
         },
         {
             "name": "gcg-windows-debug",
