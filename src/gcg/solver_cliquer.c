@@ -1249,7 +1249,7 @@ SCIP_RETCODE solveCliquer(
       consvarsfixedtozerocount[i] = 0;
 
       /* Skip if there are no fixed variables. */
-      if( nlinkedvars <= 0)
+      if( nfixedvars <= 0)
          continue;
 
       /* Get variables of the constraint in dependence of the constraint handler */
