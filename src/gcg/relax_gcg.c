@@ -713,9 +713,8 @@ SCIP_RETCODE checkIdenticalBlocks(
 }
 
 /** sets the pricing problem parameters */
-static
-SCIP_RETCODE setPricingProblemParameters(
-   SCIP_RELAXDATA*       relaxdata,          /**< the relaxator data data structure */
+SCIP_RETCODE GCGsetPricingProblemParameters(
+   GCG_DECTYPE           dectype,            /**< the dectype of the decomp */
    SCIP*                 scip,               /**< SCIP data structure of the pricing problem */
    int                   clocktype,          /**< clocktype to use in the pricing problem */
    SCIP_Real             infinity,           /**< values larger than this are considered infinity in the pricing problem */
@@ -728,9 +727,9 @@ SCIP_RETCODE setPricingProblemParameters(
    )
 {
    assert(scip != NULL);
-   assert(relaxdata->mode != GCG_DECMODE_ORIGINAL);
+   assert(dectype != GCG_DECMODE_ORIGINAL);
 
-   if( GCGdecompGetType(relaxdata->decomp) != GCG_DECTYPE_DIAGONAL )
+   if( dectype != GCG_DECTYPE_DIAGONAL )
    {
       /* disable conflict analysis */
       SCIP_CALL( SCIPsetBoolParam(scip, "conflict/useprop", FALSE) );
@@ -753,15 +752,14 @@ SCIP_RETCODE setPricingProblemParameters(
       SCIP_CALL( SCIPsetBoolParam(scip, "constraints/setppc/presolusehashing", FALSE) );
       SCIP_CALL( SCIPsetBoolParam(scip, "constraints/logicor/presolusehashing", FALSE) );
 
-      /* disable dual fixing presolver for the moment, because we want to avoid variables fixed to infinity */
-      // SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/freq", -1) );
+      /* disable dual fixing presolver for the moment (propagator should be safe), because we want to avoid variables fixed to infinity */
       SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/maxprerounds", 0) );
-      // SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/freq") );
       SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/maxprerounds") );
 
 
       /* disable solution storage ! */
       SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
+      SCIP_CALL( SCIPfixParam(scip, "limits/maxorigsol") );
 
       /* @todo enable presolving and propagation of xor constraints if bug is fixed */
 
@@ -769,11 +767,8 @@ SCIP_RETCODE setPricingProblemParameters(
       SCIP_CALL( SCIPsetIntParam(scip, "constraints/xor/maxprerounds", 0) );
       SCIP_CALL( SCIPsetIntParam(scip, "constraints/xor/propfreq", -1) );
 
-      SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
-      SCIP_CALL( SCIPfixParam(scip, "limits/maxorigsol") );
-
       /* jonas' stuff */
-      if( GCGdecompGetType(relaxdata->decomp) == GCG_DECTYPE_DIAGONAL && enableppcuts )
+      if( enableppcuts )
       {
          int pscost;
          int prop;
@@ -1258,7 +1253,7 @@ SCIP_RETCODE createPricingProblem(
    {
       SCIP_CALL( SCIPcreate(pricingscip) );
       SCIP_CALL( SCIPincludeDefaultPlugins(*pricingscip) );
-      SCIP_CALL( setPricingProblemParameters(relaxdata, *pricingscip, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastolfactor, dualfeastol, enableppcuts) );
+      SCIP_CALL( GCGsetPricingProblemParameters(GCGdecompGetType(relaxdata->decomp), *pricingscip, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastolfactor, dualfeastol, enableppcuts) );
    }
    SCIP_CALL( SCIPcreateProb(*pricingscip, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL) );
 

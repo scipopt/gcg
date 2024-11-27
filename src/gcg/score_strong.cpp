@@ -430,82 +430,11 @@ SCIP_RETCODE setTestpricingProblemParameters(
 {
    assert(scip != NULL);
 
-   /* disable conflict analysis */
-   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/useprop", FALSE) );
-   SCIP_CALL( SCIPsetCharParam(scip, "conflict/useinflp", 'o') );
-   SCIP_CALL( SCIPsetCharParam(scip, "conflict/useboundlp", 'o') );
-   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/usesb", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/usepseudo", FALSE) );
+   GCGsetPricingProblemParameters(GCG_DECTYPE_UNKNOWN, scip, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastolfactor,
+      dualfeastol, enableppcuts);
 
-   /* reduce the effort spent for hash tables */
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/usevartable", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/useconstable", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/usesmalltables", TRUE) );
-
-   /* disable expensive presolving */
-   /* @todo test whether this really helps, perhaps set presolving emphasis to fast? */
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/linear/presolpairwise", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/setppc/presolpairwise", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/logicor/presolpairwise", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/linear/presolusehashing", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/setppc/presolusehashing", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/logicor/presolusehashing", FALSE) );
-
-   /* disable dual fixing presolver for the moment, because we want to avoid variables fixed to infinity */
-   // SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/freq", -1) );
-   SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/maxprerounds", 0) );
-   // SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/freq") );
-   SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/maxprerounds") );
-
-   /* disable solution storage ! */
-   SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
    SCIP_CALL( SCIPsetRealParam(scip, "limits/time", timelimit ) );
 
-   /* disable multiaggregation because of infinite values */
-   SCIP_CALL( SCIPsetBoolParam(scip, "presolving/donotmultaggr", TRUE) );
-
-   /* @todo enable presolving and propagation of xor constraints if bug is fixed */
-
-   /* disable presolving and propagation of xor constraints as work-around for a SCIP bug */
-   SCIP_CALL( SCIPsetIntParam(scip, "constraints/xor/maxprerounds", 0) );
-   SCIP_CALL( SCIPsetIntParam(scip, "constraints/xor/propfreq", -1) );
-
-   /* disable output to console */
-   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NORMAL) );
-#if SCIP_VERSION > 210
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/printreason", FALSE) );
-#endif
-   SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
-   SCIP_CALL( SCIPfixParam(scip, "limits/maxorigsol") );
-
-   /* do not abort subproblem on CTRL-C */
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/catchctrlc", FALSE) );
-
-   /* set clock type */
-   SCIP_CALL( SCIPsetIntParam(scip, "timing/clocktype", clocktype) );
-
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/calcintegral", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/finitesolutionstore", TRUE) );
-
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/infinity", infinity) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/epsilon", epsilon) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/sumepsilon", sumepsilon) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/feastol", feastol) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/lpfeastolfactor", lpfeastolfactor) ); // canged from "numerics/lpfeastol"
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/dualfeastol", dualfeastol) );
-
-   /* jonas' stuff */
-   if( enableppcuts )
-   {
-      int pscost;
-      int prop;
-
-      SCIP_CALL( SCIPgetIntParam(scip, "branching/pscost/priority", &pscost) );
-      SCIP_CALL( SCIPgetIntParam(scip, "propagating/maxroundsroot", &prop) );
-      SCIP_CALL( SCIPsetIntParam(scip, "branching/pscost/priority", 11000) );
-      SCIP_CALL( SCIPsetIntParam(scip, "propagating/maxroundsroot", 0) );
-      SCIP_CALL( SCIPsetPresolving(scip, SCIP_PARAMSETTING_OFF, TRUE) );
-   }
    return SCIP_OKAY;
 }
 
