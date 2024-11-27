@@ -162,15 +162,12 @@
         {
             "name": "gcg-linux-debug-nm",
             "inherits": [
-                "gcg-debug-nm",
-                "gcg-linux"
+                "gcg-linux",
+                "gcg-debug-nm"
             ],
             "displayName": "GCG Linux Debug Config (native memory)",
             "description": "GCG Linux development debug build configuration with native memory handling",
-            "generator": "Unix Makefiles",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
+            "generator": "Unix Makefiles"
         },
         {
             "name": "gcg-linux-release",
