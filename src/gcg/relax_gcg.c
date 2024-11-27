@@ -2146,7 +2146,6 @@ SCIP_RETCODE solveDiagonalBlocks(
 
 }
 
-
 GCG_DECOMP* GCGgetStructDecomp(
    SCIP*                 scip
    )
@@ -2164,7 +2163,6 @@ GCG_DECOMP* GCGgetStructDecomp(
 
    return relaxdata->decomp;
 }
-
 
 /** sets the structure information */
 static
@@ -2192,7 +2190,6 @@ SCIP_RETCODE GCGsetStructDecomp(
 
    return SCIP_OKAY;
 }
-
 
 /** transforms the master problem **/
 static
@@ -2279,7 +2276,6 @@ SCIP_RETCODE transformMaster(
    }
    return SCIP_OKAY;
 }
-
 
 /** initializes and transforms relaxator data */
 static

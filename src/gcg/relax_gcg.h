@@ -422,6 +422,9 @@ SCIP_RETCODE GCGinitializeMasterProblemSolve(
    );
 
 /** stash limit settings if not already stashed
+ * 
+ * @note This function is used to prevent that SCIP interrupts (due to limits) the solving process when the B&B trees are not synchronized.
+ * Otherwise it may happen that SCIP creates a dummy node in one tree that cannot be mirrored to the other one.
  */
 SCIP_RETCODE GCGstashLimitSettings(
    SCIP*                 scip,             /**< SCIP data structure */
