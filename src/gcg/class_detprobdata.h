@@ -214,7 +214,7 @@ public:
    void addCandidatesNBlocksNVotes(
       int candidate, /**< candidate for block size */
       int nvotes     /**< number of votes this candidates will get */
-   );
+      );
 
    /**
     * @brief adds a partialdec to ancestor partialdecs
@@ -387,7 +387,7 @@ public:
    GCG_EXPORT
    int getIndexForCons(
       const char* consname
-   );
+      );
 
    /**
     * @brief returns the variable index related to a SCIP variable
@@ -407,7 +407,7 @@ public:
    GCG_EXPORT
    int getIndexForVar(
       const char* varname
-   );
+      );
 
    /**
     * @brief returns size of ancestor partialdec data structure
@@ -597,8 +597,8 @@ public:
     */
    GCG_EXPORT
    bool isConsCardinalityCons(
-         int  consindexd
-         );
+      int  consindexd
+      );
 
    /**
     * @brief determines whether or not the constraint-constraint adjacency data structure is initilized
@@ -636,7 +636,7 @@ public:
    SCIP_Bool isFiniteNonnegativeIntegral(
       SCIP*                 scip,               /**< SCIP data structure */
       SCIP_Real             x                   /**< value */
-   );
+      );
 
    /**
     * @brief check if partialdec is a duplicate of an existing finished partialdec
@@ -663,7 +663,7 @@ public:
       SCIP*                 scip,   /**< SCIP data structure */
       SCIP_Real             lhs,    /**< left hand side */
       SCIP_Real             rhs     /**< right hand side */
-   );
+      );
 
    /**
     * @brief check if partialdec is a duplicate of any given partialdecs
@@ -677,7 +677,7 @@ public:
       PARTIALDECOMP* comppartialdec,
       std::vector<PARTIALDECOMP*> const & partialdecs,
       bool sort
-   );
+      );
 
    /**
     * @brief output method for json file writer to write block candidate information
@@ -686,9 +686,9 @@ public:
     */
    GCG_EXPORT
    void printBlockcandidateInformation(
-    SCIP*                 scip,               /**< SCIP data structure */
-    FILE*                 file                /**< output file or NULL for standard output */
-   );
+      SCIP*                 scip,                /**< SCIP data structure */
+      FILE*                 file                 /**< output file or NULL for standard output */
+      );
 
    /**
     * @brief output method for json file writer to write partition candidate information
@@ -696,8 +696,8 @@ public:
     */
    GCG_EXPORT
    void printPartitionInformation(
-    FILE*                 file                /**< output file or NULL for standard output */
-   );
+      FILE*                 file                /**< output file or NULL for standard output */
+      );
 
    /**
     * @brief sorts partialdecs in finished partialdecs data structure according to the current scoretype
@@ -724,7 +724,7 @@ public:
    std::vector<PARTIALDECOMP*> translatePartialdecs(
       DETPROBDATA* otherdata,                       /**< old detprobdata */
       SCIP_Bool translateSymmetry                   /**< translate symmetry information? */
-   );
+      );
 
 
 };

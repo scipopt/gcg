@@ -1275,8 +1275,8 @@ void DETPROBDATA::printPartitionInformation(
 
 
 std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
-   DETPROBDATA* origdata,
-   std::vector<PARTIALDECOMP*> origpartialdecs,
+   DETPROBDATA* otherdata,
+   std::vector<PARTIALDECOMP*> otherpartialdecs,
    SCIP_Bool translateSymmetry
    )
 {
@@ -1287,20 +1287,20 @@ std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
    std::vector<int> missingrowinthis;
    std::vector<PARTIALDECOMP*> newpartialdecs;
 
-   calcTranslationMapping(origdata, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis);
+   calcTranslationMapping(otherdata, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis);
 
    SCIPverbMessage(this->scip, SCIP_VERBLEVEL_HIGH, NULL,
       " calculated translation; number of missing constraints: %ld; number of other partialdecs: %ld \n", missingrowinthis.size(),
-      origpartialdecs.size());
+      otherpartialdecs.size());
 
-   getTranslatedPartialdecs(origpartialdecs, rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, translateSymmetry);
+   getTranslatedPartialdecs(otherpartialdecs, rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, translateSymmetry);
    return newpartialdecs;
 }
 
 std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
-   DETPROBDATA* origdata,
+   DETPROBDATA* otherdata,
    SCIP_Bool translateSymmetry
-)
+   )
 {
    std::vector<int> rowothertothis;
    std::vector<int> rowthistoother;
@@ -1309,14 +1309,14 @@ std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
    std::vector<int> missingrowinthis;
    std::vector<PARTIALDECOMP*> newpartialdecs;
 
-   calcTranslationMapping(origdata, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis);
+   calcTranslationMapping(otherdata, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis);
 
    SCIPverbMessage(this->scip, SCIP_VERBLEVEL_HIGH, NULL,
       " calculated translation; number of missing constraints: %ld; number of other partialdecs: %ld \n", missingrowinthis.size(),
-      (origdata->getOpenPartialdecs().size() + origdata->getFinishedPartialdecs().size()));
+      (otherdata->getOpenPartialdecs().size() + otherdata->getFinishedPartialdecs().size()));
 
-   getTranslatedPartialdecs(origdata->getOpenPartialdecs(), rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, translateSymmetry);
-   getTranslatedPartialdecs(origdata->getFinishedPartialdecs(), rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, translateSymmetry);
+   getTranslatedPartialdecs(otherdata->getOpenPartialdecs(), rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, translateSymmetry);
+   getTranslatedPartialdecs(otherdata->getFinishedPartialdecs(), rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, translateSymmetry);
    return newpartialdecs;
 }
 
