@@ -545,7 +545,6 @@ SCIP_RETCODE solveProblem(
    SCIP_RETCODE retcode;
    SCIP_Real timelimit;
    SCIP_HASHMAP* varmap = solverdata->varmaps[probnr];
-   int nfreethreads;
 
    #pragma omp atomic update
    solverdata->count++;
@@ -559,9 +558,8 @@ SCIP_RETCODE solveProblem(
    nthreads = (int) MAX(nthreads / solverdata->nrelpricingprobs, 1);
    /* @todo: free threads should be assigned to expensive pps or even better:
       use additional threads (dynamically during solving) if other pps terminated */
-   nfreethreads = nthreads % solverdata->nrelpricingprobs;
    assert(solverdata->relpricingprobidxs[probnr] >= 0);
-   if( solverdata->relpricingprobidxs[probnr] + 1 <= nfreethreads )
+   if( solverdata->relpricingprobidxs[probnr] + 1 <= (nthreads % solverdata->nrelpricingprobs) )
       nthreads++;
 
    if( GCGpricerGetMaxNThreads(GCGgetMasterprob(subgcg)) != nthreads )
@@ -935,7 +933,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveGcg)
 
    *lowerbound = -SCIPinfinity(pricingprob);
 
-   SCIPdebugMessage("GCG Solver %li: solve start, probnr: %d, status: %u\n", solverdata->count+1, probnr, *status);
+   SCIPdebugMessage("GCG Solver %" PRId64 ": solve start, probnr: %d, status: %u\n", solverdata->count+1, probnr, *status);
 
    subgcg = solverdata->subgcgs[probnr];
 
@@ -995,7 +993,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurGcg)
 
    *lowerbound = -SCIPinfinity(pricingprob);
 
-   SCIPdebugMessage("GCG Solver %li: solveHeur start, probnr: %d, status: %u\n", solverdata->count+1, probnr, *status);
+   SCIPdebugMessage("GCG Solver %" PRId64 ": solveHeur start, probnr: %d, status: %u\n", solverdata->count+1, probnr, *status);
 
    subgcg = solverdata->subgcgs[probnr];
 

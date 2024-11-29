@@ -2472,7 +2472,7 @@ PARTIALDECOMP* GCGgetPartialdecToWrite(
    // get the index of the next fitting candidate
    for( dec = 0; dec < (int) candidates.size(); ++dec )
    {
-      if( candidates[dec].first->isAssignedToOrigProb() != transformed )
+      if( candidates[dec].first->isAssignedToPresolvedProb() == (bool) transformed )
          break;
    }
    // return the candidate iff one was found

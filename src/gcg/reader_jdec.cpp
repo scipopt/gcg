@@ -933,7 +933,7 @@ int JDecFileHandler::jsonDumpCallback(
       SCIPinfoMessage(filehandler->scip_, filehandler->wfile_, "%.*s", (SCIP_MAXSTRLEN - 1), &buffer[pos]);
       pos += (SCIP_MAXSTRLEN - 1);
    }
-   SCIPinfoMessage(filehandler->scip_, filehandler->wfile_, "%.*s", (buflen - pos), &buffer[pos]);
+   SCIPinfoMessage(filehandler->scip_, filehandler->wfile_, "%.*s", (int)(buflen - pos), &buffer[pos]);
 
    // size_t size_written = SCIPfwrite(buffer, 1, buflen, filehandler->wfile_);
    // return (size_written == 0) ? 1 : 0;

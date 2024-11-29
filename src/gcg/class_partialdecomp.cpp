@@ -102,7 +102,7 @@ PARTIALDECOMP* BLOCK_STRUCTURE::createPartialdec(
    )
 {
    PARTIALDECOMP* partialdec = new PARTIALDECOMP(newdetprobdata->getScip(), newdetprobdata->isAssignedToOrigProb());
-   int nblocks = blockconss.size();
+   int nblocks = (int) blockconss.size();
    char buffer[SCIP_MAXSTRLEN];
    std::vector<int> rowmapping(parentdetprobdata->getNConss(), -1);
    std::vector<int> colmapping(parentdetprobdata->getNVars(), -1);
@@ -1419,7 +1419,7 @@ void PARTIALDECOMP::calcHashvalue()
    }
 
    hashval += primes[nblocks % nprimes] * borderval;
-   hashval += primes[( nblocks + 1 ) % nprimes] * openvars.size();
+   hashval += primes[( nblocks + 1 ) % nprimes] * (unsigned long) openvars.size();
 
    hashvalue = hashval;
    hvoutdated = false;
