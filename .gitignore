@@ -19,7 +19,7 @@ doc/resources/users/features/interactive-menu/menu.html
 doc/scip.tag
 stats/plots
 gcg-*.metis*
-lib/
+lib/*
 !lib/googletest-git
 !lib/scip-git
 !lib/soplex-git
@@ -37,7 +37,7 @@ __pycache__
 *.lp
 *.mps
 *.dec
-*.ndec
+*.jdec
 *.set
 *.test
 *.solu
