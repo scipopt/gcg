@@ -168,12 +168,7 @@ AUT_HOOK2::AUT_HOOK2(
    SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &nodemap, n_) ); /*lint !e666*/
    for (i = 0; i < n_; ++i)
       nodemap[i] = -1;
-
    conssperm = NULL;
-   detprobdata = NULL;
-   partialdec = NULL;
-   blocks = NULL;
-
    ncalls = 0;
    generatorlimit = 0;
 
