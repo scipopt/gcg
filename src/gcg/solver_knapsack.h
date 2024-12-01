@@ -38,6 +38,7 @@
 
 #include "scip/scip.h"
 #include "def.h"
+#include "type_pricingstatus.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,6 +48,17 @@ extern "C" {
 GCG_EXPORT
 SCIP_RETCODE GCGincludeSolverKnapsack(
    SCIP*                 scip                /**< SCIP data structure */
+   );
+
+GCG_EXPORT
+SCIP_RETCODE GCGsolverKnapsackSolveKnapsack(
+   SCIP_Bool             exactly,            /**< should the pricing problem be solved to optimality or heuristically? */
+   SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
+   SCIP_Real*            solval,             /**< pointer to store the solution objective value */
+   GCG_PRICINGSTATUS*    status,             /**< pointer to store pricing problem status */
+   SCIP_VAR***           solvars,            /**< pointer to store solution vars (will be allocated as buffer array and must be freed afterwards) */
+   SCIP_Real**           solvals,            /**< pointer to store solution vals (will be allocated as buffer array and must be freed afterwards) */
+   int*                  nsolvars            /**< pointer to store the number of solution vars */
    );
 
 #ifdef __cplusplus

@@ -32,6 +32,7 @@
  * @author Michael Bastubbe
  * @author Hannah Hechenrieder
  * @author Hanna Franzen
+ * @author Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -44,6 +45,8 @@
 
 #include <vector>
 #include <string>
+#include <functional>
+#include <unordered_map>
 
 #include "def.h"
 #include "class_conspartition.h"
@@ -69,6 +72,39 @@ enum USERGIVEN
 };
 
 class DETPROBDATA;
+class PARTIALDECOMP;
+
+/**
+ * a lightweight struct that stores nested structure information of a block
+ */
+struct BLOCK_STRUCTURE
+{
+   /** destructor */
+   ~BLOCK_STRUCTURE();
+
+   /**
+    * Creates a partialdec using the stored structure information.
+    * The new partialdec is created using the constraint and variable names of a pricing problem created by GCG.
+   */
+   PARTIALDECOMP* createPartialdec(
+      DETPROBDATA* parentdetprobdata,              /**< parent detprobdata (the one that fits to the stored con/var ids) */
+      DETPROBDATA* newdetprobdata,                 /**< detprobdata used to create the new partialdec */
+      int probnr                                   /**< the number of the pricing problem the partialdec is created for */
+      );
+
+   /** translates the structure using provided mappings */
+   BLOCK_STRUCTURE* translateStructure(
+      std::vector<int>& rowmapping,                /**< row mapping used to translate data */
+      std::vector<int>& colmapping,                /**< column mapping used to translate data */
+      SCIP_Bool translatesymmetry                  /**< translate symmetry information? */
+      );
+
+   std::vector<int> masterconss;                   /**< vector containing the master constraints */
+   std::vector<std::vector<int>> blockconss;       /**< vector of vectors (for each block) containing the block constraints */
+   std::vector<BLOCK_STRUCTURE*> blockstructures;  /**< vector containing pointers to block structures for each block (if available) */
+   std::vector<int> symmetricalblocks;             /**< vector containing for each block an id of a block that is symmetrical */
+   std::unordered_map<int, int> symmetryvardata;   /**< symmetry information of variables (mapping) */
+};
 
 
 /*!
@@ -93,6 +129,7 @@ private:
    std::vector<std::vector<int>> varsforblocks;                /**< varsforblocks[k] contains a vector of indices of all
                                                                  *< variables assigned to block k */
    std::vector<int> linkingvars;                               /**< vector containing indices of linking variables */
+   std::vector<std::vector<int>> linkingvarsforblocks;         /**< vector of vectors containing indices of linking variables for each block */
    std::vector<std::vector<int>> stairlinkingvars;             /**< vector containing indices of staircase linking variables
                                                                  *< of the blocks (stair-linking variables are registered only
                                                                  *< in their first block) */
@@ -107,7 +144,6 @@ private:
 
    std::vector<int>  ncoeffsforblock;                          /**< number of coeffs per block */
 
-   SCIP_Bool         calculatedncoeffsforblock;                /**< is the number of coeff per block already calculated*/
    int               ncoeffsformaster;                         /**< number of master coefficients */
    std::vector<std::vector<int>> ncoeffsforblockformastercons; /**< number of coeffs a block has in a certain master constraint */
 
@@ -131,10 +167,10 @@ private:
    bool isfinishedbyfinisher;                                   /**< was this partialdec finished by the finishpartialdec() method of a detector */
 
    /* aggregation information */
-   int                  nrepblocks;                                    /**< number of block representatives */
-   std::vector<std::vector<int>> reptoblocks;                          /**< translation of the block representatives to (old) blocks */
-   std::vector<int>     blockstorep;                                   /**< translation of the (old) blocks to the block representatives */
-   std::vector<std::vector<std::vector<int> > > pidtopidvarmaptofirst; /**< [nrepblocks][blockstorep[k].size()][nvarsforprob] collection of varmaps of probindices from k-th subproblem to the zeroth block that is represented */
+   int nequivalenceclasses;                                     /**< number of equivalence classes */
+   std::vector<std::vector<int>> eqclasstoblocks;               /**< translation of the equivalence classes to blocks (first block at index 0 is the representative block of the class) */
+   std::vector<int> blockstoeqclasses;                          /**< translation of the blocks to the equivalence classes */
+   std::vector<std::vector<std::vector<int>>> eqclassesvarmappings; /**< stores for each equivalence class (first index) and for each block of the class (second index) a mapping that maps the indices of the probvars (third index) of the block to the indices of the probvars (actual value) of the representative block */
 
    /* statistic information */
    std::vector<GCG_DETECTOR*> detectorchain;          /**< vector containing detectors that worked on that partialdec */
@@ -179,6 +215,7 @@ private:
    GCG_DETECTOR* finishedorigby;          /**< index of finishing detector of orig ancestor partialdec */
 
    int translatedpartialdecid;
+   std::vector<BLOCK_STRUCTURE*> blockstructures;    /**< structure information for each block (empty iff decomposition is not nested)*/
 
 private:
    /**< id of the translated partialdec */
@@ -198,8 +235,7 @@ private:
       SCIP_Bool*           identical,  /**< pointer to store if the subproblems are identical  */
       unsigned int         searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
       unsigned int         generatorlimit      /**< bliss generator limit (requires patched bliss version) */
-
-   );
+      );
 
 
    /**
@@ -382,7 +418,7 @@ public:
    SCIP_RETCODE assignBorderFromConstoblock(
       SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons*) to block indices */
       int givenNBlocks           /**< number of blocks the hashmap contains */
-       );
+      );
 
    /**
     * @brief assigns open vars to stairlinking if appropriate
@@ -391,15 +427,13 @@ public:
     * @returns true iff at least one stairlinkingvar was assigned
     */
    GCG_EXPORT
-   bool assignCurrentStairlinking(
-      );
+   bool assignCurrentStairlinking();
 
    /**
     * @brief assigns open conss to master
     */
    GCG_EXPORT
-   void assignOpenConssToMaster(
-      );
+   void assignOpenConssToMaster();
 
    /**
     * @brief assigns conss structure according to given hashmap
@@ -414,7 +448,7 @@ public:
    SCIP_RETCODE assignPartialdecFromConstoblock(
       SCIP_HASHMAP* constoblock, /**< hashmap assigning cons indices (not SCIP_Cons*) to block indices */
       int additionalNBlocks      /**< number of (additional) blocks the hashmap contains */
-       );
+      );
 
    /*!
     * @brief assigns conss structure according to given vector
@@ -443,20 +477,19 @@ public:
     *  hence it cannot be applied in presence of linking variables
     */
    GCG_EXPORT
-   void assignSmallestComponentsButOneConssAdjacency(
-      );
+   void assignSmallestComponentsButOneConssAdjacency();
 
    /**
-    * @brief reassigns linking vars to stairlinkingvars if possible
+    * @brief reorders blocks for making a maximum number of linking vars stairlinking
     *
-    *  potentially reorders blocks for making a maximum number of linking vars stairlinking
+    *  reorders blocks for making a maximum number of linking vars stairlinking
     *  if all vars that connect exactly two blocks have a staircase structure, all of them become stairlinkingvars
     *  otherwise, the stairlinking assignment is done greedily
+    *  call PARTIALDEC::findVarsLinkingToStairlinking afterwards (this is also done by PARTIALDEC::prepare())
     *  @note precondition: partialdec does not have any stairlinking vars
     */
    GCG_EXPORT
-   void calcStairlinkingVars(
-        );
+   void reorderBlocksForStairlinkingVars();
 
    /**
     * @brief checks if all conss are assigned
@@ -484,8 +517,7 @@ public:
     * @returns true iff the partialdec seems to be consistent
     * */
    GCG_EXPORT
-   bool checkConsistency(
-      );
+   bool checkConsistency();
 
    /**
     * @brief assigns all open constraints and open variables trivially
@@ -495,8 +527,7 @@ public:
     *  @note partialdecomps should usually be completed by a detector, only use this function if you know what you are doing.
     */
    GCG_EXPORT
-   void complete(
-      );
+   void complete();
 
    /**
     * @brief assigns all open constraints and open variables
@@ -505,8 +536,7 @@ public:
     *  a cons and a var are adjacent if the var appears in the cons
     */
    GCG_EXPORT
-   void completeByConnected(
-      );
+   void completeByConnected();
 
    /**
     * @brief assigns all open constraints and open variables
@@ -517,8 +547,7 @@ public:
     *  hence it cannot be applied in presence of linking variables
     */
    GCG_EXPORT
-   void completeByConnectedConssAdjacency(
-      );
+   void completeByConnectedConssAdjacency();
 
    /**
     * @brief assigns all open constraints and open variables
@@ -528,8 +557,7 @@ public:
     *  and finally to master, if there does not exist such a block
     */
    GCG_EXPORT
-   void completeGreedily(
-      );
+   void completeGreedily();
 
    /** @brief removes the given cons from master
     */
@@ -549,8 +577,7 @@ public:
     *  - leave the cons/variableopen if nothing from the above holds
     *  */
    GCG_EXPORT
-   void considerImplicits(
-      );
+   void considerImplicits();
 
    /**
     * @brief copies the given partialdec's partition statistics
@@ -573,7 +600,7 @@ public:
    GCG_EXPORT
    void deleteEmptyBlocks(
       bool variables
-   );
+      );
 
    /**
     * @brief deletes a cons from list of open conss
@@ -593,7 +620,7 @@ public:
    GCG_EXPORT
    std::vector<int>::const_iterator deleteOpencons(
       std::vector<int>::const_iterator itr
-   );
+      );
 
    /**
     * @brief deletes a var from the list of open vars
@@ -613,7 +640,7 @@ public:
    GCG_EXPORT
    std::vector<int>::const_iterator deleteOpenvar(
       std::vector<int>::const_iterator itr
-   );
+      );
 
    /**
     * @brief displays the relevant information of the partialdec
@@ -664,8 +691,7 @@ public:
     * Variables are reassigned as master if the variable only hits master conss
     */
    GCG_EXPORT
-   void findVarsLinkingToMaster(
-      );
+   void findVarsLinkingToMaster();
 
    /**
     * @brief reassigns variables classified as linking to stairlinking if appropriate
@@ -674,8 +700,7 @@ public:
     * blocks
     */
    GCG_EXPORT
-   void findVarsLinkingToStairlinking(
-      );
+   void findVarsLinkingToStairlinking();
 
    /**
     * @brief gets partialdec id of given ancestor id
@@ -691,8 +716,7 @@ public:
     * @return vector of ids of all ancestors id
     */
    GCG_EXPORT
-   std::vector<int>& getAncestorList(
-      );
+   std::vector<int>& getAncestorList();
 
    /**
     * set ancestor list directly
@@ -707,7 +731,7 @@ public:
    GCG_EXPORT
    void removeAncestorID(
       int ancestorid    /**< id to remove */
-   );
+      );
 
    /**
     * adds ancestor id to back of list
@@ -719,13 +743,23 @@ public:
       );
 
    /**
-    * @brief get a vector of block ids that are identical to block with id repid
-    * @param repid id of the representative block
-    * @return vector of block ids that are identical to block with id repid
+    * @brief get a vector of block ids that are contained in the equivalence class eqclass
+    * @param eqclass id of the equivalence class
+    * @return vector of block ids
     */
    GCG_EXPORT
-   const std::vector<int> & getBlocksForRep(
-      int  repid
+   const std::vector<int>& getBlocksForEqClass(
+      int  eqclass
+      );
+
+   /**
+    * @brief get the representative block of the given equivalence class
+    * @param eqclass id of the equivalence class
+    * @return id of the representative block
+    */
+   GCG_EXPORT
+   int getReprBlockForEqClass(
+      int  eqclass
       );
 
    /**
@@ -791,6 +825,16 @@ public:
    std::vector<int>& getLinkingvars();
 
    /**
+    * @brief returns vector of all linking var indices contained by the block
+    * @return vector of var indices
+    * @note when accessed the vector is supposed to be sorted
+    */
+   GCG_EXPORT
+   std::vector<int>& getLinkingvarsForBlock(
+      int block
+      );
+
+   /**
     * @brief Gets array containing all master conss indices
     * @return array containing all master conss indices
     * @note when accessed it is supposed to be sorted
@@ -822,11 +866,10 @@ public:
     * @return the number of nonzero coeffs in master
     */
    GCG_EXPORT
-   int getNCoeffsForMaster(
-      );
+   int getNCoeffsForMaster();
 
    /**
-    * @brief returns the score of the partialdec (depending on enabled score)
+    * @brief returns the score of the partialdec
     * @param score the score
     * @return the score
     */
@@ -836,6 +879,13 @@ public:
       );
 
    /**
+    * @brief returns the score of the partialdec (depending on enabled score)
+    * @return the score
+    */
+   GCG_EXPORT
+   SCIP_Real getScore();
+
+   /**
    * @brief gets an intermediate score value for the blocks of a partialdec
    *
    * Used by several score calculations,
@@ -843,9 +893,7 @@ public:
    * 
    * @returns intermediate score value
    */
-   SCIP_Real calcBlockAreaScore(
-      SCIP* scip                /**< SCIP data structure */
-      );
+   SCIP_Real calcBlockAreaScore();
 
    /**
     * @brief sets the scorevalue of score
@@ -862,8 +910,7 @@ public:
     * @return TRUE iff all master constraints set partitioning, set packing, set cover, or cardinality constraints
     */
    GCG_EXPORT
-   SCIP_Bool hasSetppccardMaster(
-   );
+   SCIP_Bool hasSetppccardMaster();
 
 
    /**
@@ -871,16 +918,14 @@ public:
     * @return TRUE iff all master constraints set partitioning, set packing, or set cover
     */
    GCG_EXPORT
-   SCIP_Bool hasSetppcMaster(
-   );
+   SCIP_Bool hasSetppcMaster();
 
    /**
     * @brief checks iff all master constraints set partitioning, or set packing constraints
     * @return TRUE iff all master constraints set partitioning, or set packing constraints
     */
    GCG_EXPORT
-   SCIP_Bool hasSetppMaster(
-   );
+   SCIP_Bool hasSetppMaster();
 
    /**
     * @brief Gets the USERGIVEN status of this partialdecs
@@ -934,6 +979,18 @@ public:
     */
    GCG_EXPORT
    int getNDetectors();
+
+   /**
+    *  @brief Returns the structure information of a specific block
+    */
+   BLOCK_STRUCTURE* getBlockStructure(
+      int block                          /**< block id */
+      );
+
+   /**
+    *  @brief Returns the structure information of all blocks
+    */
+   std::vector<BLOCK_STRUCTURE*>& getBlockStructures();
 
    /**
     * @brief Gets size of the vector containing linking vars
@@ -1001,7 +1058,7 @@ public:
     * @return the number of blockrepresentatives
     */
    GCG_EXPORT
-   int getNReps();
+   int getNEquivalenceClasses();
 
    /**
     * @brief Gets size of the vector containing stairlinking vars
@@ -1035,36 +1092,21 @@ public:
     * @return number of vars that are assigned to any block
     */
    GCG_EXPORT
-   int getNVarsForBlocks(
-      );
+   int getNVarsForBlocks();
 
    /**
-    * @brief Gets array containing constraints not assigned yet
-    * @return array containing constraints not assigned yet
+    * @brief Gets vector containing constraints not assigned yet
+    * @return vector containing constraints not assigned yet
     */
    GCG_EXPORT
-   const int* getOpenconss();
+   std::vector<int>& getOpenconss();
 
    /**
-    * @brief Gets a vector containing constraint ids not assigned yet as vector
-    * @return returns a vector containing constraint ids not assigned yet as vector
+    * @brief Gets vector containing variables not assigned yet
+    * @return returns vector containing variables not assigned yet
     */
    GCG_EXPORT
-   std::vector<int>& getOpenconssVec();
-
-   /**
-    * @brief Gets array containing variables not assigned yet
-    * @return returns array containing variables not assigned yet
-    */
-   GCG_EXPORT
-   const int* getOpenvars();
-
-   /**
-    * Gets array containing variables not assigned yet as vector
-    * @return array containing variables not assigned yet as vector
-    */
-   GCG_EXPORT
-   std::vector<int>& getOpenvarsVec();
+   std::vector<int>& getOpenvars();
 
    /**
     * @brief Gets fraction of variables assigned to the border for a detector
@@ -1171,22 +1213,21 @@ public:
     * @return index of the representative block for a block, this might be blockid itself
     */
    GCG_EXPORT
-   int getRepForBlock(
+   int getEqClassForBlock(
       int blockid
       );
 
    /**
-    * @brief Gets the represenation varmap
+    * @brief Returns a vector that maps probvar indices of a block contained in an equivalence class to the probvar indices of the representative block of the class
     *
-    * Var map is vector for represenative repid and the blockrepid-th block that is represented by repid
-    * @param repid id of representative
-    * @param blockrepid id of block
-    * @return the represenation varmap as vector for represenative repid and the blockrepid-th block that is represented by repid
+    * @param eqclass id of the equivalence class
+    * @param eqclassblock index of block (with respect to eqclass)
+    * @return probvar indices mapping
     */
    GCG_EXPORT
    std::vector<int> & getRepVarmap(
-      int repid,
-      int blockrepid
+      int eqclass,
+      int eqclassblock
       );
 
    /**
@@ -1197,13 +1238,13 @@ public:
    DETPROBDATA* getDetprobdata();
 
    /**
-    * @brief Gets array containing stairlinking vars,
+    * @brief Gets vector containing stairlinking vars,
     * @note if a stairlinking variable links block i and i+1 it is only stored in vector of block i
     * @param block id of the block the stairlinking variable varctor is asked for
-    * @return array containing stairlinking vars,
+    * @return vector containing stairlinking vars,
     */
    GCG_EXPORT
-   const int* getStairlinkingvars(
+   std::vector<int>& getStairlinkingvars(
       int block
       );
 
@@ -1218,8 +1259,8 @@ public:
       );
 
    /**
-    * @brief  Gets index in variables array of a block for a variable
-    * @param varid the id of the variable the index
+    * @brief  Gets the index of a variable in the vector returned by PARTIALDECOMP::getVarsForBlock.
+    * @param varid the id of the variable
     * @param block the corresponding block id
     * @return the index of the variable or -1 if var is not in block
     */
@@ -1227,7 +1268,7 @@ public:
    int getVarProbindexForBlock(
       int varid,
       int block
-   );
+      );
 
    /**
     * @brief Gets whether this partialdec is complete,
@@ -1258,11 +1299,18 @@ public:
       );
 
    /**
+    * @brief Gets whether the partialdec is from the original problem
+    * @return true iff the partialdec is from the original problem
+    */
+   GCG_EXPORT
+   bool isAssignedToOrigProb();
+
+   /**
     * @brief Gets whether the partialdec is from the presolved problem
     * @return true iff the partialdec is from the presolved problem
     */
    GCG_EXPORT
-   bool isAssignedToOrigProb();
+   bool isAssignedToPresolvedProb();
 
    /**
     * Gets whether the partialdec is currently selected in explore menue
@@ -1292,6 +1340,12 @@ public:
    bool isEqual(
       PARTIALDECOMP* other /**< other partialdec to check equality with */
       );
+
+   /**
+    *  @brief Checks whether this is a nested decomposition
+    *  @returns true iff the decomposition is nested
+    */
+   bool isNested();
 
    /**
     * @brief Gets whether this partialdec was propagated by specified detector
@@ -1333,6 +1387,18 @@ public:
    GCG_EXPORT
    bool isVarLinkingvar(
       int var
+      );
+
+   /**
+    * @brief Checks whether the var is a linking var contained by the block
+    * @param var id of var to check
+    * @param block id of block to check
+    * @return true iff the var is a linking var
+    */
+   GCG_EXPORT
+   bool isVarLinkingvarOfBlock(
+      int var,
+      int block
       );
 
    /**
@@ -1396,8 +1462,7 @@ public:
     * @note partialdec might be not complete
     */
    GCG_EXPORT
-   void refineToBlocks(
-      );
+   void refineToBlocks();
 
    /**
     * @brief refine partialdec with focus on master
@@ -1406,8 +1471,7 @@ public:
     *  assign other conss and vars to master if possible (@see assignOpenPartialHittingToMaster())
     */
    GCG_EXPORT
-   void refineToMaster(
-      );
+   void refineToMaster();
 
    /**
     * @brief registers statistics for a used conspartition
@@ -1558,6 +1622,14 @@ public:
    GCG_EXPORT
    void setNBlocks(
       int nblocks
+      );
+
+   /**
+    *  @brief sets structure information of a specific block
+    */
+   void setBlockStructure(
+      int block,                          /**< block id */
+      BLOCK_STRUCTURE* blockstructure     /**< structure information */
       );
 
    /**
@@ -1943,8 +2015,7 @@ public:
     * @returns vector of a vector of indices for each block 
     */
    GCG_EXPORT
-   std::vector<std::vector<int>>& getConssForBlocks(
-   );
+   std::vector<std::vector<int>>& getConssForBlocks();
 
    GCG_EXPORT
    int getTranslatedpartialdecid() const;
@@ -1970,6 +2041,30 @@ public:
       int block /**< block id */
       );
 
+   /**
+   * @brief creates a detector chain short string for this partialdec, is built from detector chain
+   */
+   GCG_EXPORT
+   std::string buildDecChainString();
+
+   /**
+    * @brief sets symmetry information
+    *
+    * Each block b must be mapped to its representative block rb with rb <= b. Furthermore, rb must be mapped to itself.
+    * It is assumed that a variable assigned to a representative block is mapped to itself (varmapping does not have
+    * to cover this case).
+    *
+    * @param blockmapping function that maps block ids to the ids of the representative blocks
+    * @param varmapping function that maps tuples (block, variable index (in the block)) to the indices of the representative variables (in their blocks)
+    *
+    * @returns true iff symmetry information was stored successfully
+    */
+    GCG_EXPORT
+    bool setSymmetryInformation(
+       std::function<int(int)> blockmapping,
+       std::function<int(int, int)> varmapping
+       );
+
 private:
 
    /**
@@ -1988,8 +2083,7 @@ private:
     *  - leave it open if it hits no blocks yet
     *  @return true iff some assignment was made by the method
     */
-   bool assignHittingOpenconss(
-      );
+   bool assignHittingOpenconss();
 
    /** @brief assigns every open var
     *
@@ -1998,8 +2092,7 @@ private:
     *  - to linking if it hits blockconss of more than one different blocks
     *  - leave the var open otherwise
     *  @return true iff there is a var that has been assigned in this call*/
-   bool assignHittingOpenvars(
-      );
+   bool assignHittingOpenvars();
 
    /**
     * @brief assigns every open cons to master that hits
@@ -2009,14 +2102,12 @@ private:
     *  - a master var
     *  - or leave it open elsewise
     */
-   void assignOpenPartialHittingConsToMaster(
-      );
+   void assignOpenPartialHittingConsToMaster();
 
    /**
     * @brief assigns open conss/vars that hit exactly one block and at least one open var/cons to border
     */
-   void assignOpenPartialHittingToMaster(
-      );
+   void assignOpenPartialHittingToMaster();
 
    /**
     * @brief assigns every open var to linking that hits
@@ -2025,14 +2116,12 @@ private:
     *  - exactly one block cons and at least one open cons
     *  - leave it open otherwise
     */
-   void assignOpenPartialHittingVarsToMaster(
-      );
+   void assignOpenPartialHittingVarsToMaster();
 
    /**
     * @brief calculates the number of nonzero coefficients for the blocks
     */
-   void calcNCoeffsForBlocks(
-   );
+   void calcNCoeffsForBlocks();
 
    /**
     * @brief calculates the hash value of the partialdec for comparing
@@ -2045,8 +2134,7 @@ private:
     * counts for each pair of block and master constraint, how many nonzero entries the variables of the blocks
     * have in the master constraint
     */
-   void calcNCoeffsForBlockForMastercons(
-      );
+   void calcNCoeffsForBlockForMastercons();
 
    /**
     *  @brief optimizes block order to max stairlinking vars
@@ -2083,13 +2171,17 @@ private:
    void displayAggregationInformation();
 
    /**
+    * @brief calculates the linking vars for the blocks
+    */
+   void findLinkingvarBlocks();
+
+   /**
     * @brief calculates potential stairlinking variables with their blocks
     *
     * @return a vector of pairs of var index and vector of (two) block indices
     *  the related linking variable hits exactly these two blocks given in the related vector
     */
-   std::vector< std::pair< int, std::vector< int > > > findLinkingVarsPotentiallyStairlinking(
-      );
+   std::vector< std::pair< int, std::vector< int > > > findLinkingVarsPotentiallyStairlinking();
 
    /**
     * @brief returns the data of the conspartition that the given detector made use of

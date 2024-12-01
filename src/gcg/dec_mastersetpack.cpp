@@ -105,7 +105,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetpack)
    gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec;
 
    /* set open setpacking constraints to Master */
-   auto& openconss = partialdec->getOpenconssVec();
+   auto& openconss = partialdec->getOpenconss();
    for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
    {
       cons = partialdecdetectiondata->detprobdata->getCons(*itr);

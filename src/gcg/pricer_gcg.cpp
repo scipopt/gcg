@@ -78,6 +78,7 @@
 #include "branch_generic.h"
 #include "event_display.h"
 #include "pub_colpool.h"
+#include "struct_solver.h"
 
 #ifdef SCIP_STATISTIC
 #include "scip/struct_scip.h"
@@ -2941,7 +2942,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             int oldimpcols;
             int _nfoundvars;
             int _nsuccessfulprobs;
-            int iter;
 
             #pragma omp atomic read
             private_retcode = retcode;
@@ -5441,6 +5441,16 @@ SCIP_RETCODE GCGmasterPrintSimplexIters(
    return SCIP_OKAY;
 }
 
+GCG_SOLVER** ObjPricerGcg::getSolvers() const
+{
+    return pricerdata->solvers;
+}
+
+int ObjPricerGcg::getNumSolvers() const
+{
+    return pricerdata->nsolvers;
+}
+
 extern "C"
 GCG_COLPOOL* GCGgetColpool(
    SCIP*                 scip
@@ -5464,7 +5474,6 @@ int GCGpricerGetMaxNThreads(
 {
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
-   int nthreads;
 
    assert(scip != NULL);
 

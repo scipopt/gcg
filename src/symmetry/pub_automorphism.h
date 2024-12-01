@@ -75,6 +75,9 @@ void GCGgetNautyName(char* buffer, int len);
 #endif
 
 #ifdef __cplusplus
+/**
+ * graph structure used to search for automorphisms
+ */
 struct struct_graph
 {
    /** initializes the graph */
@@ -122,7 +125,10 @@ struct struct_cons
    SCIP_CONS* cons;                         /**< pointer to SCIP constraint */
 
    /** constructor for the constraint struct */
-   struct_cons( SCIP* scip, SCIP_CONS* scons );
+   struct_cons(
+      SCIP* scip_,                          /**< SCIP data structure */
+      SCIP_CONS* scons_                     /**< SCIP constraint */
+      );
 
    /** getter for the SCIP constraint */
    SCIP_CONS* getCons();
@@ -138,7 +144,10 @@ struct struct_var
    SCIP_VAR* var;                           /**< pointer to SCIP variable */
 
    /** constructor for the variable struct */
-   struct_var( SCIP* scip, SCIP_VAR* svar );
+   struct_var(
+      SCIP* scip_,                          /**< SCIP data structure */
+      SCIP_VAR* svar_                       /**< SCIP variable */
+      );
 
    /** getter for the SCIP variable */
    SCIP_VAR* getVar();
@@ -154,7 +163,10 @@ struct struct_coef
    SCIP_Real val;                           /**< SCIP Real value */
 
    /** constructor for the coefficient struct */
-   struct_coef( SCIP* scip, SCIP_Real val );
+   struct_coef(
+      SCIP* scip_,                          /**< SCIP data structure */
+      SCIP_Real val_                        /**< SCIP value */
+      );
 
    /** getter for the SCIP Real value */
    SCIP_Real getVal();

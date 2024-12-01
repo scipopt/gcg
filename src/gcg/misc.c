@@ -76,9 +76,14 @@ GCG_DECL_SORTPTRCOMP(mastervarcomp)
    SCIP* origprob = (SCIP *) userdata; /* TODO: continue here */
    SCIP_VAR* mastervar1;
    SCIP_VAR* mastervar2;
-   SCIP_VAR** origvars;
-   int norigvars;
+   SCIP_VAR** origvars1;
+   SCIP_VAR** origvars2;
+   SCIP_Real* origvals1;
+   SCIP_Real* origvals2;
+   int norigvars1;
+   int norigvars2;
    int i;
+   int j;
 
    mastervar1 = (SCIP_VAR*) elem1;
    mastervar2 = (SCIP_VAR*) elem2;
@@ -95,24 +100,41 @@ GCG_DECL_SORTPTRCOMP(mastervarcomp)
       SCIPdebugMessage("linkingvar or directy transferred var\n");
    }
 
-   /* TODO: get all original variables (need scip...maybe from pricer via function and scip_ */
-   origvars = SCIPgetVars(origprob);
-   norigvars = SCIPgetNVars(origprob);
+   origvars1 = GCGmasterVarGetOrigvars(mastervar1);
+   norigvars1 = GCGmasterVarGetNOrigvars(mastervar1);
+   origvals1 = GCGmasterVarGetOrigvals(mastervar1);
+   origvars2 = GCGmasterVarGetOrigvars(mastervar2);
+   norigvars2 = GCGmasterVarGetNOrigvars(mastervar2);
+   origvals2 = GCGmasterVarGetOrigvals(mastervar2);
 
-   for( i = 0; i < norigvars; ++i )
+   for( i = 0, j = 0; i < norigvars1 || j < norigvars2; )
    {
-      SCIP_Real entry1;
-      SCIP_Real entry2;
-      if( SCIPvarGetType(origvars[i]) > SCIP_VARTYPE_INTEGER )
-         continue;
+      if( i < norigvars1 && SCIPvarGetType(origvars1[i]) > SCIP_VARTYPE_INTEGER )
+         ++i;
+      else if( j < norigvars2 && SCIPvarGetType(origvars2[j]) > SCIP_VARTYPE_INTEGER )
+         ++j;
+      else if( i < norigvars1 && (j >= norigvars2 || SCIPvarGetProbindex(origvars1[i]) < SCIPvarGetProbindex(origvars2[j])) )
+      {
+         if( SCIPisFeasGT(origprob, origvals1[i], 0.0) )
+            return -1;
+         ++i;
+      }
+      else if( j < norigvars2 && (i >= norigvars1 || SCIPvarGetProbindex(origvars1[i]) > SCIPvarGetProbindex(origvars2[j])) )
+      {
+         if( SCIPisFeasGT(origprob, origvals2[j], 0.0) )
+            return 1;
+         ++j;
+      }
+      else if( i < norigvars1 && j < norigvars2 )
+      {
+         if( SCIPisFeasGT(origprob, origvals1[i], origvals2[j]) )
+            return -1;
+         else if( SCIPisFeasGT(origprob, origvals2[j], origvals1[i]) )
+            return 1;
+         ++i;
+         ++j;
+      }
 
-      entry1 = getGeneratorEntry(mastervar1, origvars[i]);
-      entry2 = getGeneratorEntry(mastervar2, origvars[i]);
-
-      if( SCIPisFeasGT(origprob, entry1, entry2) )
-         return -1;
-      if( SCIPisFeasLT(origprob, entry1, entry2) )
-         return 1;
    }
 
    return 0;
@@ -125,7 +147,9 @@ GCG_DECL_SORTPTRCOMP(mastervarcomp)
 SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIP*                 scip,               /* SCIP data structure */
    SCIP_SOL*             mastersol,          /* solution of the master problem, or NULL for current LP solution */
-   SCIP_SOL**            origsol             /* pointer to store the new created original problem's solution */
+   SCIP_SOL**            origsol,            /* pointer to store the new created original problem's solution */
+   SCIP_Bool             ignorelocalvarbnds, /* check global or local varbounds */
+   SCIP_Bool*            violatesvarbnds     /* pointer to variable to store whether the solution violates orig varbnds (can be NULL) */
    )
 {
    SCIP* masterprob;
@@ -151,6 +175,9 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    masterprob = GCGgetMasterprob(scip);
    npricingprobs = GCGgetNPricingprobs(scip);
 
+   if( violatesvarbnds != NULL )
+      *violatesvarbnds = FALSE;
+
    assert( !SCIPisInfinity(scip, SCIPgetSolOrigObj(masterprob, mastersol)) );
 
    if( GCGgetDecompositionMode(scip) == GCG_DECMODE_BENDERS )
@@ -168,7 +195,11 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
    SCIP_CALL( SCIPcreateSol(scip, origsol, GCGrelaxGetProbingheur(scip)) );
 
    if( GCGgetDecompositionMode(scip) != GCG_DECMODE_ORIGINAL && !GCGmasterIsSolValid(masterprob, mastersol) )
+   {
+      if( violatesvarbnds != NULL )
+         *violatesvarbnds = TRUE;
       return SCIP_OKAY;
+   }
 
    SCIP_CALL( SCIPallocBufferArray(scip, &blockvalue, npricingprobs) );
    SCIP_CALL( SCIPallocBufferArray(scip, &blocknrs, npricingprobs) );
@@ -524,8 +555,8 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
       SCIP_Real ub;
 
       solval = SCIPgetSolVal(scip, *origsol, vars[i]);
-      lb = SCIPvarGetLbLocal(vars[i]);
-      ub = SCIPvarGetUbLocal(vars[i]);
+      lb = ignorelocalvarbnds ? SCIPvarGetLbGlobal(vars[i]) : SCIPvarGetLbLocal(vars[i]);
+      ub = ignorelocalvarbnds ? SCIPvarGetUbGlobal(vars[i]) : SCIPvarGetUbLocal(vars[i]);
 
       if( SCIPisFeasGT(scip, solval, ub) && EPSEQ(solval, ub, 10 * feastol) )
       {
@@ -538,6 +569,11 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
          SCIP_CALL( SCIPsetSolVal(scip, *origsol, vars[i], lb) );
          SCIPwarningMessage(scip, "Variable %s rounded from %g to %g in relaxation solution\n",
             SCIPvarGetName(vars[i]), solval, lb);
+      }
+      if( !SCIPisFeasGE(scip, SCIPgetSolVal(scip, *origsol, vars[i]), lb) || !SCIPisFeasLE(scip, SCIPgetSolVal(scip, *origsol, vars[i]), ub) )
+      {
+         if( violatesvarbnds != NULL )
+            *violatesvarbnds = TRUE;
       }
    }
 

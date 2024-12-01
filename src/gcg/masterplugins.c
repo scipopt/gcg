@@ -170,6 +170,9 @@
 #include "event_solvingstats.h"
 #include "event_display.h"
 
+/* Erik's GCG solver */
+#include "solver_gcg.h"
+
 /* Christian's heuristics */
 #include "heur_greedycolsel.h"
 #include "heur_masterdiving.h"
@@ -338,6 +341,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 
    SCIP_CALL( GCGincludeSolverKnapsack(scip) );
    SCIP_CALL( GCGincludeSolverMip(scip) );
+   SCIP_CALL( GCGincludeSolverGcg(scip) );
 
 #ifdef WITH_CLIQUER
    SCIP_CALL( GCGincludeSolverCliquer(scip) );

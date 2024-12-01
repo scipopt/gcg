@@ -421,6 +421,23 @@ SCIP_RETCODE GCGinitializeMasterProblemSolve(
    SCIP*                 scip               /**< the SCIP data structure */
    );
 
+/** stash limit settings if not already stashed
+ * 
+ * @note This function is used to prevent that SCIP interrupts (due to limits) the solving process when the B&B trees are not synchronized.
+ * Otherwise it may happen that SCIP creates a dummy node in one tree that cannot be mirrored to the other one.
+ */
+SCIP_RETCODE GCGstashLimitSettings(
+   SCIP*                 scip,             /**< SCIP data structure */
+   SCIP*                 masterprob        /**< master problem */
+   );
+
+/** restore limit settings if currently stashed
+ */
+SCIP_RETCODE GCGrestoreLimitSettings(
+   SCIP*                 scip,             /**< SCIP data structure */
+   SCIP*                 masterprob        /**< master problem */
+   );
+
 #ifdef _OPENMP
 /** returns OpenMP locks
  *  @returns pointer to GCG_LOCKS struct
@@ -429,6 +446,20 @@ GCG_LOCKS* GCGgetLocks(
    SCIP*                 scip               /**< the SCIP data structure */
    );
 #endif
+
+/** sets the pricing problem parameters */
+SCIP_RETCODE GCGsetPricingProblemParameters(
+   GCG_DECTYPE           dectype,            /**< the dectype of the decomp */
+   SCIP*                 scip,               /**< SCIP data structure of the pricing problem */
+   int                   clocktype,          /**< clocktype to use in the pricing problem */
+   SCIP_Real             infinity,           /**< values larger than this are considered infinity in the pricing problem */
+   SCIP_Real             epsilon,            /**< absolute values smaller than this are considered zero in the pricing problem */
+   SCIP_Real             sumepsilon,         /**< absolute values of sums smaller than this are considered zero in the pricing problem */
+   SCIP_Real             feastol,            /**< feasibility tolerance for constraints in the pricing problem */
+   SCIP_Real             lpfeastolfactor,    /**< primal feasibility tolerance factor of LP solver in the pricing problem */
+   SCIP_Real             dualfeastol,        /**< feasibility tolerance for reduced costs in LP solution in the pricing problem */
+   SCIP_Bool             enableppcuts        /**< should ppcuts be stored for sepa_basis */
+   );
 
 #ifdef __cplusplus
 }

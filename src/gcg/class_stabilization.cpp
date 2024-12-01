@@ -389,7 +389,7 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
    }
 
    if( hybridascent )
-      calculateSubgradient(pricingcols);
+      SCIP_CALL( calculateSubgradient(pricingcols) );
 
    hasstabilitycenter = TRUE;
    stabcenterbound = lowerbound;
@@ -729,7 +729,7 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
 }
 
 /** calculates the subgradient (with linking variables) */
-void Stabilization::calculateSubgradient(
+SCIP_RETCODE Stabilization::calculateSubgradient(
    GCG_COL**            pricingcols         /**< columns of the pricing problems */
 )
 {
@@ -759,8 +759,8 @@ void Stabilization::calculateSubgradient(
 
       SCIP_CONS* origcons = origmasterconss[i];
       nvars = GCGconsGetNVars(origprob, origcons);
-      SCIPallocBufferArray(origprob, &vars, nvars);
-      SCIPallocBufferArray(origprob, &vals, nvars);
+      SCIP_CALL( SCIPallocBufferArray(origprob, &vars, nvars) );
+      SCIP_CALL( SCIPallocBufferArray(origprob, &vals, nvars) );
       GCGconsGetVars(origprob, origcons, vars, nvars);
       GCGconsGetVals(origprob, origcons, vals, nvars);
 
@@ -938,6 +938,7 @@ void Stabilization::calculateSubgradient(
    subgradientnorm = sqrt(subgradientnorm);
 
    SCIPdebugMessage("Update subgradient and subgradientnorm with value %g.\n", subgradientnorm);
+   return SCIP_OKAY;
 }
 
 /**< calculate norm of difference between stabcenter and current duals */

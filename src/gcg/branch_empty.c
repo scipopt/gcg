@@ -243,6 +243,8 @@ SCIP_RETCODE createBranchNodesInOrigprob(
       return SCIP_OKAY;
    }
 
+   GCGrestoreLimitSettings(scip, masterscip);
+
    /* get masterbranch constraint at the current node */
    masterbranchcons = GCGconsMasterbranchGetActiveCons(masterscip);
 

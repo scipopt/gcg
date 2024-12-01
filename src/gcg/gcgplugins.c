@@ -208,6 +208,10 @@
 #include "relax_gcg.h"
 #include "branch_empty.h"
 
+#if WITH_JSON
+#include "reader_jdec.h"
+#endif
+
 #include "cons_origbranch.h"
 #include "disp_gcg.h"
 #include "dialog_gcg.h"
@@ -474,6 +478,9 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeReaderBlk(scip) );
    SCIP_CALL( GCGincludeReaderDec(scip) );
    SCIP_CALL( SCIPincludeReaderRef(scip) );
+#if WITH_JSON
+   SCIP_CALL( SCIPincludeReaderJDec(scip) );
+#endif
    SCIP_CALL( SCIPincludeBranchruleEmpty(scip) );
 
    SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );

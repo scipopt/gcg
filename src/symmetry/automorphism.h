@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    automorph.h
+/**@file    automorphism.h
  * @brief   automorphism recognition of SCIPs
  *
  * @author  Martin Bergner

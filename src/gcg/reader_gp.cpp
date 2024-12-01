@@ -171,7 +171,7 @@ SCIP_RETCODE drawGpBox(
    ofs.open( filename, std::ofstream::out | std::ofstream::app );
 
    ofs << "set object " << objectid << " rect from " << x1 << "," << y1 << " to " << x2 << "," << y2
-      << " fc rgb \"" << color << "\"" << " lc rgb \"" << SCIPvisuGetColorLine(scip) << "\"" << std::endl;
+      << " fc rgb \"" << color << "\"" << " lc rgb \"" << GCGvisuGetColorLine(scip) << "\"" << std::endl;
 
    ofs.close();
    return SCIP_OKAY;
@@ -291,7 +291,7 @@ SCIP_RETCODE writeGpNonzeros(
       radius = (float)0.01;
 
    /* start writing dots */
-   ofs << "set style line 99 lc rgb \"" << SCIPvisuGetColorNonzero(scip) << "\"  " << std::endl;
+   ofs << "set style line 99 lc rgb \"" << GCGvisuGetColorNonzero(scip) << "\"  " << std::endl;
    ofs << "plot \"-\" using 1:2:(" << radius << ") with dots ls 99 notitle " << std::endl;
    /* write scatter plot */
    for( int row = 0; row < partialdec->getNConss(); ++row )
@@ -373,7 +373,7 @@ SCIP_RETCODE writeGpPartialdec(
       {
          ++objcounter; /* has to start at 1 for gnuplot */
          drawGpBox( scip, filename, objcounter, 0, 0, partialdec->getNLinkingvars(), partialdec->getNConss(),
-            SCIPvisuGetColorLinking(scip) );
+            GCGvisuGetColorLinking(scip) );
          colboxcounter += partialdec->getNLinkingvars();
       }
 
@@ -382,7 +382,7 @@ SCIP_RETCODE writeGpPartialdec(
       {
          ++objcounter;
          drawGpBox( scip, filename, objcounter, 0, 0, partialdec->getNVars(), partialdec->getNMasterconss(),
-            SCIPvisuGetColorMasterconss(scip) );
+            GCGvisuGetColorMasterconss(scip) );
          rowboxcounter += partialdec->getNMasterconss();
       }
 
@@ -391,7 +391,7 @@ SCIP_RETCODE writeGpPartialdec(
       {
          ++objcounter;
          //      drawGpBox( scip, filename, objcounter, colboxcounter, 0, partialdec->getNMastervars()+colboxcounter,
-         //         partialdec->getNMasterconss(), SCIPvisuGetColorMastervars() );
+         //         partialdec->getNMasterconss(), GCGvisuGetColorMastervars() );
          colboxcounter += partialdec->getNMastervars();
       }
 
@@ -401,7 +401,7 @@ SCIP_RETCODE writeGpPartialdec(
          ++objcounter;
          drawGpBox(scip, filename, objcounter, colboxcounter, rowboxcounter,
             colboxcounter + partialdec->getNVarsForBlock(b), rowboxcounter + partialdec->getNConssForBlock(b),
-            SCIPvisuGetColorBlock(scip));
+            GCGvisuGetColorBlock(scip));
          colboxcounter += partialdec->getNVarsForBlock(b);
 
          if( partialdec->getNStairlinkingvars(b) != 0 )
@@ -410,7 +410,7 @@ SCIP_RETCODE writeGpPartialdec(
             drawGpBox( scip, filename, objcounter, colboxcounter, rowboxcounter,
                colboxcounter + partialdec->getNStairlinkingvars(b),
                rowboxcounter + partialdec->getNConssForBlock(b) + partialdec->getNConssForBlock(b+1),
-               SCIPvisuGetColorStairlinking(scip) );
+               GCGvisuGetColorStairlinking(scip) );
          }
          colboxcounter += partialdec->getNStairlinkingvars(b);
          rowboxcounter += partialdec->getNConssForBlock(b);
@@ -421,16 +421,16 @@ SCIP_RETCODE writeGpPartialdec(
       {
          ++objcounter;
          drawGpBox( scip, filename, objcounter, colboxcounter, rowboxcounter, colboxcounter + partialdec->getNOpenvars(),
-            rowboxcounter+partialdec->getNOpenconss(), SCIPvisuGetColorOpen(scip) );
+            rowboxcounter+partialdec->getNOpenconss(), GCGvisuGetColorOpen(scip) );
          colboxcounter += partialdec->getNOpenvars();
          rowboxcounter += partialdec->getNOpenconss();
       }
    }
    /* --- draw nonzeros --- */
-   if( SCIPvisuGetDraftmode(scip) == FALSE )
+   if( GCGvisuGetDraftmode(scip) == FALSE )
    {
       /* scale the dots according to matrix dimensions here */
-      writeGpNonzeros(scip, filename, partialdec, SCIPvisuGetNonzeroRadius(scip, partialdec->getNVars(), partialdec->getNConss(),
+      writeGpNonzeros(scip, filename, partialdec, GCGvisuGetNonzeroRadius(scip, partialdec->getNVars(), partialdec->getNConss(),
          (float)SCALING_FACTOR_NONZEROS) );
    }
    else

@@ -392,6 +392,7 @@ LIBOBJ = \
 			gcg/sepa_basis.o \
 			gcg/sepa_master.o \
 			gcg/solver.o \
+			gcg/solver_gcg.o \
 			gcg/solver_knapsack.o \
 			gcg/solver_mip.o \
 			gcg/stat.o \
@@ -425,6 +426,10 @@ endif
 
 ifeq ($(HIGHS),true)
 LIBOBJ		+=	gcg/solver_highs.o
+endif
+
+ifeq ($(JSON),true)
+LIBOBJ		+=	gcg/reader_jdec.o
 endif
 
 MAINOBJ		=	main.o
@@ -500,12 +505,12 @@ DCXXFLAGS=$(CXXFLAGS)
 
 .PHONY: all
 all:       	$(SCIPDIR)
-		@-$(MAKE) libs
-		@-$(MAKE) mainfiles
+		@$(MAKE) libs
+		@$(MAKE) mainfiles
 
 .PHONY: mainfiles
 mainfiles:
-		@-$(MAKE) $(MAINFILE) $(MAINLINK) $(MAINSHORTLINK)
+		@$(MAKE) $(MAINFILE) $(MAINLINK) $(MAINSHORTLINK)
 
 $(SCIPDIR)/make/make.project: |$(SCIPDIR)
 

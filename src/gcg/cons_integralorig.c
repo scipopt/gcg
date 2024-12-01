@@ -272,6 +272,7 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    SCIP_Real solval;
    SCIP_Bool discretization;
    int v;
+   SCIP_Bool violatesvarbnds;
 
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
@@ -293,7 +294,14 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    }
 
    /* get corresponding origsol in order to check integrality */
-   SCIP_CALL( GCGtransformMastersolToOrigsol(origprob, sol, &origsol) );
+   SCIP_CALL( GCGtransformMastersolToOrigsol(origprob, sol, &origsol, TRUE, &violatesvarbnds) );
+
+   if( violatesvarbnds )
+   {
+      *result = SCIP_INFEASIBLE;
+      SCIPfreeSol(origprob, &origsol);
+      return SCIP_OKAY;
+   }
 
    origvars = SCIPgetVars(origprob);
    norigvars = SCIPgetNVars(origprob);

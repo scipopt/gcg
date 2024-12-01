@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    bliss_automorph.cpp
+/**@file    automorphism.cpp
  * @brief   automorphism recognition of SCIPs
  * @author  Daniel Peters
  * @author  Martin Bergner
@@ -62,22 +62,20 @@ struct AUT_HOOK2
    gcg::DETPROBDATA* detprobdata;            /**< problem information the automorphism should be searched for */
    gcg::PARTIALDECOMP* partialdec;           /**< decomposition information */
    std::vector<int>* blocks;                 /**< array of blocks the automporphisms are searched for */
-   SCIP* scip;
-   int ncalls;
-   int generatorlimit;
-   AUT_GRAPH* graph;
+   SCIP* scip;                               /**< SCIP data structure */
+   int ncalls;                               /**< number of calls of this hook */
+   int generatorlimit;                       /**< generator limit */
+   AUT_GRAPH* graph;                         /**< graph used to search for automorphisms */
 
 
    /** constructor for the hook struct*/
    AUT_HOOK2(
-      SCIP_HASHMAP* varmap,                  /**< hashmap for permutated variables */
-      SCIP_HASHMAP* consmap,                 /**< hashmap for permutated constraints */
-      unsigned int n,                        /**< number of permutations */
-      AUT_GRAPH* graph,                      /**< graph used to search for automorphisms */
-      SCIP* scip,                            /**< SCIP data structure */
-      gcg::DETPROBDATA* givendetprobdata,
-      gcg::PARTIALDECOMP* givenpartialdec,
-      std::vector<int>* givenblocks
+      SCIP_HASHMAP* varmap_,                 /**< hashmap for permutated variables */
+      SCIP_HASHMAP* consmap_,                /**< hashmap for permutated constraints */
+      unsigned int n_,                       /**< number of permutations */
+      AUT_GRAPH* graph_,                     /**< graph used to search for automorphisms */
+      gcg::PARTIALDECOMP* partialdec_,       /**< partialdec the graphs should be compared for */
+      std::vector<int>* blocks_              /**< array of blocks the automporphisms are searched for */
       );
 
    /** destructor for hook struct */
@@ -101,8 +99,6 @@ struct AUT_HOOK2
 
    /** getter for the graph */
    AUT_GRAPH* getGraph();
-
-
 };
 
 
@@ -155,34 +151,26 @@ AUT_HOOK2::AUT_HOOK2(
    SCIP_HASHMAP*         consmap_,           /**< hahsmap of permutated constraints */
    unsigned int          n_,                 /**< number of permutations */
    AUT_GRAPH*            graph_,             /**< graph used to search for automorphisms */
-   SCIP*                 scip_,              /**< SCIP data structure */
-   gcg::DETPROBDATA*     detprobdata_,
-   gcg::PARTIALDECOMP*   partialdec_,
-   std::vector<int>*     blocks_
+   gcg::PARTIALDECOMP*   partialdec_,        /**< partialdec the graphs should be compared for */
+   std::vector<int>*     blocks_             /**< array of blocks the automporphisms are searched for */
    )
 {
    size_t i;
-   scip = scip_;
    aut = FALSE;
    n = n_;
    consmap = consmap_;
    varmap = varmap_;
    graph = graph_;
+   partialdec = partialdec_;
+   detprobdata = partialdec->getDetprobdata();
+   scip = detprobdata->getScip();
+   blocks = blocks_;
    SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &nodemap, n_) ); /*lint !e666*/
    for (i = 0; i < n_; ++i)
       nodemap[i] = -1;
-
    conssperm = NULL;
-   detprobdata = NULL;
-   partialdec = NULL;
-   blocks = NULL;
-
    ncalls = 0;
    generatorlimit = 0;
-
-   detprobdata = detprobdata_;
-   partialdec = partialdec_;
-   blocks = blocks_;
 
    SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &(this->conssperm), detprobdata->getNConss() ) ); /*lint !e666*/
 }
@@ -859,8 +847,8 @@ SCIP_RETCODE cmpGraphPair(
    SCIP_RESULT*            result,             /**< result pointer to indicate success or failure */
    SCIP_HASHMAP*           varmap,             /**< hashmap to save permutation of variables */
    SCIP_HASHMAP*           consmap,            /**< hashmap to save permutation of constraints */
-   unsigned int            searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
-   unsigned int            generatorlimit      /**< bliss generator limit (requires patched bliss version or version >=0.76) */
+   unsigned int            searchnodelimit,    /**< search node limit */
+   unsigned int            generatorlimit      /**< generator limit */
    )
 {
    AUT_GRAPH graph;
@@ -882,10 +870,7 @@ SCIP_RETCODE cmpGraphPair(
    blocks[1] = block2;
    pricingnodes = 0;
 
-   if (partialdec->isAssignedToOrigProb() )
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
-   else
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+   detprobdata = partialdec->getDetprobdata();
 
    assert(detprobdata != NULL);
 
@@ -900,7 +885,7 @@ SCIP_RETCODE cmpGraphPair(
    {
       SCIP_CALL( createGraphNewDetection(scip, detprobdata, partialdec, blocks, colorinfo, &graph,  &pricingnodes, result) );
       SCIPdebugMessage("finished create graph.\n");
-      ptrhook = new AUT_HOOK2(varmap, consmap, (unsigned int) pricingnodes, &graph, detprobdata->getScip(), detprobdata, partialdec, &blocks);
+      ptrhook = new AUT_HOOK2(varmap, consmap, (unsigned int) pricingnodes, &graph, partialdec, &blocks);
       ptrhook->generatorlimit = generatorlimit;
       SCIPdebugMessage("finished creating aut hook.\n");
 

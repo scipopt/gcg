@@ -116,6 +116,7 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
    SCIP_NODE** nodes;
    SCIP* origscip;
    int nnodes;
+   SCIP_NODE* orignode;
    SCIP_Longint orignodenumber;
 
    assert(nodesel != NULL);
@@ -130,7 +131,8 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
 
    *selnode = NULL;
 
-   orignodenumber = SCIPnodeGetNumber(SCIPgetCurrentNode(origscip));
+   orignode = SCIPgetCurrentNode(origscip);
+   orignodenumber = SCIPnodeGetNumber(orignode);
 
    if( orignodenumber != nodeseldata->lastorignodenumber )
    {
@@ -142,16 +144,42 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
       /* check whether the current node is the root node and has no parent */
       if( parentorigcons == NULL )
       {
-         assert((GCGconsOrigbranchGetNode(origcons) == SCIPgetRootNode(origscip)) || ( GCGconsOrigbranchGetNode(origcons) == NULL) );
-         assert(GCGconsOrigbranchGetMastercons(origcons) != NULL);
-         assert((GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == SCIPgetRootNode(scip)) || (GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == NULL));
+         if( SCIPgetRootNode(origscip) == orignode )
+         {
+            assert((GCGconsOrigbranchGetNode(origcons) == SCIPgetRootNode(origscip)) || (GCGconsOrigbranchGetNode(origcons) == NULL) );
+            assert(GCGconsOrigbranchGetMastercons(origcons) != NULL);
+            assert((GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == SCIPgetRootNode(scip)) || (GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == NULL));
 
-         *selnode = SCIPgetRootNode(scip);
-         SCIPdebugMessage("selected root node in the master program\n");
+            *selnode = SCIPgetRootNode(scip);
+            SCIPdebugMessage("selected root node in the master program\n");
+            SCIP_CALL( GCGrestoreLimitSettings(origscip, scip) );
+         }
+         else
+         {
+            /* solving was interrupted and SCIP created a dummy node in the original problem */
+            assert(SCIPgetNChildren(scip) < 2);
+            if( SCIPgetNChildren(scip) == 0 )
+            {
+               /* create and select dummy node */
+               SCIP_NODE* child;
+               SCIPcreateChild(scip, &child, 0.0, SCIPgetLocalTransEstimate(scip));
+               *selnode = child;
+               SCIPdebugMessage("created and selected dummy node in the master program\n");
+            }
+            else
+            {
+               /* select dummy node */
+               SCIP_NODE** children;
+               int nchildren;
+               SCIPgetChildren(scip, &children, &nchildren);
+               assert(nchildren > 0);
+               *selnode = children[0];
+               SCIPdebugMessage("selected dummy node in the master program\n");
+            }
+         }
       }
       else
       {
-
          assert(GCGconsOrigbranchGetMastercons(parentorigcons) != NULL);
          *selnode = GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons));
 
@@ -255,7 +283,9 @@ SCIP_DECL_EVENTEXEC(eventExecFocusnode)
 
    /* set the dual bound to the lower bound of the corresponding original node */
    SCIP_CALL( SCIPupdateNodeDualbound(scip, focusnode, SCIPgetNodeLowerbound(origscip, SCIPgetCurrentNode(origscip))) );
-   assert((SCIPgetRootNode(scip) == focusnode && SCIPgetRootNode(origscip) == SCIPgetCurrentNode(origscip))
+   assert(
+      (GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(origscip)) == SCIPgetRootNode(origscip)
+         && SCIPnodeGetDepth(SCIPgetCurrentNode(origscip)) == SCIPnodeGetDepth(focusnode))
       || focusnode == GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(GCGconsOrigbranchGetActiveCons(origscip))));
 
    return SCIP_OKAY;

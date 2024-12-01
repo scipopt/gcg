@@ -182,7 +182,7 @@ GCG_DECL_SCORECALC(scoreCalcBender)
    /* get block & border area score (note: these calculations have their own clock) */
    SCIP_Real borderareascore;
 
-   SCIP_Real blockareascore = partialdec->calcBlockAreaScore(scip);
+   SCIP_Real blockareascore = partialdec->calcBlockAreaScore();
    borderareascore = partialdec->getScore(GCGconshdlrDecompFindScore(scip, "border area"));
 
    *scorevalue = blockareascore + benderareascore + borderareascore - 1.;

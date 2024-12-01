@@ -130,7 +130,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDensemasterconss)
    lastindex =  maxratio * detprobdata->getNConss();
    /* fix open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
    std::vector<std::pair<int,int>> nnonzeros(detprobdata->getNConss(), std::pair<int, int>(0, -1));
-   for( int cons: partialdec->getOpenconssVec() )
+   for( int cons: partialdec->getOpenconss() )
    {
       nnonzeros[cons] = std::pair<int,int>(detprobdata->getNVarsForCons(cons), cons);
    }

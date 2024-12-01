@@ -72,18 +72,56 @@ SCIP_RETCODE solveKnapsack(
    GCG_PRICINGSTATUS*    status              /**< pointer to store pricing problem status */
    )
 { /*lint -e715 */
+   int nsolvars;
+   GCG_COL* col;
+   SCIP_Real solval;
+   SCIP_VAR** solvars = NULL;
+   SCIP_Real* solvals = NULL;
+
+   assert(pricingprob != NULL);
+
+   SCIP_CALL( GCGsolverKnapsackSolveKnapsack(exactly, pricingprob, &solval, status, &solvars, &solvals, &nsolvars) );
+
+   if( solvars != NULL )
+   {
+      assert(solvals != NULL);
+
+      if( *status == GCG_PRICINGSTATUS_OPTIMAL )
+      {
+         *lowerbound = exactly ? solval : -SCIPinfinity(pricingprob);
+
+         SCIP_CALL( GCGcreateGcgCol(pricingprob, &col, probnr, solvars, solvals, nsolvars, FALSE, SCIPinfinity(pricingprob)) );
+         SCIP_CALL( GCGpricerAddCol(scip, col) );
+      }
+
+      SCIPfreeBufferArray(pricingprob, &solvals);
+      SCIPfreeBufferArray(pricingprob, &solvars);
+   }
+
+   return SCIP_OKAY;
+}
+
+
+GCG_EXPORT
+SCIP_RETCODE GCGsolverKnapsackSolveKnapsack(
+   SCIP_Bool             exactly,            /**< should the pricing problem be solved to optimality or heuristically? */
+   SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
+   SCIP_Real*            solval,             /**< pointer to store the solution objective value */
+   GCG_PRICINGSTATUS*    status,             /**< pointer to store pricing problem status */
+   SCIP_VAR***           solvars,            /**< pointer to store solution vars (will be allocated as buffer array and must be freed afterwards) */
+   SCIP_Real**           solvals,            /**< pointer to store solution vals (will be allocated as buffer array and must be freed afterwards) */
+   int*                  nsolvars            /**< pointer to store the number of solution vars */
+   )
+{
    SCIP_CONS* cons;
    SCIP_CONSHDLR* conshdlr;
    SCIP_VAR** consvars;
    SCIP_Longint* consvals;
    int nconsvars;
-   SCIP_VAR** solvars;
-   SCIP_Real* solvals;
-   int nsolvars;
+
    SCIP_VAR** pricingprobvars;
    int npricingprobvars;
    int nconss;
-
    int                   nitems;
    SCIP_Longint*         weights;
    SCIP_Real*            profits;
@@ -95,19 +133,14 @@ SCIP_RETCODE solveKnapsack(
    int                   nsolitems;
    int*                  nonsolitems;
    int                   nnonsolitems;
-   SCIP_Real             solval;
    SCIP_Bool             success;
-   GCG_COL*              col;
    SCIP_Bool             inferbounds;
    int i;
    int j;
    int k;
 
    /* check preconditions */
-   assert(scip != NULL);
    assert(pricingprob != NULL);
-   assert(solver != NULL);
-   assert(lowerbound != NULL);
    assert(status != NULL);
 
    assert(SCIPgetObjsense(pricingprob) == SCIP_OBJSENSE_MINIMIZE);
@@ -123,6 +156,12 @@ SCIP_RETCODE solveKnapsack(
     * - all variables are nonnegative integer variables
     * - there is only one constraint, which has infinite lhs and integer rhs
     */
+   nconss = SCIPgetNConss(pricingprob);
+   if( nconss != 1 )
+   {
+      SCIPdebugMessage("  -> pricing problem has more than one constraint\n");
+      return SCIP_OKAY;
+   }
    if( SCIPgetNBinVars(pricingprob) + SCIPgetNIntVars(pricingprob) < npricingprobvars )
    {
       SCIPdebugMessage("  -> pricing problem has continuous variables\n");
@@ -135,13 +174,6 @@ SCIP_RETCODE solveKnapsack(
          SCIPdebugMessage("  -> pricing problem has variables with negative lower bounds\n");
          return SCIP_OKAY;
       }
-   }
-
-   nconss = SCIPgetNConss(pricingprob);
-   if( nconss != 1 )
-   {
-      SCIPdebugMessage("  -> pricing problem has more than one constraint\n");
-      return SCIP_OKAY;
    }
 
    cons = SCIPgetConss(pricingprob)[0];
@@ -279,9 +311,8 @@ SCIP_RETCODE solveKnapsack(
    }
    SCIPdebugMessage("-> %d items\n", nitems);
 
-   SCIP_CALL( SCIPallocBufferArray(pricingprob, &solvars, npricingprobvars) );
-   SCIP_CALL( SCIPallocBufferArray(pricingprob, &solvals, npricingprobvars) );
-
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, solvars, npricingprobvars) );
+   SCIP_CALL( SCIPallocBufferArray(pricingprob, solvals, npricingprobvars) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob, &items, nitems) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob, &weights, nitems) );
    SCIP_CALL( SCIPallocBufferArray(pricingprob, &profits, nitems) );
@@ -371,12 +402,12 @@ SCIP_RETCODE solveKnapsack(
       if( exactly )
       {
          SCIP_CALL( SCIPsolveKnapsackExactly(pricingprob, nitems, weights, profits, capacity, items, solitems,
-            nonsolitems, &nsolitems, &nnonsolitems, &solval, &success ));
+            nonsolitems, &nsolitems, &nnonsolitems, solval, &success ));
       }
       else
       {
          SCIP_CALL( SCIPsolveKnapsackApproximately(pricingprob, nitems, weights, profits, capacity, items, solitems,
-            nonsolitems, &nsolitems, &nnonsolitems, &solval ));
+            nonsolitems, &nsolitems, &nnonsolitems, solval ));
       }
 
       if( !success )
@@ -387,10 +418,10 @@ SCIP_RETCODE solveKnapsack(
       else if( exactly )
          *status = GCG_PRICINGSTATUS_OPTIMAL;
 
-      SCIPdebugMessage("Knapsack solved, solval = %g\n", solval);
+      SCIPdebugMessage("Knapsack solved, solval = %g\n", *solval);
    }
 
-   nsolvars = 0;
+   *nsolvars = 0;
 
    for( i = 0; i < nsolitems; i++ )
    {
@@ -398,18 +429,18 @@ SCIP_RETCODE solveKnapsack(
 
       if( consvals[solitems[i]] >= 0 && !SCIPvarIsNegated(consvars[solitems[i]]) )
       {
-         for( j = 0; j < nsolvars; ++j )
-            if( solvars[j] == consvars[solitems[i]] )
+         for( j = 0; j < *nsolvars; ++j )
+            if( (*solvars)[j] == consvars[solitems[i]] )
                break;
 
-         if( j == nsolvars )
+         if( j == *nsolvars )
          {
-            solvars[j] = consvars[solitems[i]];
-            solvals[j] = 1.0;
-            ++nsolvars;
+            (*solvars)[j] = consvars[solitems[i]];
+            (*solvals)[j] = 1.0;
+            ++(*nsolvars);
          }
          else
-            solvals[j] += 1.0;
+            (*solvals)[j] += 1.0;
       }
    }
 
@@ -421,18 +452,18 @@ SCIP_RETCODE solveKnapsack(
       {
          SCIP_VAR* solvar = SCIPvarIsNegated(consvars[nonsolitems[i]]) ? SCIPvarGetNegatedVar(consvars[nonsolitems[i]]) : consvars[nonsolitems[i]];
 
-         for( j = 0; j < nsolvars; ++j )
-            if( solvars[j] == solvar )
+         for( j = 0; j < *nsolvars; ++j )
+            if( (*solvars)[j] == solvar )
                break;
 
-         if( j == nsolvars )
+         if( j == *nsolvars )
          {
-            solvars[j] = solvar;
-            solvals[j] = 1.0;
-            ++nsolvars;
+            (*solvars)[j] = solvar;
+            (*solvals)[j] = 1.0;
+            ++(*nsolvars);
          }
          else
-            solvals[j] += 1.0;
+            (*solvals)[j] += 1.0;
       }
    }
 
@@ -440,30 +471,25 @@ SCIP_RETCODE solveKnapsack(
    {
       if( SCIPisGE(pricingprob, SCIPvarGetLbLocal(pricingprobvars[i]), 1.0) )
       {
-         for( j = 0; j < nsolvars; ++j )
-            if( solvars[j] == pricingprobvars[i] )
+         for( j = 0; j < *nsolvars; ++j )
+            if( (*solvars)[j] == pricingprobvars[i] )
                break;
 
-         if( j == nsolvars )
+         if( j == *nsolvars )
          {
-            solvars[j] = pricingprobvars[i];
-            solvals[j] = SCIPfloor(pricingprob, SCIPvarGetLbLocal(pricingprobvars[i]));
-            ++nsolvars;
+            (*solvars)[j] = pricingprobvars[i];
+            (*solvals)[j] = SCIPfloor(pricingprob, SCIPvarGetLbLocal(pricingprobvars[i]));
+            ++(*nsolvars);
          }
          else
-            solvals[j] += SCIPfloor(pricingprob, SCIPvarGetLbLocal(pricingprobvars[i]));
+            (*solvals)[j] += SCIPfloor(pricingprob, SCIPvarGetLbLocal(pricingprobvars[i]));
       }
    }
 
-   SCIP_CALL( GCGcreateGcgCol(pricingprob, &col, probnr, solvars, solvals, nsolvars, FALSE, SCIPinfinity(pricingprob)) );
-   SCIP_CALL( GCGpricerAddCol(scip, col) );
+   *solval = 0.0;
 
-   solval = 0.0;
-
-   for( i = 0; i < nsolvars; ++i )
-      solval += solvals[i] * SCIPvarGetObj(solvars[i]);
-
-   *lowerbound = exactly ? solval : -SCIPinfinity(pricingprob);
+   for( i = 0; i < *nsolvars; ++i )
+      (*solval) += (*solvals)[i] * SCIPvarGetObj((*solvars)[i]);
 
  TERMINATE:
    SCIPfreeBufferArray(pricingprob, &nonsolitems);
@@ -471,13 +497,12 @@ SCIP_RETCODE solveKnapsack(
    SCIPfreeBufferArray(pricingprob, &profits);
    SCIPfreeBufferArray(pricingprob, &weights);
    SCIPfreeBufferArray(pricingprob, &items);
-   SCIPfreeBufferArray(pricingprob, &solvals);
-   SCIPfreeBufferArray(pricingprob, &solvars);
    SCIPfreeBufferArray(pricingprob, &ubs);
    SCIPfreeBufferArray(pricingprob, &consvals);
 
    return SCIP_OKAY;
 }
+
 
 /*
  * Callback methods for pricing problem solver

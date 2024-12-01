@@ -61,7 +61,7 @@ typedef enum Colorscheme VISU_COLORSCHEME; /**< visualization colorscheme type *
 /** includes the visualization parameters into GCG
  * @returns SCIP return code */
 GCG_EXPORT
-SCIP_RETCODE SCIPcreateParamsVisu(
+SCIP_RETCODE GCGcreateParamsVisu(
    SCIP* scip,                /**< SCIP data structure */
    GCG_PARAMDATA** paramdata  /**< input empty paramdata, oputput new set of param data */
    );
@@ -70,7 +70,7 @@ SCIP_RETCODE SCIPcreateParamsVisu(
  * draftmode lets visualizations omit nonzeros
  * @returns true if draftmode is on */
 GCG_EXPORT
-SCIP_Bool SCIPvisuGetDraftmode(
+SCIP_Bool GCGvisuGetDraftmode(
    SCIP* scip  /**< SCIP data structure */
    );
 
@@ -78,7 +78,7 @@ SCIP_Bool SCIPvisuGetDraftmode(
  * draftmode lets visualizations omit nonzeros
  */
 GCG_EXPORT
-void SCIPvisuSetDraftmode(
+void GCGvisuSetDraftmode(
    SCIP* scip,       /**< SCIP data structure */
    SCIP_Bool setmode /**< true iff draftmode should be on */
    );
@@ -86,7 +86,7 @@ void SCIPvisuSetDraftmode(
 /** gets the colorscheme for visualizations
  * @returns current colorscheme */
 GCG_EXPORT
-VISU_COLORSCHEME SCIPvisuGetColorscheme(
+VISU_COLORSCHEME GCGvisuGetColorscheme(
    SCIP* scip  /**< SCIP data structure */
    );
 
@@ -94,7 +94,7 @@ VISU_COLORSCHEME SCIPvisuGetColorscheme(
  * 
  */
 GCG_EXPORT
-void SCIPvisuSetColorscheme(
+void GCGvisuSetColorscheme(
    SCIP* scip,                   /**< SCIP data structure */
    VISU_COLORSCHEME newscheme    /**< new colorscheme */
    );
@@ -103,7 +103,7 @@ void SCIPvisuSetColorscheme(
  *
  */
 GCG_EXPORT
-void SCIPvisuSetColorManMasterconss(
+void GCGvisuSetColorManMasterconss(
    SCIP* scip,          /**< SCIP data structure */
    const char* newcolor /**< new color */
    );
@@ -112,7 +112,7 @@ void SCIPvisuSetColorManMasterconss(
  * 
  */
 GCG_EXPORT
-void SCIPvisuSetColorManMastervars(
+void GCGvisuSetColorManMastervars(
    SCIP* scip,          /**< SCIP data structure */
    const char* newcolor /**< new color */
    );
@@ -121,7 +121,7 @@ void SCIPvisuSetColorManMastervars(
  * 
  */
 GCG_EXPORT
-void SCIPvisuSetColorManLinking(
+void GCGvisuSetColorManLinking(
    SCIP* scip,          /**< SCIP data structure */
    const char* newcolor /**< new color */
    );
@@ -130,7 +130,7 @@ void SCIPvisuSetColorManLinking(
  * 
  */
 GCG_EXPORT
-void SCIPvisuSetColorManStairlinking(
+void GCGvisuSetColorManStairlinking(
    SCIP* scip,          /**< SCIP data structure */
    const char* newcolor /**< new color */
    );
@@ -139,7 +139,7 @@ void SCIPvisuSetColorManStairlinking(
  * 
  */
 GCG_EXPORT
-void SCIPvisuSetColorManBlock(
+void GCGvisuSetColorManBlock(
    SCIP* scip,          /**< SCIP data structure */
    const char* newcolor /**< new color */
    );
@@ -148,7 +148,7 @@ void SCIPvisuSetColorManBlock(
  * 
  */
 GCG_EXPORT
-void SCIPvisuSetColorManOpen(
+void GCGvisuSetColorManOpen(
    SCIP* scip,          /**< SCIP data structure */
    const char* newcolor /**< new color */
    );
@@ -157,7 +157,7 @@ void SCIPvisuSetColorManOpen(
  * 
  */
 GCG_EXPORT
-void SCIPvisuSetColorManNonzero(
+void GCGvisuSetColorManNonzero(
    SCIP* scip,          /**< SCIP data structure */
    const char* newcolor /**< new color */
    );
@@ -166,7 +166,7 @@ void SCIPvisuSetColorManNonzero(
  * 
  */
 GCG_EXPORT
-void SCIPvisuSetColorManLine(
+void GCGvisuSetColorManLine(
    SCIP* scip,          /**< SCIP data structure */
    const char* newcolor /**< new color */
    );
@@ -174,56 +174,56 @@ void SCIPvisuSetColorManLine(
 /** gets color for mastercons block in current color scheme
  * @returns mastercons color */
 GCG_EXPORT
-const char* SCIPvisuGetColorMasterconss(
+const char* GCGvisuGetColorMasterconss(
    SCIP* scip  /**< SCIP data structure */
    );
 
 /** gets color for mastervar block in current color scheme
  * @returns mastervar color */
 GCG_EXPORT
-const char* SCIPvisuGetColorMastervars(
+const char* GCGvisuGetColorMastervars(
    SCIP* scip  /**< SCIP data structure */
    );
 
 /** gets color for linking blocks in current color scheme
  * @returns linking color */
 GCG_EXPORT
-const char* SCIPvisuGetColorLinking(
+const char* GCGvisuGetColorLinking(
    SCIP* scip  /**< SCIP data structure */
    );
 
 /** gets color for stairlinking blocks in current color scheme
  * @returns stairlinking color */
 GCG_EXPORT
-const char* SCIPvisuGetColorStairlinking(
+const char* GCGvisuGetColorStairlinking(
    SCIP* scip  /**< SCIP data structure */
    );
 
 /** gets color for normal decomp blocks in current color scheme
  * @returns block color */
 GCG_EXPORT
-const char* SCIPvisuGetColorBlock(
+const char* GCGvisuGetColorBlock(
    SCIP* scip  /**< SCIP data structure */
    );
 
 /** gets color for open blocks in current color scheme
  * @returns open color */
 GCG_EXPORT
-const char* SCIPvisuGetColorOpen(
+const char* GCGvisuGetColorOpen(
    SCIP* scip  /**< SCIP data structure */
    );
 
 /** gets color for non-zero points in current color scheme
  * @returns non-zero color */
 GCG_EXPORT
-const char* SCIPvisuGetColorNonzero(
+const char* GCGvisuGetColorNonzero(
    SCIP* scip  /**< SCIP data structure */
    );
 
 /** gets color for lines in current color scheme
  * @returns line color */
 GCG_EXPORT
-const char* SCIPvisuGetColorLine(
+const char* GCGvisuGetColorLine(
    SCIP* scip  /**< SCIP data structure */
    );
 
@@ -231,7 +231,7 @@ const char* SCIPvisuGetColorLine(
  * needs highest indices of both axes for scaling
  * @returns radius */
 GCG_EXPORT
-float SCIPvisuGetNonzeroRadius(
+float GCGvisuGetNonzeroRadius(
    SCIP* scip,          /**< SCIP data structure */
    int maxindx,         /**< highest index x-axis */
    int maxindy,         /**< highest index y-axis */

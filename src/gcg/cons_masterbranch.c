@@ -2393,6 +2393,9 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
 
          assert(parentdata->childconss[parentdata->nchildconss - 1] == NULL);
          parentdata->childconss[parentdata->nchildconss - 1] = *cons;
+
+         // stash limit settings until branching is applied to the original problem
+         SCIP_CALL( GCGstashLimitSettings(GCGgetOriginalprob(scip), scip) );
       }
    }
 

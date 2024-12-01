@@ -115,7 +115,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetcover)
 
 
    gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec;
-   auto& openconss = partialdec->getOpenconssVec();
+   auto& openconss = partialdec->getOpenconss();
    for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
    {
       bool found = false;
