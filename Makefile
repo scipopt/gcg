@@ -685,20 +685,22 @@ $(DIRECTORIES):
 .PHONY: touchexternal
 touchexternal: | $(LIBOBJDIR)
 ifneq ($(LAST_CPLEXSOLVER),$(CPLEXSOLVER))
-		@-touch $(SRCDIR)/solver_cplex.c
+		@-touch $(SRCDIR)/gcg/solver_cplex.c
 endif
 ifneq ($(LAST_STATISTICS),$(STATISTICS))
 		@$(SHELL) -ec 'for file in $$(grep "SCIP_STATISTIC" ${SRCDIR} -rl | sort -u); do touch $$file; done'
 endif
 
 ifneq ($(LAST_BLISS),$(BLISS))
-		@-touch $(SRCDIR)/dec_isomorph.cpp
-		@-touch $(SRCDIR)/relax_gcg.c
-		@-touch $(SRCDIR)/gcgplugins.c
+		@-touch $(SRCDIR)/gcg/dec_isomorph.cpp
+		@-touch $(SRCDIR)/gcg/relax_gcg.c
+		@-touch $(SRCDIR)/gcg/gcgplugins.c
+		@-touch $(SRCDIR)/symmetry/automorphism.cpp
+		@-touch $(SRCDIR)/symmetry/automorphism_bliss.cpp
 endif
 ifneq ($(LAST_CLIQUER),$(CLIQUER))
-		@-touch $(SRCDIR)/solver_cliquer.c
-		@-touch $(SRCDIR)/masterplugins.c
+		@-touch $(SRCDIR)/gcg/solver_cliquer.c
+		@-touch $(SRCDIR)/gcg/masterplugins.c
 endif
 ifneq ($(USRFLAGS),$(LAST_USRFLAGS))
 		@-touch $(ALLSRC)
