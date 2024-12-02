@@ -89,7 +89,7 @@ void struct_graph::addEdge(
    int v2
    )
 {
-   assert(v1 < graphdata->edges.size() && v2 < graphdata->edges.size());
+   assert(v1 < (int) graphdata->edges.size() && v2 < (int) graphdata->edges.size());
    graphdata->edges[v1].push_back(v2);
    graphdata->edges[v2].push_back(v1);
    graphdata->nedges+=2;
@@ -116,7 +116,7 @@ SCIP_RETCODE struct_graph::findAutomorphisms(
    // edges
    DYNALLOC1(int, graphdata->graph.e, graphdata->graph.elen, graphdata->nedges, "malloc");
    graphdata->graph.nde = graphdata->nedges;
-   assert(graphdata->edges.size() == graphdata->graph.nv);
+   assert((int) graphdata->edges.size() == graphdata->graph.nv);
    for( i = 0; i < graphdata->graph.nv; ++i)
    {
       graphdata->graph.d[i] = (int)graphdata->edges[i].size();

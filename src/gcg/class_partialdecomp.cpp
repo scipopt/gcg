@@ -123,7 +123,7 @@ PARTIALDECOMP* BLOCK_STRUCTURE::createPartialdec(
       if( idx >= 0 )
       {
          colmapping[var] = idx;
-         assert(idx < reversecolmapping.size());
+         assert(idx < (int) reversecolmapping.size());
          reversecolmapping[idx] = var;
       }
    }
@@ -3866,14 +3866,14 @@ std::vector<int>& PARTIALDECOMP::getAncestorList()
 const std::vector<int>& PARTIALDECOMP::getBlocksForEqClass(int eqclass)
 {
    assert(aggInfoCalculated());
-   assert(eqclasstoblocks.size() > eqclass);
+   assert((int) eqclasstoblocks.size() > eqclass);
    return eqclasstoblocks[eqclass];
 }
 
 int PARTIALDECOMP::getReprBlockForEqClass(int eqclass)
 {
    assert(aggInfoCalculated());
-   assert(eqclasstoblocks.size() > eqclass && !eqclasstoblocks[eqclass].empty());
+   assert((int) eqclasstoblocks.size() > eqclass && !eqclasstoblocks[eqclass].empty());
    return eqclasstoblocks[eqclass][0];
 }
 
@@ -4276,7 +4276,7 @@ std::vector<int>& PARTIALDECOMP::getLinkingvarsForBlock(
       }
    }
 
-   assert(block >= 0 && block < linkingvarsforblocks.size());
+   assert(block >= 0 && block < (int) linkingvarsforblocks.size());
    return linkingvarsforblocks[block];   
 }
 
@@ -4318,7 +4318,7 @@ BLOCK_STRUCTURE* PARTIALDECOMP::getBlockStructure(
    int block
    )
 {
-   assert(block >= 0 && block < blockstructures.size());
+   assert(block >= 0 && block < (int) blockstructures.size());
    return blockstructures[block];
 }
 
@@ -4746,7 +4746,7 @@ std::vector<int>& PARTIALDECOMP::getStairlinkingvars(
    int block
    )
 {
-   assert( block >= 0 && block < stairlinkingvars.size() );
+   assert( block >= 0 && block < (int) stairlinkingvars.size() );
    return stairlinkingvars[block];
 }
 
@@ -4770,7 +4770,7 @@ std::vector<int>& PARTIALDECOMP::getVarsForBlock(
    int block
    )
 {
-   assert( block >= 0 && block < varsforblocks.size() );
+   assert( block >= 0 && block < (int) varsforblocks.size() );
    return varsforblocks[block];
 }
 
@@ -4780,7 +4780,7 @@ int PARTIALDECOMP::getVarProbindexForBlock(
    int block
    )
 {
-   assert(block >= 0 && block < varsforblocks.size());
+   assert(block >= 0 && block < (int) varsforblocks.size());
    std::vector<int>::iterator lb = lower_bound(varsforblocks[block].begin(), varsforblocks[block].end(), varid);
 
    if( lb != varsforblocks[block].end() && *lb == varid )
@@ -4803,7 +4803,7 @@ bool PARTIALDECOMP::isConsBlockconsOfBlock(
    )
 {
    assert( cons >= 0 && cons < nconss );
-   assert( block >= 0 && block < conssforblocks.size() );
+   assert( block >= 0 && block < (int) conssforblocks.size() );
    std::vector<int>::iterator lb = lower_bound( conssforblocks[block].begin(), conssforblocks[block].end(), cons );
    if( lb != conssforblocks[block].end() &&  *lb == cons )
       return true;
@@ -4816,7 +4816,7 @@ bool PARTIALDECOMP::isConsMastercons(
    int cons
    )
 {
-   assert( cons >= 0 && cons < isconsmaster.size() );
+   assert( cons >= 0 && cons < (int) isconsmaster.size() );
   return isconsmaster[cons];
 }
 
@@ -4825,7 +4825,7 @@ bool PARTIALDECOMP::isConsOpencons(
    int cons
    )
 {
-   assert( cons >= 0 && cons < isconsopen.size() );
+   assert( cons >= 0 && cons < (int) isconsopen.size() );
    return isconsopen[cons];
 }
 
@@ -5038,7 +5038,7 @@ bool PARTIALDECOMP::isVarLinkingvarOfBlock(
       }
    }
 
-   assert(block >= 0 && block < linkingvarsforblocks.size());
+   assert(block >= 0 && block < (int) linkingvarsforblocks.size());
    return std::binary_search(linkingvarsforblocks[block].begin(), linkingvarsforblocks[block].end(), var);
 }
 

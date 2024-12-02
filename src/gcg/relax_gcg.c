@@ -726,7 +726,6 @@ SCIP_RETCODE GCGsetPricingProblemParameters(
    )
 {
    assert(scip != NULL);
-   assert(dectype != GCG_DECMODE_ORIGINAL);
 
    if( dectype != GCG_DECTYPE_DIAGONAL )
    {
@@ -1247,6 +1246,7 @@ SCIP_RETCODE createPricingProblem(
 {
    assert(pricingscip != NULL);
    assert(name != NULL);
+   assert(relaxdata->mode != GCG_DECMODE_ORIGINAL);
 
    if( *pricingscip == NULL )
    {

@@ -2746,7 +2746,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
    int nprobvars;
    int nstabrounds;
-   SCIP_Real pricingtime;
 #endif
 
    assert(pricerdata != NULL);
@@ -2942,6 +2941,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             int oldimpcols;
             int _nfoundvars;
             int _nsuccessfulprobs;
+#ifdef SCIP_STATISTIC
+            SCIP_Real pricingtime;
+#endif
 
             #pragma omp atomic read
             private_retcode = retcode;
@@ -2991,17 +2993,17 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             SCIP_CALL_ABORT( pricingcontroller->setPricingjobTimelimit(pricingjob) );
             GCG_UNSET_LOCK(&pricerdata->locks->pricinglimitslock);
 
-   #ifdef SCIP_STATISTIC
+#ifdef SCIP_STATISTIC
             /* @todo: this can interfere with parallelization */
             pricingtime = pricetype->getClockTime();
-   #endif
+#endif
 
             /* solve the pricing problem */
             private_retcode = performPricingjob(pricingjob, pricetype, &status, &problowerbound);
 
-   #ifdef SCIP_STATISTIC
+#ifdef SCIP_STATISTIC
             pricingtime = pricetype->getClockTime() - pricingtime;
-   #endif
+#endif
 
             impcols = pricerdata->nefficaciouscols[pricingprobnr] - oldimpcols;
 
@@ -3038,8 +3040,10 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 #ifdef SCIP_STATISTIC
             if( status != GCG_PRICINGSTATUS_NOTAPPLICABLE )
             {
+               GCG_SET_LOCK(&pricerdata->locks->printlock);
                SCIPstatisticMessage("P p %d : %d in %g\n",
                   pricingprobnr, impcols, pricingtime);
+               GCG_UNSET_LOCK(&pricerdata->locks->printlock);
             }
   #endif
 

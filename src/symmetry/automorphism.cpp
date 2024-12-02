@@ -827,7 +827,7 @@ SCIP_RETCODE createGraphNewDetection(
 
 #ifndef NDEBUG
    if( *result == SCIP_SUCCESS )
-      assert(currentnode == nnodes);
+      assert(currentnode == (int) nnodes);
 #endif
 
    //free all allocated memory
