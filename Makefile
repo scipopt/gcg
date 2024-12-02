@@ -746,8 +746,8 @@ ifneq ($(LAST_CLIQUER),$(CLIQUER))
 		@-touch $(SRCDIR)/gcg/masterplugins.c
 endif
 ifneq ($(LAST_HIGHS),$(HIGHS))
-		@-touch $(SRCDIR)/solver_highs.c
-		@-touch $(SRCDIR)/masterplugins.c
+		@-touch $(SRCDIR)/gcg/solver_highs.c
+		@-touch $(SRCDIR)/gcg/masterplugins.c
 endif
 ifneq ($(USRFLAGS),$(LAST_USRFLAGS))
 		@-touch $(ALLSRC)
