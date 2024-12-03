@@ -288,7 +288,6 @@ SCIP_RETCODE GCGcolpoolPrice(
 {
    GCG_COL* col;
    int firstunproc;
-   int oldncols;
    int c;
 
    assert(colpool != NULL);

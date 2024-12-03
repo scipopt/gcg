@@ -28,6 +28,10 @@
                 "PAPILO": {
                     "type": "BOOL",
                     "value": "OFF"
+                },
+                "HMETIS": {
+                    "type": "BOOL",
+                    "value": "ON"
                 }
             }
         },
@@ -45,6 +49,20 @@
                 "SANITIZE_UNDEFINED": {
                     "type": "BOOL",
                     "value": "ON"
+                },
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "gcg-debug-nm",
+            "inherits": "gcg-default",
+            "displayName": "GCG Default Debug Config (native memory)",
+            "description": "Default GCG development debug build configuration with native memory handling",
+            "hidden": true,
+            "cacheVariables": {
+                "NOBLKBUFMEM": {
+                    "type": "BOOL",
+                    "value": "ON"
                 }
             }
         },
@@ -54,7 +72,19 @@
             "displayName": "GCG Default Release Config",
             "description": "Default GCG development release build configuration",
             "hidden": true,
-            "cacheVariables": {}
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "gcg-relwithdebinfo",
+            "inherits": "gcg-default",
+            "displayName": "GCG Default RelWithDebInfo Config",
+            "description": "Default GCG development release with debug info build configuration",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
         },
         {
             "name": "gcg-linux",
@@ -82,7 +112,11 @@
             "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang",
-                "CMAKE_CXX_COMPILER": "clang++"
+                "CMAKE_CXX_COMPILER": "clang++",
+                "HMETIS": {
+                    "type": "BOOL",
+                    "value": "OFF"
+                }
             },
             "condition": {
                 "type": "inList",
@@ -101,6 +135,10 @@
                 "CMAKE_TOOLCHAIN_FILE": {
                     "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
                     "type": "FILEPATH"
+                },
+                "HMETIS": {
+                    "type": "BOOL",
+                    "value": "OFF"
                 }
             },
             "condition": {
@@ -114,86 +152,78 @@
         {
             "name": "gcg-linux-debug",
             "inherits": [
-                "gcg-debug",
-                "gcg-linux"
+                "gcg-linux",
+                "gcg-debug"
             ],
             "displayName": "GCG Linux Debug Config",
             "description": "GCG Linux development debug build configuration",
-            "generator": "Unix Makefiles",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
+            "generator": "Unix Makefiles"
+        },
+        {
+            "name": "gcg-linux-debug-nm",
+            "inherits": [
+                "gcg-linux",
+                "gcg-debug-nm"
+            ],
+            "displayName": "GCG Linux Debug Config (native memory)",
+            "description": "GCG Linux development debug build configuration with native memory handling",
+            "generator": "Unix Makefiles"
         },
         {
             "name": "gcg-linux-release",
             "inherits": [
-                "gcg-release",
-                "gcg-linux"
+                "gcg-linux",
+                "gcg-release"
             ],
             "displayName": "GCG Linux Release Config",
             "description": "GCG Linux development release build configuration",
-            "generator": "Unix Makefiles",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
-            }
+            "generator": "Unix Makefiles"
         },
         {
             "name": "gcg-linux-relwithdebinfo",
             "inherits": [
-                "gcg-release",
-                "gcg-linux"
+                "gcg-linux",
+                "gcg-relwithdebinfo"
             ],
             "displayName": "GCG Linux RelWithDebInfo Config",
             "description": "GCG Linux development release with debug info build configuration",
-            "generator": "Unix Makefiles",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-            }
+            "generator": "Unix Makefiles"
         },
         {
             "name": "gcg-macos-debug",
             "inherits": [
-                "gcg-debug",
-                "gcg-macos"
+                "gcg-macos",
+                "gcg-debug"
             ],
             "displayName": "GCG macOS Debug Config",
             "description": "GCG macOS development debug build configuration",
-            "generator": "Unix Makefiles",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
+            "generator": "Unix Makefiles"
         },
         {
             "name": "gcg-macos-release",
             "inherits": [
-                "gcg-release",
-                "gcg-macos"
+                "gcg-macos",
+                "gcg-release"
             ],
             "displayName": "GCG macOS Release Config",
             "description": "GCG macOS development release build configuration",
-            "generator": "Unix Makefiles",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
-            }
+            "generator": "Unix Makefiles"
         },
         {
             "name": "gcg-macos-relwithdebinfo",
             "inherits": [
-                "gcg-release",
-                "gcg-macos"
+                "gcg-macos",
+                "gcg-relwithdebinfo"
             ],
             "displayName": "GCG macOS RelWithDebInfo Config",
             "description": "GCG macOS development release with debug info build configuration",
-            "generator": "Unix Makefiles",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-            }
+            "generator": "Unix Makefiles"
         },
         {
             "name": "gcg-windows-debug",
             "inherits": [
-                "gcg-debug",
-                "gcg-windows"
+                "gcg-windows",
+                "gcg-debug"
             ],
             "displayName": "GCG Windows Debug Config",
             "description": "GCG Windows development debug build configuration"
@@ -201,8 +231,8 @@
         {
             "name": "gcg-windows-release",
             "inherits": [
-                "gcg-release",
-                "gcg-windows"
+                "gcg-windows",
+                "gcg-release"
             ],
             "displayName": "GCG Windows Release Config",
             "description": "GCG Windows development release build configuration"
@@ -242,6 +272,16 @@
             "configurePreset": "gcg-linux-debug",
             "displayName": "GCG Linux Debug Build",
             "description": "GCG Linux development debug build"
+        },
+        {
+            "name": "gcg-linux-debug-nm",
+            "inherits": [
+                "gcg-default",
+                "gcg-gcc-pb"
+            ],
+            "configurePreset": "gcg-linux-debug-nm",
+            "displayName": "GCG Linux Debug Build (native memory)",
+            "description": "GCG Linux development debug build with native memory handling"
         },
         {
             "name": "gcg-linux-release",

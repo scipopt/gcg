@@ -19,7 +19,7 @@ doc/resources/users/features/interactive-menu/menu.html
 doc/scip.tag
 stats/plots
 gcg-*.metis*
-lib/
+lib/*
 !lib/googletest-git
 !lib/scip-git
 !lib/soplex-git
@@ -34,3 +34,10 @@ cmake-build-*/
 .idea/
 __pycache__
 .vscode/
+*.lp
+*.mps
+*.dec
+*.jdec
+*.set
+*.test
+*.solu

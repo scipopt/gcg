@@ -64,14 +64,9 @@ if(JANSSON_FOUND AND NOT TARGET jansson::jansson)
                 IMPORTED_IMPLIB_DEBUG "${JANSSON_LIBRARY_DEBUG}" )
         endif()
     else()
-        if(STATIC_JANSSON)
-            add_library(jansson::jansson STATIC IMPORTED)
-        else()
-            add_library(jansson::jansson SHARED IMPORTED)
-        endif()
+        add_library(jansson::jansson UNKNOWN IMPORTED)
         set_target_properties(jansson::jansson PROPERTIES
             IMPORTED_LOCATION "${JANSSON_LIBRARY}"
-            INTERFACE_INCLUDE_DIRECTORIES "${JANSSON_INCLUDE_DIR}"
-            IMPORTED_IMPLIB "${JANSSON_LIBRARY}")
+            INTERFACE_INCLUDE_DIRECTORIES "${JANSSON_INCLUDE_DIR}")
     endif()
 endif()

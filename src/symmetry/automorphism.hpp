@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    automorph.hpp
+/**@file    automorphism.hpp
  * @brief   automorphism recognition (C++ interface)
  *
  * @author  Erik Muehmer
@@ -47,9 +47,9 @@ SCIP_RETCODE cmpGraphPair(
    int                     block2,             /**< index of second pricing prob */
    SCIP_RESULT*            result,             /**< result pointer to indicate success or failure */
    SCIP_HASHMAP*           varmap,             /**< hashmap to save permutation of variables */
-   SCIP_HASHMAP*           consmap,           /**< hashmap to save permutation of constraints */
-   unsigned int            searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
-   unsigned int            generatorlimit      /**< bliss generator limit (requires patched bliss version) */
+   SCIP_HASHMAP*           consmap,            /**< hashmap to save permutation of constraints */
+   unsigned int            searchnodelimit,    /**< search node limit */
+   unsigned int            generatorlimit      /**< generator limit */
 );
 
 #endif //GCG_AUTOMORPHISM_HPP__

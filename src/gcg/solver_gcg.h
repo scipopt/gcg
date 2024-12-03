@@ -25,28 +25,31 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   wrapper_partialdecomp.h
- * @ingroup DECOMP
- * @brief  Provides wrapping to have Partialdecomps as parameters in C-conform function headers with C++
- *         implementations.
- * @author Hanna Franzen
+/**@file   solver_gcg.h
+ * @ingroup PRICINGSOLVERS
+ * @brief  gcg solver for pricing problem
+ * @author Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_WRAPPER_PARTIALDECOMP_H__
-#define GCG_WRAPPER_PARTIALDECOMP_H__
+#ifndef GCG_SOLVER_GCG_H__
+#define GCG_SOLVER_GCG_H__
 
-#include "cons_decomp.h"
-#include "class_partialdecomp.h"
+#include "scip/scip.h"
 
-/** Wrapper class body to be included in .cpp files only.
- * To pass a wrapper object through C headers include the wrapper forward declaration in cons_decomp.h
- *
- * The struct can contain a PARTIALDECOMP object.*/
-struct Partialdecomp_Wrapper
-{
-   gcg::PARTIALDECOMP* partialdec;            /**< partialdec pointer */
-};
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif   /* GCG_WRAPPER_PARTIALDECOMP_H__ */
+/** creates the xyz solver for pricing problems and includes it in GCG */
+extern
+SCIP_RETCODE GCGincludeSolverGcg(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

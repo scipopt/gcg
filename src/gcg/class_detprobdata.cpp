@@ -56,6 +56,7 @@
 #include "pub_decomp.h"
 #include "struct_decomp.h"
 #include "cons_decomp.h"
+#include "cons_decomp.hpp"
 #include "decomp.h"
 #include "miscvisualization.h"
 #include "scip_misc.h"
@@ -227,10 +228,20 @@ void DETPROBDATA::getTranslatedPartialdecs(
    std::vector<int>& rowthistoother,
    std::vector<int>& colothertothis,
    std::vector<int>& colthistoother,
-   std::vector<PARTIALDECOMP*>& translatedpartialdecs
+   std::vector<PARTIALDECOMP*>& translatedpartialdecs,
+   SCIP_Bool translatesymmetry
    )
 {
-   for(auto otherpartialdec : origpartialdecs)
+   DETPROBDATA* origdetprobdata = NULL;
+   if( translatesymmetry )
+   {
+      // even if presolving is disabled some vars might be fixed to 0
+      // @todo: we could check if symmetry is still valid
+      origdetprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      if( origdetprobdata->getNConss() != getNConss() || origdetprobdata->getNVars() != getNVars() )
+         translatesymmetry = FALSE;
+   }
+   for( auto otherpartialdec : origpartialdecs )
    {
       PARTIALDECOMP* newpartialdec;
 
@@ -265,6 +276,15 @@ void DETPROBDATA::getTranslatedPartialdecs(
          }
       }
 
+      auto& blockstructures = otherpartialdec->getBlockStructures();
+      for( int b = 0; b < (int)blockstructures.size(); ++ b )
+      {
+         if( blockstructures[b] )
+            newpartialdec->setBlockStructure(b, blockstructures[b]->translateStructure(rowothertothis, colothertothis, translatesymmetry));
+         else
+            newpartialdec->setBlockStructure(b, NULL);
+      }
+
       // we do not assign variables as the previous assignment might be invalid due to presolving
 
       newpartialdec->setDetectorchain(otherpartialdec->getDetectorchain());
@@ -296,6 +316,32 @@ void DETPROBDATA::getTranslatedPartialdecs(
 
       newpartialdec->setFinishedByFinisher(otherpartialdec->getFinishedByFinisher());
       newpartialdec->prepare();
+
+      if( translatesymmetry && otherpartialdec->getNBlocks() == newpartialdec->getNBlocks() && otherpartialdec->aggInfoCalculated() )
+      {
+         newpartialdec->setSymmetryInformation(
+            [otherpartialdec] (int b)
+            {
+               return otherpartialdec->getReprBlockForEqClass(otherpartialdec->getEqClassForBlock(b));
+            },
+            [&colothertothis, &colthistoother, otherpartialdec, newpartialdec] (int b, int vi)
+            {
+               int v = newpartialdec->getVarsForBlock(b)[vi];
+               int eqclass = otherpartialdec->getEqClassForBlock(b);
+               int rb = otherpartialdec->getReprBlockForEqClass(eqclass);
+               auto& eqclassblocks = otherpartialdec->getBlocksForEqClass(eqclass);
+               assert(std::lower_bound(eqclassblocks.begin(), eqclassblocks.end(), b) != eqclassblocks.end());
+               int eqclassblock = (int) (std::lower_bound(eqclassblocks.begin(), eqclassblocks.end(), b) - eqclassblocks.begin());
+               assert(std::find(colthistoother.begin(), colthistoother.end(), v) != colthistoother.end());
+               int othervi = otherpartialdec->getVarsForBlock(b)[vi] == colthistoother[v] ? vi : otherpartialdec->getVarProbindexForBlock(colthistoother[v], b);
+               int blockVarIndex = otherpartialdec->getRepVarmap(eqclass, eqclassblock)[othervi];
+               if( newpartialdec->getVarsForBlock(rb)[blockVarIndex] == colothertothis[otherpartialdec->getVarsForBlock(rb)[blockVarIndex]] )
+                  return blockVarIndex;
+               else
+                  return newpartialdec->getVarProbindexForBlock(colothertothis[otherpartialdec->getVarsForBlock(rb)[blockVarIndex]], rb);
+            }
+         );
+      }
 
       newpartialdec->getScore(GCGgetCurrentScore(scip)) ;
 
@@ -782,6 +828,7 @@ int DETPROBDATA::getIndexForVar(
    SCIP_VAR* var
    )
 {
+   assert(var != NULL);
    return vartoindex[var];
 }
 
@@ -1228,8 +1275,9 @@ void DETPROBDATA::printPartitionInformation(
 
 
 std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
-   DETPROBDATA* origdata,
-   std::vector<PARTIALDECOMP*> origpartialdecs
+   DETPROBDATA* otherdata,
+   std::vector<PARTIALDECOMP*> otherpartialdecs,
+   SCIP_Bool translateSymmetry
    )
 {
    std::vector<int> rowothertothis;
@@ -1239,19 +1287,20 @@ std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
    std::vector<int> missingrowinthis;
    std::vector<PARTIALDECOMP*> newpartialdecs;
 
-   calcTranslationMapping( origdata, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
+   calcTranslationMapping(otherdata, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis);
 
-   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL,
+   SCIPverbMessage(this->scip, SCIP_VERBLEVEL_HIGH, NULL,
       " calculated translation; number of missing constraints: %ld; number of other partialdecs: %ld \n", missingrowinthis.size(),
-      origpartialdecs.size() );
+      otherpartialdecs.size());
 
-   getTranslatedPartialdecs( origpartialdecs, rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs );
+   getTranslatedPartialdecs(otherpartialdecs, rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, translateSymmetry);
    return newpartialdecs;
 }
 
 std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
-   DETPROBDATA* origdata
-)
+   DETPROBDATA* otherdata,
+   SCIP_Bool translateSymmetry
+   )
 {
    std::vector<int> rowothertothis;
    std::vector<int> rowthistoother;
@@ -1260,14 +1309,14 @@ std::vector<PARTIALDECOMP*> DETPROBDATA::translatePartialdecs(
    std::vector<int> missingrowinthis;
    std::vector<PARTIALDECOMP*> newpartialdecs;
 
-   calcTranslationMapping( origdata, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis );
+   calcTranslationMapping(otherdata, rowothertothis, rowthistoother, colothertothis, colthistoother, missingrowinthis);
 
-   SCIPverbMessage( this->scip, SCIP_VERBLEVEL_HIGH, NULL,
+   SCIPverbMessage(this->scip, SCIP_VERBLEVEL_HIGH, NULL,
       " calculated translation; number of missing constraints: %ld; number of other partialdecs: %ld \n", missingrowinthis.size(),
-      (origdata->getOpenPartialdecs().size() + origdata->getFinishedPartialdecs().size()) );
+      (otherdata->getOpenPartialdecs().size() + otherdata->getFinishedPartialdecs().size()));
 
-   getTranslatedPartialdecs( origdata->getOpenPartialdecs(), rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs );
-   getTranslatedPartialdecs( origdata->getFinishedPartialdecs(), rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs );
+   getTranslatedPartialdecs(otherdata->getOpenPartialdecs(), rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, translateSymmetry);
+   getTranslatedPartialdecs(otherdata->getFinishedPartialdecs(), rowothertothis, rowthistoother, colothertothis, colthistoother, newpartialdecs, translateSymmetry);
    return newpartialdecs;
 }
 

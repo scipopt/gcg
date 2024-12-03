@@ -1074,11 +1074,6 @@ SCIP_RETCODE readDECFile(
       }
    }
 
-   decinput->partialdec->prepare();
-
-   if( !decinput->partialdec->isComplete() && !decinput->incomplete )
-      decinput->partialdec->setUsergiven(gcg::USERGIVEN::COMPLETED_CONSTOMASTER);
-
    if( decinput->haserror)
    {
       SCIPinfoMessage(scip, NULL, "error occurred while reading dec file");
@@ -1086,16 +1081,10 @@ SCIP_RETCODE readDECFile(
    }
    else
    {
+      if( !decinput->incomplete )
+         decinput->partialdec->setUsergiven(gcg::USERGIVEN::COMPLETED_CONSTOMASTER);
       SCIPinfoMessage(scip, NULL, "just read dec file:\n");
-      decinput->partialdec->sort();
-      /* if the partialdec was to be completed, add a "vanilla" version as well */
-      if( decinput->partialdec->shouldCompletedByConsToMaster() )
-      {
-         gcg::PARTIALDECOMP* partial = new gcg::PARTIALDECOMP(decinput->partialdec);
-         partial->setUsergiven(gcg::USERGIVEN::PARTIAL);
-         GCGconshdlrDecompAddPreexisitingPartialDec(scip, partial);
-      }
-      GCGconshdlrDecompAddPreexisitingPartialDec(scip, decinput->partialdec);
+      GCGconshdlrDecompAddPreexisitingPartialDec(scip, decinput->partialdec, TRUE);
    }
 
    /* close file */

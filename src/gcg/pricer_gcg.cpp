@@ -97,6 +97,7 @@
 #include "event_display.h"
 #include "pub_colpool.h"
 #include "misc_varhistory.h"
+#include "struct_solver.h"
 
 #ifdef SCIP_STATISTIC
 #include "scip/struct_scip.h"
@@ -3202,9 +3203,6 @@ int cleanedIndex;
    SCIP_VAR** probvars;
    int nprobvars;
    int nstabrounds;
-   SCIP_Real pricingtime;
-
-   int cleanedIndex;
 #endif
 
    assert(pricerdata != NULL);
@@ -3419,7 +3417,9 @@ int cleanedIndex;
             int oldimpcols;
             int _nfoundvars;
             int _nsuccessfulprobs;
-            int iter;
+#ifdef SCIP_STATISTIC
+            SCIP_Real pricingtime;
+#endif
 
             #pragma omp atomic read
             private_retcode = retcode;
@@ -3469,17 +3469,17 @@ int cleanedIndex;
             SCIP_CALL_ABORT( pricingcontroller->setPricingjobTimelimit(pricingjob) );
             GCG_UNSET_LOCK(&pricerdata->locks->pricinglimitslock);
 
-   #ifdef SCIP_STATISTIC
+#ifdef SCIP_STATISTIC
             /* @todo: this can interfere with parallelization */
             pricingtime = pricetype->getClockTime();
-   #endif
+#endif
 
             /* solve the pricing problem */
             private_retcode = performPricingjob(pricingjob, pricetype, &status, &problowerbound);
 
-   #ifdef SCIP_STATISTIC
+#ifdef SCIP_STATISTIC
             pricingtime = pricetype->getClockTime() - pricingtime;
-   #endif
+#endif
 
             impcols = pricerdata->nefficaciouscols[pricingprobnr] - oldimpcols;
 
@@ -3516,8 +3516,10 @@ int cleanedIndex;
 #ifdef SCIP_STATISTIC
             if( status != GCG_PRICINGSTATUS_NOTAPPLICABLE )
             {
+               GCG_SET_LOCK(&pricerdata->locks->printlock);
                SCIPstatisticMessage("P p %d : %d in %g\n",
                   pricingprobnr, impcols, pricingtime);
+               GCG_UNSET_LOCK(&pricerdata->locks->printlock);
             }
   #endif
 
@@ -5940,6 +5942,16 @@ SCIP_RETCODE GCGmasterPrintSimplexIters(
    return SCIP_OKAY;
 }
 
+GCG_SOLVER** ObjPricerGcg::getSolvers() const
+{
+    return pricerdata->solvers;
+}
+
+int ObjPricerGcg::getNumSolvers() const
+{
+    return pricerdata->nsolvers;
+}
+
 extern "C"
 GCG_COLPOOL* GCGgetColpool(
    SCIP*                 scip
@@ -5982,7 +5994,6 @@ int GCGpricerGetMaxNThreads(
 {
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
-   int nthreads;
 
    assert(scip != NULL);
 

@@ -61,9 +61,9 @@ set(settings_BPP
 )
 
 set(instances_BPP
-   "instances/bpp/N1C1W4_M.BPP.lp\;\;41"
-   "instances/bpp/N1C2W2_O.BPP.lp\;\;29"
-   "instances/bpp/N1C3W1_A.lp\;\;16"
+   "instances/bpp/N1C1W4_M.BPP.lp\;instances/bpp/N1C1W4_M.BPP.dec\;41"
+   "instances/bpp/N1C2W2_O.BPP.lp\;instances/bpp/N1C2W2_O.BPP.dec\;29"
+   "instances/bpp/N1C3W1_A.lp\;instances/bpp/N1C3W1_A.blk\;16"
    )
 
 #
@@ -75,9 +75,9 @@ set(settings_CPMP
 )
 
 set(instances_CPMP
-   "instances/cpmp/p1250-2.lp\;\;412"
+   "instances/cpmp/p1250-2.lp\;instances/cpmp/p1250-2.blk\;412"
    "instances/cpmp/p1650-2.txt.lp\;\;336"
-   "instances/cpmp/p2050-1.txt.lp\;\;266"
+   "instances/cpmp/p2050-1.txt.lp\;instances/cpmp/p2050-1.txt.dec\;266"
    )
 
 #
@@ -89,8 +89,8 @@ set(settings_CS
 )
 
 set(instances_CS
-   "instances/cs/TEST0055.lp\;\;11"
-   "instances/cs/TEST0059.lp\;\;11"
+   "instances/cs/TEST0055.lp\;instances/cs/TEST0055.dec\;11"
+   "instances/cs/TEST0059.lp\;instances/cs/TEST0059.dec\;11"
    )
 
 #
@@ -103,7 +103,7 @@ set(settings_GAP
 
 set(instances_GAP
    "instances/gap/gap4_2.txt.lp\;\;644"
-   "instances/gap/gap8_4.txt.lp\;\;1117"
+   "instances/gap/gap8_4.txt.lp\;instances/gap/gap8_4.txt.dec\;1117"
    )
 
 #

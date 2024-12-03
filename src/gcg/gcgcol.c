@@ -144,6 +144,8 @@ SCIP_RETCODE initGcgCol(
 static
 SCIP_RETCODE initGcgColFromSol(
    SCIP*                pricingprob,        /**< SCIP data structure (pricing problem) */
+   SCIP*                subproblem,         /**< SCIP data structure that contains the actual solution (if NULL pricingprob will be used) */
+   SCIP_HASHMAP*        varmap,             /**< mapping of pricingprob vars to subproblem vars (can be NULL if subproblem is NULL) */
    GCG_COL*             gcgcol,             /**< gcg column */
    int                  prob,               /**< number of corresponding pricing problem */
    SCIP_SOL*            sol,                /**< solution of pricing problem with index prob */
@@ -151,6 +153,7 @@ SCIP_RETCODE initGcgColFromSol(
    SCIP_Real            redcost             /**< last known reduced cost */
    )
 {
+   SCIP* solprob;
    SCIP_VAR** solvars;
    SCIP_VAR** colvars;
 
@@ -160,6 +163,11 @@ SCIP_RETCODE initGcgColFromSol(
    int ncolvars;
 
    int i;
+
+   if ( subproblem == NULL )
+      solprob = pricingprob;
+   else
+      solprob = subproblem;
 
    solvars = SCIPgetOrigVars(pricingprob);
    nsolvars = SCIPgetNOrigVars(pricingprob);
@@ -175,13 +183,16 @@ SCIP_RETCODE initGcgColFromSol(
       SCIP_Real solval;
 
       solvar = solvars[i];
-      solval = SCIPgetSolVal(pricingprob, sol, solvar);
+      if ( varmap != NULL )
+         solval = SCIPgetSolVal(subproblem, sol, SCIPhashmapGetImage(varmap, solvar));
+      else
+         solval = SCIPgetSolVal(pricingprob, sol, solvar);
 
       /* round solval if possible to avoid numerical troubles */
-      if( SCIPvarIsIntegral(solvar) && SCIPisFeasIntegral(pricingprob, solval) )
-         solval = SCIPround(pricingprob, solval);
+      if( SCIPvarIsIntegral(solvar) && SCIPisFeasIntegral(solprob, solval) )
+         solval = SCIPround(solprob, solval);
 
-      if( SCIPisZero(pricingprob, solval) )
+      if( SCIPisZero(solprob, solval) )
       {
          continue;
       }
@@ -273,6 +284,8 @@ void GCGfreeGcgCol(
 /** reinitialize a gcg column from a solution to a pricing problem */
 SCIP_RETCODE GCGreinitGcgColFromSol(
    SCIP*                pricingprob,        /**< SCIP data structure (pricing problem) */
+   SCIP*                subproblem,         /**< SCIP data structure that contains the actual solution (if NULL pricingprob will be used) */
+   SCIP_HASHMAP*        varmap,             /**< mapping of pricingprob vars to subproblem vars (can be NULL if subproblem is NULL) */
    GCG_COL*             gcgcol,             /**< gcg column */
    int                  prob,               /**< number of corresponding pricing problem */
    SCIP_SOL*            sol,                /**< solution of pricing problem with index prob */
@@ -282,7 +295,7 @@ SCIP_RETCODE GCGreinitGcgColFromSol(
 {
    freeInternalGcgCol(gcgcol);
 
-   SCIP_CALL( initGcgColFromSol(pricingprob, gcgcol, prob, sol, isray, redcost) );
+   SCIP_CALL( initGcgColFromSol(pricingprob, subproblem, varmap, gcgcol, prob, sol, isray, redcost) );
 
    return SCIP_OKAY;
 }
@@ -290,6 +303,8 @@ SCIP_RETCODE GCGreinitGcgColFromSol(
 /** create a gcg column from a solution to a pricing problem */
 SCIP_RETCODE GCGcreateGcgColFromSol(
    SCIP*                pricingprob,        /**< SCIP data structure (pricing problem) */
+   SCIP*                subproblem,         /**< SCIP data structure that contains the actual solution (if NULL pricingprob will be used) */
+   SCIP_HASHMAP*        varmap,             /**< mapping of pricingprob vars to subproblem vars (can be NULL if subproblem is NULL) */
    GCG_COL**            gcgcol,             /**< pointer to store gcg column */
    int                  prob,               /**< number of corresponding pricing problem */
    SCIP_SOL*            sol,                /**< solution of pricing problem with index prob */
@@ -299,7 +314,7 @@ SCIP_RETCODE GCGcreateGcgColFromSol(
 {
    SCIP_CALL( SCIPallocBlockMemory(pricingprob, gcgcol) );
 
-   SCIP_CALL( initGcgColFromSol(pricingprob, *gcgcol, prob, sol, isray, redcost) );
+   SCIP_CALL( initGcgColFromSol(pricingprob, subproblem, varmap, *gcgcol, prob, sol, isray, redcost) );
 
    return SCIP_OKAY;
 }

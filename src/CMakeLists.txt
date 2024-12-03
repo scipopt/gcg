@@ -149,6 +149,7 @@ set(gcgsources
     gcg/score.c
     gcg/sepa_basis.c
     gcg/sepa_original.c
+    gcg/solver_gcg.cpp
     gcg/solver_knapsack.c
     gcg/solver_mip.c
     gcg/solver.c
@@ -299,6 +300,7 @@ set(gcgheaders
     gcg/sepa_original.h
     gcg/solver.h
     gcg/solver_cliquer.h
+    gcg/solver_gcg.cpp
     gcg/solver_knapsack.h
     gcg/solver_mip.h
     gcg/solver_xyz.h
@@ -337,8 +339,11 @@ set(gcgheaders
     gcg/type_score.h
     gcg/type_solver.h
     gcg/type_varclassifier.h
+<<<<<<< HEAD
     gcg/type_varhistory.h
     gcg/wrapper_partialdecomp.h
+=======
+>>>>>>> master
 )
 
 set(gcggraphheaders
@@ -367,7 +372,7 @@ set(gcggraphheaders
     graph/rowgraph.h
     graph/rowgraph_def.h
     graph/weights.h
-   )
+)
 
 if(NOT SYM STREQUAL "none")
    set(gcgsources ${gcgsources} ${symsources}
@@ -434,6 +439,15 @@ if(HMETIS_FOUND)
       add_definitions(-DHMETIS_HEADER)
       configure_file(hmetis.h.in hmetis.h)
    endif()
+endif()
+
+if(JANSSON_FOUND)
+    set(gcgsources ${gcgsources}
+        gcg/reader_jdec.cpp
+    )
+    set(gcgheaders ${gcgheaders}
+        gcg/reader_jdec.h
+    )
 endif()
 
 if(OPENMP_FOUND)

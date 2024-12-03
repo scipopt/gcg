@@ -232,7 +232,7 @@ private:
 
    /** calculates the normalized subgradient (with linking variables) multiplied
     * with the norm of the difference of current duals and the stability center */
-   void calculateSubgradient(
+   SCIP_RETCODE calculateSubgradient(
       GCG_COL**            pricingcols         /**< columns of the pricing problems */
    );
 

@@ -92,6 +92,8 @@ void GCGfreeGcgCol(
 GCG_EXPORT
 SCIP_RETCODE GCGreinitGcgColFromSol(
    SCIP*                pricingprob,        /**< SCIP data structure (pricing problem) */
+   SCIP*                subproblem,         /**< SCIP data structure that contains the actual solution (if NULL pricingprob will be used) */
+   SCIP_HASHMAP*        varmap,             /**< mapping of pricingprob vars to subproblem vars (can be NULL if subproblem is NULL) */
    GCG_COL*             gcgcol,             /**< gcg column */
    int                  prob,               /**< number of corresponding pricing problem */
    SCIP_SOL*            sol,                /**< solution of pricing problem with index prob */
@@ -102,7 +104,9 @@ SCIP_RETCODE GCGreinitGcgColFromSol(
 /** create a gcg column from a solution to a pricing problem */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateGcgColFromSol(
-   SCIP*                scip,               /**< SCIP data structure (original problem) */
+   SCIP*                pricingprob,        /**< SCIP data structure (pricing problem) */
+   SCIP*                subproblem,         /**< SCIP data structure that contains the actual solution (if NULL pricingprob will be used) */
+   SCIP_HASHMAP*        varmap,             /**< mapping of pricingprob vars to subproblem vars (can be NULL if subproblem is NULL) */
    GCG_COL**            gcgcol,             /**< pointer to store gcg column */
    int                  prob,               /**< number of corresponding pricing problem */
    SCIP_SOL*            sol,                /**< solution of pricing problem with index prob */

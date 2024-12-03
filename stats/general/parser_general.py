@@ -36,6 +36,9 @@ def parseOutfiles(outfiles):
         'PRESOLVING TIME': [],
         'STATUS': [],
         'ROOT NODE TIME': [],
+        'DUAL BOUND': [],
+        'PRIMAL BOUND': [],
+        'GAP': [],
         'DUAL BOUNDS': [],
         'HEUR TIME ORIG': [],
         'HEUR CALLS ORIG': [],
@@ -101,6 +104,9 @@ def parseOutfiles(outfiles):
         'PRESOLVING TIME': [],
         'STATUS': [],
         'ROOT NODE TIME': [],
+        'DUAL BOUND': [],
+        'PRIMAL BOUND': [],
+        'GAP': [],
         'DUAL BOUNDS': [],
         'HEUR TIME ORIG': [],
         'HEUR CALLS ORIG': [],
@@ -197,14 +203,14 @@ def parseOutfiles(outfiles):
                 opstat = True
 
             # get instance lp
-            if line.startswith("read problem") and '.dec' not in line and '.blk' not in line:
+            if line.startswith("read problem") and '.dec' not in line and '.jdec' not in line and '.blk' not in line:
                 if line.split()[2][1:-1].startswith("/") and "/check/" in line.split()[2][1:-1]:
                     data['LP FILE'].append(line.split()[2][1:-1].split("/check/")[1])
                 else:
                     data['LP FILE'].append(line.split()[2][1:-1])
 
             # get instance dec
-            if line.startswith("read problem") and ('.dec' in line or '.blk' in line) and not SCIPlog:
+            if line.startswith("read problem") and ('.dec' in line or '.jdec' in line or '.blk' in line) and not SCIPlog:
                 if line.split()[2][1:-1].startswith("/") and "/check/" in line.split()[2][1:-1]:
                     data['DEC FILE'].append(line.split()[2][1:-1].split("/check/")[1])
                 else:
@@ -234,7 +240,7 @@ def parseOutfiles(outfiles):
                 continue
 
             # get status
-            if line.startswith("SCIP Status") and not status:
+            if line.startswith("SCIP Status") and opstat and not status:
                 if line.split(':')[1].strip() == "problem is solved [optimal solution found]":
                     data['STATUS'].append(1)
                 elif line.split(':')[1].strip() == "problem is solved [infeasible]":
@@ -245,6 +251,8 @@ def parseOutfiles(outfiles):
                     data['STATUS'].append(4)
                 elif line.split(':')[1].strip() == "solving was interrupted [node limit reached]":
                     data['STATUS'].append(5)
+                elif line.split(':')[1].strip() == "problem is solved [unbounded]":
+                    data['STATUS'].append(6)
                 else:
                     data['STATUS'].append(0)
                 status = True
@@ -435,6 +443,11 @@ def parseOutfiles(outfiles):
                         data['PRICING SOLVER TYPE'][-1].append("MIP")
                         data['FARKAS TIME'][-1] += sum([float(x) for x in line.split(':')[1].split()[4:6]])
                         data['PRICING SOLVER TIME'][-1] += sum([float(x) for x in line.split(':')[1].split()[4:]])
+                    elif line.lstrip().startswith("gcg"):
+                        # type: GCG (=5)
+                        data['PRICING SOLVER TYPE'][-1].append("GCG")
+                        data['FARKAS TIME'][-1] += sum([float(x) for x in line.split(':')[1].split()[4:6]])
+                        data['PRICING SOLVER TIME'][-1] += sum([float(x) for x in line.split(':')[1].split()[4:]])
                     else:
                         print(line)
                         try:
@@ -542,7 +555,7 @@ def parseOutfiles(outfiles):
                     search = ""
 
             # get solution statistics
-            if line.startswith("Solution") and not opstat:
+            if line.startswith("Solution") and opstat:
                 search = "SOLUTION"
                 continue
 
@@ -552,7 +565,12 @@ def parseOutfiles(outfiles):
                 elif line.lstrip().startswith("First Solution"):
                     data['FIRST SOLUTION TIME'].append(float(line.split(':')[1].split()[7]))
                 elif line.lstrip().startswith("Primal Bound") and data['SOLUTIONS FOUND'][-1] > 0:
+                    data['PRIMAL BOUND'].append(float(line.split(':')[1].split()[0]))
                     data['BEST SOLUTION TIME'].append(float(line.split(':')[1].split()[7]))
+                elif line.lstrip().startswith("Dual Bound"):
+                    data['DUAL BOUND'].append(float(line.split(':')[1].split()[0]))
+                elif line.lstrip().startswith("Gap    "):
+                    data['GAP'].append(float(line.split(':')[1].split()[0]))
                 elif line.lstrip().startswith("Avg. Gap") and data['SOLUTIONS FOUND'][-1] > 0:
                     data['PD INTEGRAL'].append(float(line.split(':')[1].split('%')[1].split()[0][1:]))
                     search = ""
@@ -672,6 +690,12 @@ def parseOutfiles(outfiles):
                 if len(data['ROOT NODE TIME']) < it:
                     data['ROOT NODE TIME'].append(float('NaN'))
 
+                if len(data['DUAL BOUND']) < it:
+                    data['DUAL BOUND'].append(float('NaN'))
+                if len(data['PRIMAL BOUND']) < it:
+                    data['PRIMAL BOUND'].append(float('NaN'))
+                if len(data['GAP']) < it:
+                    data['GAP'].append(float('NaN'))
                 if len(data['DUAL BOUNDS']) < it:
                     data['DUAL BOUNDS'].append([float('NaN')])
 
@@ -851,17 +875,16 @@ def parseOutfiles(outfiles):
             d[key] += data[key]
             data[key] = []
 
-        if len(set(datalengths)) == 2:
-            print("One error in input. Possibly unrecoverable.")
-            differentlen = [count(x) for x in set(datalengths)].min()
-            differentlenidx = datalenghts.index(differentlen)
-            for l, key in enumerate(data):
-                print(outfile, data[data.keys[differentlenidx]], datalengths(differentlenidx))
-        elif len(set(datalengths)) > 2:
-            print("Multiple errors in input. Unrecoverable.")
-            for l, key in enumerate(data):
-                print(outfile, key, datalengths[l])
-
+        if len(set(datalengths)) >= 2:
+            print("Error in input. Numbers of values per data key are not consistent.")
+            print("File: " + outfile)
+            datalengthdict = {
+                l: [k for i, k in enumerate(data.keys()) if datalengths[i] == l] for l in set(datalengths)
+            }
+            print("")
+            print("Will print '#values: list of keys' for all #values:")
+            for l in sorted(datalengthdict.keys()):
+                print(f"{l}: {datalengthdict[l]}")
 
         idx += index
         index = []

@@ -165,7 +165,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConsclass)
          partialdec = new gcg::PARTIALDECOMP(partialdecOrig);
 
          /* fix open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
-         auto& openconss = partialdec->getOpenconssVec();
+         auto& openconss = partialdec->getOpenconss();
          for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
          {
             bool foundCons = false;

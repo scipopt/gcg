@@ -140,15 +140,17 @@ GCG_DECL_SCORECALC(scoreCalcFawh)
    newmasterarea = ( partialdec->getNMasterconss() + sumblockshittinglinkingvar) * ( partialdec->getNVars() + sumlinkingvarshittingblock );
    newblockareaagg = 0;
 
-   for( int br = 0; br < partialdec->getNReps(); ++br )
+   for( int br = 0; br < partialdec->getNEquivalenceClasses(); ++br )
    {
-      newblockareaagg += partialdec->getNConssForBlock( partialdec->getBlocksForRep(br)[0] ) * ( partialdec->getNVarsForBlock( partialdec->getBlocksForRep(br)[0] ) + nlinkingvarsforblock[partialdec->getBlocksForRep(br)[0]] );
+      newblockareaagg += partialdec->getNConssForBlock(partialdec->getBlocksForEqClass(br)[0])
+            * ( partialdec->getNVarsForBlock(partialdec->getBlocksForEqClass(br)[0]) + nlinkingvarsforblock[partialdec->getBlocksForEqClass(br)[0]] );
    }
 
-   SCIP_Real maxforeseeingwhitescoreagg = ((SCIP_Real ) newblockareaagg + (SCIP_Real) newmasterarea) / (SCIP_Real) newwidth;
-   maxforeseeingwhitescoreagg =  maxforeseeingwhitescoreagg / (SCIP_Real) newheight ;
+   SCIP_Real maxforeseeingwhitescoreagg = newwidth == 0 ? 1. : ((SCIP_Real ) newblockareaagg + (SCIP_Real) newmasterarea) / (SCIP_Real) newwidth;
+   maxforeseeingwhitescoreagg =  newheight == 0 ? 1. : maxforeseeingwhitescoreagg / (SCIP_Real) newheight;
 
    maxforeseeingwhitescoreagg = 1. - maxforeseeingwhitescoreagg;
+   assert(maxforeseeingwhitescoreagg == SCIP_INVALID || (maxforeseeingwhitescoreagg >= 0.0 && maxforeseeingwhitescoreagg <= 1.0));
    *scorevalue = maxforeseeingwhitescoreagg;
 
    return SCIP_OKAY;

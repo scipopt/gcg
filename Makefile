@@ -396,6 +396,7 @@ LIBOBJ = \
 			gcg/sepa_basis.o \
 			gcg/sepa_original.o \
 			gcg/solver.o \
+			gcg/solver_gcg.o \
 			gcg/solver_knapsack.o \
 			gcg/solver_mip.o \
 			gcg/stat.o \
@@ -429,6 +430,10 @@ endif
 
 ifeq ($(HIGHS),true)
 LIBOBJ		+=	gcg/solver_highs.o
+endif
+
+ifeq ($(JSON),true)
+LIBOBJ		+=	gcg/reader_jdec.o
 endif
 
 MAINOBJ		=	main.o
@@ -504,12 +509,12 @@ DCXXFLAGS=$(CXXFLAGS)
 
 .PHONY: all
 all:       	$(SCIPDIR)
-		@-$(MAKE) libs
-		@-$(MAKE) mainfiles
+		@$(MAKE) libs
+		@$(MAKE) mainfiles
 
 .PHONY: mainfiles
 mainfiles:
-		@-$(MAKE) $(MAINFILE) $(MAINLINK) $(MAINSHORTLINK)
+		@$(MAKE) $(MAINFILE) $(MAINLINK) $(MAINSHORTLINK)
 
 $(SCIPDIR)/make/make.project: |$(SCIPDIR)
 
@@ -727,24 +732,26 @@ $(DIRECTORIES):
 .PHONY: touchexternal
 touchexternal: | $(LIBOBJDIR)
 ifneq ($(LAST_CPLEXSOLVER),$(CPLEXSOLVER))
-		@-touch $(SRCDIR)/solver_cplex.c
+		@-touch $(SRCDIR)/gcg/solver_cplex.c
 endif
 ifneq ($(LAST_STATISTICS),$(STATISTICS))
 		@$(SHELL) -ec 'for file in $$(grep "SCIP_STATISTIC" ${SRCDIR} -rl | sort -u); do touch $$file; done'
 endif
 
 ifneq ($(LAST_BLISS),$(BLISS))
-		@-touch $(SRCDIR)/dec_isomorph.cpp
-		@-touch $(SRCDIR)/relax_gcg.c
-		@-touch $(SRCDIR)/gcgplugins.c
+		@-touch $(SRCDIR)/gcg/dec_isomorph.cpp
+		@-touch $(SRCDIR)/gcg/relax_gcg.c
+		@-touch $(SRCDIR)/gcg/gcgplugins.c
+		@-touch $(SRCDIR)/symmetry/automorphism.cpp
+		@-touch $(SRCDIR)/symmetry/automorphism_bliss.cpp
 endif
 ifneq ($(LAST_CLIQUER),$(CLIQUER))
-		@-touch $(SRCDIR)/solver_cliquer.c
-		@-touch $(SRCDIR)/masterplugins.c
+		@-touch $(SRCDIR)/gcg/solver_cliquer.c
+		@-touch $(SRCDIR)/gcg/masterplugins.c
 endif
 ifneq ($(LAST_HIGHS),$(HIGHS))
-		@-touch $(SRCDIR)/solver_highs.c
-		@-touch $(SRCDIR)/masterplugins.c
+		@-touch $(SRCDIR)/gcg/solver_highs.c
+		@-touch $(SRCDIR)/gcg/masterplugins.c
 endif
 ifneq ($(USRFLAGS),$(LAST_USRFLAGS))
 		@-touch $(ALLSRC)

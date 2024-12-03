@@ -285,7 +285,7 @@ SCIP_VAR* GCGoriginalVarGetPricingVar(
 }
 #endif
 
-/** returns the pricing var of an original variable */
+/** sets the pricing var of an original variable */
 void GCGoriginalVarSetPricingVar(
    SCIP_VAR*             var,                /**< SCIP variable structure */
    SCIP_VAR*             pricingvar          /**< SCIP variable structure */
