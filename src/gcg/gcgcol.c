@@ -49,11 +49,10 @@
 #include <scip/scip_mem.h>
 #include <scip/type_retcode.h>
 
-/** initialize GCG column */
-static
-SCIP_RETCODE initGcgCol(
+/** create a gcg column */
+SCIP_RETCODE GCGcreateGcgCol(
    SCIP*                pricingprob,        /**< SCIP data structure (pricing problem) */
-   GCG_COL*             gcgcol,             /**< gcg column */
+   GCG_COL**            gcgcol,             /**< pointer to store gcg column */
    int                  probnr,             /**< number of corresponding pricing problem */
    SCIP_VAR**           vars,               /**< (sorted) array of variables of corresponding pricing problem */
    SCIP_Real*           vals,               /**< array of solution values (belonging to vars) */
@@ -66,31 +65,31 @@ SCIP_RETCODE initGcgCol(
    int nnonz;
    int size;
 
-   assert(gcgcol != NULL);
+   /* WARNING: this function has to be threadsafe!*/
 
    size = SCIPcalcMemGrowSize(pricingprob, nvars);
-   SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &(gcgcol->vars), size) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &(gcgcol->vals), size) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vars), size) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vals), size) );
 
-   gcgcol->pricingprob = pricingprob;
-   gcgcol->probnr = probnr;
-   gcgcol->isray = isray;
-   gcgcol->redcost = redcost;
-   gcgcol->age = 0;
-   gcgcol->mastercoefs = NULL;
-   gcgcol->originalsepamastercuts = NULL;
-   gcgcol->linkvars = NULL;
-   gcgcol->nmastercoefs = 0;
-   gcgcol->noriginalsepamastercuts = 0;
-   gcgcol->maxmastercoefs = 0;
-   gcgcol->maxoriginalsepamastercuts = 0;
-   gcgcol->genericmastercutcoefs = NULL;
-   gcgcol->genericmastercutbounds = NULL;
-   gcgcol->ngenericmastercuts = 0;
-   gcgcol->nlinkvars = 0;
-   gcgcol->initcoefs = FALSE;
-   gcgcol->pos = -1;
-   gcgcol->maxvars = size;
+   (*gcgcol)->pricingprob = pricingprob;
+   (*gcgcol)->probnr = probnr;
+   (*gcgcol)->isray = isray;
+   (*gcgcol)->redcost = redcost;
+   (*gcgcol)->age = 0;
+   (*gcgcol)->mastercoefs = NULL;
+   (*gcgcol)->originalsepamastercuts = NULL;
+   (*gcgcol)->linkvars = NULL;
+   (*gcgcol)->nmastercoefs = 0;
+   (*gcgcol)->noriginalsepamastercuts = 0;
+   (*gcgcol)->maxmastercoefs = 0;
+   (*gcgcol)->maxoriginalsepamastercuts = 0;
+   (*gcgcol)->genericmastercutcoefs = NULL;
+   (*gcgcol)->genericmastercutbounds = NULL;
+   (*gcgcol)->ngenericmastercuts = 0;
+   (*gcgcol)->nlinkvars = 0;
+   (*gcgcol)->initcoefs = FALSE;
+   (*gcgcol)->pos = -1;
+   (*gcgcol)->maxvars = size;
 
    nnonz = 0;
    for( i = 0; i < nvars; ++i )
@@ -100,10 +99,10 @@ SCIP_RETCODE initGcgCol(
       SCIP_Real constant;
       SCIP_Real origval;
 
-      origvar = vars[i];
-
       scalar = 1.0;
       constant = 0.0;
+
+      origvar = vars[i];
 
       /* todo: capture vars? */
       SCIP_CALL( SCIPvarGetOrigvarSum(&origvar, &scalar, &constant) );
@@ -121,32 +120,55 @@ SCIP_RETCODE initGcgCol(
 
       assert((GCGvarIsPricing(origvar) && GCGpricingVarGetNOrigvars(origvar) > 0 && GCGpricingVarGetOrigvars(origvar)[0] != NULL) || GCGvarIsInferredPricing(origvar));
 
-      gcgcol->vars[nnonz] = origvar;
-      gcgcol->vals[nnonz] = origval;
+      (*gcgcol)->vars[nnonz] = origvar;
+      (*gcgcol)->vals[nnonz] = origval;
       ++nnonz;
    }
 
-   gcgcol->nvars = nnonz;
+   (*gcgcol)->nvars = nnonz;
 
    /* sort vars and vals array w.r.t. variable index */
-   SCIPsortPtrReal((void**)gcgcol->vars, (double*)gcgcol->vals, SCIPvarComp, nnonz);
+   SCIPsortPtrReal((void**)(*gcgcol)->vars, (double*)(*gcgcol)->vals, SCIPvarComp, nnonz);
 
 #ifndef NDEBUG
-   for( i = 1 ; i < gcgcol->nvars; ++i )
+   for( i = 1 ; i < (*gcgcol)->nvars; ++i )
    {
-      assert( SCIPvarCompare(gcgcol->vars[i-1], gcgcol->vars[i]) < 0 );
+      assert( SCIPvarCompare((*gcgcol)->vars[i-1], (*gcgcol)->vars[i]) < 0 );
    }
 #endif
    return SCIP_OKAY;
 }
 
-/** initialize gcg column from solution */
-static
-SCIP_RETCODE initGcgColFromSol(
+/** free a gcg column */
+void GCGfreeGcgCol(
+   GCG_COL**            gcgcol              /**< pointer to store gcg column */
+   )
+{
+   assert(gcgcol != NULL);
+   assert(*gcgcol != NULL);
+
+   /* WARNING: this function has to be threadsafe!*/
+
+   /* todo: release vars? */
+   assert((*gcgcol)->nvars == 0 || (*gcgcol)->vars != NULL);
+
+   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vars, (*gcgcol)->maxvars);
+   assert((*gcgcol)->nvars == 0 || (*gcgcol)->vals != NULL);
+   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vals, (*gcgcol)->maxvars);
+   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercoefs, (*gcgcol)->maxmastercoefs);
+   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->linkvars, (*gcgcol)->maxlinkvars);
+   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->originalsepamastercuts, (*gcgcol)->maxoriginalsepamastercuts);
+   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->genericmastercutcoefs, (*gcgcol)->ngenericmastercuts);
+   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->genericmastercutbounds, (*gcgcol)->ngenericmastercuts);
+   SCIPfreeBlockMemory((*gcgcol)->pricingprob, gcgcol);
+}
+
+/** create a gcg column from a solution to a pricing problem */
+SCIP_RETCODE GCGcreateGcgColFromSol(
    SCIP*                pricingprob,        /**< SCIP data structure (pricing problem) */
    SCIP*                subproblem,         /**< SCIP data structure that contains the actual solution (if NULL pricingprob will be used) */
    SCIP_HASHMAP*        varmap,             /**< mapping of pricingprob vars to subproblem vars (can be NULL if subproblem is NULL) */
-   GCG_COL*             gcgcol,             /**< gcg column */
+   GCG_COL**            gcgcol,             /**< pointer to store gcg column */
    int                  prob,               /**< number of corresponding pricing problem */
    SCIP_SOL*            sol,                /**< solution of pricing problem with index prob */
    SCIP_Bool            isray,              /**< is column a ray? */
@@ -202,119 +224,10 @@ SCIP_RETCODE initGcgColFromSol(
       ++ncolvars;
    }
 
-   SCIP_CALL( initGcgCol(pricingprob, gcgcol, prob, colvars, colvals, ncolvars, isray, redcost) );
+   SCIP_CALL( GCGcreateGcgCol(pricingprob, gcgcol, prob, colvars, colvals, ncolvars, isray, redcost) );
 
    SCIPfreeBufferArray(pricingprob, &colvals);
    SCIPfreeBufferArray(pricingprob, &colvars);
-
-   return SCIP_OKAY;
-}
-
-/** free inner structures of a gcg column */
-static
-void freeInternalGcgCol(
-   GCG_COL*             gcgcol              /**< gcg column */
-   )
-{
-   assert(gcgcol != NULL);
-
-   /* todo: release vars? */
-   assert(gcgcol->nvars == 0 || gcgcol->vars != NULL);
-   SCIPfreeBlockMemoryArrayNull(gcgcol->pricingprob, &gcgcol->vars, gcgcol->maxvars);
-   assert(gcgcol->nvars == 0 || gcgcol->vals != NULL);
-   SCIPfreeBlockMemoryArrayNull(gcgcol->pricingprob, &gcgcol->vals, gcgcol->maxvars);
-   SCIPfreeBlockMemoryArrayNull(gcgcol->pricingprob, &gcgcol->mastercoefs, gcgcol->maxmastercoefs);
-   SCIPfreeBlockMemoryArrayNull(gcgcol->pricingprob, &gcgcol->linkvars, gcgcol->maxlinkvars);
-   SCIPfreeBlockMemoryArrayNull(gcgcol->pricingprob, &gcgcol->originalsepamastercuts, gcgcol->maxoriginalsepamastercuts);
-   SCIPfreeBlockMemoryArrayNull(gcgcol->pricingprob, &gcgcol->genericmastercutcoefs, gcgcol->ngenericmastercuts);
-   SCIPfreeBlockMemoryArrayNull(gcgcol->pricingprob, &gcgcol->genericmastercutbounds, gcgcol->ngenericmastercuts);
-}
-
-/** reinitialize gcg column */
-SCIP_RETCODE GCGreinitGcgCol(
-   SCIP*                pricingprob,        /**< SCIP data structure (pricing problem) */
-   GCG_COL*             gcgcol,             /**< gcg column */
-   int                  probnr,             /**< number of corresponding pricing problem */
-   SCIP_VAR**           vars,               /**< (sorted) array of variables of corresponding pricing problem */
-   SCIP_Real*           vals,               /**< array of solution values (belonging to vars) */
-   int                  nvars,              /**< number of variables */
-   SCIP_Bool            isray,              /**< is the column a ray? */
-   SCIP_Real            redcost             /**< last known reduced cost */
-   )
-{
-   freeInternalGcgCol(gcgcol);
-
-   SCIP_CALL( initGcgCol(pricingprob, gcgcol, probnr, vars, vals, nvars, isray, redcost) );
-
-   return SCIP_OKAY;
-}
-
-/** create a gcg column */
-SCIP_RETCODE GCGcreateGcgCol(
-   SCIP*                pricingprob,        /**< SCIP data structure (pricing problem) */
-   GCG_COL**            gcgcol,             /**< pointer to store gcg column */
-   int                  probnr,             /**< number of corresponding pricing problem */
-   SCIP_VAR**           vars,               /**< (sorted) array of variables of corresponding pricing problem */
-   SCIP_Real*           vals,               /**< array of solution values (belonging to vars) */
-   int                  nvars,              /**< number of variables */
-   SCIP_Bool            isray,              /**< is the column a ray? */
-   SCIP_Real            redcost             /**< last known reduced cost */
-   )
-{
-   SCIP_CALL( SCIPallocBlockMemory(pricingprob, gcgcol) );
-
-   SCIP_CALL( initGcgCol(pricingprob, *gcgcol, probnr, vars, vals, nvars, isray, redcost) );
-
-   return SCIP_OKAY;
-}
-
-/** free a gcg column */
-void GCGfreeGcgCol(
-   GCG_COL**            gcgcol              /**< pointer to store gcg column */
-   )
-{
-   assert(gcgcol != NULL);
-   assert(*gcgcol != NULL);
-
-   freeInternalGcgCol(*gcgcol);
-
-   SCIPfreeBlockMemory((*gcgcol)->pricingprob, gcgcol);
-}
-
-/** reinitialize a gcg column from a solution to a pricing problem */
-SCIP_RETCODE GCGreinitGcgColFromSol(
-   SCIP*                pricingprob,        /**< SCIP data structure (pricing problem) */
-   SCIP*                subproblem,         /**< SCIP data structure that contains the actual solution (if NULL pricingprob will be used) */
-   SCIP_HASHMAP*        varmap,             /**< mapping of pricingprob vars to subproblem vars (can be NULL if subproblem is NULL) */
-   GCG_COL*             gcgcol,             /**< gcg column */
-   int                  prob,               /**< number of corresponding pricing problem */
-   SCIP_SOL*            sol,                /**< solution of pricing problem with index prob */
-   SCIP_Bool            isray,              /**< is column a ray? */
-   SCIP_Real            redcost             /**< last known reduced cost */
-   )
-{
-   freeInternalGcgCol(gcgcol);
-
-   SCIP_CALL( initGcgColFromSol(pricingprob, subproblem, varmap, gcgcol, prob, sol, isray, redcost) );
-
-   return SCIP_OKAY;
-}
-
-/** create a gcg column from a solution to a pricing problem */
-SCIP_RETCODE GCGcreateGcgColFromSol(
-   SCIP*                pricingprob,        /**< SCIP data structure (pricing problem) */
-   SCIP*                subproblem,         /**< SCIP data structure that contains the actual solution (if NULL pricingprob will be used) */
-   SCIP_HASHMAP*        varmap,             /**< mapping of pricingprob vars to subproblem vars (can be NULL if subproblem is NULL) */
-   GCG_COL**            gcgcol,             /**< pointer to store gcg column */
-   int                  prob,               /**< number of corresponding pricing problem */
-   SCIP_SOL*            sol,                /**< solution of pricing problem with index prob */
-   SCIP_Bool            isray,              /**< is column a ray? */
-   SCIP_Real            redcost             /**< last known reduced cost */
-)
-{
-   SCIP_CALL( SCIPallocBlockMemory(pricingprob, gcgcol) );
-
-   SCIP_CALL( initGcgColFromSol(pricingprob, subproblem, varmap, *gcgcol, prob, sol, isray, redcost) );
 
    return SCIP_OKAY;
 }
