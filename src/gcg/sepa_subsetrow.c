@@ -87,10 +87,10 @@ struct SCIP_SepaData
    int                     maxsepacuts;         /**< number of cuts generated per separation call at non-root node */
    int                     maxcutcands;         /**< maximal number of cuts generated in total */
    int                     strategy;            /**< RANDOM (0), KOSTER-ET-A (1) */
-   int                     n;                   /**< k > 0          : defines the possible weights 1/k */
-   int                     k;                   /**< n = |S| > 0    : number of constraints used to construct subset row */
+   int                     n;                   /**< n = |S| > 0    : number of constraints used to construct subset row */
+   int                     k;                   /**< k > 0          : defines the possible weights 1/k */
    GCG_SEPA*               sepa;                /**< gcg master separator instance */
-   SCIP_CLOCK*             subsetrowclock;
+   SCIP_CLOCK*             subsetrowclock;      /**< times how much time is spent in separator */
 };
 
 
@@ -130,7 +130,7 @@ SCIP_DECL_SEPAFREE(sepaFreeSubsetrow)
    return SCIP_OKAY;
 }
 
-/**< create and add a subset row cut to the generated cuts */
+/**< create a mastersepacut instance for a subset-row cut and add it to the generated cuts */
 static
 SCIP_RETCODE addSubsetRowCutToGeneratedCuts(
    SCIP*                masterscip,       /**< SCIP data structure */
@@ -202,10 +202,10 @@ SCIP_RETCODE selectRandomRows(
 
 /** create a new row for master problem and fill it with the variables (+ their coefficients) and right-hand side*/
 static
-SCIP_RETCODE createSubsetRowCut_alt(
+SCIP_RETCODE createSubsetRowCut(
    SCIP*          masterscip,                   /**< SCIP data structure (master problem) */
    SCIP_ROW**     ssrc,                         /**< pointer to store subset row cut */
-   SCIP_HASHMAP*  mapmastervarxcoeffs,
+   SCIP_HASHMAP*  mapmastervarxcoeffs,          /**< maps master variables to their coefficient in subset-row cut */
    SCIP_Real      rhs_ssrc,                     /**< right hand side of subset row cut */
    SCIP_SEPA*     sepa                          /**< separator which creates subset row cut */
 )
@@ -256,14 +256,14 @@ SCIP_RETCODE createSubsetRowCut_alt(
 
 /** computes the rhs (w^Tb) and the coefficient for each variable (w^Ta_p) in the cut (still non-rounded) */
 static
-SCIP_RETCODE computeSubsetRowCoefficientsAndRHS_alt(
+SCIP_RETCODE computeSubsetRowCoefficientsAndRHS(
    SCIP*          masterscip,                 /**< SCIP data structure of master problem */
    SCIP_CONS**    masterconss,                /**< constraints of the master problem */
    int*           selectedconssidx,           /**< indices of the selected constraints */
    int            nselectedconss,             /**< number of selected constraints */
    SCIP_Real**    weights,                    /**< pointer to store weights of the selected constraints */
    SCIP_Real*     rhs_ssrc,                   /**< pointer to store rhs of subset row cut */
-   SCIP_HASHMAP*  mapmastervarxcoeff
+   SCIP_HASHMAP*  mapmastervarxcoeff          /**< maps master variable to its coefficient in subset-row cut */
 )
 {
    SCIP_Bool  success;
@@ -533,11 +533,11 @@ SCIP_RETCODE createCut(
    assert(masterscip != NULL);
    /* determine the master variables, their coefficients and rhs for subset row (non-rounded) */
    SCIP_CALL( SCIPhashmapCreate(&mapmastervarxcoeff, SCIPblkmem(masterscip), nmastervars) );
-   SCIP_CALL( computeSubsetRowCoefficientsAndRHS_alt(masterscip, masterconss, cutindex->indices, cutindex->nindices,
-                                                     weights, &rhs_ssrc, mapmastervarxcoeff) );
+   SCIP_CALL(computeSubsetRowCoefficientsAndRHS(masterscip, masterconss, cutindex->indices, cutindex->nindices,
+                                                weights, &rhs_ssrc, mapmastervarxcoeff) );
 
    /* create the subset row cut */
-   SCIP_CALL( createSubsetRowCut_alt(masterscip, ssrc, mapmastervarxcoeff, rhs_ssrc, sepa) );
+   SCIP_CALL(createSubsetRowCut(masterscip, ssrc, mapmastervarxcoeff, rhs_ssrc, sepa) );
    assert(ssrc != NULL);
 
 
@@ -815,7 +815,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       // determine the pricing variables and their coefficients for the pricing constraints
       SCIP_CALL( computePricingConssCoefficients(origscip, originalconss, cutindices[i]->indices, cutindices[i]->nindices,
                                                  weights, mappricingvarxcoeff) );
-      // add cut to sepa store and
+      // add cut to separation store and corresponding mastersepacut to sepacut event handler
       mastercutdata = createMastercutData(scip, origscip, ssrc, npricingproblems, sepadata, mappricingvarxcoeff);
       SCIPaddRow(scip, ssrc, FALSE, &success);
       SCIP_CALL( addSubsetRowCutToGeneratedCuts(scip, mastercutdata, weights, cutindices[i]->indices, cutindices[i]->nindices, sepadata->sepa) );
@@ -826,7 +826,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       SCIP_CALL( SCIPhashmapRemoveAll(mappricingvarxcoeff) );
       SCIPfreeBufferArrayNull(scip, &weights);
    }
-   SCIPinfoMessage(scip, NULL, "ncutindices: %i, ngenerated: %i, maxcutands: %i\n", ncutindices, sepadata->ngeneratedcut, sepadata->maxcutcands);
+   //SCIPinfoMessage(scip, NULL, "ncutindices: %i, ngenerated: %i, maxcutands: %i\n", ncutindices, sepadata->ngeneratedcut, sepadata->maxcutcands);
 
    SCIPfreeBlockMemoryArrayNull(scip, &cutindices, maxcuts);
    SCIPhashmapFree(&mappricingvarxcoeff);
