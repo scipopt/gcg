@@ -38,6 +38,10 @@
 #include "struct_mastersepacut.h"
 #include "struct_sepagcg.h"
 #include "type_mastersepacut.h"
+#include "type_gcgcol.h"
+#include "gcgcol.h"
+#include "pub_gcgcol.h"
+
 
 
 /** frees data of subset row cut */
@@ -359,4 +363,284 @@ int* GCGsubsetrowCutGetConssIndices(
    assert(data != NULL);
 
    return data->data.subsetrowcutdata.conssindices;
+}
+
+/** computes the coefficient of a column for a master separator cut */
+SCIP_RETCODE GCGsubsetrowCutGetColumnCoefficient(
+   SCIP*                   scip,       /**< SCIP data structure (master problem) */
+   GCG_MASTERSEPACUT*      cut,        /**< master separator cut */
+   GCG_COL*                gcgcol,     /**< gcg column */
+   SCIP_Real*              coeff       /**< pointer to store the coefficient */
+)
+{
+   SCIP_Real*     weights;
+   SCIP_Real*     mastercoeffs;
+   int*           conssindices;
+   int            n;
+   int            i;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+   assert(gcgcol != NULL);
+   assert(GCGcolGetInitializedCoefs(gcgcol));
+
+   mastercoeffs = GCGcolGetMastercoefs(gcgcol);
+   weights = GCGsubsetrowCutGetWeights(cut);
+   conssindices = GCGsubsetrowCutGetConssIndices(cut);
+   n = GCGsubsetrowCutGetNWeights(cut);
+   assert(mastercoeffs != NULL);
+   assert(weights != NULL);
+   assert(conssindices != NULL);
+
+   /* use the coefficients of the master constraints to compute coefficient for cut */
+   *coeff = 0.0;
+   for( i = 0; i < n; i++ )
+   {
+      SCIPdebugMessage("w[%i]: %f, i[%i]: %i --> %f\n", i, weights[i], i, conssindices[i], mastercoeffs[conssindices[i]]);
+      *coeff += weights[i] * mastercoeffs[conssindices[i]];
+   }
+
+   *coeff = SCIPfeasFloor(scip, *coeff);
+   SCIPdebugMessage("column coefficient: %f\n", *coeff);
+   return SCIP_OKAY;
+}
+
+/** computes the coefficient of a master variable for a master separator cut */
+SCIP_RETCODE GCGsubsetrowCutGetVariableCoefficient(
+   SCIP*                scip,       /**< SCIP data structure (master problem) */
+   GCG_MASTERSEPACUT*   cut,        /**< master separator cut */
+   SCIP_VAR**           vars,       /**< pricing variables which define the master variable */
+   SCIP_Real*           vals,       /**< values of the pricing variables which define the master variables */
+   int                  nvars,      /**< number of pricing variables which define the master variable */
+   int                  probnr,     /**< index of the pricing problem which generated the master variable */
+   SCIP_Real*           coef        /**< pointer to store the coefficient */
+)
+{
+   SCIP*                      origscip;
+   SCIP*                      pricingscip;
+   GCG_PRICINGMODIFICATION*   pricingmod;
+   GCG_MASTERCUTDATA*         mastercutdata;
+   SCIP_CONS**                pricingconss;
+   SCIP_VAR**                 pricingconsvars;
+   SCIP_Bool                  success;
+   SCIP_Bool                  found;
+   SCIP_Real*                 pricingconscoeffs;
+   int                        npricingconsvars;
+   int                        i;
+   int                        pos;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+   assert(cut != NULL);
+
+   *coef = 0.0;
+   mastercutdata = GCGmastersepacutGetMasterCutData(cut);
+   assert(mastercutdata != NULL);
+   pricingmod = GCGmastercutGetPricingModification(scip, mastercutdata, probnr);
+
+   /* no pricing modification for this problem: coefficient is zero */
+   if( pricingmod == NULL )
+   {
+      SCIPdebugMessage("no pricing modification for pp%i --> variable coefficient 0\n", probnr);
+      return SCIP_OKAY;
+   }
+
+   /* get the pricing modification of the problem which generated this master variable */
+   origscip = GCGgetOriginalprob(scip);
+   assert(origscip != NULL);
+   pricingscip = GCGgetPricingprob(origscip, probnr);
+   pricingconss = GCGpricingmodificationGetAdditionalConss(pricingmod);
+
+   /* get all the pricing variables and their coefficients in the constraint */
+   SCIP_CALL( SCIPgetConsNVars(pricingscip, pricingconss[0], &npricingconsvars, &success) );
+   assert(success);
+   SCIPallocBufferArray(scip, &pricingconsvars, npricingconsvars);
+   SCIPallocBufferArray(scip, &pricingconscoeffs, npricingconsvars);
+   SCIP_CALL( SCIPgetConsVars(pricingscip, pricingconss[0], pricingconsvars, npricingconsvars, &success) );
+   assert(success);
+   SCIP_CALL( SCIPgetConsVals(pricingscip, pricingconss[0], pricingconscoeffs, npricingconsvars, &success) );
+   assert(success);
+
+   /* compute w^TAx using the pricing constraint */
+   for( i = 0; i < npricingconsvars; i++ )
+   {
+      if( GCGvarIsInferredPricing(pricingconsvars[i]) )
+         continue;
+
+      found = SCIPsortedvecFindPtr((void**) vars, SCIPvarComp, (void*) pricingconsvars[i], nvars, &pos);
+
+      if( !found )
+         continue;
+
+      *coef += pricingconscoeffs[i] * vals[pos];
+   }
+
+   /* finally, we round down w^TAx */
+   SCIPdebugMessage("variable coefficient %f\n", *coef);
+   *coef = SCIPfeasFloor(scip, *coef);
+
+   /* clean-up */
+   SCIPfreeBufferArray(scip, &pricingconsvars);
+   SCIPfreeBufferArray(scip, &pricingconscoeffs);
+
+   return SCIP_OKAY;
+}
+
+/** adapts the objectives of all the necessary pricing problems such that they consider the master cut */
+SCIP_RETCODE GCGsubsetrowSetPricingObjectives(
+   SCIP*                   scip,    /**< SCIP data structure (master problem) */
+   GCG_MASTERSEPACUT*      cut,     /**< master separator cut */
+   SCIP_Real               dual     /**< the dual value of the master separator cut */
+)
+{
+   SCIP_ROW*                  row;
+   SCIP*                      pricingproblem;
+   SCIP*                      origscip;
+   SCIP_VAR*                  coeffvar;
+   GCG_PRICINGMODIFICATION*   pricingmodifications;
+   GCG_MASTERCUTDATA*         mastercutdata;
+   int                        npricingmodifications;
+   int                        pricingblocknr;
+   int                        i;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+   assert(cut != NULL);
+
+   /* get all the pricing modifications associated with this master cut */
+   origscip = GCGgetOriginalprob(scip);
+   assert(origscip != NULL);
+   mastercutdata = GCGmastersepacutGetMasterCutData(cut);
+   assert(mastercutdata != NULL);
+   npricingmodifications = GCGmastercutGetNPricingModifications(mastercutdata);
+   pricingmodifications = GCGmastercutGetPricingModifications(mastercutdata);
+   row = GCGmastercutGetRow(mastercutdata);
+   assert(row != NULL);
+
+   /* set the objective value of each coefficient variable y to -dual of the cut it is associated with */
+   for( i = 0; i < npricingmodifications; i++ )
+   {
+      pricingblocknr = GCGpricingmodificationGetBlock(&pricingmodifications[i]);
+      pricingproblem = GCGgetPricingprob(origscip, pricingblocknr);
+      coeffvar = GCGpricingmodificationGetCoefVar(&pricingmodifications[i]);
+
+      if( dual >= 0.0 ) // @todo: theoretically, dual should always be non-positive: 'correct' it to zero
+         SCIP_CALL( SCIPchgVarObj(pricingproblem, coeffvar, 0.0) );
+      else
+         SCIP_CALL( SCIPchgVarObj(pricingproblem, coeffvar, -1.0 * dual) );
+   }
+
+   return SCIP_OKAY;
+}
+
+/** adapts a GCG column such that it respects the pricing modification imposed by the master separator cut */
+SCIP_RETCODE GCGsubsetrowAdjustGCGColumn(
+   SCIP*                scip,       /**< SCIP data structure (master problem) */
+   GCG_MASTERSEPACUT*   cut,        /**< master separator cut */
+   GCG_COL**            gcgcol      /**< gcg column */
+)
+{
+   GCG_PRICINGMODIFICATION* pricemod;
+   GCG_MASTERCUTDATA* mastercutdata;
+
+   assert(scip != NULL);
+   assert(GCGisMaster(scip));
+   assert(cut != NULL);
+
+   mastercutdata = GCGmastersepacutGetMasterCutData(cut);
+   assert(mastercutdata != NULL);
+
+   if( !GCGmastercutIsActive(mastercutdata) )
+      return SCIP_OKAY;
+
+   pricemod = GCGmastercutGetPricingModification(scip, mastercutdata, GCGcolGetProbNr(*gcgcol));
+   if( pricemod != NULL )
+   {
+      SCIP_VAR* coefvar;
+      SCIP_Real coefvarval;
+      SCIP_Bool append = FALSE;
+      SCIP_Bool insert = FALSE;
+      int pos;
+
+      coefvar = GCGpricingmodificationGetCoefVar(pricemod);
+      assert(coefvar != NULL);
+
+      if( SCIPvarGetIndex(coefvar) == -1 )
+         return SCIP_OKAY;
+
+      /* we compute the value of y */
+      if( GCGcolGetInitializedCoefs(*gcgcol) )
+         SCIP_CALL( GCGsubsetrowCutGetColumnCoefficient(scip, cut, *gcgcol, &coefvarval) );
+      else
+         SCIP_CALL( GCGsubsetrowCutGetVariableCoefficient(scip, cut, (*gcgcol)->vars, (*gcgcol)->vals, (*gcgcol)->nvars, (*gcgcol)->probnr, &coefvarval) );
+
+      /* 1. variable already in column: replace value (this indicates that this was not the violating constraint)
+       * 2. variable not yet in column:
+       *    a. variable can be appended and variable order (based on index) remains correct
+       *    b. variable has to be inserted to maintain the correct order */
+      if( SCIPvarCompare((*gcgcol)->vars[(*gcgcol)->nvars - 1], coefvar) == -1 )
+         append = TRUE; // variable can simply be appended (2.a)
+      else
+      {
+         /* check if variable already in column */
+         SCIP_VAR** vars;
+         SCIP_Bool found;
+         int nvars;
+
+         vars = (*gcgcol)->vars;
+         nvars = (*gcgcol)->nvars;
+
+         /* search position variable should be at */
+         found = SCIPsortedvecFindPtr((void**) vars, SCIPvarComp, (void*) coefvar, nvars, &pos);
+         if( found )
+            (*gcgcol)->vals[pos] = coefvarval; // variable already in column (1)
+         else
+            insert = TRUE; // variable needs to be inserted in column at position pos (2.b)
+      }
+
+      /* cases 2.a and 2.b */
+      if( !SCIPisZero((*gcgcol)->pricingprob, coefvarval) && (append || insert))
+      {
+         /* ensure column has enough space to include variable */
+         if( (*gcgcol)->maxvars < (*gcgcol)->nvars + 1 )
+         {
+            int newmaxvars = SCIPcalcMemGrowSize((*gcgcol)->pricingprob, (*gcgcol)->nvars + 1);
+            SCIP_CALL( SCIPreallocBlockMemoryArray((*gcgcol)->pricingprob, &((*gcgcol)->vars), (*gcgcol)->maxvars,
+                                                   newmaxvars) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray((*gcgcol)->pricingprob, &((*gcgcol)->vals), (*gcgcol)->maxvars,
+                                                   newmaxvars) );
+            (*gcgcol)->maxvars = newmaxvars;
+         }
+
+         if( append )
+         {
+            /* variable can simply be appended to array and order remains correct */
+            (*gcgcol)->vars[(*gcgcol)->nvars] = coefvar;
+            (*gcgcol)->vals[(*gcgcol)->nvars] = coefvarval;
+            SCIPcaptureVar((*gcgcol)->pricingprob, (*gcgcol)->vars[(*gcgcol)->nvars]);
+         }
+         else if( insert )
+         {
+            int i = 0;
+
+            /* we have to move all the variables (& and their values) stored behind pos */
+            for( i = (*gcgcol)->nvars; i > pos ; i-- )
+            {
+               (*gcgcol)->vars[i] = (*gcgcol)->vars[i - 1];
+               (*gcgcol)->vals[i] = (*gcgcol)->vals[i - 1];
+            }
+
+            /* add variable at correct position */
+            (*gcgcol)->vars[pos] = coefvar;
+            (*gcgcol)->vals[pos] = coefvarval;
+            SCIPcaptureVar((*gcgcol)->pricingprob, (*gcgcol)->vars[pos]);
+         }
+
+         ((*gcgcol)->nvars)++;
+      }
+   }
+   else
+      SCIPinfoMessage(scip, NULL, "pricemod not found!\n");
+
+   return SCIP_OKAY;
 }
