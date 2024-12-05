@@ -49,7 +49,7 @@ extern "C" {
 
 
 /** additional data for subset row cuts */
-struct GCG_SubsetRowCutData
+struct GCG_ChvatalGomoryCutData
 {
    int                     n;                      /**< number of constraints used to create cut */
    int*                    conssindices;           /**< indices of constraints used to create cut */
@@ -61,7 +61,7 @@ struct GCG_MasterSepaCutData
 {
    union
    {
-      GCG_SUBSETROWCUTDATA    subsetrowcutdata;       /**< data for subset row cuts */
+      GCG_CHVATALGOMORYCUTDATA    subsetrowcutdata;       /**< data for subset row cuts */
    } data;
 };
 

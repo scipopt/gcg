@@ -3903,7 +3903,6 @@ SCIP_RETCODE GCGrelaxIncludeSeparator(
    relaxdata->separators[pos]->gcgsepagetcolcoefficient = gcgsepagetcolcoefficient;
    relaxdata->separators[pos]->gcgsepasetobjective = gcgsepasetobjective;
    relaxdata->separators[pos]->gcgsepaadjustcol = gcgsepaadjustcol;
-   relaxdata->separators[pos]->index = relaxdata->nseparators;
    relaxdata->nseparators++;
 
    return SCIP_OKAY;

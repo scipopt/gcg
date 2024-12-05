@@ -148,7 +148,7 @@ SCIP_RETCODE addSubsetRowCutToGeneratedCuts(
    assert(mastercutdata != NULL);
 
    /* create a subset row cut */
-   SCIP_CALL( GCGcreateSubsetRowCut(masterscip, &mastersepacut, sepa, mastercutdata, NULL, weights, conssindices, n) );
+   SCIP_CALL(GCGcreateChvatalGomoryCut(masterscip, &mastersepacut, sepa, mastercutdata, NULL, weights, conssindices, n) );
    assert(mastersepacut != NULL);
 
    /* register it with the event handler managing active master separator cuts */
@@ -837,28 +837,28 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
 static
 GCG_DECL_SEPAGETCOLCOEFFICIENTS(gcgsepaGetColCoefficientSubsetrow)
 {
-   return GCGsubsetrowCutGetColumnCoefficient(scip, cut, gcgcol, coeff);
+   return GCGchvatalGomoryCutGetColumnCoefficient(scip, cut, gcgcol, coeff);
 }
 
 /** compute cut coefficient for master variable */
 static
 GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
 {
-   return GCGsubsetrowCutGetVariableCoefficient(scip, cut, vars, vals, nvars, probnr, coef);
+   return GCGchvatalGomoryCutGetVariableCoefficient(scip, cut, vars, vals, nvars, probnr, coef);
 }
 
 /** modifies the objective values of the pricing variables affected by the master cut */
 static
 GCG_DECL_SEPASETOBJECTIVE(gcgsepaSetObjectiveSubsetrow)
 {
-   return GCGsubsetrowSetPricingObjectives(scip, cut, dual);
+   return GCGchvatalGomorySetPricingObjectives(scip, cut, dual);
 }
 
 /** modifies outdated column to respect cut */
 static
 GCG_DECL_SEPAADJUSTCOL(gcgsepaAdjustCol)
 {
-   return GCGsubsetrowAdjustGCGColumn(scip, cut, gcgcol);
+   return GCGchvatalGomoryAdjustGCGColumn(scip, cut, gcgcol);
 }
 
 /** initialization method of separator (called after problem was transformed) */

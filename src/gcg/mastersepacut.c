@@ -46,7 +46,7 @@
 
 /** frees data of subset row cut */
 static
-SCIP_RETCODE freeSubsetRowCutData(
+SCIP_RETCODE freeChvatalGomoryCutData(
    SCIP*                      masterscip,    /**< SCIP data structure (master problem) */
    GCG_MASTERSEPACUTDATA**    data           /**< pointer to data of subset row cut */
    )
@@ -102,9 +102,9 @@ SCIP_RETCODE freeMasterSepaCut(
    }
    assert((*mastersepacut)->mastercutdata == NULL);
 
-   if( (*mastersepacut)->cuttype == GCG_MASTERSEPACUTTYPE_SUBSETROW )
+   if((*mastersepacut)->cuttype == GCG_MASTERSEPACUTTYPE_CHVATALGOMORY )
    {
-      SCIP_CALL( freeSubsetRowCutData(masterscip, &((*mastersepacut)->data)) );
+      SCIP_CALL(freeChvatalGomoryCutData(masterscip, &((*mastersepacut)->data)) );
    }
    assert((*mastersepacut)->data == NULL);
 
@@ -151,9 +151,7 @@ SCIP_RETCODE GCGreleaseMasterSepaCut(
 
    ((*mastersepacut)->nuses)--;
    if( (*mastersepacut)->nuses == 0 )
-   {
       SCIP_CALL( freeMasterSepaCut(masterscip, mastersepacut) );
-   }
 
    *mastersepacut = NULL;
 
@@ -219,15 +217,7 @@ GCG_MASTERSEPACUTTYPE GCGmastersepacutGetCutType(
    return mastersepacut->cuttype;
 }
 
-/**< return the indexof the separator which created the cut */
-int GCGmastersepacutGetSeparatorIndex(
-   GCG_MASTERSEPACUT*      mastersepacut     /**< master separator cut */
-   )
-{
-   assert(mastersepacut != NULL);
 
-   return mastersepacut->sepa->index;
-}
 
 /**< return the separator which created the cut */
 GCG_SEPA* GCGmastersepacutGetSeparator(
@@ -273,7 +263,7 @@ SCIP_RETCODE GCGmastersepacutSetVarHistory(
 // SUBSETROW CUT SPECIFIC METHODS
 
 /**< creates a subset row cut */
-SCIP_RETCODE GCGcreateSubsetRowCut(
+SCIP_RETCODE GCGcreateChvatalGomoryCut(
    SCIP*                   masterscip,            /**< SCIP data structure (master problem) */
    GCG_MASTERSEPACUT**     mastersepacut,         /**< pointer to store master separator cut */
    GCG_SEPA*               sepa,                  /**< separator creating this cut */
@@ -302,30 +292,30 @@ SCIP_RETCODE GCGcreateSubsetRowCut(
       SCIP_CALL( SCIPduplicateBlockMemoryArray(masterscip, &(data->data.subsetrowcutdata.conssindices), indices, n) );
    }
 
-   SCIP_CALL( GCGcreateMasterSepaCut(masterscip, mastersepacut, GCG_MASTERSEPACUTTYPE_SUBSETROW, sepa,
+   SCIP_CALL( GCGcreateMasterSepaCut(masterscip, mastersepacut, GCG_MASTERSEPACUTTYPE_CHVATALGOMORY, sepa,
                                      mastercutdata, varhistory, data) );
    return SCIP_OKAY;
 }
 
 /**< returns TRUE or FALSE whether cut is a subset row cut */
-SCIP_Bool GCGmastersepacutIsSubsetRow(
+SCIP_Bool GCGmastersepacutIsChvatalGomory(
    GCG_MASTERSEPACUT*      mastersepacut     /**< master separator cut */
    )
 {
    assert(mastersepacut != NULL);
 
-   return mastersepacut->cuttype == GCG_MASTERSEPACUTTYPE_SUBSETROW;
+   return mastersepacut->cuttype == GCG_MASTERSEPACUTTYPE_CHVATALGOMORY;
 }
 
 /**< returns the number of weights of subset row cut */
-int GCGsubsetrowCutGetNWeights(
+int GCGchvatalGomoryCutGetNWeights(
    GCG_MASTERSEPACUT*      mastersepacut     /**< master separator cut */
    )
 {
    GCG_MASTERSEPACUTDATA* data;
 
    assert(mastersepacut != NULL);
-   assert(GCGmastersepacutIsSubsetRow(mastersepacut));
+   assert(GCGmastersepacutIsChvatalGomory(mastersepacut));
 
    data = GCGmastersepacutGetData(mastersepacut);
    assert(data != NULL);
@@ -334,14 +324,14 @@ int GCGsubsetrowCutGetNWeights(
 }
 
 /**< returns the weights of subset row cut */
-SCIP_Real* GCGsubsetrowCutGetWeights(
+SCIP_Real* GCGchvatalGomoryCutGetWeights(
    GCG_MASTERSEPACUT*      mastersepacut     /**< master separator cut */
 )
 {
    GCG_MASTERSEPACUTDATA* data;
 
    assert(mastersepacut != NULL);
-   assert(GCGmastersepacutIsSubsetRow(mastersepacut));
+   assert(GCGmastersepacutIsChvatalGomory(mastersepacut));
 
    data = GCGmastersepacutGetData(mastersepacut);
    assert(data != NULL);
@@ -350,14 +340,14 @@ SCIP_Real* GCGsubsetrowCutGetWeights(
 }
 
 /**< returns the constraint indices of subset row cut */
-int* GCGsubsetrowCutGetConssIndices(
+int* GCGchvatalGomoryCutGetConssIndices(
    GCG_MASTERSEPACUT*      mastersepacut     /**< master separator cut */
 )
 {
    GCG_MASTERSEPACUTDATA* data;
 
    assert(mastersepacut != NULL);
-   assert(GCGmastersepacutIsSubsetRow(mastersepacut));
+   assert(GCGmastersepacutIsChvatalGomory(mastersepacut));
 
    data = GCGmastersepacutGetData(mastersepacut);
    assert(data != NULL);
@@ -366,7 +356,7 @@ int* GCGsubsetrowCutGetConssIndices(
 }
 
 /** computes the coefficient of a column for a master separator cut */
-SCIP_RETCODE GCGsubsetrowCutGetColumnCoefficient(
+SCIP_RETCODE GCGchvatalGomoryCutGetColumnCoefficient(
    SCIP*                   scip,       /**< SCIP data structure (master problem) */
    GCG_MASTERSEPACUT*      cut,        /**< master separator cut */
    GCG_COL*                gcgcol,     /**< gcg column */
@@ -385,9 +375,9 @@ SCIP_RETCODE GCGsubsetrowCutGetColumnCoefficient(
    assert(GCGcolGetInitializedCoefs(gcgcol));
 
    mastercoeffs = GCGcolGetMastercoefs(gcgcol);
-   weights = GCGsubsetrowCutGetWeights(cut);
-   conssindices = GCGsubsetrowCutGetConssIndices(cut);
-   n = GCGsubsetrowCutGetNWeights(cut);
+   weights = GCGchvatalGomoryCutGetWeights(cut);
+   conssindices = GCGchvatalGomoryCutGetConssIndices(cut);
+   n = GCGchvatalGomoryCutGetNWeights(cut);
    assert(mastercoeffs != NULL);
    assert(weights != NULL);
    assert(conssindices != NULL);
@@ -406,7 +396,7 @@ SCIP_RETCODE GCGsubsetrowCutGetColumnCoefficient(
 }
 
 /** computes the coefficient of a master variable for a master separator cut */
-SCIP_RETCODE GCGsubsetrowCutGetVariableCoefficient(
+SCIP_RETCODE GCGchvatalGomoryCutGetVariableCoefficient(
    SCIP*                scip,       /**< SCIP data structure (master problem) */
    GCG_MASTERSEPACUT*   cut,        /**< master separator cut */
    SCIP_VAR**           vars,       /**< pricing variables which define the master variable */
@@ -487,7 +477,7 @@ SCIP_RETCODE GCGsubsetrowCutGetVariableCoefficient(
 }
 
 /** adapts the objectives of all the necessary pricing problems such that they consider the master cut */
-SCIP_RETCODE GCGsubsetrowSetPricingObjectives(
+SCIP_RETCODE GCGchvatalGomorySetPricingObjectives(
    SCIP*                   scip,    /**< SCIP data structure (master problem) */
    GCG_MASTERSEPACUT*      cut,     /**< master separator cut */
    SCIP_Real               dual     /**< the dual value of the master separator cut */
@@ -534,7 +524,7 @@ SCIP_RETCODE GCGsubsetrowSetPricingObjectives(
 }
 
 /** adapts a GCG column such that it respects the pricing modification imposed by the master separator cut */
-SCIP_RETCODE GCGsubsetrowAdjustGCGColumn(
+SCIP_RETCODE GCGchvatalGomoryAdjustGCGColumn(
    SCIP*                scip,       /**< SCIP data structure (master problem) */
    GCG_MASTERSEPACUT*   cut,        /**< master separator cut */
    GCG_COL**            gcgcol      /**< gcg column */
@@ -570,9 +560,11 @@ SCIP_RETCODE GCGsubsetrowAdjustGCGColumn(
 
       /* we compute the value of y */
       if( GCGcolGetInitializedCoefs(*gcgcol) )
-         SCIP_CALL( GCGsubsetrowCutGetColumnCoefficient(scip, cut, *gcgcol, &coefvarval) );
+         SCIP_CALL(GCGchvatalGomoryCutGetColumnCoefficient(scip, cut, *gcgcol, &coefvarval) );
       else
-         SCIP_CALL( GCGsubsetrowCutGetVariableCoefficient(scip, cut, (*gcgcol)->vars, (*gcgcol)->vals, (*gcgcol)->nvars, (*gcgcol)->probnr, &coefvarval) );
+         SCIP_CALL(
+            GCGchvatalGomoryCutGetVariableCoefficient(scip, cut, (*gcgcol)->vars, (*gcgcol)->vals, (*gcgcol)->nvars,
+                                                      (*gcgcol)->probnr, &coefvarval) );
 
       /* 1. variable already in column: replace value (this indicates that this was not the violating constraint)
        * 2. variable not yet in column:
