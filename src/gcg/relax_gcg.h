@@ -156,33 +156,6 @@ SCIP_RETCODE GCGrelaxBranchGetAllActiveMasterCuts(
    int*                  nmastercuts         /**< number of currently active branching rules that created mastercuts */
    );
 
-/** includes a separator into the relaxator data */
-GCG_EXPORT
-SCIP_RETCODE GCGrelaxIncludeSeparator(
-   SCIP*                            scip,                              /**< SCIP data structure */
-   SCIP_SEPA*                       separator,                         /**< SCIP separator structure*/
-   GCG_DECL_SEPAGETVARCOEFFICIENT   ((*gcgsepagetvarcoefficient)),     /**< get cut coefficient for a master variable */
-   GCG_DECL_SEPAGETCOLCOEFFICIENTS  ((*gcgsepagetcolcoefficient)),     /**< get cut coefficient for a column */
-   GCG_DECL_SEPASETOBJECTIVE        ((*gcgsepasetobjective)),          /**< adapt pricing objective to respect cut */
-   GCG_DECL_SEPAADJUSTCOL           ((*gcgsepaadjustcol))              /**< adjusts column to respect cut */
-);
-
-/** get all gcg separators registered with the relaxator */
-GCG_SEPA** GCGrelaxGetSeparators(
-   SCIP* scip        /**< SCIP data structure */
-);
-
-/** returns the gcg separator of the given name */
-GCG_SEPA* GCGrelaxGetSeparator(
-   SCIP*             scip,       /**< SCIP data structure */
-   const char*       name        /**< name of the separator */
-);
-
-/** get number of gcg separators registered with the relaxator */
-int GCGrelaxGetNSeparators(
-   SCIP* scip
-);
-
 /** transformes a constraint of the original problem into the master variable space and
  *  adds it to the master problem */
 GCG_EXPORT

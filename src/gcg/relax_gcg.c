@@ -189,9 +189,6 @@ struct SCIP_RelaxData
    /* visualization parameter */
    GCG_PARAMDATA*        paramsvisu;         /**< parameters for visualization */
 
-   /* separator data */
-   GCG_SEPA**            separators;
-   int                   nseparators;
 };
 
 
@@ -2651,16 +2648,6 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
       SCIPfreeMemoryArray(scip, &(relaxdata->branchrules));
    }
 
-   if( relaxdata->nseparators > 0 )
-   {
-      for( i = 0; i < relaxdata->nseparators; i++ )
-      {
-         SCIPfreeMemory(scip, &(relaxdata->separators[i]));
-      }
-      SCIPfreeMemoryArray(scip, &(relaxdata->separators));
-   }
-
-   relaxdata->nseparators = 0;
    relaxdata->nbranchrules = 0;
    relaxdata->relaxisinitialized = FALSE;
 
@@ -3347,8 +3334,6 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
    relaxdata->masterprob = NULL;
    relaxdata->altmasterprob = NULL;
    relaxdata->paramsvisu = NULL;
-   relaxdata->nseparators = 0;
-   relaxdata->separators = NULL;
    SCIPcreateParamsVisu(scip, &(relaxdata->paramsvisu));
    assert(relaxdata->paramsvisu != NULL);
    initRelaxdata(relaxdata);
@@ -3840,154 +3825,6 @@ SCIP_RETCODE GCGrelaxBranchMasterSolved(
    assert(i < relaxdata->nbranchrules);
 
    return SCIP_OKAY;
-}
-
-/*
- * relaxator specific interface methods for coordination of gcg separators for master problem
- */
-
-/** ensures size of separators array: enlarges the array by 1 */
-static
-SCIP_RETCODE ensureSizeSeparators(
-   SCIP*                 scip,
-   SCIP_RELAXDATA*       relaxdata
-)
-{
-   assert(scip != NULL);
-   assert(relaxdata != NULL);
-   assert((relaxdata->separators == NULL) == (relaxdata->nseparators == 0));
-
-   if( relaxdata->nseparators == 0 )
-   {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(relaxdata->separators), 1) );
-   }
-   else
-   {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(relaxdata->separators), (size_t)relaxdata->nseparators + 1) );
-   }
-
-   return SCIP_OKAY;
-}
-
-/** includes a separator into the relaxator data */
-SCIP_RETCODE GCGrelaxIncludeSeparator(
-   SCIP*                            scip,                              /**< SCIP data structure */
-   SCIP_SEPA*                       separator,                         /**< SCIP separator structure*/
-   GCG_DECL_SEPAGETVARCOEFFICIENT   ((*gcgsepagetvarcoefficient)),     /**< get cut coefficient for a master variable */
-   GCG_DECL_SEPAGETCOLCOEFFICIENTS  ((*gcgsepagetcolcoefficient)),     /**< get cut coefficient for a column */
-   GCG_DECL_SEPASETOBJECTIVE        ((*gcgsepasetobjective)),          /**< adapt pricing objective to respect cut */
-   GCG_DECL_SEPAADJUSTCOL           ((*gcgsepaadjustcol))              /**< adjusts column to respect cut */
-   )
-{
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
-   int pos;
-
-   assert(scip != NULL);
-   assert(separator != NULL);
-
-   relax = SCIPfindRelax(scip, RELAX_NAME);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   SCIPdebugMessage("include gcg separator %s in relaxator data of original problem\n", SCIPsepaGetName(separator));
-   SCIP_CALL( ensureSizeSeparators(scip, relaxdata) );
-   pos = relaxdata->nseparators;
-
-   /* store scip separator and callback functions */
-   SCIP_CALL( SCIPallocMemory(scip, &(relaxdata->separators[pos])) );
-   relaxdata->separators[pos]->separator = separator;
-   relaxdata->separators[pos]->gcgsepagetvarcoefficient = gcgsepagetvarcoefficient;
-   relaxdata->separators[pos]->gcgsepagetcolcoefficient = gcgsepagetcolcoefficient;
-   relaxdata->separators[pos]->gcgsepasetobjective = gcgsepasetobjective;
-   relaxdata->separators[pos]->gcgsepaadjustcol = gcgsepaadjustcol;
-   relaxdata->nseparators++;
-
-   return SCIP_OKAY;
-}
-
-/** returns the gcg separator of the given name */
-GCG_SEPA* GCGrelaxGetSeparator(
-   SCIP*             scip,       /**< SCIP data structure */
-   const char*       name        /**< name of the separator */
-   )
-{
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
-   SCIP* origscip;
-   int i;
-
-   assert(scip != NULL);
-   assert(GCGisMaster(scip));
-
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
-
-   relax = SCIPfindRelax(origscip, RELAX_NAME);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   for( i = 0; i < relaxdata->nseparators; i++ )
-   {
-      if( strcmp(SCIPsepaGetName(relaxdata->separators[i]->separator), name) == 0 )
-      {
-         return relaxdata->separators[i];
-      }
-   }
-
-   return NULL;
-}
-
-/** returns the gcg separators registered with the relaxator */
-GCG_SEPA** GCGrelaxGetSeparators(
-   SCIP* scip
-   )
-{
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
-   SCIP* origscip;
-
-   assert(scip != NULL);
-   assert(GCGisMaster(scip));
-
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
-
-   relax = SCIPfindRelax(origscip, RELAX_NAME);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   return relaxdata->separators;
-}
-
-/** returns the number of gcg separators registered with the relaxator */
-int GCGrelaxGetNSeparators(
-   SCIP* scip
-   )
-{
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
-   SCIP* origscip;
-
-   assert(scip != NULL);
-   assert(GCGisMaster(scip));
-
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
-
-   relax = SCIPfindRelax(origscip, RELAX_NAME);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   return relaxdata->nseparators;
 }
 
 

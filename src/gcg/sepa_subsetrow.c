@@ -106,6 +106,7 @@ SCIP_DECL_SEPAEXIT(sepaExitSubsetrow)
    SCIP_SEPADATA* sepadata;
    assert(sepa != NULL);
    sepadata = SCIPsepaGetData(sepa);
+   SCIPfreeMemory(scip, &(sepadata->sepa));
 
    SCIPinfoMessage(scip, NULL, "GCG Subset-Row Separator Time: %f sec\n", SCIPgetClockTime(scip, sepadata->subsetrowclock));
 
@@ -243,7 +244,6 @@ SCIP_RETCODE createSubsetRowCut(
 
       mastervar = (SCIP_VAR*) SCIPhashmapEntryGetOrigin(entry);
       varcoeff = SCIPhashmapEntryGetImageReal(entry);
-      varcoeff = varcoeff / sepadata->k;
       varcoeff = SCIPfeasFloor(masterscip, varcoeff);
       if( varcoeff != 0.0 )
          SCIP_CALL( SCIPaddVarToRow(masterscip, *ssrc, mastervar, varcoeff) );
@@ -878,11 +878,14 @@ SCIP_DECL_SEPAINIT(sepaInitSubsetrow)
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
 
-   /* creates the subset row gcg separator and includes in the relaxator data of the original problem */
-   SCIP_CALL( GCGrelaxIncludeSeparator(origscip, sepa, gcgsepaGetVarCoefficientSubsetrow,
-                                                gcgsepaGetColCoefficientSubsetrow, gcgsepaSetObjectiveSubsetrow, gcgsepaAdjustCol) );
-   sepadata->sepa = GCGrelaxGetSeparator(scip, SEPA_NAME);
+   SCIP_CALL( SCIPallocMemory(scip, &(sepadata->sepa)) );
+   sepadata->sepa->separator = sepa;
+   sepadata->sepa->gcgsepagetvarcoefficient = gcgsepaGetVarCoefficientSubsetrow;
+   sepadata->sepa->gcgsepagetcolcoefficient = gcgsepaGetColCoefficientSubsetrow;
+   sepadata->sepa->gcgsepasetobjective = gcgsepaSetObjectiveSubsetrow;
+   sepadata->sepa->gcgsepaadjustcol = gcgsepaAdjustCol;
    assert(sepadata->sepa != NULL);
+
    sepadata->ngeneratedcut = 0;
 
    return SCIP_OKAY;
