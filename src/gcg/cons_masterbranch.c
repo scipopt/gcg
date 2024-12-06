@@ -180,34 +180,30 @@ struct SCIP_ConshdlrData
 static
 SCIP_RETCODE addMissedVariables(
    SCIP*                scip,             /**< SCIP data structure */
-   GCG_MASTERSEPACUT*   mastersepacut,    /**< master separator cut */
-   GCG_SEPA*            sepa              /**< separator which created the cut */
+   GCG_MASTERSEPACUT*   mastersepacut     /**< master separator cut */
 )
 {
    GCG_MASTERCUTDATA*      mastercutdata;
    GCG_VARHISTORY*         varhistory;
    GCG_VARHISTORYBUFFER*   next;
+   GCG_SEPA*               sepa;
    int                     i;
 
    assert(scip != NULL);
    assert(mastersepacut != NULL);
-   assert(sepa != NULL);
 
+   sepa = GCGmastersepacutGetSeparator(mastersepacut);
+   assert(sepa != NULL);
    varhistory = GCGmastersepacutGetVarHistory(mastersepacut);
    assert(varhistory != NULL);
-
    mastercutdata = GCGmastersepacutGetMasterCutData(mastersepacut);
    assert(mastercutdata != NULL);
 
    if( varhistory->buffer->nvars == 0 )
-   {
       return SCIP_OKAY;
-   }
 
    if( varhistory->pos < 0 )
-   {
       varhistory->pos = -1;
-   }
 
    do
    {
@@ -234,7 +230,6 @@ SCIP_RETCODE addMissedVariables(
 
          /* get missed master variable */
          mastervar = varhistory->buffer->vars[i];
-         //SCIPinfoMessage(scip, NULL, "missed var %s\n", SCIPvarGetName(mastervar));
          assert(GCGvarIsMaster(mastervar));
 
          /* get the pricing variables corresponding to the original variables which define the master variable */
@@ -260,7 +255,7 @@ SCIP_RETCODE addMissedVariables(
                                                       blocknr, &coef) );
          }
 
-         /* add variable wiht its coefficient to the cut */
+         /* add variable with its coefficient to the cut */
          if( !SCIPisZero(scip, coef) )
          {
             SCIP_ROW* mastercutrow;
@@ -282,9 +277,7 @@ SCIP_RETCODE addMissedVariables(
          varhistory->pos = -1;
       }
       else
-      {
          break;
-      }
    }
    while( TRUE );
 
@@ -299,16 +292,15 @@ SCIP_RETCODE addMissedVariables(
 /** remove the cuts generated at this node from active cuts */
 static
 SCIP_RETCODE removeStoredCutsFromActiveCuts(
-   SCIP* scip,                   /**< SCIP data structure */
-   SCIP_CONSDATA* consdata,       /**< data of current constraint */
-   SCIP_CONSHDLRDATA* conshdlrdata
+   SCIP*                scip,           /**< SCIP data structure */
+   SCIP_CONSDATA*       consdata,       /**< data of current constraint */
+   SCIP_CONSHDLRDATA*   conshdlrdata    /**< masterbranch constraint handler data */
 )
 {
    assert(scip != NULL);
    assert(consdata != NULL);
-   //assert(consdata->addedcutsinit);
 
-   SCIP_CALL(GCGsepacutShrinkActiveCuts(scip, consdata->firstnewcut, conshdlrdata->eventhdlr) );
+   SCIP_CALL( GCGsepacutShrinkActiveCuts(scip, consdata->firstnewcut, conshdlrdata->eventhdlr) );
 
 
    return SCIP_OKAY;
@@ -330,10 +322,11 @@ SCIP_RETCODE addStoredCutsToActiveCuts(
    assert(consdata != NULL);
    assert(consdata->addedcutsinit);
    assert(conshdlrdata != NULL);
+
 #ifndef MASTERSEP_DEBUG
    SCIPinfoMessage(scip, NULL, "add stored cuts: node %lli of type: %i\n", SCIPnodeGetNumber(consdata->node), SCIPnodeGetType(consdata->node));
 #endif
-   //SCIPinfoMessage(scip, NULL, "add stored to active cuts\n");
+
    nactivecuts = GCGsepacutGetNActiveCuts(scip, conshdlrdata->eventhdlr);
    assert(consdata->firstnewcut == nactivecuts);
 
@@ -350,8 +343,10 @@ SCIP_RETCODE addStoredCutsToActiveCuts(
 
    for( j = 0; j < consdata->naddedcuts; j++ )
    {
-      SCIP_CALL( addMissedVariables(scip, consdata->addedcuts[j], GCGmastersepacutGetSeparator(consdata->addedcuts[j])) );
-      SCIP_CALL(GCGsepacutAddCutToActiveCuts(scip, consdata->addedcuts[j], conshdlrdata->eventhdlr) );
+      /* we update the cut to include all the master variables which were generated while the cut was inactive */
+      SCIP_CALL( addMissedVariables(scip, consdata->addedcuts[j]) );
+      /* we add this cut to activecuts */
+      SCIP_CALL( GCGsepacutAddCutToActiveCuts(scip, consdata->addedcuts[j], conshdlrdata->eventhdlr) );
 
 #ifndef MASTERSEP_DEBUG
       GCG_MASTERCUTDATA* mastercutdata;
@@ -2143,7 +2138,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
 
    /* if tree is currently probing, we do not clear generated cuts
     * - the cuts in generated cuts may not have been separated yet, as separation store gets switched when probing */
-   if( SCIPnodeGetType(consdata->node) != SCIP_NODETYPE_PROBINGNODE )
+   if( SCIPnodeGetType(consdata->node) == SCIP_NODETYPE_FOCUSNODE )
       SCIP_CALL( GCGsepacutClearGeneratedCuts(scip, conshdlrdata->eventhdlr) );
 
    return SCIP_OKAY;

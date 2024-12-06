@@ -260,7 +260,7 @@ SCIP_RETCODE GCGmastersepacutSetVarHistory(
 }
 
 
-// SUBSETROW CUT SPECIFIC METHODS
+// CHVATAL-GOMORY CUT SPECIFIC METHODS
 
 /**< creates a subset row cut */
 SCIP_RETCODE GCGcreateChvatalGomoryCut(
@@ -555,16 +555,21 @@ SCIP_RETCODE GCGchvatalGomoryAdjustGCGColumn(
       coefvar = GCGpricingmodificationGetCoefVar(pricemod);
       assert(coefvar != NULL);
 
+      /* cut (and by extension its pricing modifications) is currently not active (or its dual is zero) */
       if( SCIPvarGetIndex(coefvar) == -1 )
          return SCIP_OKAY;
 
       /* we compute the value of y */
       if( GCGcolGetInitializedCoefs(*gcgcol) )
-         SCIP_CALL(GCGchvatalGomoryCutGetColumnCoefficient(scip, cut, *gcgcol, &coefvarval) );
+         SCIP_CALL( GCGchvatalGomoryCutGetColumnCoefficient(scip, cut, *gcgcol, &coefvarval) );
       else
          SCIP_CALL(
             GCGchvatalGomoryCutGetVariableCoefficient(scip, cut, (*gcgcol)->vars, (*gcgcol)->vals, (*gcgcol)->nvars,
                                                       (*gcgcol)->probnr, &coefvarval) );
+
+      /* if the computed coefficient is zero, we do not need to modify the column */
+      if( coefvarval == 0.0 )
+         return SCIP_OKAY;
 
       /* 1. variable already in column: replace value (this indicates that this was not the violating constraint)
        * 2. variable not yet in column:

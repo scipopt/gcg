@@ -66,6 +66,7 @@ struct SCIP_EventhdlrData
    int                        ngeneratedcuts;         /**< number of newly generated cuts */
    int                        activecutssize;         /**< size of memory allocated in active cuts */
    int                        generatedcutssize;      /**< size of memory allocated in generated cuts */
+   SCIP_Bool                  globalcutsreinserted;   /**< have global cuts been re-inserted */
 };
 
 /*
@@ -305,6 +306,7 @@ SCIP_DECL_EVENTINIT(eventInitMastercutUpdate)
    eventhdlrdata->ngeneratedcuts = 0;
    eventhdlrdata->activecutssize = initialsize;
    eventhdlrdata->generatedcutssize = initialsize;
+   eventhdlrdata->globalcutsreinserted = FALSE;
 
    /* notify SCIP that event handler wants to react on the event types row added to LP and node deleted */
    SCIP_CALL( SCIPcatchEvent(scip, SCIP_EVENTTYPE_ROWADDEDLP, eventhdlr, NULL, NULL) );
@@ -465,6 +467,13 @@ SCIP_RETCODE GCGsepacutClearGeneratedCuts(
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
 
+   /* global cuts were re-inserted to generated cuts: we can only clear after the separation round had been applied */
+   if( eventhdlrdata->globalcutsreinserted )
+   {
+      eventhdlrdata->globalcutsreinserted = FALSE;
+      return SCIP_OKAY;
+   }
+
    SCIPdebugMessage("clear %i generated cuts \n", eventhdlrdata->ngeneratedcuts);
    for( j = 0; j < eventhdlrdata->ngeneratedcuts; j++ )
    {
@@ -576,6 +585,7 @@ SCIP_RETCODE GCGsepacutShrinkActiveCuts(
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
 
+   /* no cuts to remove */
    if( eventhdlrdata->nactivecuts == 0 || eventhdlrdata->nactivecuts == newnrows )
       return SCIP_OKAY;
 
@@ -596,6 +606,7 @@ SCIP_RETCODE GCGsepacutShrinkActiveCuts(
       if( masterscip->tree->correctlpdepth != -1 && !SCIProwIsLocal(row) && SCIProwGetAge(row) == 0 )
       {
          SCIP_CALL( reinsertGlobalMasterSepaCut(masterscip, eventhdlrdata->activecuts[j], eventhdlrdata) );
+         eventhdlrdata->globalcutsreinserted = TRUE;
       }
 
       SCIP_CALL( GCGreleaseMasterSepaCut(masterscip, &(eventhdlrdata->activecuts[j])) );
