@@ -300,7 +300,7 @@ set(gcgheaders
     gcg/sepa_original.h
     gcg/solver.h
     gcg/solver_cliquer.h
-    gcg/solver_gcg.cpp
+    gcg/solver_gcg.h
     gcg/solver_knapsack.h
     gcg/solver_mip.h
     gcg/solver_xyz.h
