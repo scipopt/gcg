@@ -2581,6 +2581,12 @@ SCIP_RETCODE initRelaxdata(
 
    relaxdata->limitsettingsstashed = FALSE;
 
+   relaxdata->activebranchrules = NULL;
+   relaxdata->activebranchdata = NULL;
+   relaxdata->activebranchmastercuts = NULL;
+   relaxdata->nactivebranchmastercuts = 0;
+   relaxdata->maxactivebranchmastercuts = 0;
+
    SCIP_CALL( GCGcreateParamsVisu(scip, &(relaxdata->paramsvisu)) );
    assert(relaxdata->paramsvisu != NULL);
 
