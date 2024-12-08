@@ -339,11 +339,7 @@ set(gcgheaders
     gcg/type_score.h
     gcg/type_solver.h
     gcg/type_varclassifier.h
-<<<<<<< HEAD
     gcg/type_varhistory.h
-    gcg/wrapper_partialdecomp.h
-=======
->>>>>>> master
 )
 
 set(gcggraphheaders
