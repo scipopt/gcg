@@ -68,6 +68,7 @@ SCIP_RETCODE GCGcreateGcgCol(
    /* WARNING: this function has to be threadsafe!*/
 
    size = SCIPcalcMemGrowSize(pricingprob, nvars);
+   SCIP_CALL( SCIPallocBlockMemory(pricingprob, gcgcol) );
    SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vars), size) );
    SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vals), size) );
 
