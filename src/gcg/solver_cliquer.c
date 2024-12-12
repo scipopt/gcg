@@ -29,6 +29,7 @@
  * @brief  heuristic solver for pricing problems that solves independent set problems with cliquer
  * @author Henri Lotze
  * @author Christian Puchert
+ * @author Johannes Ehls
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -56,6 +57,7 @@
 #define SOLVER_EXACTENABLED  FALSE           /**< indicates whether the solver should be enabled */
 
 #define DEFAULT_DENSITY      0.00
+#define DEFAULT_NODELIMIT    200
 
 /*
  * Data structures.
@@ -64,6 +66,7 @@
 struct GCG_SolverData 
 {
    SCIP_Real             density;            /**< graph density threshold above which to use solver */
+   int                   nodelimit;          /**< graph node threshold below which to use solver */
 };
 
 /* Constraint type (combination of handler type and constraint form) to use in this solver. */
@@ -1513,6 +1516,14 @@ SCIP_RETCODE solveCliquer(
       goto TERMINATE;
    }
 
+   /* Test if the node threshold is respected */
+   if( SCIPisGT(pricingprob, indexcount, solver->nodelimit) )
+   {
+      SCIPdebugMessage("Exit: Node threshold exceeded, number of nodes: %i.\n", indexcount);
+      *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
+      goto TERMINATE;
+   }
+
    SCIPdebugMessage("Graph size: %d ; Graph density: %g.\n",indexcount,(float)nedges / ((float)(g->n - 1) * (g->n) / 2));
 
    ASSERT( indexcount <= npricingprobvars );
@@ -1733,6 +1744,10 @@ SCIP_RETCODE GCGincludeSolverCliquer(
    SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/cliquer/density",
          "graph density threshold above which to use solver",
          &solverdata->density, TRUE, DEFAULT_DENSITY, 0.0, 1.0, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/cliquer/nodelimit",
+         "graph node threshold below which to use solver",
+         &solverdata->nodelimit, TRUE, DEFAULT_NODELIMIT, 0, INT_MAX, NULL, NULL) );
 
    return SCIP_OKAY;
 }
