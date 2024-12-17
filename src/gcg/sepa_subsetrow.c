@@ -40,14 +40,12 @@
 #include "mastercutdata.h"
 #include "mastersepacut.h"
 #include "pricer_gcg.h"
-#include "pub_gcgcol.h"
 #include "relax_gcg.h"
 #include "scip_misc.h"
 #include "sepa_subsetrow.h"
 #include "struct_gcgcol.h"
 #include "struct_sepagcg.h"
 #include "type_sepagcg.h"
-#include "type_mastersepacut.h"
 #include "zerohalf_selector.h"
 
 #define SEPA_NAME           "subsetrow"
@@ -56,16 +54,16 @@
 #define SEPA_FREQ                     1
 #define SEPA_MAXBOUNDDIST           1.0
 #define SEPA_USESSUBSCIP          FALSE /**< does the separator use a secondary SCIP instance? */
-#define SEPA_DELAY                TRUE /**< should separation method be delayed, if other separators found cuts? */
+#define SEPA_DELAY                 TRUE /**< should separation method be delayed, if other separators found cuts? */
 
 #define STARTMAXCUTS                 50
 #define DEFAULT_RANDSEED             71
 #define DEFAULT_MAXROUNDS             1 /**< maximal number of subset row separation rounds per non-root node */
-#define DEFAULT_MAXROUNDSROOT         2 /**< maximal number of subset row separation calls in the root node */
+#define DEFAULT_MAXROUNDSROOT         1 /**< maximal number of subset row separation calls in the root node */
 #define DEFAULT_MAXSEPACUTS         100 /**< maximal number of subset row cuts separated per call in non-root nodes */
 #define DEFAULT_MAXSEPACUTSROOT    1000 /**< maximal number of subset row cuts separated per call in root node */
-#define DEFAULT_MAXCUTCANDS        1000 /**< maximal number of subset row cuts in total */
-#define DEFAULT_ONLYROOT           TRUE /**< only apply separator in root node */
+#define DEFAULT_MAXCUTCANDS        2000 /**< maximal number of subset row cuts in total */
+#define DEFAULT_ONLYROOT          FALSE /**< only apply separator in root node */
 #define DEFAULT_STRATEGY              0 /**< strategy which is used to determine which rows to consider for cut computation */
 #define DEFAULT_N                     3 /**< number of rows used to create a new cut */
 #define DEFAULT_K                     2 /**< inverse of weight used for cut generation */
@@ -87,8 +85,8 @@ struct SCIP_SepaData
    int                     maxsepacuts;         /**< number of cuts generated per separation call at non-root node */
    int                     maxcutcands;         /**< maximal number of cuts generated in total */
    int                     strategy;            /**< RANDOM (0), KOSTER-ET-A (1) */
-   int                     n;                   /**< n = |S| > 0    : number of constraints used to construct subset row */
-   int                     k;                   /**< k > 0          : defines the possible weights 1/k */
+   int                     n;                   /**< n = |S| > 0    : number of constraints used to construct cut */
+   int                     k;                   /**< k > 0          : defines the weights 1/k */
    GCG_SEPA*               sepa;                /**< gcg master separator instance */
    SCIP_CLOCK*             subsetrowclock;      /**< times how much time is spent in separator */
 };
@@ -142,7 +140,7 @@ SCIP_RETCODE addSubsetRowCutToGeneratedCuts(
    GCG_SEPA*            sepa              /**< separator which generated the cut */
 )
 {
-   GCG_MASTERSEPACUT* mastersepacut;
+   GCG_SEPARATORMASTERCUT* mastersepacut;
 
    assert(masterscip != NULL);
    assert(GCGisMaster(masterscip));

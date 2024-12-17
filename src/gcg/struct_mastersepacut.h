@@ -51,29 +51,30 @@ extern "C" {
 /** additional data for subset row cuts */
 struct GCG_ChvatalGomoryCutData
 {
-   int                     n;                      /**< number of constraints used to create cut */
    int*                    conssindices;           /**< indices of constraints used to create cut */
    SCIP_Real*              weights;                /**< weights used to create cut */
+   int                     nconssindices;          /**< number of constraints used to create cut */
+
 };
 
 /** additional data for master separator cuts */
-struct GCG_MasterSepaCutData
+struct GCG_SeparatorMasterCutData
 {
    union
    {
-      GCG_CHVATALGOMORYCUTDATA    subsetrowcutdata;       /**< data for subset row cuts */
+      GCG_CHVATALGOMORYCUTDATA    chvatalgomorycutdata;       /**< data for Chvatal-Gomory cut */
    } data;
 };
 
 /** master separator cut data structure */
-struct GCG_MasterSepaCut
+struct GCG_SeparatorMasterCut
 {
-   GCG_MASTERSEPACUTDATA*     data;
-   GCG_SEPA*                  sepa;                   /**< index of separator which created cut */
-   GCG_MASTERSEPACUTTYPE      cuttype;                /**< type of cut */
-   GCG_MASTERCUTDATA*         mastercutdata;          /**< master cut data */
-   GCG_VARHISTORY*            knownvarhistory;        /**< pointer to the history of priced variables */
-   int                        nuses;                  /**< number of times this cut is referenced */
+   GCG_SEPA*                        sepa;                   /**< GCG Master Separator which generated the mastercut */
+   GCG_SEPARATORMASTERCUTTYPE       type;                   /**< type of mastercut */
+   GCG_MASTERCUTDATA*               mastercutdata;          /**< mastercut and pricing modifications */
+   GCG_VARHISTORY*                  knownvarhistory;        /**< pointer to the history of priced variables */
+   GCG_SEPARATORMASTERCUTDATA*      data;                   /**< additional data helpful to compute coefficients */
+   int                              nuses;                  /**< number of times this separator mastercut is referenced */
 };
 
 #ifdef __cplusplus

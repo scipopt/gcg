@@ -247,7 +247,7 @@ SCIP_RETCODE adjustGCGCol(
    GCG_COL*       gcgcol      /**< priced col */
 )
 {
-   GCG_MASTERSEPACUT**  activecuts;
+   GCG_SEPARATORMASTERCUT**  activecuts;
    int                  nactivecuts;
    int                  j;
 
