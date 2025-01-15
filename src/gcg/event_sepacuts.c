@@ -326,7 +326,7 @@ SCIP_DECL_EVENTEXITSOL(eventExitSolMastercutUpdate)
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
 
-
+   SCIPinfoMessage(scip, NULL, "sepacut event exitsol\n");
    /* release all the remaining cuts from generated cuts and active cuts */
    SCIPdebugMessage("event exit sol: release remaining %i cuts in generatedcuts\n", eventhdlrdata->ngeneratedcuts);
    for( j = 0; j < eventhdlrdata->ngeneratedcuts; j++ )
@@ -580,8 +580,12 @@ SCIP_RETCODE GCGsepacutShrinkActiveCuts(
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
 
-   /* no cuts to remove */
-   if( eventhdlrdata->nactivecuts == 0 || eventhdlrdata->nactivecuts == newnrows )
+   /* stage already beyonde SCIP_STAGE_EXITSOLVE: activecuts has already been cleared */
+   SCIPinfoMessage(masterscip, NULL, "stage: %i\n", SCIPgetStage(masterscip));
+   if( SCIPgetStage(masterscip) > SCIP_STAGE_EXITSOLVE )
+      return SCIP_OKAY;
+
+   if( eventhdlrdata->nactivecuts == newnrows )
       return SCIP_OKAY;
 
    assert(eventhdlrdata->nactivecuts >= newnrows);
