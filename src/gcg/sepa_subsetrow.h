@@ -32,9 +32,9 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    sepa_xyz.h
+/**@file    sepa_subsetrow.h
  * @ingroup SEPARATORS-GCG
- * @brief   xyz separator for master problem (put your description here)
+ * @brief   subset row separator for master problem
  * @author  Chantal Reinartz Groba
  */
 
@@ -54,7 +54,7 @@ extern "C" {
 /** creates the scip sepa of the subsetrow gcg separator and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE SCIPincludeSepaSubsetrow(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure (master problem) */
 );
 
 #ifdef __cplusplus

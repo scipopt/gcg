@@ -51,13 +51,12 @@
 #define SEPA_NAME           "subsetrow"
 #define SEPA_DESC "subsetrow separator"
 #define SEPA_PRIORITY               100
-#define SEPA_FREQ                     1
+#define SEPA_FREQ                     1 /**< default frequency: 1 --> callback is executed for subproblems at every level*/
 #define SEPA_MAXBOUNDDIST           1.0
 #define SEPA_USESSUBSCIP          FALSE /**< does the separator use a secondary SCIP instance? */
 #define SEPA_DELAY                 TRUE /**< should separation method be delayed, if other separators found cuts? */
 
-#define STARTMAXCUTS                 50
-#define DEFAULT_RANDSEED             71
+#define DEFAULT_RANDSEED             71 /**< initial seed for RandomNumber Generator which picks the constraint indices*/
 #define DEFAULT_MAXROUNDS             1 /**< maximal number of subset row separation rounds per non-root node */
 #define DEFAULT_MAXROUNDSROOT         1 /**< maximal number of subset row separation calls in the root node */
 #define DEFAULT_MAXSEPACUTS         100 /**< maximal number of subset row cuts separated per call in non-root nodes */
@@ -75,6 +74,7 @@
 /** separator data */
 struct SCIP_SepaData
 {
+   GCG_SEPA*               sepa;                /**< gcg master separator instance */
    SCIP_RANDNUMGEN*        randnumgen;          /**< random number generator (for strategy RANDOM) */
    SCIP_Bool               enable;              /**< is this separator enabled? */
    SCIP_Bool               onlyroot;            /**< indicates if separator should only be applied at root node */
@@ -87,8 +87,7 @@ struct SCIP_SepaData
    int                     strategy;            /**< RANDOM (0), KOSTER-ET-A (1) */
    int                     n;                   /**< n = |S| > 0    : number of constraints used to construct cut */
    int                     k;                   /**< k > 0          : defines the weights 1/k */
-   GCG_SEPA*               sepa;                /**< gcg master separator instance */
-   SCIP_CLOCK*             subsetrowclock;      /**< times how much time is spent in separator */
+
 };
 
 
@@ -106,7 +105,6 @@ SCIP_DECL_SEPAEXIT(sepaExitSubsetrow)
    sepadata = SCIPsepaGetData(sepa);
    SCIPfreeMemory(scip, &(sepadata->sepa));
 
-   SCIPinfoMessage(scip, NULL, "GCG Subset-Row Separator Time: %f sec\n", SCIPgetClockTime(scip, sepadata->subsetrowclock));
 
    return SCIP_OKAY;
 }
@@ -123,7 +121,6 @@ SCIP_DECL_SEPAFREE(sepaFreeSubsetrow)
    SCIPdebugMessage("free separator data for subset row separator\n");
    sepadata = SCIPsepaGetData(sepa);
    SCIPfreeRandom(scip, &(sepadata->randnumgen));
-   SCIP_CALL( SCIPfreeClock(scip, &(sepadata->subsetrowclock)) );
    SCIPfreeBlockMemory(scip, &sepadata);
 
    return SCIP_OKAY;
@@ -147,7 +144,7 @@ SCIP_RETCODE addSubsetRowCutToGeneratedCuts(
    assert(mastercutdata != NULL);
 
    /* create a subset row cut */
-   SCIP_CALL(GCGcreateChvatalGomoryCut(masterscip, &mastersepacut, sepa, mastercutdata, NULL, weights, conssindices, n) );
+   SCIP_CALL( GCGcreateChvatalGomoryCut(masterscip, &mastersepacut, sepa, mastercutdata, NULL, weights, conssindices, n) );
    assert(mastersepacut != NULL);
 
    /* register it with the event handler managing active master separator cuts */
@@ -220,7 +217,7 @@ SCIP_RETCODE createSubsetRowCut(
    sepadata = SCIPsepaGetData(sepa);
 
    /* create 'empty' subset row cut of form -inf <= ... <= rhs_ssrc
-    * - local, non-removable, modifiable */
+    * - local, removable, modifiable */
    rhs_ssrc = SCIPfeasFloor(masterscip, rhs_ssrc);
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "ssrc_%i", sepadata->ngeneratedcut);
    SCIP_CALL( SCIPcreateEmptyRowSepa(masterscip, &(*ssrc), sepa, name, -SCIPinfinity(masterscip), rhs_ssrc, TRUE, TRUE, TRUE) );
@@ -254,8 +251,8 @@ SCIP_RETCODE createSubsetRowCut(
 /** computes the rhs (w^Tb) and the coefficient for each variable (w^Ta_p) in the cut (still non-rounded) */
 static
 SCIP_RETCODE computeSubsetRowCoefficientsAndRHS(
-   SCIP*          masterscip,                 /**< SCIP data structure of master problem */
-   SCIP_SEPA*     sepa,
+   SCIP*          masterscip,                 /**< SCIP data structure (master problem) */
+   SCIP_SEPA*     sepa,                       /**< SCIP separator */
    SCIP_CONS**    masterconss,                /**< constraints of the master problem */
    int*           selectedconssidx,           /**< indices of the selected constraints */
    int            nselectedconss,             /**< number of selected constraints */
@@ -340,9 +337,7 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS(
 
          varcoeff = SCIPhashmapGetImageReal(mapmastervarxcoeff, masterconsvars[j]);
          if( varcoeff == SCIP_INVALID )
-         {
             varcoeff = (*weights)[i] * masterconscoeffs[j];
-         }
          else
             varcoeff += (*weights)[i] * masterconscoeffs[j];
 
@@ -359,7 +354,7 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS(
 /** computes the (non-rounded) coefficients for the pricing variables used in the pricing constraints */
 static
 SCIP_RETCODE computePricingConssCoefficients(
-   SCIP*             origscip,               /**< SCIP data structure of original problem */
+   SCIP*             origscip,               /**< SCIP data structure (original problem) */
    SCIP_CONS**       originalconss,          /**< constraints in the original problem */
    int*              selectedconssidx,       /**< indices of selected constraints */
    int               nselectedconss,         /**< number of selected constraints */
@@ -428,9 +423,9 @@ SCIP_RETCODE computePricingConssCoefficients(
 
          coeff_pricing = SCIPhashmapGetImageReal(mappricingvarxcoeff, pricingvar);
          if( coeff_pricing == SCIP_INVALID )
-            SCIPhashmapSetImageReal(mappricingvarxcoeff, pricingvar, weights[i] * origconscoeffs[j]);
+            SCIP_CALL( SCIPhashmapSetImageReal(mappricingvarxcoeff, pricingvar, weights[i] * origconscoeffs[j]) );
          else
-            SCIPhashmapSetImageReal(mappricingvarxcoeff, pricingvar, coeff_pricing + weights[i] * origconscoeffs[j]);
+            SCIP_CALL( SCIPhashmapSetImageReal(mappricingvarxcoeff, pricingvar, coeff_pricing + weights[i] * origconscoeffs[j]) );
       }
 
       SCIPfreeBufferArrayNull(origscip, &origconsvars);
@@ -447,7 +442,7 @@ SCIP_RETCODE selectConstraintsRandom(
    int*                    ncutindices,      /**< pointer to store the number of cuts for which constraint indices were found */
    int                     maxcuts,          /**< maximal number of cuts for which indices should be computed */
    int                     nconss,           /**< number of constraints for every cut */
-   int                     nmasterconss,     /**< numbner of constraints in the master problem */
+   int                     nmasterconss,     /**< number of constraints in the master problem */
    SCIP_RANDNUMGEN*        randnumgen        /**< random number generator to choose the indices */
 )
 {
@@ -519,7 +514,7 @@ SCIP_RETCODE createCut(
    int               nmastervars,   /**< number of variables in the master problem*/
    SCIP_CONS**       masterconss,   /**< constraints of the master problem */
    SCIP_Real**       weights,       /**< sign (1, -1) with which to multiply each selected constraint before adding to cut*/
-   SCIP_ROW**        ssrc          /**< pointer to store subset row cut */
+   SCIP_ROW**        ssrc           /**< pointer to store subset row cut */
    )
 {
    SCIP_HASHMAP*  mapmastervarxcoeff;
@@ -536,7 +531,7 @@ SCIP_RETCODE createCut(
    assert(ssrc != NULL);
 
 
-   SCIPhashmapRemoveAll(mapmastervarxcoeff);
+   SCIP_CALL( SCIPhashmapRemoveAll(mapmastervarxcoeff) );
    SCIPhashmapFree(&mapmastervarxcoeff);
 
    return SCIP_OKAY;
@@ -793,7 +788,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
          SCIP_CALL( GCGfreeCutIndices(scip, &cutindices[i]) );
          SCIPfreeBufferArrayNull(scip, &weights);
          if( ssrc != NULL )
-            SCIPreleaseRow(scip, &ssrc);
+            SCIP_CALL( SCIPreleaseRow(scip, &ssrc) );
 
          continue;
       }
@@ -896,7 +891,7 @@ SCIP_DECL_SEPAINIT(sepaInitSubsetrow)
 
 /** creates the scip separator of the subset row separator and includes it in master SCIP*/
 SCIP_RETCODE SCIPincludeSepaSubsetrow(
-   SCIP*                 scip                /**< SCIP data structure */
+   SCIP*                 scip                /**< SCIP data structure (master problem) */
 )
 {
    SCIP_SEPADATA* sepadata;
@@ -906,7 +901,6 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
    /* create subsetrow separator data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &sepadata) );
    sepa = NULL;
-   SCIP_CALL( SCIPcreateClock(scip, &(sepadata->subsetrowclock)) );
    sepadata->ngeneratedcut = 0;
    sepadata->randnumgen = NULL;
    sepadata->enable = FALSE;
@@ -929,6 +923,7 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
    origscip = GCGmasterGetOrigprob(scip);
    assert(origscip != NULL);
 
+   /* define setting parameters */
    SCIP_CALL( SCIPaddBoolParam(origscip, "sepa/" SEPA_NAME "/enable", "enable subsetrow separator",
       &(sepadata->enable), FALSE, TRUE, NULL, NULL) );
 
