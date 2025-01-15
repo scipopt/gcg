@@ -33,24 +33,24 @@ extern "C" {
 
 /** increases usage counter of master separator cut */
 SCIP_RETCODE GCGcaptureMasterSepaCut(
-   GCG_SEPARATORMASTERCUT*      mastersepacut      /**< master separator cut */
+   GCG_SEPARATORMASTERCUT*       mastersepacut      /**< master separator cut */
 );
 
 /** decreases usage counter of master separator cut, and frees memory if necessary */
 SCIP_RETCODE GCGreleaseMasterSepaCut(
-   SCIP*                   masterscip,      /**< SCIP data structure (master problem) */
-   GCG_SEPARATORMASTERCUT**     mastersepacut    /**< pointer to master separator cut */
+   SCIP*                         masterscip,      /**< SCIP data structure (master problem) */
+   GCG_SEPARATORMASTERCUT**      mastersepacut    /**< pointer to master separator cut */
 );
 
 /** creates master separator cut */
 SCIP_RETCODE GCGcreateMasterSepaCut(
-   SCIP*                   masterscip,          /**< SCIP data structure (master problem) */
-   GCG_SEPARATORMASTERCUT**     mastersepacut,       /**< pointer to store master separator cut */
-   GCG_SEPARATORMASTERCUTTYPE   mastersepacuttype,   /**< type of master separator cut */
-   GCG_SEPA*               sepa,                /**< separator creating this cut */
-   GCG_MASTERCUTDATA*      mastercutdata,       /**< master cut data */
-   GCG_VARHISTORY*         varhistory,          /**< variable history */
-   GCG_SEPARATORMASTERCUTDATA*  mastersepacutdata    /**< master separator cut data */
+   SCIP*                         masterscip,          /**< SCIP data structure (master problem) */
+   GCG_SEPARATORMASTERCUT**      mastersepacut,       /**< pointer to store master separator cut */
+   GCG_SEPARATORMASTERCUTTYPE    mastersepacuttype,   /**< type of master separator cut */
+   GCG_SEPA*                     sepa,                /**< separator creating this cut */
+   GCG_MASTERCUTDATA*            mastercutdata,       /**< master cut data */
+   GCG_VARHISTORY*               varhistory,          /**< variable history */
+   GCG_SEPARATORMASTERCUTDATA*   mastersepacutdata    /**< master separator cut data */
 );
 
 /** returns the master cut data of the master separator cut */
@@ -80,20 +80,20 @@ GCG_SEPARATORMASTERCUTDATA* GCGmastersepacutGetData(
 
 /** set the variable history of master separator cut */
 SCIP_RETCODE GCGmastersepacutSetVarHistory(
-   SCIP*                   masterscip,       /**< SCIP data structure (master problem) */
-   GCG_SEPARATORMASTERCUT**     mastersepacut     /**< pointer to master separator cut */
+   SCIP*                         masterscip,       /**< SCIP data structure (master problem) */
+   GCG_SEPARATORMASTERCUT**      mastersepacut     /**< pointer to master separator cut */
 );
 
 /** creates a subset row cut */
 SCIP_RETCODE GCGcreateChvatalGomoryCut(
-   SCIP*                   masterscip,            /**< SCIP data structure (master problem) */
-   GCG_SEPARATORMASTERCUT**     mastersepacut,         /**< pointer to store master separator cut */
-   GCG_SEPA*               sepa,                  /**< separator creating this cut */
-   GCG_MASTERCUTDATA*      mastercutdata,         /**< mastercutdata associated with the cut */
-   GCG_VARHISTORY*         varhistory,            /**< variables history of subset row cut*/
-   SCIP_Real*              weights,               /**< weights which were used to create the cut */
-   int*                    indices,               /**< indices of constraints used to create the cut */
-   int                     n                      /**< number of constraints used to create the cut */
+   SCIP*                         masterscip,            /**< SCIP data structure (master problem) */
+   GCG_SEPARATORMASTERCUT**      mastersepacut,         /**< pointer to store master separator cut */
+   GCG_SEPA*                     sepa,                  /**< separator creating this cut */
+   GCG_MASTERCUTDATA*            mastercutdata,         /**< mastercutdata associated with the cut */
+   GCG_VARHISTORY*               varhistory,            /**< variables history of subset row cut*/
+   SCIP_Real*                    weights,               /**< weights which were used to create the cut */
+   int*                          indices,               /**< indices of constraints used to create the cut */
+   int                           n                      /**< number of constraints used to create the cut */
 );
 
 /** returns TRUE or FALSE whether cut is a subset row cut */
@@ -118,35 +118,35 @@ int* GCGchvatalGomoryCutGetConssIndices(
 
 /** computes the coefficient of a column for a master separator cut */
 SCIP_RETCODE GCGchvatalGomoryCutGetColumnCoefficient(
-   SCIP*                   scip,       /**< SCIP data structure (master problem) */
-   GCG_SEPARATORMASTERCUT*      cut,        /**< master separator cut */
-   GCG_COL*                gcgcol,     /**< gcg column */
-   SCIP_Real*              coeff       /**< pointer to store the coefficient */
+   SCIP*                         scip,       /**< SCIP data structure (master problem) */
+   GCG_SEPARATORMASTERCUT*       cut,        /**< master separator cut */
+   GCG_COL*                      gcgcol,     /**< gcg column */
+   SCIP_Real*                    coeff       /**< pointer to store the coefficient */
 );
 
 /** computes the coefficient of a master variable for a master separator cut */
 SCIP_RETCODE GCGchvatalGomoryCutGetVariableCoefficient(
-   SCIP*                scip,       /**< SCIP data structure (master problem) */
-   GCG_SEPARATORMASTERCUT*   cut,        /**< master separator cut */
-   SCIP_VAR**           vars,       /**< pricing variables which define the master variable */
-   SCIP_Real*           vals,       /**< values of the pricing variables which define the master variables */
-   int                  nvars,      /**< number of pricing variables which define the master variable */
-   int                  probnr,     /**< index of the pricing problem which generated the master variable */
-   SCIP_Real*           coef        /**< pointer to store the coefficient */
+   SCIP*                      scip,       /**< SCIP data structure (master problem) */
+   GCG_SEPARATORMASTERCUT*    cut,        /**< master separator cut */
+   SCIP_VAR**                 vars,       /**< pricing variables which define the master variable */
+   SCIP_Real*                 vals,       /**< values of the pricing variables which define the master variables */
+   int                        nvars,      /**< number of pricing variables which define the master variable */
+   int                        probnr,     /**< index of the pricing problem which generated the master variable */
+   SCIP_Real*                 coef        /**< pointer to store the coefficient */
 );
 
 /** adapts the objectives of all the necessary pricing problems such that they consider the master cut */
 SCIP_RETCODE GCGchvatalGomorySetPricingObjectives(
-   SCIP*                   scip,    /**< SCIP data structure (master problem) */
-   GCG_SEPARATORMASTERCUT*      cut,     /**< master separator cut */
-   SCIP_Real               dual     /**< the dual value of the master separator cut */
+   SCIP*                         scip,    /**< SCIP data structure (master problem) */
+   GCG_SEPARATORMASTERCUT*       cut,     /**< master separator cut */
+   SCIP_Real                     dual     /**< the dual value of the master separator cut */
 );
 
 /** adapts a GCG column such that it respects the pricing modification imposed by the master separator cut */
 SCIP_RETCODE GCGchvatalGomoryAdjustGCGColumn(
-   SCIP*                scip,       /**< SCIP data structure (master problem) */
-   GCG_SEPARATORMASTERCUT*   cut,        /**< master separator cut */
-   GCG_COL**            gcgcol      /**< gcg column */
+   SCIP*                      scip,       /**< SCIP data structure (master problem) */
+   GCG_SEPARATORMASTERCUT*    cut,        /**< master separator cut */
+   GCG_COL**                  gcgcol      /**< gcg column */
 );
 
 
