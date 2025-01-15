@@ -88,11 +88,6 @@ SCIP_Bool GCGvarIsInferredPricing(
    );
 #endif
 
-/** count the number of inferred pricing variables in a array of variables */
-int GCGcountInferredPricingVars(
-   SCIP_VAR**             vars,               /**< array of variables */
-   int                    nvars               /**< number of variables */
-   );
 
 /** return the mastercutdata associated with the inferred pricing variable */
 GCG_MASTERCUTDATA* GCGinferredPricingVarGetMastercutData(

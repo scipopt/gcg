@@ -46,7 +46,6 @@
 #include "type_branchgcg.h"
 #include "type_decomp.h"
 #include "type_parameter.h"
-#include "type_sepagcg.h"
 
 #ifdef __cplusplus
 extern "C" {

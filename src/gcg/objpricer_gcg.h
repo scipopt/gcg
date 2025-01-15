@@ -267,6 +267,7 @@ public:
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
+   /** compute separator mastercut coefficients of column */
    SCIP_RETCODE computeColSepaMastercutCoeffs(
       GCG_COL*              gcgcol              /**< GCG column data structure */
    );
@@ -277,7 +278,7 @@ public:
       GCG_COL*              gcgcol              /**< GCG column data structure */
    );
 
-   /** add variable with computed coefficients to the sepa master cuts */
+   /** add variable with computed coefficients to the separator master cuts */
    SCIP_RETCODE addVariableToSepaMasterCuts(
       SCIP_VAR*             newvar,             /**< The new variable to add */
       int                   prob,               /**< number of the pricing problem the solution belongs to */
