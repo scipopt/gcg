@@ -398,7 +398,7 @@ SCIP_RETCODE GCGcolpoolPrice(
          SCIPdebugMessage(" -> col %p from the col pool (redcost: %g)\n",
             (void*)col, redcost );
 
-	      SCIP_CALL( colpoolDelCol(colpool, col, FALSE) ); // delete column form pool first
+	      SCIP_CALL( colpoolDelCol(colpool, col, FALSE) ); // delete column from pool
          col->age = 0;
          SCIP_CALL( GCGpricestoreAddCol(colpool->scip, pricestore, col, FALSE, TRUE, TRUE) );
          

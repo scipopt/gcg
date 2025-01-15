@@ -241,6 +241,7 @@ int pricestoreFindEqualCol(
    return -1;
 }
 
+/** adjust an outdated column to respect all active mastercuts */
 static
 SCIP_RETCODE adjustGCGCol(
    SCIP*          scip,       /**< SCIP data structure */
@@ -345,15 +346,16 @@ SCIP_RETCODE GCGpricestoreAddCol(
 
             SCIPfreeSol(col->pricingprob, &sol);
 
-            // auxiliary constraints (and variables) from master cuts might not have been present
-            //when column was generated
-            //--> compute correct value for those variables
+            /* auxiliary constraints (and variables) from master cuts might not have been present
+               in pricing problem when this column was generated
+              --> compute correct value for those variables */
             SCIP_CALL( adjustGCGCol(scip, col) );
 
-            // re-compute reduced cost of column
+            /* re-compute reduced cost of column */
             redcost = GCGcomputeRedCostGcgCol(scip, pricestore->infarkas, col, NULL);
             GCGcolUpdateRedcost(col, redcost, FALSE);
-            // reduced cost of modified column is not negative anymore: discard column
+
+            /* reduced cost of modified column is not negative anymore: discard column */
             if( !SCIPisDualfeasNegative(scip, redcost) )
             {
                GCGfreeGcgCol(&col);
@@ -361,7 +363,8 @@ SCIP_RETCODE GCGpricestoreAddCol(
                return SCIP_OKAY;
             }
             col->age = 0;
-            // again, we try to create a solution using the updated column and check it
+
+            /* again, we try to create a solution using the updated column and check it */
             sol = NULL;
             SCIPcreateSol(col->pricingprob, &sol, NULL);
             SCIP_CALL( SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals) );

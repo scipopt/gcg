@@ -279,7 +279,7 @@ SCIP_Real GCGcolComputeOrth(
    GCG_COL*             gcgcol2             /**< second gcg column */
    );
 
-/** update original separator cut coefficients information of column */
+/** update separator mastercut coefficients information of column */
 SCIP_RETCODE GCGcolAppendSepaMastercutCoeffs(
    GCG_COL*             gcgcol,                 /**< gcg column structure */
    SCIP_Real*           sepamastercoeffs,       /**< pointer to new array of master cut coefficients */

@@ -1458,9 +1458,7 @@ SCIP_RETCODE GCGcreateMasterVar(
     */
    if( newvardata->data.mastervardata.norigvars == 0 && !auxiliaryvar )
    {
-
       newvardata->data.mastervardata.norigvars =  nnoninferredpricingvars;
-
       trivialsol = TRUE;
    }
 
@@ -1548,8 +1546,6 @@ SCIP_RETCODE GCGcreateMasterVar(
          j++;
       }
    }
-   if( j != newvardata->data.mastervardata.norigvars )
-      SCIPinfoMessage(scip, NULL, "j != norigvars\n");
    assert(j == newvardata->data.mastervardata.norigvars);
 
    return SCIP_OKAY;
