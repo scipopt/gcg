@@ -116,6 +116,8 @@ struct GCG_DetectorData
    int                   nconssperblock;     /**< number of constraints per block (static blocking only) */
    int                   maxblocks;          /**< maximum number of constraints per block */
    int                   minblocks;          /**< minimum number of constraints per block */
+   int                   usermaxblocks;      /**< maximum number of constraints per block given by user */
+   int                   userminblocks;      /**< minimum number of constraints per block given by user*/
    INDEXMAP*             indexmap;           /**< index map (contains 4 hashmaps) */
    int*                  ibegin;             /**< array, ibegin[i]: index of first nonzero entry in row i */
    int*                  iend;               /**< array, iend[i]: index of last nonzero entry in row i */
@@ -496,7 +498,8 @@ SCIP_RETCODE initData(
 
    nvars = partialdec->getNOpenvars();
    nconss = partialdec->getNOpenconss();
-   detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
+   detectordata->maxblocks = MIN(nconss, detectordata->usermaxblocks);
+   detectordata->minblocks = MIN(detectordata->userminblocks, detectordata->maxblocks);
 
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->ibegin, nconss) );
    SCIP_CALL( SCIPallocMemoryArray(scip, &detectordata->iend, nconss) );
@@ -600,12 +603,12 @@ SCIP_RETCODE createRowindexList(
       cons = (int)(size_t)  SCIPhashmapGetImage(indexcons, (void*) hashmapindex);
       ncurrvars = detprobdata->getNVarsForCons(cons);
 
-      SCIP_CALL( SCIPallocMemoryArray(scip, &probindices, ncurrvars) );
+      SCIP_CALL( SCIPallocClearBufferArray(scip, &probindices, ncurrvars) );
 
       /* fill the array with the indices of the variables of the current constraint */
       for( j = 0; j < ncurrvars; ++j )
       {
-         if(!partialdec->isVarOpenvar(detprobdata->getVarsForCons(cons)[j]))
+         if( !partialdec->isVarOpenvar(detprobdata->getVarsForCons(cons)[j]) )
             continue;
          probindices[j] = *(int*) SCIPhashmapGetImage(varindex, (void*)(size_t)detprobdata->getVarsForCons(cons)[j]);
       }
@@ -615,12 +618,12 @@ SCIP_RETCODE createRowindexList(
       /* store a copy of the elements of probindices in the vector rowindices_row */
       for( j = 0; j < ncurrvars; ++j )
       {
-         if(!partialdec->isVarOpenvar(detprobdata->getVarsForCons(cons)[j]))
+         if( probindices[j] <= 0 )
             continue;
          rowindices_row.push_back(probindices[j]);
       }
 
-      SCIPfreeMemoryArray(scip, &probindices);
+      SCIPfreeBufferArray(scip, &probindices);
 
       /* add rowindices_row to the vector rowindices */
       rowindices.push_back(rowindices_row);
@@ -672,7 +675,7 @@ SCIP_RETCODE createColumnindexList(
       for( inner = outer->begin(); inner != outer->end(); ++inner )
       {
          position = (*inner)-1;
-         columnindices_array[(size_t) position].push_back(i);
+         columnindices_array.at((size_t) position).push_back(i);
       }
    }
 
@@ -1165,20 +1168,17 @@ int calculateNdecompositions(
 /** check the consistency of the parameters */
 static
 void checkParameterConsistency(
+   SCIP*                 scip,               /**< SCIP data structure */
    GCG_DETECTORDATA*     detectordata,       /**< detector data structure */
    SCIP_RESULT*          result              /**< pointer to store result */
    )
 {
-   /* maxblocks < nRelevantsCons? */
-
-   /* desired blocks <= maxblocks? */
-
    /* is  minblocks <= maxblocks? */
    if( detectordata->multipledecomps )
    {
       if( detectordata->minblocks > detectordata->maxblocks )
       {
-         SCIPerrorMessage("minblocks > maxblocks. Setting minblocks = maxblocks.\n");
+         SCIPwarningMessage(scip, "minblocks > maxblocks. Setting minblocks = maxblocks.\n");
          detectordata->minblocks = detectordata->maxblocks;
       }
    }
@@ -1186,7 +1186,7 @@ void checkParameterConsistency(
    /* is at least one blocking type enabled? */
    if( ! detectordata->blockingassoonaspossible && ! detectordata->staticblocking &&! detectordata->dynamicblocking )
    {
-      SCIPerrorMessage("No blocking type enabled, cannot perform blocking.\n");
+      SCIPwarningMessage(scip, "No blocking type enabled, cannot perform blocking.\n");
       *result = SCIP_DIDNOTRUN;
    }
 }
@@ -1709,7 +1709,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecStairheur)
 
    SCIP_CALL( initData(scip, partialdec, detectordata) );
 
-   checkParameterConsistency(detectordata, result);
+   checkParameterConsistency(scip, detectordata, result);
    nPartialdecs = calculateNdecompositions(detectordata);
    SCIPdebugMessage("%i decompositions will be created\n", nPartialdecs);
    partialdecdetectiondata->nnewpartialdecs = 0;
@@ -1871,9 +1871,9 @@ SCIP_RETCODE SCIPincludeDetectorStairheur(
       &detectordata->nconssperblock, FALSE, DEFAULT_NCONSSPERBLOCK, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/maxblocks",
       "The maximal number of blocks",
-      &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
+      &detectordata->usermaxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/minblocks", "The minimal number of blocks",
-      &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
+      &detectordata->userminblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/desiredblocks",
       "The desired number of blocks. 0 means automatic determination of the number of blocks.",
       &detectordata->desiredblocks, FALSE, DEFAULT_DESIREDBLOCKS, 0, 1000000, NULL, NULL) );

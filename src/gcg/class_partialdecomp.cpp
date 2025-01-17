@@ -949,7 +949,6 @@ void PARTIALDECOMP::assignSmallestComponentsButOneConssAdjacency()
    if ( !detprobdata->isConssAdjInitialized() )
       detprobdata->createConssAdjacency();
 
-   std::vector<bool> isConsOpen(nconss, false);
    std::vector<bool> isConsVisited(nconss, false);
 
    std::vector<std::vector<int>> conssfornewblocks;
@@ -989,14 +988,14 @@ void PARTIALDECOMP::assignSmallestComponentsButOneConssAdjacency()
       while( !helpqueue.empty() )
       {
          int nodeCons = helpqueue.front();
-         assert( isConsOpencons(nodeCons) );
+         assert(isConsOpencons(nodeCons));
          helpqueue.pop();
          for( int cons :  detprobdata->getConssForCons(nodeCons) )
          {
-            if( isConsVisited[cons] || isConsMastercons(cons) || !isConsOpen[cons] )
+            if( isConsVisited[cons] || isConsMastercons(cons) )
                continue;
 
-            assert( isConsOpencons(cons) );
+            assert(isConsOpencons(cons));
             isConsVisited[cons] = true;
             neighborConss.push_back(cons);
             helpqueue.push(cons);
@@ -1004,13 +1003,12 @@ void PARTIALDECOMP::assignSmallestComponentsButOneConssAdjacency()
       }
 
       /* assign found conss and vars to a new block */
-      ++newblocks;
       for( int cons : neighborConss )
       {
          std::vector<int>::iterator consiter = std::lower_bound(constoconsider.begin(), constoconsider.end(), cons);
          assert(consiter != constoconsider.end() );
          constoconsider.erase(consiter);
-         assert( isConsOpencons(cons) );
+         assert(isConsOpencons(cons));
          newconss.push_back(cons);
 
          for( int var : detprobdata->getVarsForCons(cons) )
@@ -1018,11 +1016,12 @@ void PARTIALDECOMP::assignSmallestComponentsButOneConssAdjacency()
             if( isVarLinkingvar(var) || varinblocks[var] != -1 )
                continue;
 
-            assert( !isVarMastervar(var) );
+            assert(!isVarMastervar(var));
             newvars.push_back(var);
             varinblocks[var] = newblocks;
          }
       }
+      ++newblocks;
       conssfornewblocks.push_back(newconss);
       varsfornewblocks.push_back(newvars);
    }
@@ -1063,7 +1062,7 @@ void PARTIALDECOMP::assignSmallestComponentsButOneConssAdjacency()
       prepare();
    }
 
-   assert( checkConsistency() );
+   assert(checkConsistency());
 }
 
 
@@ -2616,6 +2615,7 @@ void PARTIALDECOMP::removeMastercons(
    )
 {
    std::vector<int>::iterator todelete = lower_bound( masterconss.begin(), masterconss.end(), consid );
+   assert(todelete != masterconss.end() && *todelete == consid);
    masterconss.erase(todelete);
 }
 
