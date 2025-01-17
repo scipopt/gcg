@@ -112,8 +112,6 @@ using gcg::Weights;
 #define DEFAULT_DUMMYNODES        0.2        /**< percentage of dummy vertices*/
 #define DEFAULT_CONSWEIGHT_SETPPC 5          /**< weight for constraint hyperedges that are setpartitioning or covering
                                                   constraints */
-#define DEFAULT_MINBLOCKS         2          /**< value for the minimum number of blocks to be considered */
-#define DEFAULT_MAXBLOCKS         20         /**< value for the maximum number of blocks to be considered */
 #define DEFAULT_MAXNBLOCKCANDIDATES 1          /**< number of block number candidates to be considered */
 #define DEFAULT_ALPHA             0.0        /**< factor for standard deviation of constraint weights */
 #define DEFAULT_BETA              0.5        /**< factor of how the weight for equality and inequality constraints is
@@ -151,8 +149,6 @@ struct GCG_DetectorData
    SCIP_Real dummynodes;      /**< percent of dummy nodes */
    SCIP_Bool tidy;            /**< whether tempory metis files should be cleaned up */
    int       maxnblockcandidates;       /**< maximal number of block canddidates to test */
-   int       maxblocks;       /**< maximal number of blocks to test */
-   int       minblocks;       /**< minimal number of blocks to test */
 
    /* metis parameters */
    int       randomseed;      /**< metis random seed */
@@ -208,8 +204,6 @@ GCG_DECL_INITDETECTOR(initHcgpartition)
    detectordata->found = FALSE;
 
    nconss = SCIPgetNConss(scip);
-   detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
-
 
    return SCIP_OKAY;
 }
@@ -434,13 +428,11 @@ SCIP_RETCODE detection(
    )
 {
    /* add hcgpartition presolver parameters */
-   char setstr[SCIP_MAXSTRLEN];
    char decinfo[SCIP_MAXSTRLEN];
    int maxnblockcandidates;
    int k;
    int j;
    int s;
-   int nMaxPartialdecs;
    gcg::PARTIALDECOMP** newpartialdecs;
    SCIP_CLOCK* clock;
    SCIP_CLOCK* temporaryClock;
@@ -457,22 +449,20 @@ SCIP_RETCODE detection(
 
    std::vector<int> numberOfBlocks;
    partialdecdetectiondata->detprobdata->getSortedCandidatesNBlocks(numberOfBlocks);
-   if(numberOfBlocks.empty())
+   if( numberOfBlocks.empty() )
       numberOfBlocks.push_back(8);
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/hcgpartition/maxnblockcandidates");
-   SCIP_CALL( SCIPgetIntParam(scip, setstr, &maxnblockcandidates) );
+   SCIP_CALL( SCIPgetIntParam(scip, "detection/detectors/hcgpartition/maxnblockcandidates", &maxnblockcandidates) );
 
-   maxnblockcandidates = MIN(maxnblockcandidates, (int) numberOfBlocks.size() );
+   maxnblockcandidates = MIN(maxnblockcandidates, (int) numberOfBlocks.size());
 
    assert(scip != NULL);
    assert(detectordata != NULL);
 
    SCIPdebugMessage("Detecting structure from %s\n", DEC_NAME);
-   nMaxPartialdecs = detectordata->maxblocks-detectordata->minblocks+1;
 
    /* allocate space for output data */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(newpartialdecs), 2 * nMaxPartialdecs) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(newpartialdecs), 2 * maxnblockcandidates) );
 
    /* build the hypergraph structure from the original problem */
 
@@ -487,7 +477,7 @@ SCIP_RETCODE detection(
    SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
 
-   for( j = 0, k = 0; k < maxnblockcandidates; ++k)
+   for( j = 0, k = 0; k < maxnblockcandidates; ++k )
    {
       int nblocks = numberOfBlocks[k] - partialdec->getNBlocks();
       SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
@@ -502,7 +492,7 @@ SCIP_RETCODE detection(
 
       retcode = callMetis(scip, detectordata, graph, tempfile, nblocks, result);
 
-      if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
+      if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY )
       {
          SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
          SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
@@ -794,8 +784,6 @@ SCIP_RETCODE SCIPincludeDetectorHcgpartition(
 
    /* add hcgpartition detector parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/maxnblockcandidates", "The maximal number of block number candidates", &detectordata->maxnblockcandidates, FALSE, DEFAULT_MAXNBLOCKCANDIDATES, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/maxblocks", "The maximal number of blocks (detector is called for all block numbers in [minblocks,maxblocks])", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/minblocks", "The minimal number of blocks (detector is called for all block numbers in [minblocks,maxblocks])", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/hcgpartition/beta", "Factor on how heavy equality (beta) and inequality constraints are measured", &detectordata->beta, FALSE, DEFAULT_BETA, 0.0, 1.0, NULL, NULL ) );
    SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/hcgpartition/alpha", "Factor on how heavy the standard deviation of the coefficients is measured", &detectordata->alpha, FALSE, DEFAULT_ALPHA, 0.0, 1E20, NULL, NULL ) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hcgpartition/varWeight", "Weight of a variable hyperedge", &detectordata->varWeight, FALSE, DEFAULT_VARWEIGHT, 0, 1000000, NULL, NULL) );

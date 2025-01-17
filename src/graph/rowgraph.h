@@ -61,8 +61,8 @@ public:
    /** amplifies a partialdec by dint of a graph created with open constraints and open variables of the partialdec */
    virtual SCIP_RETCODE createPartialdecFromPartition(
       PARTIALDECOMP*      oldpartialdec,            /**< partialdec which should be amplifies */
-      PARTIALDECOMP**     firstpartialdec,          /**< pointer to buffer the new partialdec amplified by dint of the graph */
-      PARTIALDECOMP**     secondpartialdec,         /**< pointer to buffer the new partialdec whose border is amplified by dint of the graph */
+      PARTIALDECOMP**     firstpartialdec,          /**< pointer to buffer the new partialdec amplified by dint of the graph (can be NULL) */
+      PARTIALDECOMP**     secondpartialdec,         /**< pointer to buffer the new partialdec whose border is amplified by dint of the graph (can be NULL) */
       DETPROBDATA*        detprobdata          /**< datprobdata the partialdecs correspond to */
       );
 

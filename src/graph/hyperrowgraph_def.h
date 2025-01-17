@@ -210,7 +210,7 @@ template <class T>
 SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
    PARTIALDECOMP**     firstpartialdec,
    PARTIALDECOMP**     secondpartialdec,
-   DETPROBDATA*  detprobdata
+   DETPROBDATA*        detprobdata
    )
 {
    int nblocks;
@@ -220,7 +220,12 @@ SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
    int i;
    SCIP_CONS** conss = NULL;
    SCIP_Bool emptyblocks = FALSE;
-   std::vector<int> partition = graph.getPartition();
+   std::vector<int> partition;
+
+   if( firstpartialdec == NULL && secondpartialdec == NULL )
+      return SCIP_INVALIDDATA;
+
+   partition = graph.getPartition();
    conss = SCIPgetConss(this->scip_);
    nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
 
@@ -298,7 +303,7 @@ SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
    PARTIALDECOMP*      oldpartialdec,
    PARTIALDECOMP**     firstpartialdec,
    PARTIALDECOMP**     secondpartialdec,
-   DETPROBDATA*  detprobdata
+   DETPROBDATA*        detprobdata
    )
 {
    int nblocks;
@@ -308,10 +313,17 @@ SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
    int i;
    SCIP_Bool emptyblocks = FALSE;
 
-   if(this->nconss == 0)
+   assert(oldpartialdec != NULL);
+
+   if( firstpartialdec == NULL && secondpartialdec == NULL )
+      return SCIP_INVALIDDATA;
+
+   if( this->nconss == 0 )
    {
-      (*firstpartialdec) = NULL;
-      (*secondpartialdec) = NULL;
+      if( firstpartialdec != NULL )
+         (*firstpartialdec) = NULL;
+      if( secondpartialdec != NULL )
+         (*secondpartialdec) = NULL;
       return SCIP_OKAY;
    }
 
@@ -321,7 +333,7 @@ SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
    SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
 
-   for(int b = 0; b < nblocks; ++b)
+   for( int b = 0; b < nblocks; ++b )
    {
        nsubscipconss[b] = 0;
    }
@@ -333,16 +345,16 @@ SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
    vector<bool> conssBool(oldpartialdec->getNConss(), false); /**< true, if the cons will be part of the graph */
    bool found;
 
-   for(int c = 0; c < oldpartialdec->getNOpenconss(); ++c)
+   for( int c = 0; c < oldpartialdec->getNOpenconss(); ++c )
    {
       int cons = oldpartialdec->getOpenconss()[c];
       found = false;
-      for(int v = 0; v < oldpartialdec->getNOpenvars() && !found; ++v)
+      for( int v = 0; v < oldpartialdec->getNOpenvars() && !found; ++v )
       {
          int var = oldpartialdec->getOpenvars()[v];
-         for(i = 0; i < detprobdata->getNVarsForCons(cons) && !found; ++i)
+         for( i = 0; i < detprobdata->getNVarsForCons(cons) && !found; ++i )
          {
-            if(var == detprobdata->getVarsForCons(cons)[i])
+            if( var == detprobdata->getVarsForCons(cons)[i] )
             {
                conssBool[cons] = true;
                found = true;
@@ -351,10 +363,10 @@ SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
       }
    }
 
-   for(int c = 0; c < oldpartialdec->getNOpenconss(); ++c)
+   for( int c = 0; c < oldpartialdec->getNOpenconss(); ++c )
    {
       int cons = oldpartialdec->getOpenconss()[c];
-      if(conssBool[cons])
+      if( conssBool[cons] )
          conssForGraph.push_back(cons);
    }
 
@@ -393,13 +405,20 @@ SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
 
    if( !emptyblocks )
    {
-      (*firstpartialdec) = new PARTIALDECOMP(oldpartialdec);
-      SCIP_CALL( (*firstpartialdec)->assignPartialdecFromConstoblock(constoblock, nblocks) );
-      (*secondpartialdec) = new PARTIALDECOMP(oldpartialdec);
-      SCIP_CALL( (*secondpartialdec)->assignBorderFromConstoblock(constoblock, nblocks) );
+      if( firstpartialdec != NULL )
+      {
+         (*firstpartialdec) = new PARTIALDECOMP(oldpartialdec);
+         SCIP_CALL( (*firstpartialdec)->assignPartialdecFromConstoblock(constoblock, nblocks) );
+      }
+      if( secondpartialdec != NULL )
+      {
+         (*secondpartialdec) = new PARTIALDECOMP(oldpartialdec);
+         SCIP_CALL( (*secondpartialdec)->assignBorderFromConstoblock(constoblock, nblocks) );
+      }
       SCIPhashmapFree(&constoblock);
    }
-   else {
+   else
+   {
       SCIPhashmapFree(&constoblock);
       *firstpartialdec = NULL;
       *secondpartialdec = NULL;
