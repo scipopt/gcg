@@ -124,6 +124,8 @@ GCG_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
 {
    *result = SCIP_DIDNOTFIND;
 
+   assert(partialdecdetectiondata->workonpartialdec->isComplete());
+
    SCIP_CLOCK* temporaryClock;
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
@@ -164,15 +166,16 @@ GCG_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
          int masterconsid = partialdec->getMasterconss()[mc];
          int hittenblock  = -1;
 
-         SCIP_Bool hitsmastervar = FALSE;
-         SCIP_Bool varhitsotherblock = FALSE;
+         SCIP_Bool lockedcons = FALSE;
 
          for( int var = 0; var < detprobdata->getNVarsForCons(masterconsid); ++var )
          {
             int varid = detprobdata->getVarsForCons(masterconsid)[var];
-            if( partialdec->isVarMastervar(varid) )
+            /* do not reassign cons that contain static master vars or stairlinking vars */
+            /* @todo: we could check if cons can be moved without destroying the staircase structure*/
+            if( partialdec->isVarMastervar(varid) || partialdec->isVarStairlinkingvar(varid) )
             {
-               hitsmastervar = TRUE;
+               lockedcons = TRUE;
                break;
             }
 
@@ -182,13 +185,13 @@ GCG_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
                   hittenblock = blockforvar[varid];
                else if( hittenblock != blockforvar[varid] )
                {
-                  varhitsotherblock = TRUE;
+                  lockedcons = TRUE;
                   break;
                }
             }
          }
 
-         if( hitsmastervar || varhitsotherblock )
+         if( lockedcons )
             continue;
 
          if ( hittenblock != -1 )
@@ -200,8 +203,9 @@ GCG_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
 
       for( size_t i = 0; i < constoreassign.size() ; ++i )
       {
-         partialdec->setConsToBlock(constoreassign[i], blockforconstoreassign[i]);
+         assert(partialdec->isConsMastercons(constoreassign[i]));
          partialdec->removeMastercons(constoreassign[i]);
+         partialdec->setConsToBlock(constoreassign[i], blockforconstoreassign[i]);
       }
 
       if( !constoreassign.empty() )
@@ -212,28 +216,30 @@ GCG_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
    else
       success = FALSE;
 
-   if ( !success )
-   {
-     partialdecdetectiondata->nnewpartialdecs = 0;
-     *result = SCIP_DIDNOTFIND;
-     SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-     SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-     return SCIP_OKAY;
-   }
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
 
-   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 1) );
-   partialdecdetectiondata->newpartialdecs[0] = partialdec;
-   partialdecdetectiondata->nnewpartialdecs = 1;
-   (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "postprocess");
-   partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(decinfo);
-   partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-   // we used the provided partialdec -> prevent deletion
-   partialdecdetectiondata->workonpartialdec = NULL;
+   assert(partialdec->checkConsistency());
 
-   *result = SCIP_SUCCESS;
+   if ( !success )
+   {
+      partialdecdetectiondata->nnewpartialdecs = 0;
+      *result = SCIP_DIDNOTFIND;
+   }
+   else
+   {
+      partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 1) );
+      partialdecdetectiondata->newpartialdecs[0] = partialdec;
+      partialdecdetectiondata->nnewpartialdecs = 1;
+      (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "postprocess");
+      partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(decinfo);
+      partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
+      // we used the provided partialdec -> prevent deletion
+      partialdecdetectiondata->workonpartialdec = NULL;
+      *result = SCIP_SUCCESS;
+   }
+
+   SCIP_CALL_ABORT( SCIPfreeClock(scip, &temporaryClock) );
 
    return SCIP_OKAY;
 }

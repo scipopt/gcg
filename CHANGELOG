@@ -11,6 +11,7 @@ Bug fixes
 - fix clock issue and segfault caused by dec_mst
 - fix segfault caused by dec_stairheur
 - fix parameters 'detection/detectors/stairheur/minblocks' and 'detection/detectors/stairheur/maxblocks'
+- fix postprocessing of staircase decompositions (dec_postprocess)
 
 
 @section RN370 GCG 3.7.0
