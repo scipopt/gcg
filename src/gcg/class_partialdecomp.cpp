@@ -2615,6 +2615,7 @@ void PARTIALDECOMP::removeMastercons(
    )
 {
    std::vector<int>::iterator todelete = lower_bound( masterconss.begin(), masterconss.end(), consid );
+   assert(todelete != masterconss.end() && *todelete == consid);
    masterconss.erase(todelete);
 }
 
