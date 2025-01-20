@@ -470,7 +470,8 @@ SCIP_RETCODE selectConstraintsRandom(
    return SCIP_OKAY;
 }
 
-/** select the indices of constraints to use for construction of cuts using strategy devised for zero-half-cuts */
+/** select the indices of constraints to use for construction of cuts using strategy devised for zero-half-cuts
+ * @to-do: finished implementing alternative strategy */
 static
 SCIP_RETCODE selectConstraintsKosterEtAl(
    SCIP*                   masterscip,    /**< SCIP data structure (master problem) */
