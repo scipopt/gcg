@@ -201,8 +201,8 @@ int GCGpricerGetMaxColsProb(
 GCG_EXPORT
 SCIP_RETCODE GCGpricerAddCol(
    SCIP*                 scip,               /**< SCIP data structure */
-   GCG_COL*              col,                 /**< priced col */
-   SCIP_Bool             checkcol
+   GCG_COL*              col,                /**< priced col */
+   SCIP_Bool             checkcol            /**< indicates whether column needs to be checked for validity */
    );
 
 /** transfers a primal solution of the original problem into the master variable space,

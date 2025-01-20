@@ -1462,7 +1462,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToOriginalSepaCutsFromGCGCol(
 SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCutsFromGCGCol(
    SCIP_VAR*             newvar,   /**< the new master variable to add to master cuts*/
    GCG_COL*              gcgcol    /**< GCG column data structure which generated the master variable */
-)
+   )
 {
    GCG_SEPARATORMASTERCUT** activecuts;
    SCIP_Real* sepamastercutcoeffs;
@@ -1510,7 +1510,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
    SCIP_VAR**            solvars,      /**< array of variables with non-zero value in the solution of the pricing problem */
    SCIP_Real*            solvals,      /**< array of values in the solution of the pricing problem for variables in array solvars*/
    int                   nsolvars      /**< number of variables in array solvars */
-)
+   )
 {
    GCG_SEPARATORMASTERCUT** activecuts;
    SCIP_Real coeff;
@@ -3356,7 +3356,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       SCIPgetNNodes(scip_), SCIPnodeGetDepth(SCIPgetCurrentNode(scip_)), maxniters);
 
    /* apply the inferred pricing modifications from the mastercuts */
-   for( i=0; i<nbranchmastercuts; ++i )
+   for( i = 0; i < nbranchmastercuts; ++i )
    {
       assert(GCGmastercutIsActive(branchmastercutdata[i]));
 
@@ -3828,7 +3828,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 #endif
 
    /* undo the inferred pricing modifications from the mastercuts */
-   for( i=0; i<nbranchmastercuts; ++i )
+   for( i = 0; i < nbranchmastercuts; ++i )
    {
       assert(GCGmastercutIsActive(branchmastercutdata[i]));
 
@@ -3846,6 +3846,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          /* update the var history of all the cuts still in the LP */
          SCIP_CALL( GCGvarhistoryJumpToLatest(scip_, &(activecuts[j]->knownvarhistory)) );
          SCIP_Real dual = pricetype->mastercutGetDual(scip_, mastercutdata);
+         /* if the dual was zero, the pricing modifications were never applied since they are superfluous */
          if( dual != 0.0 )
             SCIP_CALL( GCGmastercutUndoPricingModifications(scip_, mastercutdata) );
       }
@@ -5477,9 +5478,9 @@ int GCGpricerGetMaxColsProb(
 /** add a new column to the pricing storage */
 extern "C"
 SCIP_RETCODE GCGpricerAddCol(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,                /**< SCIP data structure */
    GCG_COL*              col,                 /**< priced col */
-   SCIP_Bool             checkcol
+   SCIP_Bool             checkcol             /**< indicates whether column needs to be checked for validity */
    )
 {
    ObjPricerGcg* pricer;

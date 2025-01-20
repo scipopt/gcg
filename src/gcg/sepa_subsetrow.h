@@ -55,7 +55,7 @@ extern "C" {
 GCG_EXPORT
 SCIP_RETCODE SCIPincludeSepaSubsetrow(
    SCIP*                 scip                /**< SCIP data structure (master problem) */
-);
+   );
 
 #ifdef __cplusplus
 }

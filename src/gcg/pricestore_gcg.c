@@ -278,7 +278,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
    GCG_COL*              col,                /**< priced col */
    SCIP_Bool             forcecol,           /**< should the col be forced to enter the LP? */
    SCIP_Bool             checkcol,           /**< should the col be checked */
-   SCIP_Bool             fromcolpool         /**< is column from colpool */
+   SCIP_Bool             fromcolpool         /**< is column from column pool */
    )
 {
    SCIP_Real colobjparallelism;

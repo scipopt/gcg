@@ -135,7 +135,7 @@ SCIP_RETCODE addSubsetRowCutToGeneratedCuts(
    int*                 conssindices,     /**< indices of constraints used to create the cut */
    int                  n,                /**< number of constraints used to create the cut */
    GCG_SEPA*            sepa              /**< separator which generated the cut */
-)
+   )
 {
    GCG_SEPARATORMASTERCUT* mastersepacut;
 
@@ -204,7 +204,7 @@ SCIP_RETCODE createSubsetRowCut(
    SCIP_HASHMAP*  mapmastervarxcoeffs,          /**< maps master variables to their coefficient in subset-row cut */
    SCIP_Real      rhs_ssrc,                     /**< right hand side of subset row cut */
    SCIP_SEPA*     sepa                          /**< separator which creates subset row cut */
-)
+   )
 {
    SCIP_SEPADATA* sepadata;
    char           name[SCIP_MAXSTRLEN]; // name of the ssrc
@@ -259,7 +259,7 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS(
    SCIP_Real**    weights,                    /**< pointer to store weights of the selected constraints */
    SCIP_Real*     rhs_ssrc,                   /**< pointer to store rhs of subset row cut */
    SCIP_HASHMAP*  mapmastervarxcoeff          /**< maps master variable to its coefficient in subset-row cut */
-)
+   )
 {
    SCIP_SEPADATA* sepadata;
    SCIP_Bool      success;
@@ -444,7 +444,7 @@ SCIP_RETCODE selectConstraintsRandom(
    int                     nconss,           /**< number of constraints for every cut */
    int                     nmasterconss,     /**< number of constraints in the master problem */
    SCIP_RANDNUMGEN*        randnumgen        /**< random number generator to choose the indices */
-)
+   )
 {
    assert(masterscip != NULL);
    assert(randnumgen != NULL);
@@ -892,7 +892,7 @@ SCIP_DECL_SEPAINIT(sepaInitSubsetrow)
 /** creates the scip separator of the subset row separator and includes it in master SCIP*/
 SCIP_RETCODE SCIPincludeSepaSubsetrow(
    SCIP*                 scip                /**< SCIP data structure (master problem) */
-)
+   )
 {
    SCIP_SEPADATA* sepadata;
    SCIP_SEPA* sepa;
@@ -951,7 +951,7 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
    SCIP_CALL( SCIPaddIntParam(origscip,"sepa/" SEPA_NAME "/n", "number of rows used to create a new subset row cut ",
       &(sepadata->n), FALSE, DEFAULT_N, 0, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/k", "weight used to create new subset row cut",
+   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/l", "weight used to create new subset row cut",
       &(sepadata->k), FALSE, DEFAULT_K, 1, INT_MAX, NULL, NULL) );
 
    return SCIP_OKAY;

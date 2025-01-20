@@ -270,13 +270,13 @@ public:
    /** compute separator mastercut coefficients of column */
    SCIP_RETCODE computeColSepaMastercutCoeffs(
       GCG_COL*              gcgcol              /**< GCG column data structure */
-   );
+      );
 
    /** add variable with computed coefficients to the original separator cuts */
    SCIP_RETCODE addVariableToSepaMasterCutsFromGCGCol(
       SCIP_VAR*             newvar,             /**< The new variable to add */
       GCG_COL*              gcgcol              /**< GCG column data structure */
-   );
+      );
 
    /** add variable with computed coefficients to the separator master cuts */
    SCIP_RETCODE addVariableToSepaMasterCuts(
@@ -285,7 +285,7 @@ public:
       SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
       SCIP_Real*            solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
       int                   nsolvars            /**< number of variables in array solvars */
-   );
+      );
 
 private:
    ReducedCostPricing*    reducedcostpricing;
