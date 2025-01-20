@@ -435,7 +435,6 @@ SCIP_RETCODE GCGchvatalGomoryCutGetVariableCoefficient(
       return SCIP_OKAY;
    }
 
-   /* get the pricing modification of the problem which generated this master variable */
    origscip = GCGgetOriginalprob(scip);
    assert(origscip != NULL);
    pricingscip = GCGgetPricingprob(origscip, probnr);

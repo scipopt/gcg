@@ -1640,7 +1640,7 @@ SCIP_RETCODE GCGcreateInferredPricingVar(
    SCIP_VAR**            newvar,             /**< pointer to store new master variable */
    const char*           varname,            /**< new variable name */
    SCIP_Real             lb,                 /**< new variable lower bound */
-   SCIP_Real             ub,                 /**< new objective coefficient */
+   SCIP_Real             ub,                 /**< new variable lower bound */
    SCIP_Real             objcoeff,           /**< new objective coefficient */
    SCIP_VARTYPE          vartype,            /**< new variable type */
    int                   prob                /**< number of pricing problem that created this variable */

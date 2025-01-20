@@ -58,11 +58,48 @@
  * @{
  */
 
+/** use binary search to find pricing modification */
+static
+SCIP_Bool findPricingModificationPosition(
+   GCG_PRICINGMODIFICATION*   pricemods,     /**< array of pricing modifications to be searched */
+   int                        npricemods,    /**< number of pricing modifications to be searched */
+   int                        blocknr,       /**< block number (ID) of the pricing modification we look for */
+   int*                       pos            /**< pointer to store the position of the pricing modifcation in (if found) */
+)
+{
+   int left;
+   int right;
+
+   left = 0;
+   right = npricemods - 1;
+   while( left <= right )
+   {
+      int middle;
+
+      middle = (left + right) / 2;
+      assert(0 <= middle && middle < npricemods);
+
+      if( blocknr < pricemods[middle].blocknr )
+         right = middle - 1;
+      else if( pricemods[middle].blocknr < blocknr )
+         left = middle + 1;
+      else
+      {
+         *pos = middle;
+         return TRUE;
+      }
+   }
+   assert(left == right + 1);
+
+   *pos = left;
+   return FALSE;
+}
+
 /** free a pricing modification */
 static
 SCIP_RETCODE GCGpricingmodificationFree(
-   SCIP*                  scip,               /**< SCIP data structure */
-   GCG_PRICINGMODIFICATION* pricingmodification /**< pointer to the pricing modification */
+   SCIP*                      scip,               /**< SCIP data structure (master problem) */
+   GCG_PRICINGMODIFICATION*   pricingmodification /**< pointer to the pricing modification */
    )
 {
    SCIP* originalscip;
@@ -100,16 +137,16 @@ SCIP_RETCODE GCGpricingmodificationFree(
 /** create a pricing modification, taking ownership over additionalvars and additionalcons */
 GCG_EXPORT
 SCIP_RETCODE GCGpricingmodificationCreate(
-   SCIP*                  scip,               /**< SCIP data structure */
-   GCG_PRICINGMODIFICATION* pricingmodification, /**< pointer to store the pricing modification */
-   int                    blocknr,             /**< block number of the master cut */
-   SCIP_VAR*              coefvar,             /**< variable in the pricing problem inferred from the master cut
-                                                  * always has the objective coefficient of the negated dual value of the master cut
-                                                  * its solution value corresponds to the coefficient of the new mastervariable in the master cut */
-   SCIP_VAR**             additionalvars,      /**< array of additional variables with no objective coefficient in the pricing programs inferred from the master cut */
-   int                    nadditionalvars,     /**< number of additional variables in the pricing programs */
-   SCIP_CONS**            additionalconss,     /**< array of additional constraints in the pricing programs inferred from the master cut */
-   int                    nadditionalconss     /**< number of additional constraints in the pricing programs */
+   SCIP*                      scip,                    /**< SCIP data structure (master problem) */
+   GCG_PRICINGMODIFICATION*   pricingmodification,     /**< pointer to store the pricing modification */
+   int                        blocknr,                 /**< block number of the master cut */
+   SCIP_VAR*                  coefvar,                 /**< variable in the pricing problem inferred from the master cut
+                                                        * always has the objective coefficient of the negated dual value of the master cut
+                                                        * its solution value corresponds to the coefficient of the new mastervariable in the master cut */
+   SCIP_VAR**                 additionalvars,          /**< array of additional variables with no objective coefficient in the pricing programs inferred from the master cut */
+   int                        nadditionalvars,         /**< number of additional variables in the pricing programs */
+   SCIP_CONS**                additionalconss,         /**< array of additional constraints in the pricing programs inferred from the master cut */
+   int                        nadditionalconss         /**< number of additional constraints in the pricing programs */
    )
 {
    int i;
@@ -152,11 +189,11 @@ SCIP_RETCODE GCGpricingmodificationCreate(
 /** create a master cut, taking ownership over pricingmodifications */
 GCG_EXPORT
 SCIP_RETCODE GCGmastercutCreateFromCons(
-   SCIP*                  scip,               /**< SCIP data structure */
-   GCG_MASTERCUTDATA**    mastercutdata,       /**< pointer to store the mastercut data */
-   SCIP_CONS*             cons,                /**< constraint in the master problem that represents the master cut */
-   GCG_PRICINGMODIFICATION* pricingmodifications, /**< pricing modifications for the master cut */
-   int                    npricingmodifications /**< number of pricing modifications for the master cut */
+   SCIP*                      scip,                   /**< SCIP data structure (master problem) */
+   GCG_MASTERCUTDATA**        mastercutdata,          /**< pointer to store the mastercut data */
+   SCIP_CONS*                 cons,                   /**< constraint in the master problem that represents the master cut */
+   GCG_PRICINGMODIFICATION*   pricingmodifications,   /**< pricing modifications for the master cut */
+   int                        npricingmodifications   /**< number of pricing modifications for the master cut */
    )
 {
 #ifndef NDEBUG
@@ -215,11 +252,11 @@ SCIP_RETCODE GCGmastercutCreateFromCons(
 /** create a master cut, taking ownership over pricingmodifications */
 GCG_EXPORT
 SCIP_RETCODE GCGmastercutCreateFromRow(
-   SCIP*                  scip,               /**< SCIP data structure */
-   GCG_MASTERCUTDATA**    mastercutdata,       /**< pointer to store the mastercut data */
-   SCIP_ROW*              row,                 /**< row in the master problem that represents the master cut */
-   GCG_PRICINGMODIFICATION* pricingmodifications, /**< pricing modifications for the master cut */
-   int                    npricingmodifications /**< number of pricing modifications for the master cut */
+   SCIP*                      scip,                    /**< SCIP data structure (master problem) */
+   GCG_MASTERCUTDATA**        mastercutdata,           /**< pointer to store the mastercut data */
+   SCIP_ROW*                  row,                     /**< row in the master problem that represents the master cut */
+   GCG_PRICINGMODIFICATION*   pricingmodifications,    /**< pricing modifications associated with the master cut */
+   int                        npricingmodifications    /**< number of pricing modifications associated with the master cut */
    )
 {
 #ifndef NDEBUG
@@ -277,7 +314,7 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
 /** free a master cut */
 GCG_EXPORT
 SCIP_RETCODE GCGmastercutFree(
-   SCIP*                  scip,               /**< SCIP data structure */
+   SCIP*                  scip,                /**< SCIP data structure (master problem)*/
    GCG_MASTERCUTDATA**    mastercutdata        /**< pointer to the mastercut data */
    )
 {
@@ -338,7 +375,7 @@ SCIP_Bool GCGmastercutIsActive(
 
 /** add a new variable along with its coefficient to the mastercut */
 SCIP_RETCODE GCGmastercutAddMasterVar(
-   SCIP*                  masterscip,         /**< master scip */
+   SCIP*                  masterscip,         /**< SCIP data structure (master problem) */
    GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
    SCIP_VAR*              var,                /**< variable to add */
    SCIP_Real              coef                /**< coefficient of the variable */
@@ -366,9 +403,9 @@ SCIP_RETCODE GCGmastercutAddMasterVar(
    return SCIP_OKAY;
 }
 
-/** update the master cut with the new dual value */
+/** set the variable objective of the coefficient variables to the dual value */
 SCIP_RETCODE GCGmastercutUpdateDualValue(
-   SCIP*                  masterscip,         /**< master scip */
+   SCIP*                  masterscip,         /**< SCIP data structure (master problem) */
    GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
    SCIP_Real              dualvalue           /**< dual value */
    )
@@ -397,9 +434,7 @@ SCIP_RETCODE GCGmastercutUpdateDualValue(
    return SCIP_OKAY;
 }
 
-/** get the constraint that is the master cut
-  * will fail if the master cut is a row
-  */
+/** get the constraint that is the master cut (will fail if the master cut is a row) */
 SCIP_RETCODE GCGmastercutGetCons(
    GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
    SCIP_CONS**            cons                /**< pointer to store the constraint */
@@ -418,9 +453,7 @@ SCIP_RETCODE GCGmastercutGetCons(
    return SCIP_OKAY;
 }
 
-/** get the row that is the master cut
-   * will fail if the master cut is a constraint
-   */
+/** get the row that is the master cut (will fail if the master cut is a constraint) */
 SCIP_ROW* GCGmastercutGetRow(
    GCG_MASTERCUTDATA*     mastercutdata      /**< mastercut data */
    )
@@ -482,46 +515,11 @@ int GCGpricingmodificationGetNAdditionalConss(
    return pricingmodification->nadditionalconss;
 }
 
-/** use binary search to find pricing modification */
-static
-SCIP_Bool findPricingModificationPosition(
-   GCG_PRICINGMODIFICATION*   pricemods,
-   int                        npricemods,
-   int                        blocknr,
-   int*                       pos
-   )
-{
-   int left;
-   int right;
 
-   left = 0;
-   right = npricemods - 1;
-   while( left <= right )
-   {
-      int middle;
 
-      middle = (left + right) / 2;
-      assert(0 <= middle && middle < npricemods);
-
-      if( blocknr < pricemods[middle].blocknr )
-         right = middle - 1;
-      else if( pricemods[middle].blocknr < blocknr )
-         left = middle + 1;
-      else
-      {
-         *pos = middle;
-         return TRUE;
-      }
-   }
-   assert(left == right + 1);
-
-   *pos = left;
-   return FALSE;
-}
-
-/** get the pricing modification for a block, if exists, else NULL */
+/** get the pricing modification for specific block (pricing problem), if exists, else NULL */
 GCG_PRICINGMODIFICATION* GCGmastercutGetPricingModification(
-   SCIP*                  masterscip,         /**< master scip */
+   SCIP*                  masterscip,         /**< SCIP data structure (master problem) */
    GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
    int                    blocknr             /**< block number */
    )
@@ -547,8 +545,7 @@ GCG_PRICINGMODIFICATION* GCGmastercutGetPricingModification(
 }
 
 
-
-/** get the pricing modifications for the master cut */
+/** get the pricing modifications asssociated with a master cut */
 GCG_PRICINGMODIFICATION* GCGmastercutGetPricingModifications(
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
    )
@@ -558,7 +555,7 @@ GCG_PRICINGMODIFICATION* GCGmastercutGetPricingModifications(
    return mastercutdata->pricingmodifications;
 }
 
-/** get the number of pricing modifications for the master cut */
+/** get the number of pricing modifications associated with a master cut */
 int GCGmastercutGetNPricingModifications(
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
    )
@@ -571,7 +568,7 @@ int GCGmastercutGetNPricingModifications(
 /** apply a pricing modification */
 SCIP_RETCODE GCGpricingmodificationApply(
    SCIP*                      pricingscip,        /**< pricing scip */
-   GCG_PRICINGMODIFICATION   pricingmodification /**< pricing modification */
+   GCG_PRICINGMODIFICATION    pricingmodification /**< pricing modification */
    )
 {
    int i;
@@ -597,7 +594,7 @@ SCIP_RETCODE GCGpricingmodificationApply(
    return SCIP_OKAY;
 }
 
-/** apply all pricing modifications */
+/** apply all pricing modifications associated with a mastercut */
 SCIP_RETCODE GCGmastercutApplyPricingModifications(
    SCIP*                  masterscip,         /**< master scip */
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
@@ -627,7 +624,7 @@ SCIP_RETCODE GCGmastercutApplyPricingModifications(
 /** undo a pricing modification */
 SCIP_RETCODE GCGpricingmodificationUndo(
    SCIP*                      pricingscip,        /**< pricing scip */
-   GCG_PRICINGMODIFICATION   pricingmodification /**< pricing modification */
+   GCG_PRICINGMODIFICATION    pricingmodification /**< pricing modification */
    )
 {
    int i;
@@ -658,10 +655,10 @@ SCIP_RETCODE GCGpricingmodificationUndo(
    return SCIP_OKAY;
 }
 
-/** undo all pricing modifications */
+/** undo all pricing modifications associated with a mastercut */
 SCIP_RETCODE GCGmastercutUndoPricingModifications(
    SCIP*                  masterscip,         /**< master scip */
-   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut whose pricing modifications should be removed */
    )
 {
    int i;
@@ -687,7 +684,7 @@ SCIP_RETCODE GCGmastercutUndoPricingModifications(
 
 /** check whether a given variable is a coefficient variable of a given pricing modification */
 SCIP_Bool GCGpricingmodificationIsCoefVar(
-   GCG_PRICINGMODIFICATION   pricingmodification,     /**< pricing modification */
+   GCG_PRICINGMODIFICATION    pricingmodification,     /**< pricing modification */
    SCIP_VAR*                  var                      /**< variable to check */
    )
 {
