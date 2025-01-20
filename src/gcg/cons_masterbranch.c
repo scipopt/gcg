@@ -180,7 +180,7 @@ static
 SCIP_RETCODE addMissedVariables(
    SCIP*                      scip,             /**< SCIP data structure */
    GCG_SEPARATORMASTERCUT*    mastersepacut     /**< master separator cut */
-)
+   )
 {
    GCG_MASTERCUTDATA*      mastercutdata;
    GCG_VARHISTORY*         varhistory;
@@ -218,6 +218,7 @@ SCIP_RETCODE addMissedVariables(
          SCIP_Real  coef;
          int        blocknr;
          int        npricingvars;
+         int        nnonzeros;
          int        j;
 
          if( varhistory->buffer->vars[i]->deleted )
@@ -236,7 +237,7 @@ SCIP_RETCODE addMissedVariables(
          origvars = GCGmasterVarGetOrigvars(mastervar);
          pricingvals = GCGmasterVarGetOrigvals(mastervar);
          SCIPallocBufferArray(scip, &pricingvars, npricingvars);
-         int nnonzeros = 0;
+         nnonzeros = 0;
          for( j = 0; j < npricingvars; j++ )
          {
             pricingvars[j] = GCGoriginalVarGetPricingVar(origvars[j]);
@@ -288,13 +289,13 @@ SCIP_RETCODE addMissedVariables(
 }
 
 
-/** remove the cuts generated at this node from activecuts */
+/** remove the separator mastercuts generated and applied at this node from activecuts */
 static
 SCIP_RETCODE removeStoredCutsFromActiveCuts(
    SCIP*                scip,           /**< SCIP data structure */
    SCIP_CONSDATA*       consdata,       /**< data of current constraint */
    SCIP_CONSHDLRDATA*   conshdlrdata    /**< masterbranch constraint handler data */
-)
+   )
 {
    assert(scip != NULL);
    assert(consdata != NULL);
@@ -305,7 +306,7 @@ SCIP_RETCODE removeStoredCutsFromActiveCuts(
    return SCIP_OKAY;
 }
 
-/** add the cuts generated and stored at this node to active cuts */
+/** add the separator mastercuts generated and applied at this node to active cuts */
 static
 SCIP_RETCODE addStoredCutsToActiveCuts(
    SCIP*              scip,               /**< SCIP data structure */
@@ -364,7 +365,7 @@ SCIP_RETCODE addStoredCutsToActiveCuts(
    return SCIP_OKAY;
 }
 
-/** stores the cuts generated at this node */
+/** stores the separator mastercuts generated and applied at this node to the branchdata */
 static
 SCIP_RETCODE initializeAddedCuts(
    SCIP*                scip,            /**< SCIP data structure */
@@ -1934,7 +1935,7 @@ SCIP_DECL_CONSEXITSOL(consExitSolMasterbranch)
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
 
-   /* we release all the mastercuts stored in the data of all the constraints which have not been deleted yet:
+   /* we release all the separator mastercuts stored in the data of all the constraints which have not been deleted yet:
     * normally we release the mastercuts via/in consDeleteMasterbranch, but some constraints are only deleted after SCIP_STAGE_EXITSOLVE
     * and at that point, we cannot free rows anymore */
    for( i = 0; i < nconss; i++ )
@@ -2127,7 +2128,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    /* if tree is currently probing, we do not clear generated cuts
     * - the cuts in generated cuts may not have been separated yet, as separation store gets switched when probing */
    if( SCIPnodeGetType(consdata->node) == SCIP_NODETYPE_FOCUSNODE )
-      SCIP_CALL( GCGsepacutClearGeneratedCuts(scip, conshdlrdata->eventhdlr) );
+      SCIP_CALL( GCGsepacutClearGeneratedCuts(scip, conshdlrdata->eventhdlr) ); // potentially: move to pricing
 
    return SCIP_OKAY;
 }
@@ -2191,12 +2192,11 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
                    SCIPnodeGetType(consdata->node), consdata->name);
 #endif
    /* node is deactivated without any of its children being activated:
-    *    - store the mastercuts which were (generated and) applied in this node in the data of its defining branch */
+    *    - store the separator mastercuts which were (generated and) applied in this node in the data of its defining branch */
    if( !consdata->addedcutsinit )
       SCIP_CALL( initializeAddedCuts(scip, consdata, conshdlrdata) );
 
    /* remove all the mastercuts (generated and) applied at this node from activecuts */
-   //if( consdata->addedcutsinit && consdata->nodestoredcuts )
    SCIP_CALL( removeStoredCutsFromActiveCuts(scip, consdata, conshdlrdata) );
 
    return SCIP_OKAY;
