@@ -4246,7 +4246,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
       pricerdata->nraysprob[i] = 0;
    }
 
-   pricerdata->mastersepacuthdlr = SCIPfindEventhdlr(scip, "sepacuts");
+   pricerdata->mastersepacuthdlr = SCIPfindEventhdlr(scip, "mastersepacut");
 
    /* alloc memory for solution values of variables in pricing problems */
    norigvars = SCIPgetNOrigVars(origprob);

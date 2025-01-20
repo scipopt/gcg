@@ -1915,7 +1915,7 @@ SCIP_DECL_CONSINITSOL(consInitsolMasterbranch)
 
    conshdlrdata->nstack = 1;
    conshdlrdata->stack[0] = cons;
-   conshdlrdata->eventhdlr = SCIPfindEventhdlr(scip, "sepacuts");
+   conshdlrdata->eventhdlr = SCIPfindEventhdlr(scip, "mastersepacut");
 
    return SCIP_OKAY;
 }
