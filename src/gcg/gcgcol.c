@@ -643,14 +643,14 @@ SCIP_RETCODE GCGcolUpdateOriginalSepaMastercuts(
 }
 
 /*
- * column specific interface methods for coordination of coefficients for sepa master cuts
+ * column specific interface methods for coordination of coefficients for separator master cuts
  */
 
-/** add new sepa master cut cut coefficients to the column */
+/** update the column's stored coefficients for separator mastercut */
 SCIP_RETCODE GCGcolAppendSepaMastercutCoeffs(
-   GCG_COL*             gcgcol,               /**< gcg column structure */
-   SCIP_Real*           sepamastercoeffs,     /**< array of new master cut coefficients */
-   int                  nsepamastercoeffs     /**< number of coefficients to add */
+   GCG_COL*             gcgcol,                 /**< gcg column structure */
+   SCIP_Real*           sepamastercoeffs,       /**< pointer to array of new mastercut coefficients */
+   int                  nsepamastercoeffs       /**< number of new mastercut coefficients */
    )
 {
    int i;
@@ -681,26 +681,26 @@ SCIP_RETCODE GCGcolAppendSepaMastercutCoeffs(
 }
 
 
-/** get the numbers of stored separator master cut coefficients for each separator */
+/** get the column's number of stored coefficients for separator mastercuts */
 int GCGcolGetNSepaMastercutCoeffs(
-   GCG_COL*             gcgcol         /**< gcg column structure */
-)
+   GCG_COL*             gcgcol      /**< gcg column structure */
+   )
 {
    return gcgcol->nsepamastercutcoeffs;
 }
 
-/** get the size of the array storing separator master cut coefficients for each separator */
+/** get the size of the column's array for separator mastercut coefficients */
 int GCGcolGetSepaMastercutCoeffsSize(
-   GCG_COL*            gcgcol
-)
+   GCG_COL*            gcgcol    /**< gcg column structure */
+   )
 {
    return gcgcol->sepamastercutscoeffssize;
 }
 
-/** get the separator master cut coefficients stored for this column */
+/** get the column's coefficients for the separator mastercuts */
 SCIP_Real* GCGcolGetSepaMastercutCoeffs(
-   GCG_COL*             gcgcol
-)
+   GCG_COL*             gcgcol      /**< gcg column structure */
+   )
 {
    return gcgcol->sepamastercutcoeffs;
 }
