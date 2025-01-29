@@ -349,10 +349,7 @@ void aggregateObjCoef(
    SCIP_Real  aggr;
    int*       valisset;            /* 0 : unset; 1 : set; 2 : to be set. */
 
-   SCIP_CALL_ABORT( SCIPallocBufferArray(scip,&valisset,nlinkedvars) );
-
-   for( i = 0; i < nlinkedvars; i++)
-      valisset[i] = 0;
+   SCIP_CALL_ABORT( SCIPallocClearBufferArray(scip, &valisset, nlinkedvars) );
 
    for( i = 0; i < nlinkedvars; i++)
    {
