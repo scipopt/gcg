@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -61,7 +61,7 @@ RowGraph<T>::~RowGraph()
 template <class T>
 SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
    GCG_DECOMP**       decomp              /**< decomposition structure to generate */
-)
+   )
 {
    int nblocks;
    SCIP_HASHMAP* constoblock = NULL;
@@ -84,12 +84,13 @@ SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
    {
       int block = partition[i];
 
-      if(block == -1)
+      if( block == -1 )
       {
          SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (nblocks +1)) );
       }
       else
-      {  assert(block >= 0);
+      {
+         assert(block >= 0);
          assert(block < nblocks);
          SCIP_CALL( SCIPhashmapInsert(constoblock, conss[i], (void*) (size_t) (block +1)) );
          ++(nsubscipconss[block]);
@@ -118,7 +119,8 @@ SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
       SCIP_CALL( GCGdecompCreate(this->scip_, decomp) );
       SCIP_CALL( GCGfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
    }
-   else {
+   else
+   {
       SCIPhashmapFree(&constoblock);
       *decomp = NULL;
    }
@@ -132,31 +134,35 @@ SCIP_RETCODE RowGraph<T>::createPartialdecFromPartition(
    PARTIALDECOMP*      oldpartialdec,
    PARTIALDECOMP**     firstpartialdec,
    PARTIALDECOMP**     secondpartialdec,
-   DETPROBDATA*  detprobdata
+   DETPROBDATA*        detprobdata
    )
 {
    int nblocks;
    SCIP_HASHMAP* constoblock = NULL;
-
+   bool found;
    int* nsubscipconss = NULL;
    int i;
    SCIP_Bool emptyblocks = FALSE;
 
+   assert(oldpartialdec != NULL);
+
    //fillout conssForGraph
    std::vector<int> conssForGraph; /** stores the conss included by the graph */
    std::vector<bool> conssBool(oldpartialdec->getNConss(), false); /**< true, if the cons will be part of the graph */
-   bool found;
 
-   for(int c = 0; c < oldpartialdec->getNOpenconss(); ++c)
+   if( firstpartialdec == NULL && secondpartialdec == NULL )
+      return SCIP_INVALIDDATA;
+
+   for( int c = 0; c < oldpartialdec->getNOpenconss(); ++c )
    {
       int cons = oldpartialdec->getOpenconss()[c];
       found = false;
-      for(int v = 0; v < oldpartialdec->getNOpenvars() && !found; ++v)
+      for( int v = 0; v < oldpartialdec->getNOpenvars() && !found; ++v )
       {
          int var = oldpartialdec->getOpenvars()[v];
-         for(i = 0; i < detprobdata->getNVarsForCons(cons) && !found; ++i)
+         for( i = 0; i < detprobdata->getNVarsForCons(cons) && !found; ++i )
          {
-            if(var == detprobdata->getVarsForCons(cons)[i])
+            if( var == detprobdata->getVarsForCons(cons)[i] )
             {
                conssBool[cons] = true;
                found = true;
@@ -165,7 +171,7 @@ SCIP_RETCODE RowGraph<T>::createPartialdecFromPartition(
       }
    }
 
-   for(int c = 0; c < oldpartialdec->getNOpenconss(); ++c)
+   for( int c = 0; c < oldpartialdec->getNOpenconss(); ++c )
    {
       int cons = oldpartialdec->getOpenconss()[c];
       if(conssBool[cons])
@@ -185,12 +191,13 @@ SCIP_RETCODE RowGraph<T>::createPartialdecFromPartition(
    {
       int block = partition[i];
 
-      if(block == -1)
+      if( block == -1 )
       {
          SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) conssForGraph[i], (void*) (size_t) (nblocks +1)) );
       }
       else
-      {  assert(block >= 0);
+      {
+         assert(block >= 0);
          assert(block < nblocks);
          SCIP_CALL( SCIPhashmapInsert(constoblock, (void*) (size_t) conssForGraph[i], (void*) (size_t) (block +1)) );
          ++(nsubscipconss[block]);
