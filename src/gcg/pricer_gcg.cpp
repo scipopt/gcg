@@ -2423,7 +2423,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       {
       case GCG_MASTERCUTTYPE_CONS:
          assert(branchmastercutdata[i]->cut.cons != NULL);
-         GCGmastercutGetCons(branchmastercutdata[i], &tmpCons);
+         SCIP_CALL( GCGmastercutGetCons(branchmastercutdata[i], &tmpCons) );
          nconsvars = GCGconsGetNVars(origprob, tmpCons);
          SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
          SCIP_CALL( SCIPallocBufferArray(scip_, &consvals, nconsvars) );
@@ -2432,7 +2432,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
          break;
       case GCG_MASTERCUTTYPE_ROW:
          assert(branchmastercutdata[i]->cut.row != NULL);
-         GCGmastercutGetRow(branchmastercutdata[i], &tmpRow);
+         SCIP_CALL( GCGmastercutGetRow(branchmastercutdata[i], &tmpRow)) ;
          nconsvars = SCIProwGetNNonz(tmpRow);
          cols = SCIProwGetCols(tmpRow);
          consvals = SCIProwGetVals(tmpRow);
