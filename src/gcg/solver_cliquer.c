@@ -1546,10 +1546,12 @@ SCIP_RETCODE solveCliquer(
    }
    nedges /= 2;
 
+   SCIPdebugMessage("Problem Number: %i ; Graph size: %d ; Graph density: %g\n", probnr, indexcount, (float)nedges / ((float)(g->n - 1) * (g->n) / 2));
+
    /* Test if the density criteria is met */
    if( SCIPisGT(pricingprob, (float)nedges/((float)(g->n - 1) * (g->n) / 2), solver->density) )
    {
-      SCIPdebugMessage("Exit: Density criteria not met,density: %g.\n", (float)nedges / ((float)(g->n - 1) * (g->n) / 2));
+      SCIPdebugMessage("Exit: Density criteria not met, density: %g.\n", (float)nedges / ((float)(g->n - 1) * (g->n) / 2));
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
       goto TERMINATE;
    }
@@ -1561,8 +1563,6 @@ SCIP_RETCODE solveCliquer(
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
       goto TERMINATE;
    }
-
-   SCIPdebugMessage("Graph size: %d ; Graph density: %g.\n", indexcount, (float)nedges / ((float)(g->n - 1) * (g->n) / 2));
 
    ASSERT( indexcount <= npricingprobvars );
 
