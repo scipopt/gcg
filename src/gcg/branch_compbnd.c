@@ -576,6 +576,7 @@ SCIP_RETCODE createBranchingCons(
       char consname[SCIP_MAXSTRLEN];
       for( i = 0; i < branchdata->compBndSeqSize; ++i )
       {
+         (void) SCIPsnprintf(consname, SCIP_MAXSTRLEN, "c(g(%s,%s))", name, SCIPvarGetName(additionalvars[i]));
          SCIP_CALL( SCIPcreateConsVarbound(pricingscip, &additionalcons[i], consname, additionalvars[i], coefvar, -1.0, 0.0, SCIPinfinity(pricingscip),
             TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
       }
