@@ -11,7 +11,7 @@ problem exists. In general, a generic master cut consists of some constraint to 
 master:
 
 \f{align}{
-\sum_{p \in P} f(p) \lambda_p + \sum_{r \in R} f(r) \lambda_p \leq h \quad \left[ \gamma \right]
+\sum_{p \in P} f(p) \lambda_p + \sum_{r \in R} f(r) \lambda_r \leq h \quad \left[ \gamma \right]
 \f}
 
 where \(f\) is a function used to determine the coefficient of each column in the constraint.
@@ -22,7 +22,7 @@ the master constraint for each new column. In doing so, we can also consider the
 constraint in the pricing problem, ensuring only columns with negative reduced cost are generated.
 For this we create a new variable \(y\), the _coefficient variable_ in the pricing problem, which
 we will force to take the coefficient value of the new column in the master constraint. Expressing
-this constraint \(y = f(x)\) might require additional constraints and auxiliary variables. We called
+this constraint \(y = f(x)\) might require additional constraints and auxiliary variables. We call
 these variables _inferred pricing variables_, as they are inferred from the generic master cut.
 
 \f{align}{
