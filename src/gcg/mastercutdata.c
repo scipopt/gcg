@@ -291,7 +291,7 @@ SCIP_RETCODE GCGmastercutFree(
       SCIP_CALL( SCIPreleaseRow(scip, &(*mastercutdata)->cut.row) );
       break;
    default:
-      SCIP_CALL( SCIP_ERROR );
+      SCIP_CALL( SCIP_INVALIDDATA );
    }
 
    for( i = 0; i < (*mastercutdata)->npricingmodifications; i++ )
@@ -323,7 +323,7 @@ SCIP_Bool GCGmastercutIsActive(
       assert(mastercutdata->cut.row != NULL);
       return SCIProwIsInLP(mastercutdata->cut.row);
    default:
-      SCIP_CALL_ABORT( SCIP_ERROR );
+      SCIP_CALL_ABORT( SCIP_INVALIDDATA );
       return FALSE;
    }
 }
@@ -352,7 +352,7 @@ SCIP_RETCODE GCGmastercutAddMasterVar(
       SCIP_CALL( SCIPaddVarToRow(masterscip, mastercutdata->cut.row, var, coef) );
       break;
    default:
-      SCIP_CALL( SCIP_ERROR );
+      SCIP_CALL( SCIP_INVALIDDATA );
    }
 
    return SCIP_OKAY;
@@ -402,7 +402,7 @@ SCIP_RETCODE GCGmastercutGetCons(
    assert(*cons == NULL);
 
    if( mastercutdata->type != GCG_MASTERCUTTYPE_CONS )
-      return SCIP_ERROR;
+      return SCIP_INVALIDDATA;
 
    assert(mastercutdata->cut.cons != NULL);
    *cons = mastercutdata->cut.cons;
@@ -423,7 +423,7 @@ SCIP_RETCODE GCGmastercutGetRow(
    assert(*row == NULL);
 
    if( mastercutdata->type != GCG_MASTERCUTTYPE_ROW )
-      return SCIP_ERROR;
+      return SCIP_INVALIDDATA;
 
    assert(mastercutdata->cut.row != NULL);
    *row = mastercutdata->cut.row;
@@ -689,7 +689,7 @@ const char* GCGmastercutGetName(
       assert(mastercutdata->cut.row != NULL);
       return SCIProwGetName(mastercutdata->cut.row);
    default:
-      SCIP_CALL_ABORT( SCIP_ERROR );
+      SCIP_CALL_ABORT( SCIP_INVALIDDATA );
       return NULL;
    }
 }
@@ -711,7 +711,7 @@ SCIP_Real GCGmastercutGetLhs(
       assert(mastercutdata->cut.row != NULL);
       return SCIProwGetLhs(mastercutdata->cut.row);
    default:
-      SCIP_CALL_ABORT( SCIP_ERROR );
+      SCIP_CALL_ABORT( SCIP_INVALIDDATA );
       return SCIP_INVALID;
    }
 }
@@ -733,7 +733,7 @@ SCIP_Real GCGmastercutGetRhs(
       assert(mastercutdata->cut.row != NULL);
       return SCIProwGetRhs(mastercutdata->cut.row);
    default:
-      SCIP_CALL_ABORT( SCIP_ERROR );
+      SCIP_CALL_ABORT( SCIP_INVALIDDATA );
       return SCIP_INVALID;
    }
 }
@@ -754,7 +754,7 @@ SCIP_Real GCGmastercutGetConstant(
       assert(mastercutdata->cut.row != NULL);
       return SCIProwGetConstant(mastercutdata->cut.row);
    default:
-      SCIP_CALL_ABORT( SCIP_ERROR );
+      SCIP_CALL_ABORT( SCIP_INVALIDDATA );
       return SCIP_INVALID;
    }
 }
@@ -776,7 +776,7 @@ int GCGmastercutGetNNonz(
       assert(mastercutdata->cut.row != NULL);
       return SCIProwGetNNonz(mastercutdata->cut.row);
    default:
-      SCIP_CALL_ABORT( SCIP_ERROR );
+      SCIP_CALL_ABORT( SCIP_INVALIDDATA );
       return -1;
    }
 }
@@ -798,7 +798,7 @@ SCIP_COL** GCGmastercutGetCols(
       assert(mastercutdata->cut.row != NULL);
       return SCIProwGetCols(mastercutdata->cut.row);
    default:
-      SCIP_CALL_ABORT( SCIP_ERROR );
+      SCIP_CALL_ABORT( SCIP_INVALIDDATA );
       return NULL;
    }
 }
@@ -820,7 +820,7 @@ SCIP_Real* GCGmastercutGetVals(
       assert(mastercutdata->cut.row != NULL);
       return SCIProwGetVals(mastercutdata->cut.row);
    default:
-      SCIP_CALL_ABORT( SCIP_ERROR );
+      SCIP_CALL_ABORT( SCIP_INVALIDDATA );
       return NULL;
    }
 }
