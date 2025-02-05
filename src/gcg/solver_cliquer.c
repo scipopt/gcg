@@ -56,7 +56,7 @@
 #define SOLVER_HEURENABLED   TRUE            /**< indicates whether the solver should be enabled */
 #define SOLVER_EXACTENABLED  FALSE           /**< indicates whether the solver should be enabled */
 
-#define DEFAULT_DENSITY      0.00
+#define DEFAULT_DENSITY      0.85
 #define DEFAULT_NODELIMIT    200
 
 /*
@@ -1522,7 +1522,7 @@ SCIP_RETCODE solveCliquer(
    nedges /= 2;
 
    /* Test if the density criteria is met */
-   if( SCIPisLT(pricingprob, (float)nedges/((float)(g->n - 1) * (g->n) / 2), solver->density) )
+   if( SCIPisGT(pricingprob, (float)nedges/((float)(g->n - 1) * (g->n) / 2), solver->density) )
    {
       SCIPdebugMessage("Exit: Density criteria not met,density: %g.\n", (float)nedges / ((float)(g->n - 1) * (g->n) / 2));
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
@@ -1756,7 +1756,7 @@ SCIP_RETCODE GCGincludeSolverCliquer(
          solverInitsolCliquer, solverExitsolCliquer, solverdata) );
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/cliquer/density",
-         "graph density threshold above which to use solver",
+         "graph density threshold below which to use solver",
          &solverdata->density, TRUE, DEFAULT_DENSITY, 0.0, 1.0, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/cliquer/nodelimit",
