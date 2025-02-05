@@ -3338,9 +3338,9 @@ int cleanedIndex;
 
       stabilized = enablestab && stabilization->isStabilized();
 
-      /* set the objective function */
       SCIP_CALL( freePricingProblems() );
 
+      /* set the objective function */
       SCIP_CALL( setPricingObjs(pricetype, stabilized) );
 
       /* call update method of pricing solvers to update objectives;
@@ -3769,8 +3769,6 @@ int cleanedIndex;
    }
 #endif
 
-   //SCIPwriteOrigProblem(GCGgetPricingprob(origprob, 0), "subprob.lp", "lp", FALSE);
-
    /* undo the inferred pricing modifications from the mastercuts */
    for( i=0; i<nbranchmastercuts; ++i )
    {
@@ -3816,7 +3814,7 @@ SCIP_RETCODE GCGsetPricingObjs(
       }
    }
 
-   if(dualsolconv != NULL)
+   if( dualsolconv != NULL )
    {
       for(i = 0; i < pricer->pricerdata->npricingprobs; ++i)
       {

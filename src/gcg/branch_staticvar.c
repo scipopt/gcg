@@ -183,7 +183,6 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpStaticVar)
 
    *result = SCIP_DIDNOTRUN;
 
-   /* the branching scheme only works for the discretization approach */
    if( GCGcurrentNodeIsGeneric(scip) )
    {
       SCIPdebugMessage("Not executing static mastervar branching, node was branched by generic branchrule\n");

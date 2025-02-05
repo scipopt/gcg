@@ -218,7 +218,7 @@ SCIP_RETCODE GCGvarhistoryJumpAndRetrieveVars(
    int*                   nvars              /**< pointer to store the number of variables */
    )
 {
-   GCG_VARHISTORY weak_copy;
+   GCG_VARHISTORY weakcopy;
    int curridx;
    int i;
    GCG_VARHISTORYBUFFER* next;
@@ -248,16 +248,16 @@ SCIP_RETCODE GCGvarhistoryJumpAndRetrieveVars(
       (*pointer)->pos = -1;
    }
 
-   weak_copy.buffer = (*pointer)->buffer;
-   weak_copy.pos = (*pointer)->pos;
+   weakcopy.buffer = (*pointer)->buffer;
+   weakcopy.pos = (*pointer)->pos;
    do
    {
-      *nvars += weak_copy.buffer->nvars - weak_copy.pos - 1;
+      *nvars += weakcopy.buffer->nvars - weakcopy.pos - 1;
 
-      if( weak_copy.buffer->next != NULL )
+      if( weakcopy.buffer->next != NULL )
       {
-         weak_copy.buffer = weak_copy.buffer->next;
-         weak_copy.pos = -1;
+         weakcopy.buffer = weakcopy.buffer->next;
+         weakcopy.pos = -1;
       }
       else
       {

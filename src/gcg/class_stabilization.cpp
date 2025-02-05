@@ -489,7 +489,7 @@ SCIP_Real Stabilization::linkingconsGetDual(
 SCIP_RETCODE Stabilization::consGetDual(
    int                   i,                  /* index of the constraint */
    SCIP_Real*            dual                /* return pointer for dual value */
-)
+   )
 {
    SCIP* origprob = GCGmasterGetOrigprob(scip_);
    SCIP_Real subgradient = 0.0;
@@ -527,7 +527,7 @@ SCIP_RETCODE Stabilization::consGetDual(
 SCIP_RETCODE Stabilization::rowGetDual(
    int                   i,                  /* index of the row */
    SCIP_Real*            dual                /* return pointer for dual value */
-)
+   )
 {
 #ifndef NDEBUG
    int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(scip_);
@@ -692,7 +692,7 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
 
    for( i = 0; i < nprobs; ++i )
    {
-      if(!GCGisPricingprobRelevant(origprob, i))
+      if( !GCGisPricingprobRelevant(origprob, i) )
          continue;
       stabcenterconv[i] = dualsolconv[i];
    }

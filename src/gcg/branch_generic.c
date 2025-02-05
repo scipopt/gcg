@@ -88,7 +88,6 @@ struct GCG_BranchData
    int                   consSsize;          /**< size of the component bound sequence */
    int                   maxconsS;           /**< size of consS */
    int                   consblocknr;        /**< id of the pricing problem (or block) to which this branching constraint belongs */
-   int                   nvars;              /**< number of master variables the last time the node has been visited */
 };
 
 /** set of component bounds in separate */
@@ -207,7 +206,7 @@ SCIP_Real getColCoefficient(
       }
    }
 
-   if(varinS)
+   if( varinS )
       return 1.;
    else
       return 0.;
@@ -220,7 +219,7 @@ SCIP_RETCODE addVarToMasterbranch(
    SCIP_VAR*             mastervar,          /**< the variable to add */
    GCG_BRANCHDATA*       branchdata,         /**< branching data structure where the variable should be added */
    SCIP_Bool*            added               /**< whether the variable was added */
-)
+   )
 {
    SCIP_Real coef;
    SCIP_VAR** origvars;
@@ -256,7 +255,7 @@ SCIP_RETCODE createDirectBranchingCons(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_NODE*            node,               /**< node to add constraint */
    GCG_BRANCHDATA*       branchdata          /**< branching data structure */
-)
+   )
 {
    char name[SCIP_MAXSTRLEN];
 
@@ -290,7 +289,7 @@ SCIP_RETCODE createBranchingCons(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_NODE*            node,               /**< node to add constraint */
    GCG_BRANCHDATA*       branchdata          /**< branching data structure */
-)
+   )
 {
    char name[SCIP_MAXSTRLEN];
    SCIP_Bool added = FALSE;
@@ -314,7 +313,6 @@ SCIP_RETCODE createBranchingCons(
 
    for( int i = 0; i < nvars; ++i )
    {
-      added = FALSE;
       SCIP_CALL( addVarToMasterbranch(scip, vars[i], branchdata, &added) );
    }
 
@@ -2101,7 +2099,6 @@ SCIP_RETCODE initNodeBranchdata(
    (*nodebranchdata)->C = NULL;
    (*nodebranchdata)->maxconsS = 0;
    (*nodebranchdata)->consSsize = 0;
-   (*nodebranchdata)->nvars = 0;
 
    return SCIP_OKAY;
 }
