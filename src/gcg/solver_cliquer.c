@@ -45,6 +45,8 @@
 #include "relax_gcg.h"
 #include "pub_gcgcol.h"
 #include "pub_gcgvar.h"
+#include "gcg.h"
+#include "sepa_master.h"
 
 #include "cliquer/cliquer.h"
 
@@ -67,6 +69,7 @@ struct GCG_SolverData
 {
    SCIP_Real             density;            /**< graph density threshold above which to use solver */
    int                   nodelimit;          /**< graph node threshold below which to use solver */
+   SCIP_Bool*            isnotapplicable;    /**< array tracking if solver is not applicable in root node (& no cuts) */
 };
 
 /* Constraint type (combination of handler type and constraint form) to use in this solver. */
@@ -542,6 +545,18 @@ SCIP_Real scaleRelativeToMax(
       scalingfactor = fabs(scalingfactor / biggestobj);
    }
    return scalingfactor;
+}
+
+/** Set isnotapplicable to true for given problem number if solver is applied at root node and no cuts are applied. */
+static
+void setProblemNotApplicable(
+   SCIP*                 scip,               /**< master problem SCIP data structure */
+   int                   probnr,             /**< pricing problem number */
+   SCIP_Bool*            isnotapplicable     /**< array storing if solver is applicable to problems */
+   )
+{
+   if( SCIPgetDepth(scip) == 0 && GCGsepaGetNCuts(scip) == 0 )
+      isnotapplicable[probnr] = TRUE;
 }
 
 /**
@@ -1123,6 +1138,14 @@ SCIP_RETCODE solveCliquer(
    assert(lowerbound != NULL);
    assert(status != NULL);
 
+   /* Check if solver already found itself to be not applicable to actual problem. */
+   if( solver->isnotapplicable[probnr] )
+   {
+      SCIPdebugMessage("Exit: Solver already found to be not applicable to pricing problem %i.\n", probnr);
+      *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
+      return SCIP_OKAY;
+   }
+
    pricingprobvars = SCIPgetVars(pricingprob);
    npricingprobvars = SCIPgetNVars(pricingprob);
 
@@ -1134,6 +1157,7 @@ SCIP_RETCODE solveCliquer(
    {
       SCIPdebugMessage("Exit: Nonbinary variables.\n");
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
+      setProblemNotApplicable(scip, probnr, solver->isnotapplicable);
       return SCIP_OKAY;
    }
 
@@ -1211,6 +1235,7 @@ SCIP_RETCODE solveCliquer(
    {
       /* Encountered constraint that can not be handled. */
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
+      setProblemNotApplicable(scip, probnr, solver->isnotapplicable);
       goto TERMINATE;
    }
 
@@ -1714,8 +1739,46 @@ GCG_DECL_SOLVERFREE(solverFreeCliquer)
    return SCIP_OKAY;
 }
 
-#define solverInitsolCliquer NULL
-#define solverExitsolCliquer NULL
+/** solving process initialization method of pricing solver (called when branch and bound process is about to begin) */
+static
+GCG_DECL_SOLVERINITSOL(solverInitsolCliquer)
+{
+   GCG_SOLVERDATA* solverdata;
+   int npricingprobs;
+
+   assert(scip != NULL);
+   assert(solver != NULL);
+
+   solverdata = GCGsolverGetData(solver);
+   assert(solverdata != NULL);
+
+   /* allocate and initialize isnotapplicable array */
+   npricingprobs = GCGgetNPricingprobs(GCGmasterGetOrigprob(scip));
+   SCIP_CALL( SCIPallocClearMemoryArray(scip, &solverdata->isnotapplicable, npricingprobs) );
+
+   return SCIP_OKAY;
+}
+
+/** solving process deinitialization method of pricing solver (called before branch and bound process data is freed) */
+static
+GCG_DECL_SOLVEREXITSOL(solverExitsolCliquer)
+{
+   GCG_SOLVERDATA* solverdata;
+   int npricingprobs;
+
+   assert(scip != NULL);
+   assert(solver != NULL);
+
+   solverdata = GCGsolverGetData(solver);
+   assert(solverdata != NULL);
+
+   /* free isnotapplicable array */
+   npricingprobs = GCGgetNPricingprobs(GCGmasterGetOrigprob(scip));
+   SCIPfreeBlockMemoryArray(scip, &solverdata->isnotapplicable, npricingprobs);
+
+   return SCIP_OKAY;
+}
+
 #define solverInitCliquer NULL
 #define solverExitCliquer NULL
 #define solverUpdateCliquer NULL
