@@ -30,12 +30,8 @@
  * @author  Til Mohr
  */
 
-#include <scip/def.h>
-#include <scip/pub_message.h>
-#include <scip/scip.h>
-#include <scip/type_retcode.h>
-#include <scip/type_scip.h>
 #include "misc_varhistory.h"
+#include "struct_varhistory.h"
 
 /** free a history buffer */
 static

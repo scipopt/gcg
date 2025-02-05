@@ -59,10 +59,6 @@
 #include "scip/type_misc.h"
 #include "type_mastercutdata.h"
 #include <cstddef>
-#include <gcg/pricer_gcg.h>
-#include <scip/scip_mem.h>
-#include <scip/type_cons.h>
-#include <scip/type_retcode.h>
 
 namespace gcg {
 

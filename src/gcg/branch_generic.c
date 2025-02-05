@@ -44,12 +44,12 @@
 #include "cons_masterbranch.h"
 #include "cons_origbranch.h"
 #include "pricer_gcg.h"
-#include "scip/cons_linear.h"
 #include "type_branchgcg.h"
 #include "gcg.h"
 #include "cons_integralorig.h"
 #include "gcgsort.h"
 
+#include "scip/cons_linear.h"
 #include "scip/nodesel_bfs.h"
 #include "scip/nodesel_dfs.h"
 #include "scip/nodesel_estimate.h"
@@ -65,8 +65,6 @@
 #include "scip/branch_relpscost.h"
 
 #include <assert.h>
-#include <scip/def.h>
-#include <scip/scip_numerics.h>
 #include <string.h>
 
 

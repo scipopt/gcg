@@ -49,28 +49,6 @@
 // will write information about the component bound sequences to a file (slow!)
 //#define COMPBND_STATS
 
-#include <gcg/pricer_gcg.h>
-#include <scip/pub_message.h>
-#include <scip/pub_var.h>
-#include <scip/type_branch.h>
-#include <scip/type_misc.h>
-#include <assert.h>
-#include <scip/def.h>
-#include <scip/cons_linear.h>
-#include <scip/cons_varbound.h>
-#include <scip/scip.h>
-#include <scip/type_result.h>
-#include <scip/type_retcode.h>
-#include <scip/type_scip.h>
-#include <scip/type_var.h>
-#include <string.h>
-#include <scip/struct_var.h>
-#include <scip/pub_lp.h>
-#include <scip/pub_misc_linear.h>
-#include <scip/scip_mem.h>
-#include <scip/scip_numerics.h>
-#include <scip/scip_var.h>
-
 #include "branch_compbnd.h"
 #include "cons_integralorig.h"
 #include "cons_masterbranch.h"
@@ -81,6 +59,8 @@
 #include "pub_gcgvar.h"
 #include "type_mastercutdata.h"
 #include "type_branchgcg.h"
+#include "scip/cons_linear.h"
+#include "scip/cons_varbound.h"
 
 #define BRANCHRULE_NAME            "compbnd"                      /**< name of branching rule */
 #define BRANCHRULE_DESC            "component bound branching"    /**< short description of branching rule */

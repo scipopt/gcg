@@ -37,9 +37,6 @@
 #ifndef GCG_STRUCT_VARDATA_H__
 #define GCG_STRUCT_VARDATA_H__
 
-#include <scip/type_cons.h>
-#include <scip/type_misc.h>
-#include <scip/type_var.h>
 #include "struct_mastercutdata.h"
 #include "type_mastercutdata.h"
 

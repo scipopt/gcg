@@ -40,7 +40,6 @@
 #define GCG_RELAX_GCG_H__
 
 #include "scip/scip.h"
-#include "scip/type_retcode.h"
 #include "def.h"
 #include "type_branchgcg.h"
 #include "type_decomp.h"

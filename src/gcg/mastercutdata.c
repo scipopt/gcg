@@ -37,21 +37,10 @@
 #include "gcg.h"
 #include "gcg/scip_misc.h"
 #include "pricer_gcg.h"
-#include "scip/pub_var.h"
 #include "struct_mastercutdata.h"
 
-#include <scip/cons_linear.h>
-#include <scip/def.h>
-#include <scip/pub_cons.h>
-#include <scip/pub_lp.h>
-#include <scip/pub_misc_linear.h>
-#include <scip/scip.h>
-#include <scip/scip_cons.h>
-#include <scip/scip_prob.h>
-#include <scip/struct_scip.h>
-#include <scip/struct_mem.h>
-#include <scip/struct_var.h>
-#include <scip/type_scip.h>
+#include "scip/scip.h"
+#include "scip/cons_linear.h"
 
 /** free a pricing modification */
 static
@@ -126,7 +115,7 @@ SCIP_RETCODE GCGpricingmodificationCreate(
       assert(additionalvars[i] != NULL);
       assert(additionalvars[i] != coefvar);
       assert(GCGvarIsInferredPricing(additionalvars[i]));
-      assert(SCIPisZero(scip, additionalvars[i]->obj));
+      assert(SCIPisZero(scip, SCIPvarGetObj(additionalvars[i])));
    }
 
    for( i = 0; i < nadditionalconss; i++ )
@@ -202,9 +191,9 @@ SCIP_RETCODE GCGmastercutCreateFromCons(
    (*mastercutdata)->mastercutGetCoeff = mastercutGetCoeff;
 
    for( i = 0; i < npricingmodifications; i++ ) {
-      pricingmodifications[i].coefvar->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
+      SCIPvarGetData(pricingmodifications[i].coefvar)->data.inferredpricingvardata.mastercutdata = *mastercutdata;
       for( j = 0; j < pricingmodifications[i].nadditionalvars; j++ ) {
-         pricingmodifications[i].additionalvars[j]->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
+         SCIPvarGetData(pricingmodifications[i].additionalvars[j])->data.inferredpricingvardata.mastercutdata = *mastercutdata;
       }
    }
 
@@ -268,9 +257,9 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
    (*mastercutdata)->mastercutGetCoeff = mastercutGetCoeff;
 
    for( i = 0; i < npricingmodifications; i++ ) {
-      pricingmodifications[i].coefvar->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
+      SCIPvarGetData(pricingmodifications[i].coefvar)->data.inferredpricingvardata.mastercutdata = *mastercutdata;
       for( j = 0; j < pricingmodifications[i].nadditionalvars; j++ ) {
-         pricingmodifications[i].additionalvars[j]->vardata->data.inferredpricingvardata.mastercutdata = *mastercutdata;
+         SCIPvarGetData(pricingmodifications[i].additionalvars[j])->data.inferredpricingvardata.mastercutdata = *mastercutdata;
       }
    }
 

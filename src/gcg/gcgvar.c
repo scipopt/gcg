@@ -40,7 +40,6 @@
 #include "struct_vardata.h"
 #include "relax_gcg.h"
 #include "scip/cons_linear.h"
-#include <scip/type_retcode.h>
 
 #define STARTMAXMASTERVARS 8
 #define STARTMAXORIGVARS 1

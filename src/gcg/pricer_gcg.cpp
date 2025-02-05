@@ -49,17 +49,6 @@
 #include "type_pricingprob.h"
 #include <cassert>
 #include <cstring>
-#include <lpi/type_lpi.h>
-#include <scip/def.h>
-#include <scip/pub_var.h>
-#include <scip/scip_lp.h>
-#include <scip/scip_mem.h>
-#include <scip/scip_message.h>
-#include <scip/scip_prob.h>
-#include <scip/type_lp.h>
-#include <scip/type_retcode.h>
-#include <scip/type_var.h>
-#include <scip/var.h>
 
 /*lint -e64 disable useless and wrong lint warning */
 
@@ -1847,7 +1836,7 @@ SCIP_Real ObjPricerGcg::computeRedCost(
       assert(GCGvarIsPricing(solvars[i]) || GCGvarIsInferredPricing(solvars[i]));
       if( GCGvarIsInferredPricing(solvars[i]) )
       {
-         mastercutdata = solvars[i]->vardata->data.inferredpricingvardata.mastercutdata;
+         mastercutdata = SCIPvarGetData(solvars[i])->data.inferredpricingvardata.mastercutdata;
          if( GCGmastercutIsCoefVar(mastercutdata, solvars[i]) )
          {
             objvalue -= solvals[i] * pricetype->mastercutGetDual(scip_, mastercutdata);
@@ -1931,7 +1920,7 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
       assert(GCGvarIsPricing(solvars[i]) || GCGvarIsInferredPricing(solvars[i]));
       if( GCGvarIsInferredPricing(solvars[i]) )
       {
-         mastercutdata = solvars[i]->vardata->data.inferredpricingvardata.mastercutdata;
+         mastercutdata = SCIPvarGetData(solvars[i])->data.inferredpricingvardata.mastercutdata;
          if( GCGmastercutIsCoefVar(mastercutdata, solvars[i]) )
          {
             objvalue -= solvals[i] * pricetype->mastercutGetDual(scip_, mastercutdata);

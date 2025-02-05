@@ -44,9 +44,6 @@
 
 //#define SCIP_DEBUG
 
-#include <scip/def.h>
-#include <scip/type_branch.h>
-#include <scip/type_retcode.h>
 #include <string.h>
 #ifdef _OPENMP
 #include <omp.h>

@@ -39,15 +39,13 @@
 
 #include "gcg.h"
 #include "scip/def.h"
+#include "scip/scip.h"
 #include "scip/cons_linear.h"
 #include "pricer_gcg.h"
 #include "sepa_original.h"
 #include "type_gcgcol.h"
 
 #include <assert.h>
-#include <scip/pub_message.h>
-#include <scip/scip_mem.h>
-#include <scip/type_retcode.h>
 
 /** create a gcg column */
 SCIP_RETCODE GCGcreateGcgCol(

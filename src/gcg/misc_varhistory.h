@@ -39,7 +39,7 @@
 
 #include "scip/scip.h"
 #include "def.h"
-#include "struct_varhistory.h"
+#include "type_varhistory.h"
 
 #ifdef __cplusplus
 extern "C" {
