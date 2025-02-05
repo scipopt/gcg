@@ -311,7 +311,7 @@ SCIP_RETCODE varGetIndexCleaned(
       if( !GCGvarIsPricing(vars[i]) )
          continue;
 
-      if( SCIPvarCompare(var, vars[i]) == 0 )
+      if( var == vars[i] )
          return SCIP_OKAY;
 
       *index += 1;

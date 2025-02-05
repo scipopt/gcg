@@ -192,7 +192,7 @@ SCIP_RETCODE simplifyComponentBoundSequence(
 
       for( j=i+1; j<*compBndSeqSize; ++j )
       {
-         if( SCIPvarCompare(component, (*compBndSeq)[j].component) != 0 )
+         if( component != (*compBndSeq)[j].component )
             continue;
          if( (*compBndSeq)[i].sense != (*compBndSeq)[j].sense )
             continue;
@@ -273,7 +273,7 @@ SCIP_Real getGeneratorEntryCol(
       else
          cmp = pricingvar;
 
-      if( SCIPvarCompare(solvars[i], cmp) == 0 )
+      if( solvars[i] == cmp )
       {
          return solvals[i];
       }
@@ -882,7 +882,7 @@ SCIP_Real getLowerBound(
    {
       if(
          compBndSeq[i].sense == GCG_COMPBND_SENSE_GE
-         && SCIPvarCompare(origvar, compBndSeq[i].component) == 0
+         && origvar == compBndSeq[i].component
          && SCIPisLT(scip, lb, compBndSeq[i].bound)
       )
       {
@@ -914,7 +914,7 @@ SCIP_Real getUpperBound(
    {
       if(
          compBndSeq[i].sense == GCG_COMPBND_SENSE_LE
-         && SCIPvarCompare(origvar, compBndSeq[i].component) == 0
+         && origvar == compBndSeq[i].component
          && SCIPisLT(scip, compBndSeq[i].bound, ub)
       )
       {

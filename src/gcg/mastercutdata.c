@@ -650,7 +650,7 @@ SCIP_Bool GCGpricingmodificationIsCoefVar(
 {
    assert(var != NULL);
 
-   return SCIPvarCompare(pricingmodification.coefvar, var) == 0;
+   return pricingmodification.coefvar == var;
 }
 
 /** check whether a given variable is a coefficient variable of a given mastercut */
