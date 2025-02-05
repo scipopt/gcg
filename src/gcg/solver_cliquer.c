@@ -1754,7 +1754,7 @@ GCG_DECL_SOLVERINITSOL(solverInitsolCliquer)
 
    /* allocate and initialize isnotapplicable array */
    npricingprobs = GCGgetNPricingprobs(GCGmasterGetOrigprob(scip));
-   SCIP_CALL( SCIPallocClearMemoryArray(scip, &solverdata->isnotapplicable, npricingprobs) );
+   SCIP_CALL( SCIPallocClearBlockMemoryArray(scip, &solverdata->isnotapplicable, npricingprobs) );
 
    return SCIP_OKAY;
 }
