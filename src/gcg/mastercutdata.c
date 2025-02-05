@@ -161,15 +161,16 @@ SCIP_RETCODE GCGmastercutCreateFromCons(
 
 #ifndef NDEBUG
    originalproblem = GCGgetOriginalprob(scip);
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &seenblocks, GCGgetNRelPricingprobs(originalproblem)) );
-   for( i = 0; i < GCGgetNRelPricingprobs(originalproblem); i++ )
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &seenblocks, GCGgetNPricingprobs(originalproblem)) );
+   for( i = 0; i < GCGgetNPricingprobs(originalproblem); i++ )
       seenblocks[i] = FALSE;
 #endif
 
    for( i = 0; i < npricingmodifications; i++ )
    {
       assert(pricingmodifications[i].blocknr >= 0);
-      assert(pricingmodifications[i].blocknr < GCGgetNRelPricingprobs(originalproblem));
+      assert(pricingmodifications[i].blocknr < GCGgetNPricingprobs(originalproblem));
+      assert(GCGisPricingprobRelevant(originalproblem, pricingmodifications[i].blocknr));
 #ifndef NDEBUG
       assert(!seenblocks[pricingmodifications[i].blocknr]);
       seenblocks[pricingmodifications[i].blocknr] = TRUE;
@@ -177,7 +178,7 @@ SCIP_RETCODE GCGmastercutCreateFromCons(
    }
 
 #ifndef NDEBUG
-   SCIPfreeBlockMemoryArray(scip, &seenblocks, GCGgetNRelPricingprobs(originalproblem));
+   SCIPfreeBlockMemoryArray(scip, &seenblocks, GCGgetNPricingprobs(originalproblem));
    assert(seenblocks == NULL);
 #endif
 
@@ -228,15 +229,16 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
 
 #ifndef NDEBUG
    originalproblem = GCGgetOriginalprob(scip);
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &seenblocks, GCGgetNRelPricingprobs(originalproblem)) );
-   for( i = 0; i < GCGgetNRelPricingprobs(originalproblem); i++ )
+   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &seenblocks, GCGgetNPricingprobs(originalproblem)) );
+   for( i = 0; i < GCGgetNPricingprobs(originalproblem); i++ )
       seenblocks[i] = FALSE;
 #endif
 
    for( i = 0; i < npricingmodifications; i++ )
    {
       assert(pricingmodifications[i].blocknr >= 0);
-      assert(pricingmodifications[i].blocknr < GCGgetNRelPricingprobs(originalproblem));
+      assert(pricingmodifications[i].blocknr < GCGgetNPricingprobs(originalproblem));
+      assert(GCGisPricingprobRelevant(originalproblem, pricingmodifications[i].blocknr));
 #ifndef NDEBUG
       assert(!seenblocks[pricingmodifications[i].blocknr]);
       seenblocks[pricingmodifications[i].blocknr] = TRUE;
@@ -244,7 +246,7 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
    }
 
 #ifndef NDEBUG
-   SCIPfreeBlockMemoryArray(scip, &seenblocks, GCGgetNRelPricingprobs(originalproblem));
+   SCIPfreeBlockMemoryArray(scip, &seenblocks, GCGgetNPricingprobs(originalproblem));
 #endif
 
    SCIP_CALL( SCIPallocBlockMemory(scip, mastercutdata) );
