@@ -653,7 +653,6 @@ SCIP_RETCODE createChildNodesCompBndSeq(
 {
    SCIP*  masterscip;
    int i;
-   int identicalBlocks;
    SCIP_Real constantSum;
    int nmastervars;
    SCIP_VAR** mastervars;
@@ -670,8 +669,7 @@ SCIP_RETCODE createChildNodesCompBndSeq(
    assert(compBndSeqSize > 0);
    assert(compBndSeq != NULL);
 
-   identicalBlocks = GCGgetNIdenticalBlocks(scip, blocknr);
-   SCIPdebugMessage("Component bound branching rule Node creation for blocknr %d with %d identical blocks \n", blocknr, identicalBlocks);
+   SCIPdebugMessage("Component bound branching rule Node creation for blocknr %d with %d identical blocks \n", blocknr, GCGgetNIdenticalBlocks(scip, blocknr));
 
    /*  get variable data of the master problem */
    masterscip = GCGgetMasterprob(scip);
