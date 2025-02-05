@@ -76,7 +76,6 @@ SCIP_RETCODE GCGvarhistoryGetVar(
    assert(pointer != NULL);
    assert(0 <= pointer->pos);
    assert(var != NULL);
-   assert(*var == NULL);
    assert(pointer->buffer != NULL);
    assert(pointer->pos < pointer->buffer->nvars);
    assert((pointer->buffer->nvars == GCG_VARHISTORYBUFFER_SIZE) >= (pointer->buffer->next != NULL));

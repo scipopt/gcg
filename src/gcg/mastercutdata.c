@@ -399,7 +399,6 @@ SCIP_RETCODE GCGmastercutGetCons(
 {
    assert(mastercutdata != NULL);
    assert(cons != NULL);
-   assert(*cons == NULL);
 
    if( mastercutdata->type != GCG_MASTERCUTTYPE_CONS )
       return SCIP_INVALIDDATA;
@@ -420,7 +419,6 @@ SCIP_RETCODE GCGmastercutGetRow(
 {
    assert(mastercutdata != NULL);
    assert(row != NULL);
-   assert(*row == NULL);
 
    if( mastercutdata->type != GCG_MASTERCUTTYPE_ROW )
       return SCIP_INVALIDDATA;
