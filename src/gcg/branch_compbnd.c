@@ -123,7 +123,7 @@ void freeComponentBoundSequence(
    assert(scip != NULL);
    assert(GCGisMaster(scip));
 
-   SCIPfreeBlockMemoryArray(scip, compBndSeq, *compBndSeqSize);
+   SCIPfreeBlockMemoryArrayNull(scip, compBndSeq, *compBndSeqSize);
    assert(*compBndSeq == NULL);
    *compBndSeqSize = 0;
 }
