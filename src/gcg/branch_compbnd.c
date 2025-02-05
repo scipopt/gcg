@@ -47,7 +47,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 // will write information about the component bound sequences to a file (slow!)
-//#define STATS
+//#define COMPBND_STATS
 
 #include <gcg/pricer_gcg.h>
 #include <scip/pub_message.h>
@@ -99,7 +99,7 @@ struct SCIP_BranchruleData
 {
    SCIP_Bool             useMaxRangeMidrangeHeuristic; /** should the MaxRangeMidrangeHeuristic be used */
    SCIP_Bool             useMostDistinctMedianHeuristic; /** should the MostDistinctMedianHeuristic be used */
-#ifdef STATS
+#ifdef COMPBND_STATS
    FILE*                 statsfile;          /**< file to write statistics to */
 #endif
 };
@@ -1692,7 +1692,7 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
    )
 {
    SCIP* origscip;
-#ifdef STATS
+#ifdef COMPBND_STATS
    SCIP_BRANCHRULEDATA* branchruledata;
 #endif
    SCIP_VAR** branchcands;
@@ -1718,7 +1718,7 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
    assert(origscip != NULL);
    SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, NULL, NULL, &nbranchcands, NULL, NULL) );
 
-#ifdef STATS
+#ifdef COMPBND_STATS
    branchruledata = SCIPbranchruleGetData(branchrule);
 #endif
 
@@ -1797,7 +1797,7 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
    assert(compBndSeqSize > 0);
    assert(compBndSeq != NULL);
 
-#ifdef STATS
+#ifdef COMPBND_STATS
    int depth = SCIPgetDepth(masterscip);
    SCIP_Real sum = calcSum(masterscip, compBndSeq, compBndSeqSize, blocknr);
    int K = GCGgetNIdenticalBlocks(origscip, blocknr);
@@ -1822,7 +1822,7 @@ SCIP_DECL_BRANCHFREE(branchFreeCompBnd)
 
    branchruledata = SCIPbranchruleGetData(branchrule);
 
-#ifdef STATS
+#ifdef COMPBND_STATS
    if( branchruledata->statsfile != NULL )
    {
       fclose(branchruledata->statsfile);
@@ -2069,7 +2069,7 @@ static
 SCIP_DECL_BRANCHINIT(branchInitCompBnd)
 {
    SCIP* origscip;
-#ifdef STATS
+#ifdef COMPBND_STATS
    SCIP_BRANCHRULEDATA* branchruledata;
    SCIP_Bool stabilization_tree;
 #endif
@@ -2078,7 +2078,7 @@ SCIP_DECL_BRANCHINIT(branchInitCompBnd)
    assert(branchrule != NULL);
    assert(origscip != NULL);
 
-#ifdef STATS
+#ifdef COMPBND_STATS
    branchruledata = SCIPbranchruleGetData(branchrule);
    assert(branchruledata != NULL);
    SCIP_CALL( SCIPgetBoolParam(origscip, "pricing/masterpricer/stabilizationtree", &stabilization_tree) );
@@ -2090,7 +2090,7 @@ SCIP_DECL_BRANCHINIT(branchInitCompBnd)
          branchDeactiveMasterCompBnd, branchPropMasterCompBnd, branchMasterSolvedCompBnd, branchDataDeleteCompBnd,
          branchNewColCompBnd, branchGetMastercutCompBnd) );
 
-#ifdef STATS
+#ifdef COMPBND_STATS
    /* determine the filename */
    // "stats_compbnd" + (if useMaxRangeMidrangeHeuristic && useMostDistinctMedianHeuristic ? "" : (if useMaxRangeMidrangeHeuristic ? "-mrm" : "-mdm")) + (if stabilization_tree ? "+dvs" : "") + ".csv"
 
