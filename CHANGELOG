@@ -6,18 +6,26 @@ New features:
 -------------
 
 - Solver plugin for HiGHS. Allows user to select HiGHS as a pricing problem solver.
+- new pricing solver ("gcg") that calls GCG to solve (structured) pricing problems
+- new (JSON formatted) decomposition file format ("jdec") supporting nested/recursive decompositions
 - generic approach to handle cuts and branching constraints in the master problem with no couterpart in the original problem
 - created a pricing variable type for variables not corresponding to any original variable, inferred by mastercuts
 - automatic mastervariable synchronization across the entire search tree through history-tracking
 - component bound branching rule
-- new pricing solver ("gcg") that calls GCG to solve (structured) pricing problems
-- new (JSON formatted) decomposition file format ("jdec") supporting nested/recursive decompositions
 
 New/modified/removed structures, defines, and classes:
 ---------------------------
 
 - removed struct 'PARTIALDECOMP_WRAPPER'
 - added struct 'PARTIALDECOMP_C' used by the C interface
+- added struct 'GCG_INFERREDPRICINGVARDATA'
+- added struct 'GCG_PRICINGMODIFICATION'
+- added enum 'GCG_MASTERCUTTYPE'
+- added struct 'GCG_MASTERCUTCUT'
+- added struct 'GCG_MASTERCUTDATA'
+- added struct 'GCG_VARHISTORY'
+- added struct 'GCG_VARHISTORYBUFFER'
+- added type 'GCG_VARTYPE_INFERREDPRICING'
 
 New/modified/removed API functions:
 ---------------------------
@@ -50,51 +58,25 @@ New/modified/removed API functions:
 - removed 'GCGpricestoreRemoveInefficaciousCols', 'GCGpricestoreGetTime'
 - changed 'GCGcolpoolAddCol', 'GCGcolpoolPrice'
 - added 'GCGhashGetKeyCol', 'GCGhashKeyEqCol', 'GCGhashKeyValCol'
-- Added function 'GCGcreateInferredPricingVar'
-- Added function 'GCGvarIsInferredPricing'
-- Added function 'GCGpricingmodificationCreate'
-- Added function 'GCGmastercutCreateFromCons'
-- Added function 'GCGmastercutCreateFromRow'
-- Added function 'GCGmastercutFree'
-- Added function 'GCGrelaxBranchNewCol'
-- Added function 'GCGrelaxBranchGetMasterCut'
-- Added function 'GCGrelaxBranchGetAllActiveMasterCuts'
-- Added callback 'GCG_DECL_BRANCHNEWCOL' to 'GCG_BRANCHRULE'
-- Added callback 'GCG_DECL_BRANCHGETMASTERCUT' to 'GCG_BRANCHRULE'
-- Added parameter 'GCG_DECL_BRANCHNEWCOL ((*branchnewcol));' to 'GCGrelaxIncludeBranchrule'
-- Added parameter 'GCG_DECL_BRANCHGETMASTERCUT((*branchgetmastercut))' to 'GCGrelaxIncludeBranchrule'
-
-
-Renamed API functions:
----------------------------
-
-- Moved function 'SCIPincludeSepaMaster' to 'SCIPincludeSepaOriginal'
-- Moved function 'GCGsepaGetOrigcuts' to 'GCGsepaGetOriginalSepaOrigcuts'
-- Moved function 'GCGsepaGetNCuts' to 'GCGsepaGetNOriginalSepaCuts'
-- Moved function 'GCGsepaGetMastercuts' to 'GCGsepaGetOriginalSepaMastercuts'
-- Moved function 'GCGsepaAddMastercuts' to 'GCGsepaAddOriginalSepaCuts'
-- Moved function 'GCGsepaOrigcutExists' to 'GCGsepaOriginalSepaOrigcutExists'
-
-New/changed parameters:
------------------------
-
-- renamed parameter 'pricing/masterpricer/threads' to 'pricing/masterpricer/nthreads' (default value: 1)
-- Moved parameter 'sepa/master/enable' to 'sepa/original/enable'
-- Moved parameter 'sepa/master/paramsetting' to 'sepa/original/paramsetting'
-- Added parameter 'branching/compbnd/useMDMH'
-- Added parameter 'branching/compbnd/useMRMH'
-
-Added structures and defines:
----------------------------
-
-- Added struct 'GCG_INFERREDPRICINGVARDATA'
-- Added struct 'GCG_PRICINGMODIFICATION'
-- Added enum 'GCG_MASTERCUTTYPE'
-- Added struct 'GCG_MASTERCUTCUT'
-- Added struct 'GCG_MASTERCUTDATA'
-- Added struct 'GCG_VARHISTORY'
-- ADDED struct 'GCG_VARHISTORYBUFFER'
-- Added type 'GCG_VARTYPE_INFERREDPRICING'
+- added function 'GCGcreateInferredPricingVar'
+- added function 'GCGvarIsInferredPricing'
+- added function 'GCGpricingmodificationCreate'
+- added function 'GCGmastercutCreateFromCons'
+- added function 'GCGmastercutCreateFromRow'
+- added function 'GCGmastercutFree'
+- added function 'GCGrelaxBranchNewCol'
+- added function 'GCGrelaxBranchGetMasterCut'
+- added function 'GCGrelaxBranchGetAllActiveMasterCuts'
+- added callback 'GCG_DECL_BRANCHNEWCOL' to 'GCG_BRANCHRULE'
+- added callback 'GCG_DECL_BRANCHGETMASTERCUT' to 'GCG_BRANCHRULE'
+- added parameter 'GCG_DECL_BRANCHNEWCOL ((*branchnewcol));' to 'GCGrelaxIncludeBranchrule'
+- added parameter 'GCG_DECL_BRANCHGETMASTERCUT((*branchgetmastercut))' to 'GCGrelaxIncludeBranchrule'
+- moved function 'SCIPincludeSepaMaster' to 'SCIPincludeSepaOriginal'
+- moved function 'GCGsepaGetOrigcuts' to 'GCGsepaGetOriginalSepaOrigcuts'
+- moved function 'GCGsepaGetNCuts' to 'GCGsepaGetNOriginalSepaCuts'
+- moved function 'GCGsepaGetMastercuts' to 'GCGsepaGetOriginalSepaMastercuts'
+- moved function 'GCGsepaAddMastercuts' to 'GCGsepaAddOriginalSepaCuts'
+- moved function 'GCGsepaOrigcutExists' to 'GCGsepaOriginalSepaOrigcutExists'
 
 Command line interface
 -----------------------
@@ -104,20 +86,20 @@ Command line interface
 Code cleanup:
 -------------
 
-- Moved file 'sepa_master.c' to 'sepa_original.c'
-- Moved file 'sepa_master.h' to 'sepa_original.h'
-- Moved references of 'sepa_master' to 'sepa_original'
-
-Code cleanup:
--------------
-
 - the explore dialog accesses (partial) decompositions now directly using pointers instead of their ids
 - symmetry information stored for a decomposition is now used by the relaxator without creating intermediate varmaps
+- moved file 'sepa_master.c' to 'sepa_original.c'
+- moved file 'sepa_master.h' to 'sepa_original.h'
+- moved references of 'sepa_master' to 'sepa_original'
 
 New/changed parameters:
 -----------------------
 
 - renamed parameter 'pricing/masterpricer/threads' to 'pricing/masterpricer/nthreads' (default value: 1)
+- moved parameter 'sepa/master/enable' to 'sepa/original/enable'
+- moved parameter 'sepa/master/paramsetting' to 'sepa/original/paramsetting'
+- mdded parameter 'branching/compbnd/useMDMH'
+- added parameter 'branching/compbnd/useMRMH'
 
 Miscellaneous
 -------------
