@@ -1633,7 +1633,6 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercuts(
 
    SCIP_Real* genericmastercutcoeffs;
    SCIP_Real* genericmastercutbounds;
-   int ngenericmastercuts;
 
    assert(scip_ != NULL);
    assert(solvars != NULL);
@@ -1647,10 +1646,15 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercuts(
    SCIP_CALL( GCGrelaxBranchGetAllActiveMasterCuts(scip_, &branchrules, &branchdata, &branchmastercutdata, &nbranchmastercuts) );
    assert(nbranchmastercuts == 0 || branchmastercutdata != NULL);
 
-   /* allocate arrays */
-   ngenericmastercuts = nbranchmastercuts;
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &genericmastercutcoeffs, ngenericmastercuts) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &genericmastercutbounds, ngenericmastercuts) );
+   if( nbranchmastercuts == 0 )
+   {
+      GCGcolSetGenericMastercuts(gcgcol, NULL, NULL, 0);
+      return SCIP_OKAY;
+   }
+
+   /* allocate arrays for col */
+   SCIP_CALL( SCIPallocClearBlockMemoryArray(GCGcolGetPricingProb(gcgcol), &genericmastercutcoeffs, nbranchmastercuts) );
+   SCIP_CALL( SCIPallocClearBlockMemoryArray(GCGcolGetPricingProb(gcgcol), &genericmastercutbounds, nbranchmastercuts) );
 
    /* compute coef of the variable in the cuts and add it to the cuts */
    for( i = 0; i < nbranchmastercuts; i++ )
@@ -1689,10 +1693,7 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercuts(
       genericmastercutbounds[i] = bound;
    }
 
-   GCGcolSetGenericMastercuts(gcgcol, genericmastercutcoeffs, genericmastercutbounds, ngenericmastercuts);
-
-   SCIPfreeBlockMemoryArrayNull(scip_, &genericmastercutcoeffs, ngenericmastercuts);
-   SCIPfreeBlockMemoryArrayNull(scip_, &genericmastercutbounds, ngenericmastercuts);
+   GCGcolSetGenericMastercuts(gcgcol, genericmastercutcoeffs, genericmastercutbounds, nbranchmastercuts);
 
    return SCIP_OKAY;
 }

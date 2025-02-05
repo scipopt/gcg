@@ -273,7 +273,9 @@ SCIP_RETCODE GCGcolUpdateOriginalSepaMastercuts(
    int                  nneworiginalsepamastercuts/**< new number of master cut coefficients */
    );
 
-/** set generic mastercut coefficients information of column in the master problem */
+/** set generic mastercut coefficients information of column in the master problem
+ * @note the arrays will be freed by the column, they must be allocated using the pricingscip the column belongs to
+ */
 GCG_EXPORT
 SCIP_RETCODE GCGcolSetGenericMastercuts(
    GCG_COL*             gcgcol,             /**< gcg column structure */

@@ -635,7 +635,9 @@ SCIP_RETCODE GCGcolUpdateOriginalSepaMastercuts(
    return SCIP_OKAY;
 }
 
-/** set generic mastercut coefficients information of column in the master problem */
+/** set generic mastercut coefficients information of column in the master problem
+ * @note the arrays will be freed by the column, they must be allocated using the pricingscip the column belongs to
+ */
 GCG_EXPORT
 SCIP_RETCODE GCGcolSetGenericMastercuts(
    GCG_COL*             gcgcol,             /**< gcg column structure */
@@ -644,32 +646,24 @@ SCIP_RETCODE GCGcolSetGenericMastercuts(
    int                  ngenericmastercuts  /**< number of master cut coefficients */
    )
 {
-   int i;
-
    SCIPdebugMessage("Col set master coefs\n");
 
    if( gcgcol->ngenericmastercuts > 0 )
    {
       SCIPfreeBlockMemoryArrayNull(gcgcol->pricingprob, &(gcgcol->genericmastercutcoefs), gcgcol->ngenericmastercuts);
       SCIPfreeBlockMemoryArrayNull(gcgcol->pricingprob, &(gcgcol->genericmastercutbounds), gcgcol->ngenericmastercuts);
-      gcgcol->ngenericmastercuts = 0;
    }
+
+   gcgcol->ngenericmastercuts = ngenericmastercuts;
+
+   assert(gcgcol->genericmastercutcoefs == NULL);
+   assert(gcgcol->genericmastercutbounds == NULL);
 
    if( ngenericmastercuts == 0 )
       return SCIP_OKAY;
 
-   gcgcol->ngenericmastercuts = ngenericmastercuts;
-   SCIP_CALL( SCIPallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->genericmastercutcoefs), ngenericmastercuts) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->genericmastercutbounds), ngenericmastercuts) );
-
-   for( i = 0; i < ngenericmastercuts; ++i )
-   {
-      SCIP_Real coef = genericmastercuts[i];
-      gcgcol->genericmastercutcoefs[i] = coef;
-
-      SCIP_Real bound = genericmastercutbounds[i];
-      gcgcol->genericmastercutbounds[i] = bound;
-   }
+   gcgcol->genericmastercutcoefs = genericmastercuts;
+   gcgcol->genericmastercutbounds = genericmastercutbounds;
 
    return SCIP_OKAY;
 }
