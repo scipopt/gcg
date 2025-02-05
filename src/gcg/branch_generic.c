@@ -114,48 +114,14 @@ typedef struct GCG_Record GCG_RECORD;
 /** computes the generator of mastervar for the entry in origvar
  * @return entry of the generator corresponding to origvar */
 static
-SCIP_Real getGeneratorEntryCol(
-   SCIP_VAR**            solvars,            /**< column solution variables */
-   SCIP_Real*            solvals,            /**< column solution values */
-   int                   nsolvars,           /**< number of column solution variables */
-   SCIP_VAR*             origvar             /**< corresponding origvar */
-   )
-{
-   int i;
-
-   assert(origvar != NULL);
-
-   for( i = 0; i < nsolvars; ++i )
-   {
-      if( SCIPvarCompare(solvars[i], origvar) == 0 )
-      {
-         return solvals[i];
-      }
-   }
-
-   return 0.0;
-}
-
-/** computes the generator of mastervar for the entry in origvar
- * @return entry of the generator corresponding to origvar */
-static
 SCIP_Real getGeneratorEntry(
    SCIP_VAR*             mastervar,          /**< current mastervariable */
    SCIP_VAR*             origvar             /**< corresponding origvar */
    )
 {
-   SCIP_VAR** origvars;
-   SCIP_Real* origvals;
-   int norigvars;
+   SCIP_Real entry = GCGmasterVarGetOrigval(mastervar, origvar);
 
-   assert(mastervar != NULL);
-   assert(origvar != NULL);
-
-   origvars = GCGmasterVarGetOrigvars(mastervar);
-   norigvars = GCGmasterVarGetNOrigvars(mastervar);
-   origvals = GCGmasterVarGetOrigvals(mastervar);
-
-   return getGeneratorEntryCol(origvars, origvals, norigvars, origvar);
+   return entry != SCIP_INVALID ? entry : 0.;
 }
 
 /** determine the coefficient for a column */
@@ -163,9 +129,7 @@ static
 SCIP_Real getColCoefficient(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_BRANCHDATA*       branchdata,         /**< branching data structure where the variable should be added */
-   SCIP_VAR**            solvars,            /**< column solution variables */
-   SCIP_Real*            solvals,            /**< column solution values */
-   int                   nsolvars,           /**< number of column solution variables */
+   SCIP_VAR*             mastervar,          /**< cmaster variable */
    int                   probnr              /**< number of the pricing problem */
    )
 {
@@ -186,7 +150,7 @@ SCIP_Real getColCoefficient(
    {
       SCIP_Real generatorentry;
 
-      generatorentry = getGeneratorEntryCol(solvars, solvals, nsolvars, GCGbranchGenericBranchdataGetConsS(branchdata)[p].component);
+      generatorentry = getGeneratorEntry(mastervar, GCGbranchGenericBranchdataGetConsS(branchdata)[p].component);
 
       if( GCGbranchGenericBranchdataGetConsS(branchdata)[p].sense == GCG_COMPSENSE_GE )
       {
@@ -237,7 +201,7 @@ SCIP_RETCODE addVarToMasterbranch(
 
    *added = FALSE;
 
-   coef = getColCoefficient(scip, branchdata, origvars, origvals, norigvars, GCGvarGetBlock(mastervar));
+   coef = getColCoefficient(scip, branchdata, mastervar, GCGvarGetBlock(mastervar));
 
    if( !SCIPisZero(scip, coef) )
    {

@@ -290,18 +290,9 @@ SCIP_Real getGeneratorEntry(
    SCIP_VAR*             origvar             /**< corresponding origvar */
    )
 {
-   SCIP_VAR** origvars;
-   SCIP_Real* origvals;
-   int norigvars;
+   SCIP_Real entry = GCGmasterVarGetOrigval(mastervar, origvar);
 
-   assert(mastervar != NULL);
-   assert(origvar != NULL);
-
-   origvars = GCGmasterVarGetOrigvars(mastervar);
-   norigvars = GCGmasterVarGetNOrigvars(mastervar);
-   origvals = GCGmasterVarGetOrigvals(mastervar);
-
-   return getGeneratorEntryCol(origvars, origvals, norigvars, origvar);
+   return entry != SCIP_INVALID ? entry : 0.;
 }
 
 /** whether a master variable is in the component bound sequence or not */
