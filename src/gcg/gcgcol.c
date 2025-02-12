@@ -119,6 +119,7 @@ SCIP_RETCODE GCGcreateGcgCol(
 
       assert((GCGvarIsPricing(origvar) && GCGpricingVarGetNOrigvars(origvar) > 0 && GCGpricingVarGetOrigvars(origvar)[0] != NULL) || GCGvarIsInferredPricing(origvar));
 
+      SCIPcaptureVar(pricingprob, origvar);
       (*gcgcol)->vars[nnonz] = origvar;
       (*gcgcol)->vals[nnonz] = origval;
       ++nnonz;
@@ -143,14 +144,15 @@ void GCGfreeGcgCol(
    GCG_COL**            gcgcol              /**< pointer to store gcg column */
    )
 {
+   int i;
    assert(gcgcol != NULL);
    assert(*gcgcol != NULL);
 
    /* WARNING: this function has to be threadsafe!*/
 
-   /* todo: release vars? */
+   for( i = 0; i < (*gcgcol)->nvars; ++i )
+      SCIPreleaseVar((*gcgcol)->pricingprob, &(*gcgcol)->vars[i]);
    assert((*gcgcol)->nvars == 0 || (*gcgcol)->vars != NULL);
-
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vars, (*gcgcol)->maxvars);
    assert((*gcgcol)->nvars == 0 || (*gcgcol)->vals != NULL);
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vals, (*gcgcol)->maxvars);
