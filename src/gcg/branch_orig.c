@@ -706,6 +706,9 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
    assert(scip != NULL);
    assert(branchdata != NULL);
 
+   if( !origbranch && !force )
+      return SCIP_OKAY;
+
    if( *branchdata == NULL )
       return SCIP_OKAY;
 

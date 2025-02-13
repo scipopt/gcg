@@ -112,8 +112,10 @@ typedef enum GCG_BoundType GCG_BOUNDTYPE;
  *  input:
  *    scip            : SCIP main data structure of the original problem
  *    branchdata      : pointer to the branching data to free
+ *    origbranch      : true iff an origbranch triggered this call
+ *    force           : branch data must be deleted if true
  */
-#define GCG_DECL_BRANCHDATADELETE(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA** branchdata)
+#define GCG_DECL_BRANCHDATADELETE(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA** branchdata, SCIP_Bool origbranch, SCIP_Bool force)
 
 /** notify the branching rule that a new mastervariable was created while this node was active
  *

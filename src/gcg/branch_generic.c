@@ -1899,6 +1899,9 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteGeneric)
    assert(scip != NULL);
    assert(branchdata != NULL);
 
+   if( origbranch && !force )
+      return SCIP_OKAY;
+
    if( *branchdata == NULL )
    {
       SCIPdebugMessage("branchDataDeleteGeneric: cannot delete empty branchdata\n");

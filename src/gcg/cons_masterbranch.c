@@ -1861,13 +1861,12 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
    assert((*consdata)->origcons == NULL || GCGconsOrigbranchGetMastercons((*consdata)->origcons) == cons);
 
-   /* delete branchdata if the corresponding origcons has already been deleted or if created by the generic branchrule;
-    * otherwise, it will be deleted by the corresponding origbranch constraint
-    */
-   if( (*consdata)->branchdata != NULL && ((*consdata)->origcons == NULL || GCGisBranchruleGeneric((*consdata)->branchrule)) )
+   /* allow the correspondig branchrule to delete the branch data */
+   if( (*consdata)->branchdata != NULL && (*consdata)->branchrule != NULL )
    {
-      SCIP_CALL( GCGrelaxBranchDataDelete(origscip, (*consdata)->branchrule, &(*consdata)->branchdata) );
-      if( (*consdata)->origcons != NULL )
+      SCIP_Bool force = ((*consdata)->origcons == NULL);
+      SCIP_CALL( GCGrelaxBranchDataDelete(origscip, (*consdata)->branchrule, &(*consdata)->branchdata, FALSE, force) );
+      if( (*consdata)->origcons != NULL && (*consdata)->branchdata == NULL )
          GCGconsOrigbranchSetBranchdata((*consdata)->origcons, NULL);
    }
 
@@ -2582,6 +2581,19 @@ GCG_BRANCHDATA* GCGconsMasterbranchGetBranchdata(
    assert(consdata != NULL);
 
    return consdata->branchdata;
+}
+
+void GCGconsMasterbranchSetBranchdata(
+   SCIP_CONS*            cons,               /**< masterbranch constraint for which the branching data is requested */
+   GCG_BRANCHDATA*       branchdata          /**< branching data */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+   assert(consdata != NULL);
+
+   consdata->branchdata = branchdata;
 }
 
 /** returns the branching rule of the constraint */

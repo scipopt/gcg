@@ -1981,6 +1981,9 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteCompBnd)
    assert(GCGisOriginal(scip));
    assert(branchdata != NULL);
 
+   if( origbranch && !force )
+      return SCIP_OKAY;
+
    masterscip = GCGgetMasterprob(scip);
    assert(masterscip != NULL);
 

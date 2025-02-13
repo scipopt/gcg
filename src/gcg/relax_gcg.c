@@ -3725,7 +3725,9 @@ SCIP_RETCODE GCGrelaxBranchPropMaster(
 SCIP_RETCODE GCGrelaxBranchDataDelete(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
-   GCG_BRANCHDATA**      branchdata          /**< data representing the branching decision */
+   GCG_BRANCHDATA**      branchdata,         /**< data representing the branching decision */
+   SCIP_Bool             origbranch,         /**< true iff an origbranch triggered this call */
+   SCIP_Bool             force               /**< branch data must be deleted if true */
    )
 {
    SCIP_RELAX* relax;
@@ -3749,7 +3751,7 @@ SCIP_RETCODE GCGrelaxBranchDataDelete(
       {
          /* call branchrule data deletion method of the branching rule */
          if( relaxdata->branchrules[i]->branchdatadelete != NULL )
-            SCIP_CALL( relaxdata->branchrules[i]->branchdatadelete(scip, branchdata) );
+            SCIP_CALL( relaxdata->branchrules[i]->branchdatadelete(scip, branchdata, origbranch, force) );
          else
          {
             if( *branchdata != NULL )

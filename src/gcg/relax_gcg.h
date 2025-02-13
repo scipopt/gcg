@@ -114,7 +114,9 @@ GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchDataDelete(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
-   GCG_BRANCHDATA**      branchdata          /**< data representing the branching decision */
+   GCG_BRANCHDATA**      branchdata,         /**< data representing the branching decision */
+   SCIP_Bool             origbranch,         /**< true iff an origbranch triggered this call */
+   SCIP_Bool             force               /**< branch data must be deleted if true */
    );
 
 /** notifies the branching rule that a new mastervariable was created while this node was active */
