@@ -5,6 +5,8 @@
 Bug fixes
 ---------
 
+- store pending global bound changes only once (for the same variable) and update older ones
+
 
 @section RN371 GCG 3.7.1
 *************************
