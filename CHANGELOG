@@ -66,6 +66,15 @@ Miscellaneous
 
 
 @page RN37 Release notes for GCG 3.7
+@section RN372 GCG 3.7.2
+*************************
+
+Bug fixes
+---------
+
+- store pending global bound changes only once (for the same variable) and update older ones
+
+
 @section RN371 GCG 3.7.1
 *************************
 
