@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -131,7 +131,8 @@ struct SCIP_ConshdlrData
    SCIP_VAR**            pendingvars;        /**< pricing variables or master variable copies corresponding to pending bound changes (global bound changes) */
    SCIP_BOUNDTYPE*       pendingbndtypes;    /**< types of the pending bound changes (global bound changes) */
    SCIP_Real*            pendingnewbnds;     /**< new bounds corresponding to pending bound changes (global bound changes) */
-   SCIP_Real*            pendingoldbnds;     /**< old bounds corresponding to pending bound changes (global bound changes) */
+   SCIP_HASHMAP*         pendingvarmaplb;    /**< maps vars to indices of the pendingvars array for global lower bound changes */
+   SCIP_HASHMAP*         pendingvarmapub;    /**< maps vars to indices of the pendingvars array for global upper bound changes */
    int                   npendingbnds;       /**< number of pending bound changes (global bound changes) */
    SCIP_Bool             pendingbndsactivated; /**< were pending bound changes already activated? */
    int                   maxpendingbnds;     /**< size of the array corresponding to pending bound changes */
@@ -379,6 +380,8 @@ SCIP_RETCODE addPendingBndChg(
 {
    SCIP_CONSHDLR*     conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP_HASHMAP* pendingvarmap;
+   int idx;
 
    assert(scip != NULL);
 
@@ -395,24 +398,34 @@ SCIP_RETCODE addPendingBndChg(
    assert(conshdlrdata != NULL);
    assert((conshdlrdata->npendingbnds > 0) || conshdlrdata->pendingbndsactivated);
 
-   /* reallocate memory if needed */
-   if( conshdlrdata->npendingbnds >= conshdlrdata->maxpendingbnds )
+   pendingvarmap = (boundtype == SCIP_BOUNDTYPE_LOWER) ? conshdlrdata->pendingvarmaplb : conshdlrdata->pendingvarmapub;
+   idx = SCIPhashmapGetImageInt(pendingvarmap, var);
+   if( idx != INT_MAX )
    {
-      int newsize = SCIPcalcMemGrowSize(scip, conshdlrdata->npendingbnds+5);
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrdata->pendingvars), conshdlrdata->maxpendingbnds, newsize) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrdata->pendingbndtypes), conshdlrdata->maxpendingbnds, newsize) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrdata->pendingoldbnds), conshdlrdata->maxpendingbnds, newsize) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrdata->pendingnewbnds), conshdlrdata->maxpendingbnds, newsize) );
-      conshdlrdata->maxpendingbnds = newsize;
+      assert(conshdlrdata->pendingvars[idx] == var);
+      assert(conshdlrdata->pendingbndtypes[idx] == boundtype);
+      conshdlrdata->pendingnewbnds[idx] = newbound;
    }
+   else
+   {
+      /* reallocate memory if needed */
+      if( conshdlrdata->npendingbnds >= conshdlrdata->maxpendingbnds )
+      {
+         int newsize = SCIPcalcMemGrowSize(scip, conshdlrdata->npendingbnds+5);
+         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrdata->pendingvars), conshdlrdata->maxpendingbnds, newsize) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrdata->pendingbndtypes), conshdlrdata->maxpendingbnds, newsize) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(conshdlrdata->pendingnewbnds), conshdlrdata->maxpendingbnds, newsize) );
+         conshdlrdata->maxpendingbnds = newsize;
+      }
 
-   /* store pending bound change */
-   conshdlrdata->pendingvars[conshdlrdata->npendingbnds] = var;
-   conshdlrdata->pendingbndtypes[conshdlrdata->npendingbnds] = boundtype;
-   conshdlrdata->pendingoldbnds[conshdlrdata->npendingbnds] = oldbound;
-   conshdlrdata->pendingnewbnds[conshdlrdata->npendingbnds] = newbound;
-   conshdlrdata->npendingbnds++;
-   conshdlrdata->pendingbndsactivated = FALSE;
+      /* store pending bound change */
+      conshdlrdata->pendingvars[conshdlrdata->npendingbnds] = var;
+      conshdlrdata->pendingbndtypes[conshdlrdata->npendingbnds] = boundtype;
+      conshdlrdata->pendingnewbnds[conshdlrdata->npendingbnds] = newbound;
+      SCIP_CALL( SCIPhashmapInsertInt(pendingvarmap, var, conshdlrdata->npendingbnds) );
+      conshdlrdata->npendingbnds++;
+      conshdlrdata->pendingbndsactivated = FALSE;
+   }
 
    return SCIP_OKAY;
 }
@@ -452,7 +465,7 @@ SCIP_Bool checkAggregatedGlobalBounds(
          SCIP_Real identbound = bndtype == SCIP_BOUNDTYPE_UPPER ? SCIPvarGetUbGlobal(identvars[i]) : SCIPvarGetLbGlobal(identvars[i]);
          if( !SCIPisEQ(scip, identbound, bound) )
          {
-            SCIPerrorMessage("Var <%s> has new global %s bound %g, but identical var <%s> has %g -- don't know how to handle!\n",
+            SCIPwarningMessage(scip, "Var <%s> has new global %s bound %g, but identical var <%s> has %g -- don't know how to handle!\n",
                SCIPvarGetName(bndvar), bndtype == SCIP_BOUNDTYPE_UPPER ? "upper" : "lower",
                   bound, SCIPvarGetName(identvars[i]), identbound);
             identical = FALSE;
@@ -682,6 +695,8 @@ SCIP_RETCODE applyGlobalBndchgsToPricedMastervars(
       }
       conshdlrdata->pendingbndsactivated = TRUE;
       conshdlrdata->npendingbnds = 0;
+      SCIPhashmapRemoveAll(conshdlrdata->pendingvarmaplb);
+      SCIPhashmapRemoveAll(conshdlrdata->pendingvarmapub);
 
       SCIPdebugMessage("Finished handling of pending global bound changes: %d changed bounds\n", *propcount);
    }
@@ -899,7 +914,7 @@ SCIP_Bool checkAggregatedLocalBounds(
          {
             if( !SCIPisEQ(scip, identbounds[j], identbounds[0]) )
             {
-               SCIPerrorMessage("Var <%s> has new local %s bound %g, but identical var <%s> has %g -- don't know how to handle!\n",
+               SCIPwarningMessage(scip, "Var <%s> has new local %s bound %g, but identical var <%s> has %g -- don't know how to handle!\n",
                   SCIPvarGetName(bndvar), bndtype == SCIP_BOUNDTYPE_UPPER ? "upper" : "lower",
                      identbounds[0], SCIPvarGetName(identvars[j]), identbounds[j]);
                identical = FALSE;
@@ -935,7 +950,7 @@ SCIP_Bool checkAggregatedLocalBounds(
       /* Check if the bounds are equal */
       if( !SCIPisEQ(scip, bound, reprbound) )
       {
-         SCIPerrorMessage("Var <%s> has new local %s bound %g, but representative <%s> has %g -- don't know how to handle!\n",
+         SCIPwarningMessage(scip, "Var <%s> has new local %s bound %g, but representative <%s> has %g -- don't know how to handle!\n",
             SCIPvarGetName(bndvar), bndtype == SCIP_BOUNDTYPE_UPPER ? "upper" : "lower",
             bound, SCIPvarGetName(identvars[0]), reprbound);
       }
@@ -1550,8 +1565,9 @@ SCIP_DECL_CONSINIT(consInitMasterbranch)
    conshdlrdata->pendingbndsactivated = TRUE;
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrdata->pendingvars), conshdlrdata->maxpendingbnds) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrdata->pendingbndtypes), conshdlrdata->maxpendingbnds) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrdata->pendingoldbnds), conshdlrdata->maxpendingbnds) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrdata->pendingnewbnds), conshdlrdata->maxpendingbnds) );
+   SCIP_CALL( SCIPhashmapCreate(&conshdlrdata->pendingvarmaplb, SCIPblkmem(scip), conshdlrdata->maxpendingbnds) );
+   SCIP_CALL( SCIPhashmapCreate(&conshdlrdata->pendingvarmapub, SCIPblkmem(scip), conshdlrdata->maxpendingbnds) );
 
    conshdlrdata->maxblocknum = SCIPcalcMemGrowSize(scip, GCGgetNPricingprobs(GCGmasterGetOrigprob(scip)));
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(conshdlrdata->collectedbndvars),  conshdlrdata->maxblocknum) );
@@ -1616,8 +1632,9 @@ SCIP_DECL_CONSEXIT(consExitMasterbranch)
    SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->stack), conshdlrdata->maxstacksize);
    SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->pendingvars), conshdlrdata->maxpendingbnds);
    SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->pendingbndtypes), conshdlrdata->maxpendingbnds);
-   SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->pendingoldbnds), conshdlrdata->maxpendingbnds);
    SCIPfreeBlockMemoryArray(scip, &(conshdlrdata->pendingnewbnds), conshdlrdata->maxpendingbnds);
+   SCIPhashmapFree(&conshdlrdata->pendingvarmaplb);
+   SCIPhashmapFree(&conshdlrdata->pendingvarmapub);
 
    for( i = 0; i < conshdlrdata->maxblocknum; ++i )
    {

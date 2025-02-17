@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -347,17 +347,22 @@ template <class T>
 SCIP_RETCODE HypercolGraph<T>::createPartialdecFromPartition(
    PARTIALDECOMP**     firstpartialdec,
    PARTIALDECOMP**     secondpartialdec,
-   DETPROBDATA*  detprobdata
+   DETPROBDATA*        detprobdata
    )
 {
    SCIP_HASHMAP* constoblock;
    SCIP_CONS** conss;
    int nblocks;
 
-   std::vector<int> partition = this->getPartition();
-   conss = SCIPgetConss(this->scip_);
+   std::vector<int> partition;
    std::vector<bool> isEmptyBlock;
    std::vector<int> nEmptyBlocksBefore;
+
+   if( firstpartialdec == NULL && secondpartialdec == NULL )
+      return SCIP_INVALIDDATA;
+   
+   partition = this->getPartition();
+   conss = SCIPgetConss(this->scip_);
 
    SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
 
@@ -413,7 +418,7 @@ SCIP_RETCODE HypercolGraph<T>::createPartialdecFromPartition(
    PARTIALDECOMP*      oldpartialdec,
    PARTIALDECOMP**     firstpartialdec,
    PARTIALDECOMP**     secondpartialdec,
-   DETPROBDATA*  detprobdata
+   DETPROBDATA*        detprobdata
    )
 {
    SCIP_HASHMAP* constoblock;
@@ -421,11 +426,18 @@ SCIP_RETCODE HypercolGraph<T>::createPartialdecFromPartition(
    std::vector<bool> isEmptyBlock;
    std::vector<int> nEmptyBlocksBefore;
    int nEmptyBlocks = 0;
+   
+   assert(oldpartialdec != NULL);
 
-   if(this->nconss == 0)
+   if( firstpartialdec == NULL && secondpartialdec == NULL )
+      return SCIP_INVALIDDATA;
+
+   if( this->nconss == 0 )
    {
-      (*firstpartialdec) = NULL;
-      (*secondpartialdec) = NULL;
+      if( firstpartialdec != NULL )
+         (*firstpartialdec) = NULL;
+      if( secondpartialdec != NULL )
+         (*secondpartialdec) = NULL;
       return SCIP_OKAY;
    }
 
@@ -436,16 +448,16 @@ SCIP_RETCODE HypercolGraph<T>::createPartialdecFromPartition(
    vector<bool> conssBool(oldpartialdec->getNConss(), false); /**< true, if the cons will be part of the graph */
    bool found;
 
-   for(int c = 0; c < oldpartialdec->getNOpenconss(); ++c)
+   for( int c = 0; c < oldpartialdec->getNOpenconss(); ++c )
    {
       int cons = oldpartialdec->getOpenconss()[c];
       found = false;
-      for(int v = 0; v < oldpartialdec->getNOpenvars() && !found; ++v)
+      for( int v = 0; v < oldpartialdec->getNOpenvars() && !found; ++v )
       {
          int var = oldpartialdec->getOpenvars()[v];
-         for(int i = 0; i < detprobdata->getNVarsForCons(cons) && !found; ++i)
+         for( int i = 0; i < detprobdata->getNVarsForCons(cons) && !found; ++i )
          {
-            if(var == detprobdata->getVarsForCons(cons)[i])
+            if( var == detprobdata->getVarsForCons(cons)[i] )
             {
                conssBool[cons] = true;
                found = true;
@@ -454,10 +466,10 @@ SCIP_RETCODE HypercolGraph<T>::createPartialdecFromPartition(
       }
    }
 
-   for(int c = 0; c < oldpartialdec->getNOpenconss(); ++c)
+   for( int c = 0; c < oldpartialdec->getNOpenconss(); ++c )
    {
       int cons = oldpartialdec->getOpenconss()[c];
-      if(conssBool[cons])
+      if( conssBool[cons] )
          conssForGraph.push_back(cons);
    }
 
@@ -474,12 +486,12 @@ SCIP_RETCODE HypercolGraph<T>::createPartialdecFromPartition(
        isEmptyBlock[consblock-1] = false;
    }
 
-   for(int b1 = 0; b1 < nblocks; ++b1)
+   for( int b1 = 0; b1 < nblocks; ++b1 )
    {
        if (isEmptyBlock[b1] )
        {
            nEmptyBlocks++;
-           for(int b2 = b1+1; b2 < nblocks; ++b2)
+           for( int b2 = b1+1; b2 < nblocks; ++b2 )
                nEmptyBlocksBefore[b2]++;
        }
    }
