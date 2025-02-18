@@ -40,10 +40,10 @@
 /* #define SCIP_DEBUG */
 /* #define PRINTDUALSOLS */
 
+#include "pub_mastercutdata.h"
 #include "mastercutdata.h"
 #include "misc_varhistory.h"
 #include "pub_gcgvar.h"
-#include "struct_vardata.h"
 #include "type_branchgcg.h"
 #include "type_mastercutdata.h"
 #include "type_pricingprob.h"
@@ -2081,8 +2081,8 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
    GCG_BRANCHDATA** activebranchdata = NULL;
    GCG_MASTERCUTDATA** branchmastercutdata = NULL;
    int nbranchmastercutdata;
-   SCIP_CONS* tmpCons = NULL;
-   SCIP_ROW* tmpRow = NULL;
+   SCIP_CONS* mastercutcons;
+   SCIP_ROW* mastercutrow;
 
    SCIP_Real* stabredcosts = NULL;
 
@@ -2424,19 +2424,19 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       {
       case GCG_MASTERCUTTYPE_CONS:
          assert(branchmastercutdata[i]->cut.cons != NULL);
-         SCIP_CALL( GCGmastercutGetCons(branchmastercutdata[i], &tmpCons) );
-         nconsvars = GCGconsGetNVars(origprob, tmpCons);
+         mastercutcons = GCGmastercutGetCons(branchmastercutdata[i]);
+         nconsvars = GCGconsGetNVars(origprob, mastercutcons);
          SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
          SCIP_CALL( SCIPallocBufferArray(scip_, &consvals, nconsvars) );
-         GCGconsGetVars(origprob, tmpCons, consvars, nconsvars);
-         GCGconsGetVals(origprob, tmpCons, consvals, nconsvars);
+         GCGconsGetVars(origprob, mastercutcons, consvars, nconsvars);
+         GCGconsGetVals(origprob, mastercutcons, consvals, nconsvars);
          break;
       case GCG_MASTERCUTTYPE_ROW:
          assert(branchmastercutdata[i]->cut.row != NULL);
-         SCIP_CALL( GCGmastercutGetRow(branchmastercutdata[i], &tmpRow)) ;
-         nconsvars = SCIProwGetNNonz(tmpRow);
-         cols = SCIProwGetCols(tmpRow);
-         consvals = SCIProwGetVals(tmpRow);
+         mastercutrow = GCGmastercutGetRow(branchmastercutdata[i]) ;
+         nconsvars = SCIProwGetNNonz(mastercutrow);
+         cols = SCIProwGetCols(mastercutrow);
+         consvals = SCIProwGetVals(mastercutrow);
          SCIP_CALL( SCIPallocBufferArray(scip_, &consvars, nconsvars) );
          for( j = 0; j < nconsvars; j++ )
             consvars[j] = SCIPcolGetVar(cols[j]);

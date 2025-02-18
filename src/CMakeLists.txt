@@ -274,6 +274,7 @@ set(gcgheaders
     gcg/pub_gcgsepa.h
     gcg/pub_gcgpqueue.h
     gcg/pub_gcgvar.h
+    gcg/pub_mastercutdata.h
     gcg/pub_pricingjob.h
     gcg/pub_pricingprob.h
     gcg/pub_score.h

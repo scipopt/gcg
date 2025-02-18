@@ -39,8 +39,7 @@
 #include "scip/def.h"
 #include "scip/type_result.h"
 #include "scip/type_scip.h"
-#include "scip/type_var.h"
-#include "struct_mastercutdata.h"
+#include "type_mastercutdata.h"
 
 #ifdef __cplusplus
 extern "C" {

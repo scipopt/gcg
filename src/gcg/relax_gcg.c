@@ -76,7 +76,6 @@
 
 #include "gcg.h"
 #include "type_branchgcg.h"
-#include "struct_mastercutdata.h"
 
 #ifndef NO_AUT_LIB
 #include "symmetry/pub_automorphism.h"

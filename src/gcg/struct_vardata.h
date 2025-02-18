@@ -37,7 +37,6 @@
 #ifndef GCG_STRUCT_VARDATA_H__
 #define GCG_STRUCT_VARDATA_H__
 
-#include "struct_mastercutdata.h"
 #include "type_mastercutdata.h"
 
 #ifdef __cplusplus

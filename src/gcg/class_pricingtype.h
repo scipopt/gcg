@@ -37,7 +37,7 @@
 
 #include "objscip/objscip.h"
 #include "pricer_gcg.h"
-#include "struct_mastercutdata.h"
+#include "type_mastercutdata.h"
 
 /**
  * @ingroup PRICING_PRIV

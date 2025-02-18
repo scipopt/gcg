@@ -37,13 +37,12 @@
 #include "class_pricingtype.h"
 #include "scip/cons_linear.h"
 #include "pub_gcgvar.h"
+#include "pub_mastercutdata.h"
 #include "scip/pub_lp.h"
 #include "scip/clock.h"
 #include "scip_misc.h"
-#include "struct_mastercutdata.h"
 
 #include <exception>
-#include <scip/def.h>
 
 #define DEFAULT_MAXROUNDSREDCOST         INT_MAX    /**< maximal number of reduced cost pricing rounds */
 #define DEFAULT_MAXCOLSROUNDREDCOSTROOT  100        /**< maximal number of columns per reduced cost pricing round at root node */
@@ -148,14 +147,12 @@ SCIP_Real FarkasPricing::mastercutGetDual(
 {
    assert(scip != NULL);
    assert(mastercutdata != NULL);
-   switch( mastercutdata->type )
+   switch( GCGmastercutGetType(mastercutdata) )
    {
    case GCG_MASTERCUTTYPE_CONS:
-      assert(mastercutdata->cut.cons != NULL);
-      return SCIPgetDualfarkasLinear(scip, mastercutdata->cut.cons);
+      return SCIPgetDualfarkasLinear(scip, GCGmastercutGetCons(mastercutdata));
    case GCG_MASTERCUTTYPE_ROW:
-      assert(mastercutdata->cut.row != NULL);
-      return SCIProwGetDualfarkas(mastercutdata->cut.row);
+      return SCIProwGetDualfarkas(GCGmastercutGetRow(mastercutdata));
    default:
       SCIP_CALL_ABORT( SCIP_ERROR );
       return 0.0;
@@ -229,14 +226,12 @@ SCIP_Real ReducedCostPricing::mastercutGetDual(
 {
    assert(scip != NULL);
    assert(mastercutdata != NULL);
-   switch( mastercutdata->type )
+   switch( GCGmastercutGetType(mastercutdata) )
    {
    case GCG_MASTERCUTTYPE_CONS:
-      assert(mastercutdata->cut.cons != NULL);
-      return SCIPgetDualsolLinear(scip, mastercutdata->cut.cons);
+      return SCIPgetDualsolLinear(scip, GCGmastercutGetCons(mastercutdata));
    case GCG_MASTERCUTTYPE_ROW:
-      assert(mastercutdata->cut.row != NULL);
-      return SCIProwGetDualsol(mastercutdata->cut.row);
+      return SCIProwGetDualsol(GCGmastercutGetRow(mastercutdata));
    default:
       SCIP_CALL_ABORT( SCIP_ERROR );
       return 0.0;

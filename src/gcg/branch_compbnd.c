@@ -55,6 +55,7 @@
 #include "gcg.h"
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
+#include "pub_mastercutdata.h"
 #include "mastercutdata.h"
 #include "pub_gcgvar.h"
 #include "type_mastercutdata.h"

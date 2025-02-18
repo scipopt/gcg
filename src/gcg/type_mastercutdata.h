@@ -36,9 +36,21 @@
 #ifndef GCG_TYPE_MASTERCUTDATA_H_
 #define GCG_TYPE_MASTERCUTDATA_H_
 
+#include "scip/def.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** type of master cut */
+enum GCG_MasterCutType
+{
+   GCG_MASTERCUTTYPE_CONS,                   /**< master cut is represented by a constraint */
+   GCG_MASTERCUTTYPE_ROW                     /**< master cut is represented by a row */
+};
+typedef enum GCG_MasterCutType GCG_MASTERCUTTYPE;
+
+typedef union GCG_MasterCutCut GCG_MASTERCUTCUT;
 
 typedef struct GCG_PricingModification GCG_PRICINGMODIFICATION;
 typedef struct GCG_MasterCutData GCG_MASTERCUTDATA;

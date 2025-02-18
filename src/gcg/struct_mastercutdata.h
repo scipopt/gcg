@@ -59,21 +59,12 @@ struct GCG_PricingModification
    int                   nadditionalconss;   /**< number of additional constraints in the pricing programs */
 };
 
-/** type of master cut */
-enum GCG_MasterCutType
-{
-   GCG_MASTERCUTTYPE_CONS,                   /**< master cut is represented by a constraint */
-   GCG_MASTERCUTTYPE_ROW                     /**< master cut is represented by a row */
-};
-typedef enum GCG_MasterCutType GCG_MASTERCUTTYPE;
-
 /** cut of the master cut */
 union GCG_MasterCutCut
 {
    SCIP_CONS*           cons;                /**< constraint in the master problem that represents the master cut, iff type == Cons */
    SCIP_ROW*            row;                 /**< row in the master problem that represents the master cut, iff type == Row */
 };
-typedef union GCG_MasterCutCut GCG_MASTERCUTCUT;
 
 /** data for master cuts */
 struct GCG_MasterCutData

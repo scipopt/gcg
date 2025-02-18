@@ -38,7 +38,6 @@
 
 #include "objscip/objscip.h"
 #include "class_pricingtype.h"
-#include "struct_mastercutdata.h"
 #include "type_mastercutdata.h"
 #include <scip/type_misc.h>
 #include <scip/type_retcode.h>

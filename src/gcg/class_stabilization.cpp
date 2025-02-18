@@ -44,7 +44,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /* #define SCIP_DEBUG */
 #include "class_stabilization.h"
-#include "mastercutdata.h"
+#include "pub_mastercutdata.h"
 #include "pricer_gcg.h"
 #include "gcg.h"
 #include "pub_gcgcol.h"
@@ -53,8 +53,6 @@
 #include "objscip/objscip.h"
 #include "scip/cons_linear.h"
 #include "scip_misc.h"
-#include "struct_mastercutdata.h"
-#include "scip/def.h"
 #include "scip/pub_misc.h"
 #include "scip/type_misc.h"
 #include "type_mastercutdata.h"

@@ -33,6 +33,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include "def.h"
+#include "pub_mastercutdata.h"
 #include "mastercutdata.h"
 #include "gcg.h"
 #include "gcg/scip_misc.h"
@@ -82,7 +83,6 @@ SCIP_RETCODE GCGpricingmodificationFree(
 }
 
 /** create a pricing modification, taking ownership over additionalvars and additionalcons */
-GCG_EXPORT
 SCIP_RETCODE GCGpricingmodificationCreate(
    SCIP*                  scip,               /**< SCIP data structure */
    GCG_PRICINGMODIFICATION* pricingmodification, /**< pointer to store the pricing modification */
@@ -134,7 +134,6 @@ SCIP_RETCODE GCGpricingmodificationCreate(
 }
 
 /** create a master cut, taking ownership over pricingmodifications */
-GCG_EXPORT
 SCIP_RETCODE GCGmastercutCreateFromCons(
    SCIP*                  scip,                 /**< SCIP data structure */
    GCG_MASTERCUTDATA**    mastercutdata,        /**< pointer to store the mastercut data */
@@ -202,7 +201,6 @@ SCIP_RETCODE GCGmastercutCreateFromCons(
 }
 
 /** create a master cut, taking ownership over pricingmodifications */
-GCG_EXPORT
 SCIP_RETCODE GCGmastercutCreateFromRow(
    SCIP*                  scip,                 /**< SCIP data structure */
    GCG_MASTERCUTDATA**    mastercutdata,        /**< pointer to store the mastercut data */
@@ -269,7 +267,6 @@ SCIP_RETCODE GCGmastercutCreateFromRow(
 }
 
 /** free a master cut */
-GCG_EXPORT
 SCIP_RETCODE GCGmastercutFree(
    SCIP*                  scip,               /**< SCIP data structure */
    GCG_MASTERCUTDATA**    mastercutdata        /**< pointer to the mastercut data */
@@ -391,45 +388,33 @@ SCIP_RETCODE GCGmastercutUpdateDualValue(
    return SCIP_OKAY;
 }
 
-/** get the constraint that is the master cut
-  * will fail if the master cut is a row
-  */
-SCIP_RETCODE GCGmastercutGetCons(
-   GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
-   SCIP_CONS**            cons                /**< pointer to store the constraint */
+#ifndef NDEBUG
+/** get the constraint that is the master cut */
+SCIP_CONS* GCGmastercutGetCons(
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
    )
 {
    assert(mastercutdata != NULL);
-   assert(cons != NULL);
-
-   if( mastercutdata->type != GCG_MASTERCUTTYPE_CONS )
-      return SCIP_INVALIDDATA;
-
+   assert(mastercutdata->type == GCG_MASTERCUTTYPE_CONS);
    assert(mastercutdata->cut.cons != NULL);
-   *cons = mastercutdata->cut.cons;
 
-   return SCIP_OKAY;
+   return mastercutdata->cut.cons;
 }
+#endif
 
-/** get the row that is the master cut
-   * will fail if the master cut is a constraint
-   */
-SCIP_RETCODE GCGmastercutGetRow(
-   GCG_MASTERCUTDATA*     mastercutdata,      /**< mastercut data */
-   SCIP_ROW**             row                 /**< pointer to store the row */
+#ifndef NDEBUG
+/** get the row that is the master cut */
+SCIP_ROW* GCGmastercutGetRow(
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
    )
 {
    assert(mastercutdata != NULL);
-   assert(row != NULL);
-
-   if( mastercutdata->type != GCG_MASTERCUTTYPE_ROW )
-      return SCIP_INVALIDDATA;
-
+   assert(mastercutdata->type == GCG_MASTERCUTTYPE_ROW);
    assert(mastercutdata->cut.row != NULL);
-   *row = mastercutdata->cut.row;
 
-   return SCIP_OKAY;
+   return mastercutdata->cut.row;
 }
+#endif
 
 /** get the variable that determines the coefficient of a column in the master cut */
 SCIP_VAR* GCGpricingmodificationGetCoefVar(
@@ -505,6 +490,7 @@ GCG_PRICINGMODIFICATION* GCGmastercutGetPricingModification(
    return NULL;
 }
 
+#ifndef NDEBUG
 /** get the pricing modifications for the master cut */
 GCG_PRICINGMODIFICATION* GCGmastercutGetPricingModifications(
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
@@ -514,7 +500,9 @@ GCG_PRICINGMODIFICATION* GCGmastercutGetPricingModifications(
 
    return mastercutdata->pricingmodifications;
 }
+#endif
 
+#ifndef NDEBUG
 /** get the number of pricing modifications for the master cut */
 int GCGmastercutGetNPricingModifications(
    GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
@@ -524,6 +512,7 @@ int GCGmastercutGetNPricingModifications(
 
    return mastercutdata->npricingmodifications;
 }
+#endif
 
 /** apply a pricing modification */
 SCIP_RETCODE GCGpricingmodificationApply(
@@ -854,3 +843,15 @@ SCIP_Real GCGmastercutGetCoeff(
 
    return coef;
 }
+
+#ifndef NDEBUG
+/** gets the type of the master cut */
+GCG_MASTERCUTTYPE GCGmastercutGetType(
+   GCG_MASTERCUTDATA*     mastercutdata       /**< mastercut data */
+   )
+{
+   assert(mastercutdata != NULL);
+
+   return mastercutdata->type;
+}
+#endif
