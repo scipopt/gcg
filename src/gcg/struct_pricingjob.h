@@ -60,6 +60,7 @@ struct GCG_PricingJob
    SCIP_Real            score;              /**< current score of the pricing job */
    SCIP_Bool            heuristic;          /**< shall the pricing problem be solved heuristically? */
    int                  nheuriters;         /**< number of times the pricing job was performed heuristically */
+   SCIP_Bool            solverchanged;      /**< was the solver changed after the last solver call? */
 };
 
 #ifdef __cplusplus

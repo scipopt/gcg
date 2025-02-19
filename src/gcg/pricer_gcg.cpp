@@ -163,9 +163,10 @@ struct SCIP_PricerData
    int*                  npointsprob;        /**< number of variables representing points created by the pricing probs */
    int*                  nraysprob;          /**< number of variables representing rays created by the pricing probs */
    SCIP_Longint          currnodenr;         /**< current node number in the masterproblem */
-   SCIP_Bool             newnode;            /**< indicate whether we are at a new branch-and-bound node */
    SCIP_HASHMAP*         mapcons2idx;        /**< hashmap mapping constraints to their index in the conss array */
    int                   npricingprobsnotnull; /**< number of non-Null pricing problems*/
+   SCIP_Bool             branchconssactive;  /**< indicate whether branching constraints are active */
+   int                   npricingloopiters;  /**< number of started pricing/stabilization loop iterations (resets before the loop starts) */
 
    SCIP_VAR**            pricedvars;         /**< array of all priced variables */
    int                   npricedvars;        /**< number of priced variables */
@@ -2966,6 +2967,9 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
    GCG_SOLVER* solver;
    SCIP_Bool heuristic;
    SCIP_Bool solved;
+   SCIP_Bool solverchanged;
+   SCIP_Bool varbndschanged;
+   SCIP_Bool branchconsschanged = FALSE;
 
    pricingprob = GCGpricingjobGetPricingprob(pricingjob);
    assert(pricingprob != NULL);
@@ -2984,6 +2988,8 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
    // @todo: has to consider #threads
    SCIP_CALL( setPricingProblemMemorylimit(pricingscip) );
 
+   solverchanged = GCGpricingjobSolverChanged(pricingjob);
+
    /* add the next generic branching constraint if necessary */
    if( !GCGpricingprobBranchconsIsAdded(pricingprob) )
    {
@@ -2991,29 +2997,37 @@ SCIP_RETCODE ObjPricerGcg::performPricingjob(
       int nbranchconss;
       int branchconsidx;
 
-      int i;
-
       GCGpricingprobGetGenericBranchData(pricingprob, &branchconss, NULL, &nbranchconss);
       branchconsidx = GCGpricingprobGetBranchconsIdx(pricingprob);
       assert(branchconsidx >= 0);
       assert(branchconsidx < nbranchconss);
 
-      SCIP_CALL( SCIPfreeTransform(pricingscip) );
+      if( SCIPgetStage(pricingscip) >= SCIP_STAGE_TRANSFORMED )
+         SCIP_CALL( SCIPfreeTransform(pricingscip) );
 
       SCIPdebugMessage("*** Apply generic branching bound change of depth %d\n", -branchconsidx);
       SCIP_CALL( SCIPtransformProb(pricingscip) );
       SCIP_CALL( addBranchingBoundChangesToPricing(probnr, branchconss[branchconsidx]) );
 
-      for( i = 0; i < pricerdata->nsolvers; ++i )
-      {
-         SCIP_CALL( GCGsolverUpdate(pricingscip, pricerdata->solvers[i], probnr, FALSE, TRUE, FALSE) );
-      }
-
       GCGpricingprobMarkBranchconsAdded(pricingprob);
+      varbndschanged = TRUE;
    }
+   else
+   {
+      varbndschanged = solverchanged &&
+         (pricerdata->npricingloopiters <= 1 ||
+          GCGpricingprobGetBranchconsIdx(pricingprob) < GCGpricingprobGetNGenericBranchconss(pricingprob));
+   }
+
+   branchconsschanged = pricerdata->branchconssactive && solverchanged && pricerdata->npricingloopiters <= 1;
+
+   /* call update method of pricing solvers */
+   SCIP_CALL( GCGsolverUpdate(pricingscip, solver, probnr, solverchanged, varbndschanged, branchconsschanged) );
 
    SCIP_CALL( GCGsolverSolve(scip_, pricingscip, solver, pricetype->getType() == GCG_PRICETYPE_REDCOST,
          heuristic, probnr, pricerdata->dualsolconv[probnr], lowerbound, status, &solved) );
+
+   GCGpricingjobSolverCalled(pricingjob);
 
    if( !solved )
       return SCIP_OKAY;
@@ -3229,6 +3243,10 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       assert(GCGmastercutIsActive(branchmastercutdata[i]));
       SCIP_CALL( GCGmastercutApplyPricingModifications(scip_, branchmastercutdata[i]) );
    }
+   if( nbranchmastercuts > 0 )
+      pricerdata->branchconssactive = TRUE;
+
+   pricerdata->npricingloopiters = 0;
 
    /* stabilization loop */
    do
@@ -3244,6 +3262,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       nsuccessfulprobs = 0;
       *bestredcostvalid = isMasterLPOptimal() && !GCGisBranchruleGeneric(GCGconsMasterbranchGetBranchrule(GCGconsMasterbranchGetActiveCons(scip_)));
       nextchunk = FALSE;
+      pricerdata->npricingloopiters++;
 
       if( stabilized )
       {
@@ -3267,23 +3286,6 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
       /* set the objective function */
       SCIP_CALL( setPricingObjs(pricetype, stabilized) );
-
-      /* call update method of pricing solvers to update objectives;
-       * also, let them update their bounds since the transformed pricing problems
-       * might have contained generic branching bounds before freeing
-       * additionally, notify them of possible changes when adding the inferred pricing modifications
-       */
-      for( i = 0; i < pricerdata->nsolvers; ++i  )
-      {
-         for( j = 0; j < pricerdata->npricingprobs; ++j )
-         {
-            if( pricerdata->pricingprobs[j] != NULL )
-            {
-               SCIP_CALL( GCGsolverUpdate(pricerdata->pricingprobs[j], pricerdata->solvers[i], j,
-                     TRUE, TRUE, (nbranchmastercuts > 0)) );
-            }
-         }
-      }
 
       /* todo: do this inside the updateRedcostColumnPool */
       if( !colpoolupdated && pricerdata->usecolpool && !probingnode )
@@ -3700,6 +3702,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       assert(GCGmastercutIsActive(branchmastercutdata[i]));
       SCIP_CALL( GCGmastercutUndoPricingModifications(scip_, branchmastercutdata[i]) );
    }
+   pricerdata->branchconssactive = FALSE;
 
    return SCIP_OKAY;
 }
@@ -3726,18 +3729,6 @@ SCIP_RETCODE GCGsetPricingObjs(
    pricer->pricerdata->stabilization = FALSE;
 
    SCIP_CALL( pricer->setPricingObjs(pricer->getReducedCostPricingNonConst(), FALSE) );
-
-   /* notify the pricing solvers that the objective values have changed */
-   for( i = 0; i < pricer->pricerdata->nsolvers; ++i  )
-   {
-      for( j = 0; j < pricer->pricerdata->npricingprobs; ++j )
-      {
-         if( pricer->pricerdata->pricingprobs[j] != NULL )
-         {
-            SCIP_CALL( GCGsolverUpdate(pricer->pricerdata->pricingprobs[j], pricer->pricerdata->solvers[i], j, TRUE, FALSE, FALSE) );
-         }
-      }
-   }
 
    if( dualsolconv != NULL )
    {
@@ -3872,24 +3863,6 @@ SCIP_RETCODE ObjPricerGcg::priceNewVariables(
    nfoundvars = 0;
 
    bestredcostvalid = TRUE;
-
-   /* If pricing is performed for the first time at this node, update variable bounds and pricing constraints */
-   if( pricerdata->newnode )
-   {
-      int i;
-      int j;
-
-      for( i = 0; i < pricerdata->nsolvers; ++i  )
-      {
-         for( j = 0; j < pricerdata->npricingprobs; ++j )
-         {
-            if( pricerdata->pricingprobs[j] != NULL )
-            {
-               SCIP_CALL( GCGsolverUpdate(pricerdata->pricingprobs[j], pricerdata->solvers[i], j, TRUE, TRUE, TRUE) );
-            }
-         }
-      }
-   }
 
    pricingcontroller->initPricing(pricetype);
 
@@ -4031,8 +4004,9 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", origverblevel) );
 
    pricerdata->currnodenr = -1;
-   pricerdata->newnode = TRUE;
    pricerdata->artificialused = FALSE;
+   pricerdata->branchconssactive = FALSE;
+   pricerdata->npricingloopiters = 0;
 
    nmasterconss = GCGgetNMasterConss(origprob);
    masterconss = GCGgetMasterConss(origprob);
@@ -4381,7 +4355,6 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
    else
    {
       pricerdata->currnodenr = SCIPgetNNodes(scip);
-      pricerdata->newnode = TRUE;
       pricerdata->nroundsredcost = 0;
    }
 
@@ -4551,7 +4524,6 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    if( SCIPgetNNodes(scip) != pricerdata->currnodenr )
    {
       pricerdata->currnodenr = SCIPgetNNodes(scip);
-      pricerdata->newnode = TRUE;
    }
 
    *result = SCIP_SUCCESS;
