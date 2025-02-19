@@ -186,18 +186,11 @@ SCIP_RETCODE addVarToMasterbranch(
    )
 {
    SCIP_Real coef;
-   SCIP_VAR** origvars;
-   SCIP_Real* origvals;
-   int norigvars;
 
    assert(scip != NULL);
    assert(mastervar != NULL);
    assert(branchdata != NULL);
    assert(added != NULL);
-
-   origvars = GCGmasterVarGetOrigvars(mastervar);
-   norigvars = GCGmasterVarGetNOrigvars(mastervar);
-   origvals = GCGmasterVarGetOrigvals(mastervar);
 
    *added = FALSE;
 

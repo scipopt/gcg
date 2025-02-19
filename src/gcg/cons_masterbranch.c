@@ -1485,9 +1485,6 @@ SCIP_RETCODE forwardUpdateSeenHistory(
    SCIP_CONSDATA*        consdata            /**< constraint data */
    )
 {
-   GCG_VARHISTORYBUFFER* next;
-   int i;
-
    assert(scip != NULL);
    assert(origscip != NULL);
    assert(consdata != NULL);

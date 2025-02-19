@@ -3717,7 +3717,6 @@ SCIP_RETCODE GCGsetPricingObjs(
    ObjPricerGcg* pricer;
    SCIP_Bool stabilizationtmp;
    int i;
-   int j;
 
    assert(scip != NULL);
 
