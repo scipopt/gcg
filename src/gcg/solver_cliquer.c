@@ -779,6 +779,22 @@ SCIP_Bool determineCliquerConsTypes(
          return FALSE;
       }
    }
+
+#ifdef SCIP_DEBUG
+   SCIPdebugMessage("Overview over instances constraint types:\n");
+   const char* typeNames[] = {
+      "LINEAR_IS", "LINEAR_IS_LIKE", "LINEAR_CLIQUE", "LINEAR_COUPLING_DECORATIVE",
+      "LINEAR_COUPLING_CLIQUE", "VARBND_SAME", "VARBND_STD", "VARBND_IS"
+   };
+   int typeCount[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+   for( i = 0; i < nconss; i++ )
+      typeCount[cliquerconstypes[i]]++;
+   for( i = LINEAR_IS; i < VARBND_IS; i++ )
+   {
+      SCIPdebugMessage("   Type '%s' : %i \n", typeNames[i], typeCount[i]);
+   }
+#endif
+
    /* Has no invalid constraint. */
    return TRUE;
 }
@@ -1196,7 +1212,7 @@ SCIP_RETCODE solveCliquer(
    {
       for( j = 0; j < npricingprobvars; ++j )
       {
-         if( i != j )
+         if( i < j )
          {
             GRAPH_ADD_EDGE(g, i, j);
          }
@@ -1544,7 +1560,8 @@ SCIP_RETCODE solveCliquer(
    }
    nedges /= 2;
 
-   SCIPdebugMessage("Problem Number: %i ; Graph size: %d ; Graph density: %g\n", probnr, indexcount, (float)nedges / ((float)(g->n - 1) * (g->n) / 2));
+   SCIPdebugMessage("Problem Number: %i ; Graph size: %d ; Graph density: %g\n",
+                    probnr, indexcount, (float)nedges / ((float)(g->n - 1) * (g->n) / 2));
 
    /* Test if the density criteria is met */
    if( SCIPisGT(pricingprob, (float)nedges/((float)(g->n - 1) * (g->n) / 2), solver->density) )
