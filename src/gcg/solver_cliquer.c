@@ -91,7 +91,7 @@ typedef enum cliquerConsType CLIQUER_CONSTYPE;
  */
 
 /** Returns whether the given var is linked in some way with other variables */
-static
+static INLINE
 SCIP_Bool isVarLinked(
    SCIP_VAR** linkedvars,                         /**< Array of variables that are linked by eq-constraints */
    int        nlinkedvars,                        /**< Index of linkedvars array */
@@ -105,9 +105,7 @@ SCIP_Bool isVarLinked(
    for( i = 0; i < nlinkedvars; ++i )
    {
       if( linkedvars[i] == var )
-      {
          islinked = TRUE;
-      }
    }
    return islinked;
 }
@@ -279,20 +277,20 @@ void updateVarLinks(
    }
 }
 
-/** Get the node index of a given variable in the bijection if mapped, else return -1 */
-static 
+/** Get the node index of a given variable in a given array (for graph), else return -1 */
+static INLINE
 int getNodeIndex(
    SCIP_VAR*      var,                            /**< Variable for which the node index is to be determined */
-   SCIP_VAR**     indsetvars,                     /**< Array of variables that are mapped to a node of the graph */
+   SCIP_VAR**     vararray,                     /**< Array of variables that are mapped to a node of the graph */
    int            indexcount                      /**< Number of variables that are mapped in the graph */
    )
 {
-   for( int i = 0; i < indexcount; ++i )
+   int        i;
+
+   for( i = 0; i < indexcount; ++i )
    {
-      if( var == indsetvars[i] )
-      {
+      if( var == vararray[i] )
          return i;
-      }
    }
    return -1;
 }
