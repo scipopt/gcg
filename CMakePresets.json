@@ -54,6 +54,19 @@
             }
         },
         {
+            "name": "gcg-debug-nm",
+            "inherits": "gcg-debug",
+            "displayName": "GCG Default Debug Config (native memory)",
+            "description": "Default GCG development debug build configuration with native memory handling",
+            "hidden": true,
+            "cacheVariables": {
+                "NOBLKBUFMEM": {
+                    "type": "BOOL",
+                    "value": "ON"
+                }
+            }
+        },
+        {
             "name": "gcg-release",
             "inherits": "gcg-default",
             "displayName": "GCG Default Release Config",
