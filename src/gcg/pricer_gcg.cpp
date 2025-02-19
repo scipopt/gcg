@@ -1583,10 +1583,6 @@ SCIP_RETCODE ObjPricerGcg::addVariableToMastercuts(
    GCG_MASTERCUTDATA** branchmastercutdata;
    int nbranchmastercuts;
 
-   branchrules = NULL;
-   branchdata = NULL;
-   branchmastercutdata = NULL;
-   nbranchmastercuts = 0;
    SCIP_CALL( GCGrelaxBranchGetAllActiveMasterCuts(scip_, &branchrules, &branchdata, &branchmastercutdata, &nbranchmastercuts) );
    assert(nbranchmastercuts == 0 || branchmastercutdata != NULL);
 
@@ -1639,10 +1635,6 @@ SCIP_RETCODE ObjPricerGcg::computeColMastercuts(
    assert(solvals != NULL);
 
    /* get all active generic mastercuts */
-   branchrules = NULL;
-   branchdata = NULL;
-   branchmastercutdata = NULL;
-   nbranchmastercuts = 0;
    SCIP_CALL( GCGrelaxBranchGetAllActiveMasterCuts(scip_, &branchrules, &branchdata, &branchmastercutdata, &nbranchmastercuts) );
    assert(nbranchmastercuts == 0 || branchmastercutdata != NULL);
 
@@ -2080,7 +2072,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
    GCG_BRANCHRULE** activebranchrules = NULL;
    GCG_BRANCHDATA** activebranchdata = NULL;
    GCG_MASTERCUTDATA** branchmastercutdata = NULL;
-   int nbranchmastercutdata;
+   int nbranchmastercutdata = 0;
    SCIP_CONS* mastercutcons;
    SCIP_ROW* mastercutrow;
 
@@ -3213,10 +3205,6 @@ int cleanedIndex;
    if( lowerbound != NULL )
       *lowerbound = -SCIPinfinity(scip_);
 
-   branchrules = NULL;
-   branchdata = NULL;
-   branchmastercutdata = NULL;
-   nbranchmastercuts = 0;
    SCIP_CALL( GCGrelaxBranchGetAllActiveMasterCuts(scip_, &branchrules, &branchdata, &branchmastercutdata, &nbranchmastercuts) );
    assert(nbranchmastercuts == 0 || (branchrules != NULL && branchdata != NULL && branchmastercutdata != NULL));
 

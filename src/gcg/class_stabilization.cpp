@@ -154,14 +154,8 @@ SCIP_RETCODE Stabilization::updateStabcentermastercutvals()
    GCG_BRANCHDATA** branchdata;
    GCG_MASTERCUTDATA** branchmastercutdata;
    int nbranchmastercuts;
-   int writeOldIndex;
-   int readNewIndex;
-   SCIP_Bool exists;
+   int i;
 
-   branchrules = NULL;
-   branchdata = NULL;
-   branchmastercutdata = NULL;
-   nbranchmastercuts = 0;
    SCIP_CALL( GCGrelaxBranchGetAllActiveMasterCuts(scip_, &branchrules, &branchdata, &branchmastercutdata, &nbranchmastercuts) );
 
    // grow if necessary
@@ -171,92 +165,14 @@ SCIP_RETCODE Stabilization::updateStabcentermastercutvals()
       stabcentermastercutssize = SCIPcalcMemGrowSize(scip_, nbranchmastercuts);
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &stabcentermastercuts, oldsize, stabcentermastercutssize) );
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &stabcentermastercutvals, oldsize, stabcentermastercutssize) );
-      BMSclearMemoryArray(&stabcentermastercuts[oldsize], (size_t) (nbranchmastercuts - oldsize)); /*lint !e866*/
    }
 
    // update the arrays (mastercuts could have changed, even if size is the same)
-
-   // first remove any mastercuts that are not active anymore
-   for( writeOldIndex = 0; writeOldIndex < nstabcentermastercuts; writeOldIndex++ )
+   for( i = 0; i < nbranchmastercuts; i++ )
    {
-      exists = FALSE;
-      for( readNewIndex = 0; readNewIndex < nbranchmastercuts; readNewIndex++ )
-      {
-         if( stabcentermastercuts[writeOldIndex] == branchmastercutdata[readNewIndex] )
-         {
-            exists = TRUE;
-            break;
-         }
-      }
-
-      if( !exists )
-      {
-         stabcentermastercuts[writeOldIndex] = NULL;
-      }
+      stabcentermastercuts[i] = branchmastercutdata[i];
    }
-
-   // now place in the new mastercuts
-   for( readNewIndex = 0; readNewIndex < nbranchmastercuts; readNewIndex++ )
-   {
-      exists = FALSE;
-      for( writeOldIndex = 0; writeOldIndex < nstabcentermastercuts; writeOldIndex++ )
-      {
-         if( stabcentermastercuts[writeOldIndex] == branchmastercutdata[readNewIndex] )
-         {
-            exists = TRUE;
-            break;
-         }
-      }
-
-      if( !exists )
-      {
-         // find a next null to place into
-         for( writeOldIndex = 0; writeOldIndex < stabcentermastercutssize; writeOldIndex++ )
-         {
-            if( stabcentermastercuts[writeOldIndex] == NULL )
-            {
-               stabcentermastercuts[writeOldIndex] = branchmastercutdata[readNewIndex];
-               break;
-            }
-         }
-      }
-   }
-
-   // update the count of active mastercuts
-   nstabcentermastercuts = 0;
-   for( writeOldIndex = 0; writeOldIndex < stabcentermastercutssize; ++writeOldIndex )
-   {
-      if( stabcentermastercuts[writeOldIndex] != NULL )
-      {
-         ++nstabcentermastercuts;
-      }
-   }
-
-   // finally, fill in any gaps (NULL elements) from the end
-   int seen = 0;
-   for( writeOldIndex = 0; writeOldIndex < stabcentermastercutssize; ++writeOldIndex )
-   {
-      if( seen == nstabcentermastercuts )
-         break;
-
-      if( stabcentermastercuts[writeOldIndex] != NULL )
-      {
-         ++seen;
-         continue;
-      }
-
-      assert(stabcentermastercuts[writeOldIndex] == NULL);
-
-      for( readNewIndex = stabcentermastercutssize - 1; readNewIndex > writeOldIndex; --readNewIndex )
-      {
-         if( stabcentermastercuts[readNewIndex] != NULL )
-         {
-            stabcentermastercuts[writeOldIndex] = stabcentermastercuts[readNewIndex];
-            stabcentermastercuts[readNewIndex] = NULL;
-            break;
-         }
-      }
-   }
+   nstabcentermastercuts = nbranchmastercuts;
 
    return SCIP_OKAY;
 }
@@ -314,14 +230,8 @@ SCIP_RETCODE Stabilization::updateSubgradientmastercutvals()
    GCG_BRANCHDATA** branchdata;
    GCG_MASTERCUTDATA** branchmastercutdata;
    int nbranchmastercuts;
-   int writeOldIndex;
-   int readNewIndex;
-   SCIP_Bool exists;
+   int i;
 
-   branchrules = NULL;
-   branchdata = NULL;
-   branchmastercutdata = NULL;
-   nbranchmastercuts = 0;
    SCIP_CALL( GCGrelaxBranchGetAllActiveMasterCuts(scip_, &branchrules, &branchdata, &branchmastercutdata, &nbranchmastercuts) );
 
    // grow if necessary
@@ -331,90 +241,14 @@ SCIP_RETCODE Stabilization::updateSubgradientmastercutvals()
       subgradientmastercutssize = SCIPcalcMemGrowSize(scip_, nbranchmastercuts);
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &subgradientmastercuts, oldsize, subgradientmastercutssize) );
       SCIP_CALL( SCIPreallocBlockMemoryArray(scip_, &subgradientmastercutvals, oldsize, subgradientmastercutssize) );
-      BMSclearMemoryArray(&subgradientmastercuts[oldsize], (size_t)nbranchmastercuts-oldsize); /*lint !e866*/
    }
 
    // update the arrays (mastercuts could have changed, even if size is the same)
-   // first remove any mastercuts that are not active anymore
-   for( writeOldIndex = 0; writeOldIndex < nsubgradientmastercuts; writeOldIndex++ )
+   for( i = 0; i < nbranchmastercuts; i++ )
    {
-      exists = FALSE;
-      for( readNewIndex = 0; readNewIndex < nbranchmastercuts; readNewIndex++ )
-      {
-         if( subgradientmastercuts[writeOldIndex] == branchmastercutdata[readNewIndex] )
-         {
-            exists = TRUE;
-            break;
-         }
-      }
-
-      if( !exists )
-      {
-         subgradientmastercuts[writeOldIndex] = NULL;
-      }
+      subgradientmastercuts[i] = branchmastercutdata[i];
    }
-   // now place in the new mastercuts
-   for( readNewIndex = 0; readNewIndex < nbranchmastercuts; readNewIndex++ )
-   {
-      exists = FALSE;
-      for( writeOldIndex = 0; writeOldIndex < nsubgradientmastercuts; writeOldIndex++ )
-      {
-         if( subgradientmastercuts[writeOldIndex] == branchmastercutdata[readNewIndex] )
-         {
-            exists = TRUE;
-            break;
-         }
-      }
-
-      if( !exists )
-      {
-         // find a next null to place into
-         for( writeOldIndex = 0; writeOldIndex < subgradientmastercutssize; writeOldIndex++ )
-         {
-            if( subgradientmastercuts[writeOldIndex] == NULL )
-            {
-               subgradientmastercuts[writeOldIndex] = branchmastercutdata[readNewIndex];
-               break;
-            }
-         }
-      }
-   }
-
-   // update the count of active mastercuts
-   nsubgradientmastercuts = 0;
-   for( writeOldIndex = 0; writeOldIndex < subgradientmastercutssize; ++writeOldIndex )
-   {
-      if( subgradientmastercuts[writeOldIndex] != NULL )
-      {
-         ++nsubgradientmastercuts;
-      }
-   }
-
-   // finally, fill in any gaps (NULL elements) from the end
-   int seen = 0;
-   for( writeOldIndex = 0; writeOldIndex < subgradientmastercutssize; ++writeOldIndex )
-   {
-      if( seen == nsubgradientmastercuts )
-         break;
-
-      if( subgradientmastercuts[writeOldIndex] != NULL )
-      {
-         ++seen;
-         continue;
-      }
-
-      assert(subgradientmastercuts[writeOldIndex] == NULL);
-
-      for( readNewIndex = subgradientmastercutssize - 1; readNewIndex > writeOldIndex; --readNewIndex )
-      {
-         if( subgradientmastercuts[readNewIndex] != NULL )
-         {
-            subgradientmastercuts[writeOldIndex] = subgradientmastercuts[readNewIndex];
-            subgradientmastercuts[readNewIndex] = NULL;
-            break;
-         }
-      }
-   }
+   nsubgradientmastercuts = nbranchmastercuts;
 
    return SCIP_OKAY;
 }
