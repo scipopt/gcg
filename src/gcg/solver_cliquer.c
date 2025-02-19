@@ -393,8 +393,6 @@ SCIP_Real getAggrObjCoef(
    SCIP_Real*     aggrobjcoef                     /**< Array of aggregated objective coefficients. */
    )
 {
-   int i;
-
    if( nlinkedvars > 0 || nvarsincouplings > 0 )
       return aggrobjcoef[SCIPvarGetProbindex(var)];
    return SCIPvarGetObj(var);
@@ -807,6 +805,8 @@ void distributeVarCoefHeuristic(
                   }
                }
             }
+            break;
+         default:
             break;
       }
       denominator += nrelconsvars;
