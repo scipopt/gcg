@@ -555,7 +555,7 @@ void setProblemNotApplicable(
    SCIP_Bool*            isnotapplicable     /**< array storing if solver is applicable to problems */
    )
 {
-   if( SCIPgetDepth(scip) == 0 && GCGsepaGetNCuts(scip) == 0 )
+   if( SCIPgetFocusDepth(scip) == 0 && GCGsepaGetNCuts(scip) == 0 )
       isnotapplicable[probnr] = TRUE;
 }
 
