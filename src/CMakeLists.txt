@@ -22,7 +22,6 @@ set(gcgsources
     gcg/branch_orig.c
     gcg/branch_relpsprob.c
     gcg/branch_ryanfoster.c
-    gcg/branch_staticvar.c
     gcg/class_conspartition.cpp
     gcg/class_detprobdata.cpp
     gcg/class_indexpartition.cpp
@@ -171,7 +170,6 @@ set(gcgheaders
     gcg/branch_orig.h
     gcg/branch_relpsprob.h
     gcg/branch_ryanfoster.h
-    gcg/branch_staticvar.h
     gcg/class_conspartition.h
     gcg/class_indexpartition.h
     gcg/misc_varhistory.h

@@ -260,7 +260,6 @@ LIBOBJ = \
 			gcg/branch_ryanfoster.o \
 			gcg/branch_bpstrong.o \
 			gcg/branch_compbnd.o \
-			gcg/branch_staticvar.o \
 			gcg/class_conspartition.o \
 			gcg/class_indexpartition.o \
 			gcg/class_pricingcontroller.o \

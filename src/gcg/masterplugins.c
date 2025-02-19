@@ -162,7 +162,6 @@
 #include "branch_generic.h"
 #include "branch_bpstrong.h"
 #include "branch_compbnd.h"
-#include "branch_staticvar.h"
 #include "scip/debug.h"
 #include "dialog_master.h"
 #include "disp_master.h"
@@ -246,7 +245,6 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeBranchruleGeneric(scip) );
    SCIP_CALL( SCIPincludeBranchruleBPStrong(scip) );
    SCIP_CALL( SCIPincludeBranchruleCompBnd(scip) );
-   SCIP_CALL( SCIPincludeBranchruleStaticVar(scip) );
 
 #if USEHEURS
    SCIP_CALL( SCIPincludeHeurActconsdiving(scip) );
