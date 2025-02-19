@@ -401,6 +401,23 @@ SCIP_VAR** GCGpricingVarGetOrigvars(
 #endif
 
 #ifdef NDEBUG
+#define GCGpricingVarGetPricerIndex(var)        (SCIPvarGetData(var)->data.pricingvardata.pricerindex)
+#else
+/** returns the index used by the pricer to refer to the variable */
+GCG_EXPORT
+int GCGpricingVarGetPricerIndex(
+   SCIP_VAR*             var                 /**< SCIP variable structure */
+   );
+#endif
+
+/** returns the index used by the pricer to refer to the variable */
+GCG_EXPORT
+void GCGpricingVarSetPricerIndex(
+   SCIP_VAR*             var,                /**< SCIP variable structure */
+   int                   index               /**< index used by the pricer */
+   );
+
+#ifdef NDEBUG
 #define GCGvarGetBlock(var)             (SCIPvarGetData(var)->blocknr)
 #else
 /** returns the block of the variable */
