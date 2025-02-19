@@ -297,6 +297,9 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteRyanfoster)
    assert(scip != NULL);
    assert(branchdata != NULL);
 
+   if( origbranch && !force )
+      return SCIP_OKAY;
+
    SCIPdebugMessage("branchDataDeleteRyanfoster: %s(%s, %s)\n", ( (*branchdata)->same ? "same" : "differ" ),
       SCIPvarGetName((*branchdata)->var1), SCIPvarGetName((*branchdata)->var2));
 
