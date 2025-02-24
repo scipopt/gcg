@@ -52,11 +52,15 @@ extern "C" {
  * @{
  */
 
+#ifdef NDEBUG
+#define GCGvarIsPricing(var)                (SCIPvarGetData(var)->vartype == GCG_VARTYPE_PRICING)
+#else
 /** returns TRUE or FALSE whether variable is a pricing variable or not */
 GCG_EXPORT
 SCIP_Bool GCGvarIsPricing(
    SCIP_VAR*             var                 /**< SCIP variable structure */
    );
+#endif
 
 #ifdef NDEBUG
 #define GCGvarIsOriginal(var)                (SCIPvarGetData(var)->vartype == GCG_VARTYPE_ORIGINAL)

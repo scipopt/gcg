@@ -142,8 +142,7 @@ SCIP_DECL_VARDELORIG(GCGvarDelInferredPricing)
    return SCIP_OKAY;
 }
 
-
-
+#ifndef NDEBUG
 /** returns TRUE or FALSE whether variable is a pricing variable or not */
 SCIP_Bool GCGvarIsPricing(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -158,6 +157,7 @@ SCIP_Bool GCGvarIsPricing(
 
    return vardata->vartype == GCG_VARTYPE_PRICING;
 }
+#endif
 
 #ifndef NDEBUG
 /** returns TRUE or FALSE whether variable is a master variable or not */
