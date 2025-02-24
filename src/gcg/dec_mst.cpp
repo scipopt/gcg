@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -271,7 +271,6 @@ GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMST)
 
    if( !graphCompletible(partialdecdetectiondata->detprobdata, partialdec) )
    {
-      delete partialdec;
       partialdecdetectiondata->nnewpartialdecs = 0;
       SCIP_CALL_ABORT( SCIPstopClock(scip, overallClock) );
       partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, overallClock);
@@ -394,7 +393,6 @@ GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMST)
       std::vector<std::pair<double, SCIP_Real>> clockTimes3;
       gcg::PARTIALDECOMP *decomp1 = NULL, *decomp2 = NULL;
 
-      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
       SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\n  %s similarity: ", sim[i].c_str());
       createddecomps.reserve(2 * epsLists[i].size());
       clockTimes3.reserve(epsLists[i].size());
@@ -409,6 +407,9 @@ GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMST)
          {
             break;
          }
+
+         SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
+         SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
          // run MST with different eps
          SCIP_CALL( graph->computePartitionMSTForPartialGraph(partialdecdetectiondata->detprobdata, partialdec, eps, detectordata->postprocenable) );
@@ -443,8 +444,6 @@ GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMST)
             createddecomps.push_back(decomp2);
             clockTimes3.emplace_back(eps, SCIPgetClockTime(scip, temporaryClock));
          }
-
-         SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
       }
 
       size_t ncreateddecomps = createddecomps.size();

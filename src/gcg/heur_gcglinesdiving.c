@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -246,11 +246,6 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcglinesdiving) /*lint --e{715}*/
       int i;
 
       var = lpcands[c];
-
-      if( strcmp("t_y#21", SCIPvarGetName(var)) == 0 )
-      {
-         printf("%f %f\n", SCIPvarGetLbGlobal(var), SCIPvarGetUbGlobal(var));
-      }
 
       /* if the variable is on the tabu list, do not choose it */
        for( i = 0; i < tabulistsize; ++i )
