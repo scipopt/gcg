@@ -741,6 +741,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    SCIP_COL** cols = NULL;
    SCIP_Real* consvals = NULL;
    SCIP_Real dualsol;
+   SCIP_Real realdualsol;
 
    SCIP_VAR** consvars = NULL;
    int nconsvars;
@@ -854,13 +855,14 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    /* compute reduced cost and update objectives in the pricing problems */
    for( i = 0; i < nmasterconss; i++ )
    {
+      realdualsol = pricetype->consGetDual(scip_, masterconss[i]);
       if( stabilize )
       {
          SCIP_CALL( stabilization->consGetDual(i, &dualsol) );
       }
       else
       {
-         dualsol = pricetype->consGetDual(scip_, masterconss[i]);
+         dualsol = realdualsol;
       }
 
 #ifdef PRINTDUALSOLS
@@ -892,14 +894,14 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
                   GCGoriginalVarGetPricingVar(consvars[j]), -1.0 * dualsol * consvals[j]) );
 
             priceridx = GCGpricingVarGetPricerIndex(GCGoriginalVarGetPricingVar(consvars[j]));
-            pricerdata->realdualvalues[blocknr][priceridx] -= consvals[j] * pricetype->consGetDual(scip_, masterconss[i]);
+            pricerdata->realdualvalues[blocknr][priceridx] -= consvals[j] * realdualsol;
 
 #ifdef PRINTDUALSOLS
-            if( !SCIPisZero(scip_, dualsol) || !SCIPisZero(scip_, consvals[j] * pricetype->consGetDual(scip_, masterconss[i])) )
+            if( !SCIPisZero(scip_, dualsol) || !SCIPisZero(scip_, consvals[j] * realdualsol) )
             {
                SCIPdebugMessage("pricingobj var <%s> %g, realdualvalues + %g -> %g\n",
                   SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol,
-                  -1.0 * consvals[j] * pricetype->consGetDual(scip_, masterconss[i]),
+                  -1.0 * consvals[j] * realdualsol,
                   pricerdata->realdualvalues[blocknr][priceridx]);
             }
 #endif
@@ -920,19 +922,20 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    /* compute reduced cost and update objectives in the pricing problems */
    for( i = 0; i < noriginalsepamastercuts; i++ )
    {
+      realdualsol = pricetype->rowGetDual(originalsepamastercuts[i]);
       if( stabilize )
       {
          SCIP_CALL( stabilization->rowGetDual(i, &dualsol) );
       }
       else
       {
-         dualsol = pricetype->rowGetDual(originalsepamastercuts[i]);
+         dualsol = realdualsol;
       }
 
 #ifdef PRINTDUALSOLS
       if ( !SCIPisZero(scip_, dualsol) )
       {
-         SCIPdebugMessage("mastercut <%s> dualsol: %g\n", SCIProwGetName(mastercuts[i]), dualsol);
+         SCIPdebugMessage("mastercut <%s> dualsol: %g\n", SCIProwGetName(originalsepamastercuts[i]), dualsol);
       }
 #endif
 
@@ -963,15 +966,14 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
                   GCGoriginalVarGetPricingVar(consvars[j]), -1.0 * dualsol * consvals[j]) );
 
             priceridx = GCGpricingVarGetPricerIndex(GCGoriginalVarGetPricingVar(consvars[j]));
-            pricerdata->realdualvalues[blocknr][priceridx]-= consvals[j]* pricetype->rowGetDual(originalsepamastercuts[i]);
+            pricerdata->realdualvalues[blocknr][priceridx]-= consvals[j] * realdualsol;
 
 #ifdef PRINTDUALSOLS
-            if( !SCIPisZero(scip_, dualsol) || !SCIPisZero(scip_, consvals[j] * pricetype->rowGetDual(mastercuts[i])) )
+            if( !SCIPisZero(scip_, dualsol) || !SCIPisZero(scip_, consvals[j] * realdualsol) )
             {
                SCIPdebugMessage("pricingobj var <%s> %g, realdualvalues + %g -> %g\n",
-                  SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])), dualsol,
-                     -1.0 * consvals[j] * pricetype->rowGetDual(mastercuts[i]),
-                     pricerdata->realdualvalues[blocknr][priceridx]);
+                  SCIPvarGetName(GCGoriginalVarGetPricingVar(consvars[j])),
+                  dualsol, -1.0 * consvals[j] * realdualsol, pricerdata->realdualvalues[blocknr][priceridx]);
             }
 #endif
          }
@@ -1007,9 +1009,9 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    /* get dual solutions / farkas values of the convexity constraints */
    for( i = 0; i < pricerdata->npricingprobs; i++ )
    {
-      assert( GCGisPricingprobRelevant(origprob, i) == (GCGgetConvCons(origprob, i) != NULL) );
+      assert( (pricerdata->pricingprobs[i] != NULL) == (GCGgetConvCons(origprob, i) != NULL) );
 
-      if( !GCGisPricingprobRelevant(origprob, i) )
+      if( pricerdata->pricingprobs[i] == NULL )
       {
          pricerdata->dualsolconv[i] = -1.0 * SCIPinfinity(scip_);
          continue;
@@ -1018,7 +1020,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
       pricerdata->dualsolconv[i] = pricetype->consGetDual(scip_, GCGgetConvCons(origprob, i));
 
 #ifdef PRINTDUALSOLS
-      if( GCGisPricingprobRelevant(origprob, i) && !SCIPisZero(scip_, pricerdata->dualsolconv[i]) )
+      if( pricerdata->pricingprobs[i] != NULL && !SCIPisZero(scip_, pricerdata->dualsolconv[i]) )
       {
          SCIPdebugMessage("convcons <%s> dualsol: %g\n", SCIPconsGetName(GCGgetConvCons(origprob, i)), pricerdata->dualsolconv[i]);
       }
