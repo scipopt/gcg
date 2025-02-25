@@ -218,6 +218,7 @@ BEGIN {
    timelimit = 0.0;
    inoriginalprob = 1;
    inmasterprob = 1;
+   inpricingsolversection = 0;
    incons = 0;
    valgrinderror = 0;
    valgrindleaks = 0;
@@ -303,6 +304,12 @@ BEGIN {
 /^Master Program statistics:/ { inmasterprob = 1; inoriginalprob = 0; }
 
 #
+# In "Pricing Solver" section?
+#
+/^Pricing Solver     :/ { inpricingsolversection = 1 }
+/^Original Program statistics:/ { inpricingsolversection = 0 }
+
+#
 # get objective sense
 #
 /^  Objective sense  :/ {
@@ -369,7 +376,7 @@ BEGIN {
 # pricing
 #
 /^  gcg              :/ {
-   if( inmasterprob )
+   if( inmasterprob && !inpricingsolversection )
    {
       pricetime = $3;
       pricecall = $5;
