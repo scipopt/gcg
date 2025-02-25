@@ -1,13 +1,13 @@
-# How to create generic master cuts {#generic-mastercuts}
+# How to add master-only constraints {#extendedmasterconss}
 > Sometimes, we developers would like to add constraints to the reformulation that have no
 > (known) counterpart in the original problem. To facilitate this, \GCG provides an interface to add
-> such constraints. This page defines the structure of such constraints, which we call _generic
-> master cuts_, and provides an example of how to add them to the reformulation.
+> such constraints. This page defines the structure of such constraints, which we call _extended
+> master constraints_, and provides an example of how to add them to the reformulation.
 
 ## Theoretical background
-Generic master cuts are constraints that are added to the master problem of the Dantzig-Wolfe
+Extended master constraints are constraints that are added to the master problem of the Dantzig-Wolfe
 reformulation. Ordinarily, we require such constraints when no counterpart in the original
-problem exists. In general, a generic master cut consists of some constraint to be added to the
+problem exists. Let's assume that we have the following constraint to be added to the
 master:
 
 \f{align}{
@@ -23,7 +23,7 @@ constraint in the pricing problem, ensuring only columns with negative reduced c
 For this we create a new variable \(y\), the _coefficient variable_ in the pricing problem, which
 we will force to take the coefficient value of the new column in the master constraint. Expressing
 this constraint \(y = f(x)\) might require additional constraints and auxiliary variables. We call
-these variables _inferred pricing variables_, as they are inferred from the generic master cut.
+these variables _inferred pricing variables_, as they are inferred from the extended master constraint.
 
 \f{align}{
 & \text{min}
@@ -35,7 +35,7 @@ these variables _inferred pricing variables_, as they are inferred from the gene
 \f}
 
 ## Interface
-In \GCG, a generic mastercut (`GCG_MASTERCUTDATA`) is a wrapper around either a `SCIP_CONS` or a
+In \GCG, an extended master constraint (`GCG_EXTENDEDMASTERCONSDATA`) is a wrapper around either a `SCIP_CONS` or a
 `SCIP_ROW` to be added to the master problem, in addition to one set of pricing modifications
 (`GCG_PRICINGMODIFICATION`) for each relevant pricing problem. A pricing problem consists of a
 coefficient variable (`SCIP_VAR`), as well as any additional constraints (`SCIP_CONS`) and auxiliary
@@ -44,8 +44,8 @@ It is required that these variables have the type `GCG_VARTYPE_INFERREDPRICING`.
 We advise using the following interfaces:
  - create inferred pricing variables with `GCGcreateInferredPricingVar()`
  - create modifications with `GCGpricingmodificationCreate()`
- - create a generic mastercut around a `SCIP_CONS` with `GCGmastercutCreateFromCons()`
- - create a generic mastercut around a `SCIP_ROW` with `GCGmastercutCreateFromRow()`
+ - create an extended master constraint around a `SCIP_CONS` with `GCGextendedmasterconsCreateFromCons()`
+ - create an extended master constraint around a `SCIP_ROW` with `GCGextendedmasterconsCreateFromRow()`
 
 
 ## Usage
@@ -94,31 +94,31 @@ SCIP_CALL( GCGpricingmodificationCreate(
    nadditionalcons
 ) );
 
-/* create the master cut */
-GCG_MASTERCUTDATA* mastercutdata = NULL;
-SCIP_CALL( GCGmastercutCreateFromCons(
+/* create the extended master constraint */
+GCG_EXTENDEDMASTERCONSDATA* extendedmasterconsdata = NULL;
+SCIP_CALL( GCGextendedmasterconsCreateFromCons(
    masterscip,
-   mastercutdata,
+   extendedmasterconsdata,
    mastercons,
    pricingmods,
    npricingmods,
    branchdata,
-   mastercutGetCoeffCompBnd
+   extendedmasterconsGetCoeffCompBnd
 ) );
 ```
 
-\GCG needs to be made aware of the new master cut. This can be easily achieved by implementing callbacks of the other interfaces, e.g. for branching, implement:
+\GCG needs to be made aware of the new extended master constraint. This can be easily achieved by implementing callbacks of the other interfaces, e.g. for branching, implement:
 ```C
 static
-GCG_DECL_BRANCHGETMASTERCUT(branchGetMastercutCompBnd)
+GCG_DECL_BRANCHGETEXTENDEDMASTERCONS(branchGetExtendedmasterconsCompBnd)
 {
-   // grab the mastercut, e.g. from the branchdata
-   *mastercutdata = branchdata->mastercutdata;
+   // grab the extended master cons, e.g. from the branchdata
+   *extendedmasterconsdata = branchdata->extendedmasterconsdata;
    return SCIP_OKAY;
 }
 ```
 
 Don't forget to free the memory at some point:
 ```C
-SCIP_CALL( GCGmastercutFree(masterscip, &mastercutdata) );
+SCIP_CALL( GCGextendedmasterconsFree(masterscip, &extendedmasterconsdata) );
 ```

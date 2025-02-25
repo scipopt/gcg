@@ -37,7 +37,7 @@
 #include "class_pricingtype.h"
 #include "scip/cons_linear.h"
 #include "pub_gcgvar.h"
-#include "pub_mastercutdata.h"
+#include "pub_extendedmasterconsdata.h"
 #include "scip/pub_lp.h"
 #include "scip/clock.h"
 #include "scip_misc.h"
@@ -140,19 +140,19 @@ SCIP_Real FarkasPricing::rowGetDual(
    return SCIProwGetDualfarkas(row);
 }
 
-SCIP_Real FarkasPricing::mastercutGetDual(
-   SCIP*                 scip,
-   GCG_MASTERCUTDATA*    mastercutdata
+SCIP_Real FarkasPricing::extendedmasterconsGetDual(
+   SCIP*                         scip,
+   GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata
    ) const
 {
    assert(scip != NULL);
-   assert(mastercutdata != NULL);
-   switch( GCGmastercutGetType(mastercutdata) )
+   assert(extendedmasterconsdata != NULL);
+   switch( GCGextendedmasterconsGetType(extendedmasterconsdata) )
    {
-   case GCG_MASTERCUTTYPE_CONS:
-      return SCIPgetDualfarkasLinear(scip, GCGmastercutGetCons(mastercutdata));
-   case GCG_MASTERCUTTYPE_ROW:
-      return SCIProwGetDualfarkas(GCGmastercutGetRow(mastercutdata));
+   case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+      return SCIPgetDualfarkasLinear(scip, GCGextendedmasterconsGetCons(extendedmasterconsdata));
+   case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+      return SCIProwGetDualfarkas(GCGextendedmasterconsGetRow(extendedmasterconsdata));
    default:
       SCIP_CALL_ABORT( SCIP_ERROR );
       return 0.0;
@@ -219,19 +219,19 @@ SCIP_Real ReducedCostPricing::rowGetDual(
    return SCIProwGetDualsol(row);
 }
 
-SCIP_Real ReducedCostPricing::mastercutGetDual(
-   SCIP*                 scip,
-   GCG_MASTERCUTDATA*    mastercutdata
+SCIP_Real ReducedCostPricing::extendedmasterconsGetDual(
+   SCIP*                         scip,
+   GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata
    ) const
 {
    assert(scip != NULL);
-   assert(mastercutdata != NULL);
-   switch( GCGmastercutGetType(mastercutdata) )
+   assert(extendedmasterconsdata != NULL);
+   switch( GCGextendedmasterconsGetType(extendedmasterconsdata) )
    {
-   case GCG_MASTERCUTTYPE_CONS:
-      return SCIPgetDualsolLinear(scip, GCGmastercutGetCons(mastercutdata));
-   case GCG_MASTERCUTTYPE_ROW:
-      return SCIProwGetDualsol(GCGmastercutGetRow(mastercutdata));
+   case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+      return SCIPgetDualsolLinear(scip, GCGextendedmasterconsGetCons(extendedmasterconsdata));
+   case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+      return SCIProwGetDualsol(GCGextendedmasterconsGetRow(extendedmasterconsdata));
    default:
       SCIP_CALL_ABORT( SCIP_ERROR );
       return 0.0;

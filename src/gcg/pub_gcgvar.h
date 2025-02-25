@@ -87,7 +87,7 @@ SCIP_Bool GCGvarIsMaster(
 #else
 /** returns TRUE or FALSE whether variable is a inferred pricing variable or not
   *
-  * inferred pricing variables are auxilary variables that are required by specific generic mastercuts */
+  * inferred pricing variables are auxilary variables that are required by specific extended master conss */
 GCG_EXPORT
 SCIP_Bool GCGvarIsInferredPricing(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -560,7 +560,7 @@ SCIP_RETCODE GCGcreateArtificialVar(
    SCIP_Real             objcoef             /**< objective coefficient of artificial variable */
    );
 
-/** creates a pricing variable inferred from a master cut
+/** creates a pricing variable inferred from an extended master cons
  * that does not correspond to any original variable and its vardata */
 SCIP_RETCODE GCGcreateInferredPricingVar(
    SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */

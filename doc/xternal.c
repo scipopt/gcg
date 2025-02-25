@@ -263,6 +263,6 @@
    * @brief C++ Data structures that can store partitions of variables and constraints.
    */
 
-  /**@defgroup GCG_MASTERCUTDATA GCG Generic Mastercut Data
+  /**@defgroup GCG_EXTENDEDMASTERCONSDATA GCG Extended Master Cons Data
    * @ingroup DATASTRUCTURES
    */

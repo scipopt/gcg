@@ -178,7 +178,7 @@ SCIP_Bool GCGvarIsMaster(
 #ifndef NDEBUG
 /** returns TRUE or FALSE whether variable is a inferred pricing variable or not
   *
-  * inferred pricing variables are auxilary variables that are required by specific generic mastercuts */
+  * inferred pricing variables are auxilary variables that are required by specific extended master cons */
 GCG_EXPORT
 SCIP_Bool GCGvarIsInferredPricing(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -1653,7 +1653,7 @@ SCIP_RETCODE GCGcreateArtificialVar(
    return SCIP_OKAY;
 }
 
-/** creates a pricing variable inferred from a master cut
+/** creates a pricing variable inferred from an extended master cons
  * that does not correspond to any original variable and its vardata */
 SCIP_RETCODE GCGcreateInferredPricingVar(
    SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
@@ -1675,7 +1675,7 @@ SCIP_RETCODE GCGcreateInferredPricingVar(
    SCIP_CALL( SCIPallocBlockMemory(pricingscip, &newvardata) );
    newvardata->vartype = GCG_VARTYPE_INFERREDPRICING;
    newvardata->blocknr = prob;
-   newvardata->data.inferredpricingvardata.mastercutdata = NULL; // will be set in GCGmastercutCreateFrom*
+   newvardata->data.inferredpricingvardata.extendedmasterconsdata = NULL; // will be set in GCGextendedmasterconsCreateFrom*
 
    /* create variable in the master problem */
    SCIP_CALL( SCIPcreateVar(pricingscip, newvar, varname, lb, ub,

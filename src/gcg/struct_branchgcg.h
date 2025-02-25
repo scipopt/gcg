@@ -54,7 +54,7 @@ struct GCG_Branchrule
    GCG_DECL_BRANCHMASTERSOLVED((*branchmastersolved));      /**< lp solved method of branching rule */
    GCG_DECL_BRANCHDATADELETE ((*branchdatadelete));         /**< deinitialization method of branching rule */
    GCG_DECL_BRANCHNEWCOL ((*branchnewcol));                 /**< new column handler method of branching rule */
-   GCG_DECL_BRANCHGETMASTERCUT ((*branchgetmastercut));     /**< mastercut getter of branching rule */
+   GCG_DECL_BRANCHGETEXTENDEDMASTERCONS ((*branchgetextendedmastercons));     /**< extended master cons getter of branching rule */
 };
 
 #ifdef __cplusplus

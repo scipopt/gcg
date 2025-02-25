@@ -247,15 +247,15 @@ int GCGcolGetNOriginalSepaMastercuts(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
-/** get generic mastercut coefficients of column in the master problem */
+/** get extended master cons coefficients of column in the master problem */
 GCG_EXPORT
-SCIP_Real* GCGcolGetGenericMastercuts(
+SCIP_Real* GCGcolGetExtendedmastercons(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
-/** get number of generic mastercut coefficients of column in the master problem */
+/** get number of extended master cons coefficients of column in the master problem */
 GCG_EXPORT
-int GCGcolGetNGenericMastercuts(
+int GCGcolGetNExtendedmasterconss(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
@@ -273,15 +273,15 @@ SCIP_RETCODE GCGcolUpdateOriginalSepaMastercuts(
    int                  nneworiginalsepamastercuts/**< new number of master cut coefficients */
    );
 
-/** set generic mastercut coefficients information of column in the master problem
+/** set extended master cons coefficients information of column in the master problem
  * @note the arrays will be freed by the column, they must be allocated using the pricingscip the column belongs to
  */
 GCG_EXPORT
-SCIP_RETCODE GCGcolSetGenericMastercuts(
+SCIP_RETCODE GCGcolSetExtendedmasterconss(
    GCG_COL*             gcgcol,             /**< gcg column structure */
-   SCIP_Real*           genericmastercuts,  /**< pointer to array of master cut coefficients */
-   SCIP_Real*           genericmastercutbounds,/**< pointer to array of master cut bounds */
-   int                  ngenericmastercuts  /**< number of master cut coefficients */
+   SCIP_Real*           extendedmasterconss,  /**< pointer to array of extended master cons coefficients */
+   SCIP_Real*           extendedmasterconsbounds,/**< pointer to array of extended master cons bounds */
+   int                  nextendedmasterconss  /**< number of extended master cons coefficients */
    );
 
 /** gets the age of the col */

@@ -39,7 +39,7 @@
 #include "scip/def.h"
 #include "scip/type_result.h"
 #include "scip/type_scip.h"
-#include "type_mastercutdata.h"
+#include "type_extendedmasterconsdata.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -125,13 +125,13 @@ typedef enum GCG_BoundType GCG_BOUNDTYPE;
  */
 #define GCG_DECL_BRANCHNEWCOL(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, SCIP_VAR* mastervar)
 
-/** get the mastercutdata created by this branching rule, if any
+/** get the extendedmasterconsdata created by this branching rule, if any
  *
  *  input:
  *    scip            : SCIP main data structure of the original problem
  *    branchdata      : the branching data
  */
-#define GCG_DECL_BRANCHGETMASTERCUT(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, GCG_MASTERCUTDATA** mastercutdata)
+#define GCG_DECL_BRANCHGETEXTENDEDMASTERCONS(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, GCG_EXTENDEDMASTERCONSDATA** extendedmasterconsdata)
 
 #ifdef __cplusplus
 }

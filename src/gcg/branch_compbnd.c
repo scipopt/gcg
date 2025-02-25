@@ -55,10 +55,10 @@
 #include "gcg.h"
 #include "pricer_gcg.h"
 #include "relax_gcg.h"
-#include "pub_mastercutdata.h"
-#include "mastercutdata.h"
+#include "pub_extendedmasterconsdata.h"
+#include "extendedmasterconsdata.h"
 #include "pub_gcgvar.h"
-#include "type_mastercutdata.h"
+#include "type_extendedmasterconsdata.h"
 #include "type_branchgcg.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_varbound.h"
@@ -94,7 +94,7 @@ struct GCG_BranchData
    int                   compBndSeqSize;     /**< size of the component bound sequence compBndSeq */
    int                   blocknr;            /**< id of the pricing problem (or block) to which this branching constraint belongs */
    int                   nvars;              /**< number of master variables the last time the node has been visited - neccessary to later include newly generated master variables */
-   GCG_MASTERCUTDATA*    mastercons;         /**< master constraint along with its corresponding inferred pricing modifications */
+   GCG_EXTENDEDMASTERCONSDATA*    mastercons;         /**< master constraint along with its corresponding inferred pricing modifications */
 };
 
 
@@ -385,12 +385,12 @@ SCIP_RETCODE addVarToMasterbranch(
 
    *added = FALSE;
 
-   coef = GCGmastercutGetCoeff(scip, branchdata->mastercons, origvars, origvals, norigvars, GCGvarGetBlock(mastervar));
+   coef = GCGextendedmasterconsGetCoeff(scip, branchdata->mastercons, origvars, origvals, norigvars, GCGvarGetBlock(mastervar));
 
    if( !SCIPisZero(scip, coef) )
    {
       SCIPdebugMessage("Adding variable %s to branching constraint: %s %d\n", SCIPvarGetName(mastervar), branchdata->branchtype == GCG_BRANCH_DOWN ? "<=" : ">=", branchdata->constant);
-      SCIP_CALL( GCGmastercutAddMasterVar(scip, branchdata->mastercons, mastervar, coef) );
+      SCIP_CALL( GCGextendedmasterconsAddMasterVar(scip, branchdata->mastercons, mastervar, coef) );
       *added = TRUE;
    }
 
@@ -399,17 +399,17 @@ SCIP_RETCODE addVarToMasterbranch(
 
 /** callback new column method */
 static
-GCG_DECL_MASTERCUTGETCOEFF(mastercutGetCoeffCompBnd)
+GCG_DECL_EXTENDEDMASTERCONSGETCOEFF(extendedmasterconsGetCoeffCompBnd)
 {
    GCG_BRANCHDATA* branchdata;
 
    assert(scip != NULL);
    assert(GCGisMaster(scip));
 
-   branchdata = (GCG_BRANCHDATA*) GCGmastercutGetData(mastercutdata);
+   branchdata = (GCG_BRANCHDATA*) GCGextendedmasterconsGetData(extendedmasterconsdata);
 
    assert(branchdata != NULL);
-   assert(branchdata->mastercons == mastercutdata);
+   assert(branchdata->mastercons == extendedmasterconsdata);
 
    *coef = 0.0;
 
@@ -629,7 +629,7 @@ SCIP_RETCODE createBranchingCons(
    ) );
 
    // create the master constraint
-   SCIP_CALL( GCGmastercutCreateFromCons(scip, &branchdata->mastercons, branchcons, pricingmods, 1, branchdata, mastercutGetCoeffCompBnd) );
+   SCIP_CALL( GCGextendedmasterconsCreateFromCons(scip, &branchdata->mastercons, branchcons, pricingmods, 1, branchdata, extendedmasterconsGetCoeffCompBnd) );
 
    // add the variables to the constraint
    for( i = 0; i < nmastervars; i++ )
@@ -1994,7 +1994,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteCompBnd)
 
    /* release constraint that enforces the branching decision */
    assert((*branchdata)->mastercons != NULL);
-   SCIP_CALL( GCGmastercutFree(masterscip, &(*branchdata)->mastercons) );
+   SCIP_CALL( GCGextendedmasterconsFree(masterscip, &(*branchdata)->mastercons) );
    assert((*branchdata)->mastercons == NULL);
 
    assert((*branchdata)->compBndSeq != NULL && (*branchdata)->compBndSeqSize > 0);
@@ -2026,13 +2026,13 @@ GCG_DECL_BRANCHNEWCOL(branchNewColCompBnd)
 }
 
 static
-GCG_DECL_BRANCHGETMASTERCUT(branchGetMastercutCompBnd)
+GCG_DECL_BRANCHGETEXTENDEDMASTERCONS(branchGetExtendedmasterconsCompBnd)
 {
    assert(scip != NULL);
    assert(branchdata != NULL);
    assert(branchdata->mastercons != NULL);
 
-   *mastercutdata = branchdata->mastercons;
+   *extendedmasterconsdata = branchdata->mastercons;
 
    return SCIP_OKAY;
 }
@@ -2062,7 +2062,7 @@ SCIP_DECL_BRANCHINIT(branchInitCompBnd)
 
    SCIP_CALL( GCGrelaxIncludeBranchrule(origscip, branchrule, branchActiveMasterCompBnd,
          branchDeactiveMasterCompBnd, branchPropMasterCompBnd, branchMasterSolvedCompBnd, branchDataDeleteCompBnd,
-         branchNewColCompBnd, branchGetMastercutCompBnd) );
+         branchNewColCompBnd, branchGetExtendedmasterconsCompBnd) );
 
 #ifdef COMPBND_STATS
    /* determine the filename */

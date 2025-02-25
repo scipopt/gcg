@@ -25,56 +25,38 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    struct_mastercutdata.h
+/**@file    struct_gcgvarhistory.h
  * @ingroup DATASTRUCTURES
- * @brief   data structures for GCG mastercut data
+ * @brief   data structures for managing variable history
  * @author  Til Mohr
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_STRUCT_MASTERCUTDATA_H_
-#define GCG_STRUCT_MASTERCUTDATA_H_
+#ifndef GCG_STRUCT_GCGVARHISTORY_H_
+#define GCG_STRUCT_GCGVARHISTORY_H_
 
-#include <scip/def.h>
 #include <scip/type_cons.h>
 #include <scip/type_lp.h>
 #include <scip/type_var.h>
-#include "type_mastercutdata.h"
+#include "type_gcgvarhistory.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** data for a pricing problem modification */
-struct GCG_PricingModification
-{
-   int                   blocknr;            /**< block number of the master cut */
-   SCIP_VAR*             coefvar;            /**< variable in the pricing problem inferred from the master cut
-                                                * always has the objective coefficient of the negated dual value of the master cut
-                                                * its solution value corresponds to the coefficient of the new mastervariable in the master cut */
-   SCIP_VAR**            additionalvars;     /**< array of additional variables with no objective coefficient in the pricing programs inferred from the master cut */
-   int                   nadditionalvars;    /**< number of additional variables in the pricing programs */
-   SCIP_CONS**           additionalconss;    /**< array of additional constraints in the pricing programs inferred from the master cut */
-   int                   nadditionalconss;   /**< number of additional constraints in the pricing programs */
+#define GCG_VARHISTORYBUFFER_SIZE 50
+
+struct GCG_VarHistoryBuffer {
+   int                   nvars;              /**< number of variables */
+   GCG_VARHISTORYBUFFER* next;               /**< next buffer */
+   int                   nuses;              /**< number of uses */
+   SCIP_VAR*             vars[GCG_VARHISTORYBUFFER_SIZE]; /**< variables */
 };
 
-/** cut of the master cut */
-union GCG_MasterCutCut
-{
-   SCIP_CONS*           cons;                /**< constraint in the master problem that represents the master cut, iff type == Cons */
-   SCIP_ROW*            row;                 /**< row in the master problem that represents the master cut, iff type == Row */
-};
-
-/** data for master cuts */
-struct GCG_MasterCutData
-{
-   GCG_MASTERCUTTYPE     type;               /**< type of the master cut */
-   GCG_MASTERCUTCUT      cut;                /**< constraint or row in the master problem that represents the master cut */
-   GCG_PRICINGMODIFICATION* pricingmodifications; /**< array of pricing modifications for the master cut */
-   int                   npricingmodifications; /**< number of pricing modifications for the master cut */
-   void*                 data;               /**< any data that might be required to calculate the coefficient of a column solution */
-   GCG_DECL_MASTERCUTGETCOEFF ((*mastercutGetCoeff)); /**< callback to calculate the coefficient of a column solution */
+struct GCG_VarHistory {
+   GCG_VARHISTORYBUFFER* buffer;             /**< buffer */
+   int                   pos;                /**< position in the buffer */
 };
 
 #ifdef __cplusplus

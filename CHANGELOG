@@ -9,7 +9,7 @@ New features:
 - new pricing solver ("gcg") that calls GCG to solve (structured) pricing problems
 - new (JSON formatted) decomposition file format ("jdec") supporting nested/recursive decompositions
 - generic approach to handle cuts and branching constraints in the master problem with no couterpart in the original problem
-- created a pricing variable type for variables not corresponding to any original variable, inferred by mastercuts
+- created a pricing variable type for variables not corresponding to any original variable, inferred by extended master constraints
 - automatic mastervariable synchronization across the entire search tree through history-tracking
 - component bound branching rule
 
@@ -20,9 +20,9 @@ New/modified/removed structures, defines, and classes:
 - added struct 'PARTIALDECOMP_C' used by the C interface
 - added struct 'GCG_INFERREDPRICINGVARDATA'
 - added struct 'GCG_PRICINGMODIFICATION'
-- added enum 'GCG_MASTERCUTTYPE'
-- added struct 'GCG_MASTERCUTCUT'
-- added struct 'GCG_MASTERCUTDATA'
+- added enum 'GCG_EXTENDEDMASTERCONSTYPE'
+- added struct 'GCG_EXTENDEDMASTERCONS'
+- added struct 'GCG_EXTENDEDMASTERCONSDATA'
 - added struct 'GCG_VARHISTORY'
 - added struct 'GCG_VARHISTORYBUFFER'
 - added type 'GCG_VARTYPE_INFERREDPRICING'
@@ -61,16 +61,16 @@ New/modified/removed API functions:
 - added function 'GCGcreateInferredPricingVar'
 - added function 'GCGvarIsInferredPricing'
 - added function 'GCGpricingmodificationCreate'
-- added function 'GCGmastercutCreateFromCons'
-- added function 'GCGmastercutCreateFromRow'
-- added function 'GCGmastercutFree'
+- added function 'GCGextendedmasterconsCreateFromCons'
+- added function 'GCGextendedmasterconsCreateFromRow'
+- added function 'GCGextendedmasterconsFree'
 - added function 'GCGrelaxBranchNewCol'
-- added function 'GCGrelaxBranchGetMasterCut'
-- added function 'GCGrelaxBranchGetAllActiveMasterCuts'
+- added function 'GCGrelaxBranchGetExtendedMasterCons'
+- added function 'GCGrelaxBranchGetAllActiveExtendedMasterConss'
 - added callback 'GCG_DECL_BRANCHNEWCOL' to 'GCG_BRANCHRULE'
-- added callback 'GCG_DECL_BRANCHGETMASTERCUT' to 'GCG_BRANCHRULE'
+- added callback 'GCG_DECL_BRANCHGETEXTENDEDMASTERCONS' to 'GCG_BRANCHRULE'
 - added parameter 'GCG_DECL_BRANCHNEWCOL ((*branchnewcol));' to 'GCGrelaxIncludeBranchrule'
-- added parameter 'GCG_DECL_BRANCHGETMASTERCUT((*branchgetmastercut))' to 'GCGrelaxIncludeBranchrule'
+- added parameter 'GCG_DECL_BRANCHGETEXTENDEDMASTERCONS((*branchgetextendedmastercons))' to 'GCGrelaxIncludeBranchrule'
 - moved function 'SCIPincludeSepaMaster' to 'SCIPincludeSepaOriginal'
 - moved function 'GCGsepaGetOrigcuts' to 'GCGsepaGetOriginalSepaOrigcuts'
 - moved function 'GCGsepaGetNCuts' to 'GCGsepaGetNOriginalSepaCuts'

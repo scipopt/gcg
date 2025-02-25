@@ -39,7 +39,7 @@
 
 #include "branch_generic.h"
 #include "pub_gcgvar.h"
-#include "pub_mastercutdata.h"
+#include "pub_extendedmasterconsdata.h"
 #include "relax_gcg.h"
 #include "cons_masterbranch.h"
 #include "cons_origbranch.h"

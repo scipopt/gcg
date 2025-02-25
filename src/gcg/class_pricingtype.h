@@ -37,7 +37,7 @@
 
 #include "objscip/objscip.h"
 #include "pricer_gcg.h"
-#include "type_mastercutdata.h"
+#include "type_extendedmasterconsdata.h"
 
 /**
  * @ingroup PRICING_PRIV
@@ -87,10 +87,10 @@ public:
       SCIP_ROW*             row                 /**< row to get dual value for */
       ) const = 0;
 
-   /** get dual value of a mastercut */
-   virtual SCIP_Real mastercutGetDual(
+   /** get dual value of an extended master cons */
+   virtual SCIP_Real extendedmasterconsGetDual(
       SCIP*                 scip,
-      GCG_MASTERCUTDATA*    mastercutdata       /**< mastercut data */
+      GCG_EXTENDEDMASTERCONSDATA*    extendedmasterconsdata       /**< extended master cons data */
       ) const = 0;
 
    /** get objective value of variable */
@@ -189,9 +189,9 @@ public:
      SCIP_ROW*             row
      ) const;
 
-   virtual SCIP_Real mastercutGetDual(
+   virtual SCIP_Real extendedmasterconsGetDual(
      SCIP*                 scip,
-     GCG_MASTERCUTDATA*    mastercutdata
+     GCG_EXTENDEDMASTERCONSDATA*    extendedmasterconsdata
      ) const;
 
    virtual SCIP_Real varGetObj(
@@ -232,9 +232,9 @@ public:
       SCIP_ROW*             row
       ) const;
 
-   virtual SCIP_Real mastercutGetDual(
+   virtual SCIP_Real extendedmasterconsGetDual(
       SCIP*                 scip,
-      GCG_MASTERCUTDATA*    mastercutdata
+      GCG_EXTENDEDMASTERCONSDATA*    extendedmasterconsdata
       ) const;
 
    virtual SCIP_Real varGetObj(

@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    misc_varhistory.h
+/**@file    gcgvarhistory.h
  * @ingroup INTERNALAPI-GCG
  * @brief   methods for managing variable history
  * @author  Til Mohr
@@ -34,12 +34,12 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 
-#ifndef GCG_MISC_VARHISTORY_H__
-#define GCG_MISC_VARHISTORY_H__
+#ifndef GCG_GCGVARHISTORY_H__
+#define GCG_GCGVARHISTORY_H__
 
 #include "scip/scip.h"
 #include "def.h"
-#include "type_varhistory.h"
+#include "type_gcgvarhistory.h"
 
 #ifdef __cplusplus
 extern "C" {

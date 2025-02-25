@@ -47,7 +47,7 @@
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 #include "pub_colpool.h"
-#include "misc_varhistory.h"
+#include "gcgvarhistory.h"
 
 
 /*#define CHECKPROPAGATEDVARS*/

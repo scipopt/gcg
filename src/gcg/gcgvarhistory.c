@@ -25,13 +25,13 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    misc_varhistory.c
+/**@file    gcgvarhistory.c
  * @brief   methods for managing variable history
  * @author  Til Mohr
  */
 
-#include "misc_varhistory.h"
-#include "struct_varhistory.h"
+#include "gcgvarhistory.h"
+#include "struct_gcgvarhistory.h"
 
 /** free a history buffer */
 static

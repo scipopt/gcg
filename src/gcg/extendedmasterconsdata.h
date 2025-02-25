@@ -25,40 +25,64 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    struct_varhistory.h
- * @ingroup DATASTRUCTURES
- * @brief   data structures for managing variable history
+/**@file    extendedmasterconsdata.h
+ * @ingroup INTERNALAPI-GCG
+ * @brief   internal methods for interacting with GCG_EXTENDEDMASTERCONSDATA
  * @author  Til Mohr
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_STRUCT_VARHISTORY_H_
-#define GCG_STRUCT_VARHISTORY_H_
+#ifndef GCG_EXTENDEDMASTERCONSDATA_H_
+#define GCG_EXTENDEDMASTERCONSDATA_H_
 
-#include <scip/type_cons.h>
-#include <scip/type_lp.h>
-#include <scip/type_var.h>
-#include "type_varhistory.h"
+#include "def.h"
+
+#include "pricer_gcg.h"
+#include "struct_extendedmasterconsdata.h"
+#include "type_extendedmasterconsdata.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define GCG_VARHISTORYBUFFER_SIZE 50
+/**
+ * @ingroup GCG_EXTENDEDMASTERCONSDATA
+ * @{
+ */
 
-struct GCG_VarHistoryBuffer {
-   int                   nvars;              /**< number of variables */
-   GCG_VARHISTORYBUFFER* next;               /**< next buffer */
-   int                   nuses;              /**< number of uses */
-   SCIP_VAR*             vars[GCG_VARHISTORYBUFFER_SIZE]; /**< variables */
-};
+/** update the extended master cons with the new dual value */
+SCIP_RETCODE GCGextendedmasterconsUpdateDualValue(
+   SCIP*                         masterscip,             /**< master scip */
+   GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata, /**< extended master cons data */
+   SCIP_Real                     dualvalue               /**< dual value */
+   );
 
-struct GCG_VarHistory {
-   GCG_VARHISTORYBUFFER* buffer;             /**< buffer */
-   int                   pos;                /**< position in the buffer */
-};
+/** apply a pricing modification */
+SCIP_RETCODE GCGpricingmodificationApply(
+   SCIP*                         pricingscip,            /**< pricing scip */
+   GCG_PRICINGMODIFICATION       pricingmodification     /**< pricing modification */
+   );
 
+/** apply all pricing modifications */
+SCIP_RETCODE GCGextendedmasterconsApplyPricingModifications(
+   SCIP*                         masterscip,             /**< master scip */
+   GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata  /**< extended master cons data */
+   );
+
+/** undo a pricing modification */
+SCIP_RETCODE GCGpricingmodificationUndo(
+   SCIP*                         pricingscip,            /**< pricing scip */
+   GCG_PRICINGMODIFICATION       pricingmodification     /**< pricing modification */
+   );
+
+/** undo all pricing modifications */
+SCIP_RETCODE GCGextendedmasterconsUndoPricingModifications(
+   SCIP*                         masterscip,             /**< master scip */
+   GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata  /**< extended master cons data */
+   );
+
+/**@} */
 #ifdef __cplusplus
 }
 #endif

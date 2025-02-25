@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    type_varhistory.h
+/**@file    type_gcgvarhistory.h
  * @ingroup TYPEDEFINITIONS
  * @brief   type definitions for managing variable history
  * @author  Til Mohr
@@ -33,8 +33,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_TYPE_VARHISTORY_H_
-#define GCG_TYPE_VARHISTORY_H_
+#ifndef GCG_TYPE_GCGVARHISTORY_H_
+#define GCG_TYPE_GCGVARHISTORY_H_
 
 #ifdef __cplusplus
 extern "C" {
