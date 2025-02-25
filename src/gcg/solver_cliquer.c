@@ -60,17 +60,11 @@
 
 #define DEFAULT_DENSITY      0.85
 #define DEFAULT_NODELIMIT    200
+#define DEFAULT_OBJCOEFDISTR 0
 
 /*
  * Data structures.
  */
-
-struct GCG_SolverData 
-{
-   SCIP_Real             density;            /**< graph density threshold above which to use solver */
-   int                   nodelimit;          /**< graph node threshold below which to use solver */
-   SCIP_Bool*            isnotapplicable;    /**< array tracking if solver is not applicable in root node (& no cuts) */
-};
 
 /* Constraint type (combination of handler type and constraint form) to use in this solver. */
 enum cliquerConsType
@@ -85,6 +79,19 @@ enum cliquerConsType
    VARBND_IS
 };
 typedef enum cliquerConsType CLIQUER_CONSTYPE;
+
+typedef void (*DistrVarObjCoefHeur)(SCIP*, int, SCIP_Bool*, int**, SCIP_VAR**, int, SCIP_Real*, SCIP_CONS**, int,
+                                    int*, CLIQUER_CONSTYPE*);
+
+struct GCG_SolverData 
+{
+   SCIP_Real             density;            /**< graph density threshold above which to use solver */
+   int                   nodelimit;          /**< graph node threshold below which to use solver */
+   SCIP_Bool*            isnotapplicable;    /**< array tracking if solver is not applicable in root node (& no cuts) */
+   int                   objcoefdistr;       /**< param deciding strategy for distributing obj coefs of coupling vars */
+   DistrVarObjCoefHeur   execdistrheur;      /**< function pointer to selected obj coef distribution heuristic */
+};
+
 
 /*
  * Local methods
@@ -578,7 +585,9 @@ int assureInCouplingGraph(
    return (*nvarsincouplings)++;
 }
 
-/**  */
+/** Update coupling digraph for a given coupling(like) constraint, i.e., the coupling and constraint vars.
+ *  This is done by assuring all variables have a corresponding index in the graph.
+ *  Then, directed edges from coupling var to each other var involved in the constraint are inserted. */
 static INLINE
 void updateCouplingDiGraph(
    SCIP_VAR**            consvars,           /**< Array of variables in constraint for which to update the graph */
@@ -607,7 +616,9 @@ void updateCouplingDiGraph(
    }
 }
 
-/**  */
+/** Recursive function - should be called through isCouplingRelevant() or other non-recursive methods.
+ *  Checks if a variable for a given index in the coupling digraph is relevant for distributing the coefficients. */
+// TODO: Mark visited nodes (or count till max depth).
 static
 SCIP_Bool isCouplingRelevantRec(
    SCIP*                 scip,               /**< The problem instance */
@@ -632,7 +643,10 @@ SCIP_Bool isCouplingRelevantRec(
    return FALSE;
 }
 
-/** */
+/** Checks if a variable for a given index in the coupling digraph is relevant for distributing the coefficients.
+ *  A variable is said to be relevant iff
+ *      - it has a negative objective coefficient or
+ *      - in the digraph a node corresponding to a variable with negative obj. coef. is reachable in the digraph. */
 static INLINE
 SCIP_Bool isCouplingRelevant(
    SCIP*                 scip,               /**< The problem instance */
@@ -646,7 +660,7 @@ SCIP_Bool isCouplingRelevant(
    return isCouplingRelevantRec(scip, varind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef);
 }
 
-/** */
+/** Same as isCouplingRelevant(), but takes a SCIP_VAR pointer instead of the digraph index. */
 static INLINE
 SCIP_Bool isCouplingRelevantVar(
    SCIP*                 scip,               /**< The problem instance */
@@ -665,6 +679,7 @@ SCIP_Bool isCouplingRelevantVar(
    return isCouplingRelevantRec(scip, varind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef);
 }
 
+/** Checks in the coupling digraph if a var with a given index has a coupling relevant successor. */
 static INLINE
 SCIP_Bool hasSuccessorRel(
    SCIP*                 scip,               /**< The problem instance */
@@ -686,7 +701,7 @@ SCIP_Bool hasSuccessorRel(
    return FALSE;
 }
 
-/** Get the number of coupling-relevant successors in the Coupling DiGraph */
+/** Get the number of coupling-relevant successors in the Coupling DiGraph. */
 static INLINE
 int getNSuccessorsRelevant(
    SCIP*                 scip,               /**< The problem instance */
@@ -709,7 +724,36 @@ int getNSuccessorsRelevant(
    return nsuccessors;
 }
 
-/*  */
+/*
+ * Idea - Distribution Strategy 1: Natural Coefficient Share Distribution.
+ *
+ * Distributes a variable's objective coefficient among its coupled successors using a structured
+ * closed-form approximation, ensuring no feasible assignment overestimates the original objective function.
+ *
+ * **Step 1: Distribute the Objective Coefficient Among Constraints**
+ * Given m constraints of the form x_{i,1} + ... + x_{i,n_i} ≤ c_i * y, each constraint i receives:
+ *
+ *      w_i = w * (c_i / sum(c_j for all j in constraints))
+ *
+ * **Step 2: Distribute w_i Among Relevant Variables**
+ * Each relevant x_{i,j} variable in constraint i gets:
+ *
+ *      w_ij = w_i * (1 / n_rel_cons_vars)
+ *
+ * **Implementation:**
+ * - Iterate over constraints, identify relevant variables, and accumulate their coefficient shares (`coefshares[j]`).
+ * - Normalize using `denominator`:
+ *
+ *      aggrobjcoef[j] += actvarcoef * (coefshares[j] / denominator)
+ *
+ * **Special Cases:**
+ * - **Varbound Standard & Clique Constraints**: Each relevant variable gets **1**.
+ * - **Decorative Coupling Constraints** (x_1 + ... + x_n ≤ c * y, c ≥ n): Each variable gets **1 / n_rel_cons_vars**.
+ *
+ * This method ensures the total assigned weight remains ≤ w and that feasible selections of x_ij never exceed w.
+ */
+
+/** Coupling(-like) Variable Objective Distribution Strategy 1: Natural Coefficient Share Distribution. */
 static INLINE
 void distributeVarCoefHeuristic(
    SCIP*                 scip,               /**< The problem instance */
@@ -827,7 +871,28 @@ void distributeVarCoefHeuristic(
    SCIPfreeBufferArray(scip, &coefshares);
 }
 
-/*  */
+/*
+ * Idea - Distribution Strategy 2: Independent set (IS)-based share distribution.
+ *
+ * This heuristic distributes the objective coefficient of a coupled variable among its relevant successor variables
+ * by leveraging **maximum independent sets** in the coupling graph. The goal is to ensure a balanced coefficient
+ * distribution while preventing overestimation of the objective function.
+ *
+ * **Core Idea:**
+ * - Construct a **graph representation** where nodes correspond to relevant successor variables.
+ * - Create edges between all pairs of successor variables initially.
+ * - Remove edges based on constraints of type `LINEAR_COUPLING_CLIQUE`, ensuring that only truly independent
+ *   variables remain connected.
+ * - Compute a **maximum independent set (MIS)** in this reduced graph using the **cliquer** library.
+ * - Distribute the objective coefficient **equally** among the variables in this MIS.
+ *
+ * This ensures no overestimation of the redistributed objective coefficient.
+ *
+ * Attention:  If the coupling graph is too large, the cliquer library might not solve the problem in acceptable time.
+ *             Therefore, a hard limit of 200 nodes is implemented. Otherwise, no distribution is done.
+ */
+
+/** Coupling(-like) Variable Objective Distribution Strategy 2: Independent Set-based share distribution. */
 static INLINE
 void distributeVarCoefHeuristicIS(
    SCIP*                 scip,               /**< The problem instance */
@@ -950,7 +1015,8 @@ void distributeVarCoefHeuristicIS(
 }
 
 // TODO: Loop detection / handling !?
-/**  */
+
+/** Recursive function: Should be called through non-recursive function 'distributeObjCoef()'. */
 static
 void distributeObjCoefRec(
    SCIP*                 scip,               /**< The problem instance */
@@ -963,7 +1029,8 @@ void distributeObjCoefRec(
    SCIP_CONS**           constraints,        /**< Array containing pointers to SCIP constraints of pricing problem */
    int                   nconss,             /**< Index of constraints array */
    int*                  couplingcoefindices,/**< Array for coupling coefficient of each constraint (if coupling) */
-   CLIQUER_CONSTYPE*     cliquerconstypes    /**< Array holding constraint types (specific to this solver) */
+   CLIQUER_CONSTYPE*     cliquerconstypes,   /**< Array holding constraint types (specific to this solver) */
+   DistrVarObjCoefHeur   execdistrheur       /**< Function ptr to the selected obj coef distribution heuristic. */
    )
 {
    int            i;
@@ -981,17 +1048,42 @@ void distributeObjCoefRec(
          continue;
       if( couplingmatrix[i][actvarind] > 0 && !isdistributed[i] )
          distributeObjCoefRec(scip, i, isdistributed, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
-                              constraints, nconss, couplingcoefindices, cliquerconstypes);
+                              constraints, nconss, couplingcoefindices, cliquerconstypes, execdistrheur);
    }
 
    /* All predecessors are distributed now. */
    /* If now has positive (aggr.) obj. coeff.: Distribute coeff. of act. var to all successor variables. */
    if( SCIPisGT(scip, aggrobjcoef[SCIPvarGetProbindex(varsincouplings[actvarind])], 0))
-      distributeVarCoefHeuristic(scip, actvarind, isdistributed, couplingmatrix, varsincouplings, nvarsincouplings,
-                                 aggrobjcoef, constraints, nconss, couplingcoefindices, cliquerconstypes);
+      execdistrheur(scip, actvarind, isdistributed, couplingmatrix, varsincouplings, nvarsincouplings,
+                    aggrobjcoef, constraints, nconss, couplingcoefindices, cliquerconstypes);
 }
 
-/**  */
+/*
+ * Idea - Objective Coefficient Distribution of Coupling Variables Coefficient:
+ *
+ * ** Problem: **
+ * As the cliquer solver can only handle non-negative integer weights, the objective coefficients are (besides
+ * scaled) inverted and all negative coefficients are just set to 1 (heuristically!).
+ * Thus, after the independent set problem is transformed (heuristically) to a clique problem, the objective
+ * coefficients of coupling variables worsening the solutions objective value are not properly reflected in the
+ * weights of the max weighted clique problem.
+ *
+ * ** Correction Attempt: **
+ * The objective coefficient w of a coupling variable y (constraints of form: x_1 + ... + x_n <= c*y) can be distributed
+ * among all other variables x_1, ..., x_n in the constraint(s) to get an objective that is closer to the actual one.
+ *
+ * ** Implementation: **
+ * We implement this by building and utilizing a digraph to process the distribution hierarchically. I.e., if there
+ * exist constraints of the form z_1 + z_2 <= z_3 and z_3 + z_4 <= z_5, we first want to distribute the coefficient of
+ * z_5 to the ones of z_3 and z_4 and only then distribute the (aggregated) objective coefficient of z_3 to the ones of
+ * z_1 and z_2.
+ *
+ * Furthermore, we only distribute coefficients that worsen the solution (negative ones after inversion). Also, we only
+ * distribute to relevant variables, as the others should already be never chosen because there objective coefficient
+ * suggests so.
+ */
+
+/** Distributes the objective coefficient of coupling(-like) vars to all other vars occurring in those constraints. */
 static
 void distributeObjCoef(
    SCIP*                 scip,               /**< The problem instance */
@@ -1002,11 +1094,14 @@ void distributeObjCoef(
    int**                 couplingmatrix,     /**< Matrix indicating which variables are linked by a node */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
-   SCIP_Real*            aggrobjcoef         /**< Array of aggregated objective coefficients. */
+   SCIP_Real*            aggrobjcoef,        /**< Array of aggregated objective coefficients. */
+   DistrVarObjCoefHeur   execdistrheur       /**< Function ptr to the selected obj coef distribution heuristic. */
    )
 {
    int            i;
    SCIP_Bool*     isdistributed;                   /* array storing if a coupled variable was visited */
+
+   assert(execdistrheur != NULL);
 
    SCIP_CALL_ABORT( SCIPallocClearBufferArray(scip, &isdistributed, nvarsincouplings) );
 
@@ -1014,7 +1109,7 @@ void distributeObjCoef(
    {
       if( !isdistributed[i] )
          distributeObjCoefRec(scip, i, isdistributed, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
-                              constraints, nconss, couplingcoefindices, cliquerconstypes);
+                              constraints, nconss, couplingcoefindices, cliquerconstypes, execdistrheur);
    }
 
    SCIPfreeBufferArray(scip, &isdistributed);
@@ -1022,6 +1117,7 @@ void distributeObjCoef(
 
 /**
  * Determine cliquer constraint type and save it in the cliquerconstype array.
+ * Also, build same-constraint equality graph and coupling digraph.
  * @return SCIP bool that is false in case a constraint is encountered that cannot be handled,
  *          true if propagation was successful.
  */
@@ -1776,9 +1872,9 @@ SCIP_RETCODE solveCliquer(
       aggregateObjCoef(pricingprob, linkmatrix, linkedvars, nlinkedvars, aggrobjcoef);
 
    /* If there are coupling or standard varbound constraints, it may be necessary to distribute objective coefficients. */
-   if( ncouplvars > 0 )
+   if( solver->objcoefdistr > 0 && ncouplvars > 0 )
       distributeObjCoef(pricingprob, constraints, nconss, couplingcoefindices, cliquerconstypes, couplingmatrix,
-                        couplvars, ncouplvars, aggrobjcoef);
+                        couplvars, ncouplvars, aggrobjcoef, solver->execdistrheur);
 
    /* Now calculate scaling factor based on maximum aggregated objective coefficient value. */
 
@@ -2280,6 +2376,23 @@ GCG_DECL_SOLVERINITSOL(solverInitsolCliquer)
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
+   /* set distribution strategy function pointer based on objcoefdistr parameter. */
+   switch( solverdata->objcoefdistr )
+   {
+      case 1:
+         /* 'Natural' share coefficient distribution heuristic */
+         solverdata->execdistrheur = distributeVarCoefHeuristic;
+         break;
+      case 2:
+         /* Max. Indipendent Set coefficient distribution heuristic */
+         solverdata->execdistrheur = distributeVarCoefHeuristicIS;
+         break;
+      default:
+         /* Default (especially value 0): No objective coefficient distribution */
+         solverdata->execdistrheur = NULL;
+         break;
+   }
+
    /* allocate and initialize isnotapplicable array */
    npricingprobs = GCGgetNPricingprobs(GCGmasterGetOrigprob(scip));
    SCIP_CALL( SCIPallocClearBlockMemoryArray(scip, &solverdata->isnotapplicable, npricingprobs) );
@@ -2353,6 +2466,11 @@ SCIP_RETCODE GCGincludeSolverCliquer(
    SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/cliquer/nodelimit",
          "graph node threshold below which to use solver",
          &solverdata->nodelimit, TRUE, DEFAULT_NODELIMIT, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/cliquer/objcoefdistr",
+         "distribution of objective coefficients of coupling variables (disabled = 0, natural share = 1, "
+         "MIS-based = 2)",
+         &solverdata->nodelimit, TRUE, DEFAULT_OBJCOEFDISTR, 0, 2, NULL, NULL) );
 
    return SCIP_OKAY;
 }
