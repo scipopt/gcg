@@ -127,6 +127,13 @@ GCG_BRANCHDATA* GCGconsMasterbranchGetBranchdata(
    SCIP_CONS*            cons                /**< constraint pointer */
    );
 
+/** sets the branching data for a given masterbranch constraint */
+GCG_EXPORT
+void GCGconsMasterbranchSetBranchdata(
+   SCIP_CONS*            cons,               /**< masterbranch constraint for which the branching data is requested */
+   GCG_BRANCHDATA*       branchdata          /**< branching data */
+   );
+
 /** returns the branching rule of the constraint */
 GCG_EXPORT
 SCIP_BRANCHRULE* GCGconsMasterbranchGetBranchrule(

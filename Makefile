@@ -259,6 +259,7 @@ LIBOBJ = \
 			gcg/branch_relpsprob.o \
 			gcg/branch_ryanfoster.o \
 			gcg/branch_bpstrong.o \
+			gcg/branch_compbnd.o \
 			gcg/class_conspartition.o \
 			gcg/class_indexpartition.o \
 			gcg/class_pricingcontroller.o \
@@ -359,8 +360,10 @@ LIBOBJ = \
 			gcg/heur_setcover.o \
 			gcg/heur_xpcrossover.o \
 			gcg/heur_xprins.o \
+			gcg/extendedmasterconsdata.o \
 			gcg/masterplugins.o \
 			gcg/bendersplugins.o \
+			gcg/gcgvarhistory.o \
 			gcg/misc.o \
 			gcg/miscvisualization.o \
 			gcg/nodesel_master.o \
@@ -390,7 +393,7 @@ LIBOBJ = \
 			gcg/score_strong.o \
 			gcg/score.o \
 			gcg/sepa_basis.o \
-			gcg/sepa_master.o \
+			gcg/sepa_original.o \
 			gcg/solver.o \
 			gcg/solver_gcg.o \
 			gcg/solver_knapsack.o \

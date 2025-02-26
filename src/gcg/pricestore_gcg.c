@@ -34,6 +34,8 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 #include <assert.h>
 
+#include "pub_gcgcol.h"
+#include "pub_gcgvar.h"
 #include "scip/def.h"
 #include "scip/set.h"
 #include "scip/stat.h"
@@ -146,7 +148,7 @@ SCIP_RETCODE GCGpricestoreCreate(
 
    SCIP_CALL( SCIPhashtableCreate(&(*pricestore)->hashtable, SCIPblkmem(scip),
          hashtablesize, GCGhashGetKeyCol, GCGhashKeyEqCol, GCGhashKeyValCol, (void*)pricestore) );
-   
+
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(*pricestore)->cols, (*pricestore)->narrays) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(*pricestore)->objparallelisms, (*pricestore)->narrays) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(*pricestore)->orthogonalities, (*pricestore)->narrays) );
@@ -258,7 +260,7 @@ void pricestoreDelCol(
    assert(pricestore != NULL);
    assert(pricestore->cols != NULL);
    assert(pricestore->nforcedcols[arrayindex] <= pos && pos < pricestore->ncols[arrayindex]);
-   
+
    SCIPhashtableRemove(pricestore->hashtable, pricestore->cols[arrayindex][pos]);
    pricestore->cols[arrayindex][pos]->pos = -1;
 
@@ -295,6 +297,25 @@ int pricestoreFindEqualCol(
       return -1;
 }
 
+/**< re-computes the values of inferred pricing variables of column from column pool
+ * (in case the cut was not yet present during creation of of column) */
+static
+SCIP_RETCODE correctInferredPricingVariables(
+   SCIP*                 scip,               /**<* SCIP data structure */
+   GCG_COL*              gcgcol,             /**<* GCG column */
+   GCG_PRICESTORE*       pricestore         /**< price storage */
+   )
+{
+   SCIP_Real redcost;
+
+   /* update gcgcol */
+   SCIP_CALL( GCGcomputeColMastercoefs(scip, gcgcol) );
+   redcost = GCGcomputeRedCostGcgCol(scip, pricestore->infarkas, gcgcol, NULL);
+   GCGcolUpdateRedcost(gcgcol, redcost, FALSE);
+
+   return SCIP_OKAY;
+}
+
 /** adds col to price storage;
  *  if the col should be forced to enter the LP, an infinite score will be used
  */
@@ -303,6 +324,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
    GCG_PRICESTORE*       pricestore,         /**< price storage */
    GCG_COL*              col,                /**< priced col */
    SCIP_Bool             forcecol,           /**< should the col be forced to enter the LP? */
+   SCIP_Bool             fromcolpool,        /**< is column from colpool */
    SCIP_Bool*            added
    )
 {
@@ -320,6 +342,15 @@ SCIP_RETCODE GCGpricestoreAddCol(
 
    arrayindex = pricestoreGetArrayIndex(pricestore, col);
    assert(pricestore->nforcedcols[arrayindex] <= pricestore->ncols[arrayindex]);
+
+   if( fromcolpool )
+   {
+      /*
+         Some inferred pricing variables might not have existed when the column was created
+         As a consequence, some column related data (e.g. norm) might be invalid
+      */
+      SCIP_CALL( correctInferredPricingVariables(scip, col, pricestore) );
+   }
 
    /* a col is forced to enter the LP if
     *  - we construct the initial LP, or
@@ -363,18 +394,24 @@ SCIP_RETCODE GCGpricestoreAddCol(
       SCIP_Bool feasible;
       if( SCIPgetStage(col->pricingprob) < SCIP_STAGE_PRESOLVING )
       {
-         SCIPcreateSol(col->pricingprob, &sol, NULL);
-         SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals);
-         SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE);
+         SCIP_CALL( SCIPcreateOrigSol(col->pricingprob, &sol, NULL) );
+         SCIP_CALL( SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals) );
+         SCIP_CALL( SCIPcheckSolOrig(col->pricingprob, sol, &feasible, TRUE, TRUE) );
          if( !feasible )
             SCIPprintSol(col->pricingprob, sol, NULL, FALSE);
-         assert(feasible);
-         SCIPfreeSol(col->pricingprob, &sol);
+         SCIP_CALL( SCIPfreeSol(col->pricingprob, &sol) );
       }
       for( i = 0; i < col->nvars; ++i )
       {
          var = col->vars[i];
          val = col->vals[i];
+
+         if( GCGvarIsInferredPricing(var) )
+         {
+            continue;
+         }
+
+         assert(GCGvarIsPricing(var));
 
          assert(SCIPisFeasGE(col->pricingprob, val, SCIPvarGetLbGlobal(GCGpricingVarGetOrigvars(var)[0])) &&
                 SCIPisFeasLE(col->pricingprob, val, SCIPvarGetUbGlobal(GCGpricingVarGetOrigvars(var)[0])));
@@ -561,7 +598,7 @@ SCIP_RETCODE pricestoreApplyCol(
    /* update the orthogonalities if needed */
    if( SCIPisGT(pricestore->scip, mincolorthogonality, SCIPepsilon(pricestore->scip)) || SCIPisPositive(pricestore->scip, pricestore->orthofac))
       SCIP_CALL( pricestoreUpdateOrthogonalities(pricestore, col, mincolorthogonality) );
-   
+
    if( !force )
    {
       GCGfreeGcgCol(&col);

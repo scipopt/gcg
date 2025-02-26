@@ -52,11 +52,15 @@ extern "C" {
  * @{
  */
 
+#ifdef NDEBUG
+#define GCGvarIsPricing(var)                (SCIPvarGetData(var)->vartype == GCG_VARTYPE_PRICING)
+#else
 /** returns TRUE or FALSE whether variable is a pricing variable or not */
 GCG_EXPORT
 SCIP_Bool GCGvarIsPricing(
    SCIP_VAR*             var                 /**< SCIP variable structure */
    );
+#endif
 
 #ifdef NDEBUG
 #define GCGvarIsOriginal(var)                (SCIPvarGetData(var)->vartype == GCG_VARTYPE_ORIGINAL)
@@ -77,6 +81,24 @@ SCIP_Bool GCGvarIsMaster(
    SCIP_VAR*             var                 /**< SCIP variable structure */
    );
 #endif
+
+#ifdef NDEBUG
+#define GCGvarIsInferredPricing(var)         (SCIPvarGetData(var)->vartype == GCG_VARTYPE_INFERREDPRICING)
+#else
+/** returns TRUE or FALSE whether variable is a inferred pricing variable or not
+  *
+  * inferred pricing variables are auxilary variables that are required by specific extended master conss */
+GCG_EXPORT
+SCIP_Bool GCGvarIsInferredPricing(
+   SCIP_VAR*             var                 /**< SCIP variable structure */
+   );
+#endif
+
+/** count the number of inferred pricing variables in a array of variables */
+int GCGcountInferredPricingVars(
+   SCIP_VAR**             vars,               /**< array of variables */
+   int                    nvars               /**< number of variables */
+   );
 
 #ifdef NDEBUG
 #define GCGoriginalVarIsLinking(var)         (SCIPvarGetData(var)->blocknr == -2)
@@ -383,6 +405,23 @@ SCIP_VAR** GCGpricingVarGetOrigvars(
 #endif
 
 #ifdef NDEBUG
+#define GCGpricingVarGetPricerIndex(var)        (SCIPvarGetData(var)->data.pricingvardata.pricerindex)
+#else
+/** returns the index used by the pricer to refer to the variable */
+GCG_EXPORT
+int GCGpricingVarGetPricerIndex(
+   SCIP_VAR*             var                 /**< SCIP variable structure */
+   );
+#endif
+
+/** returns the index used by the pricer to refer to the variable */
+GCG_EXPORT
+void GCGpricingVarSetPricerIndex(
+   SCIP_VAR*             var,                /**< SCIP variable structure */
+   int                   index               /**< index used by the pricer */
+   );
+
+#ifdef NDEBUG
 #define GCGvarGetBlock(var)             (SCIPvarGetData(var)->blocknr)
 #else
 /** returns the block of the variable */
@@ -519,6 +558,19 @@ SCIP_RETCODE GCGcreateArtificialVar(
    SCIP_VAR**            newvar,              /**< pointer to store new variable */
    const char*           name,               /**< name of variable, or NULL for automatic name creation */
    SCIP_Real             objcoef             /**< objective coefficient of artificial variable */
+   );
+
+/** creates a pricing variable inferred from an extended master cons
+ * that does not correspond to any original variable and its vardata */
+SCIP_RETCODE GCGcreateInferredPricingVar(
+   SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
+   SCIP_VAR**            newvar,             /**< pointer to store new master variable */
+   const char*           varname,            /**< new variable name */
+   SCIP_Real             lb,                 /**< new variable lower bound */
+   SCIP_Real             ub,                 /**< new objective coefficient */
+   SCIP_Real             objcoeff,           /**< new objective coefficient */
+   SCIP_VARTYPE          vartype,            /**< new variable type */
+   int                   prob                /**< number of pricing problem that created this variable */
    );
 
 /* adds the vardata to the auxiliary variable */

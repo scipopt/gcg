@@ -37,6 +37,8 @@
 #ifndef GCG_STRUCT_VARDATA_H__
 #define GCG_STRUCT_VARDATA_H__
 
+#include "type_extendedmasterconsdata.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,9 +46,11 @@ extern "C" {
 /** type of the variable */
 enum GCG_Vartype
 {
-   GCG_VARTYPE_ORIGINAL = 0,                 /**< variable belongs to original problem */
+   GCG_VARTYPE_ORIGINAL = 0,                /**< variable belongs to original problem */
    GCG_VARTYPE_PRICING = 1,                 /**< variable belongs to a pricing problem */
-   GCG_VARTYPE_MASTER = 2                  /**< variable belongs to the master problem */
+   GCG_VARTYPE_MASTER = 2,                   /**< variable belongs to the master problem */
+   GCG_VARTYPE_INFERREDPRICING = 3,         /**< pricing variable inferred from an extended master cons
+                                                and does not correspond to any original variable */
 };
 typedef enum GCG_Vartype GCG_VARTYPE;
 
@@ -81,9 +85,9 @@ struct GCG_PricingVarData
    SCIP_VAR**            origvars;           /**< corresponding variables in the original program */
    int                   norigvars;          /**< number of corresponding variables in the original program */
    int                   maxorigvars;        /**< length of origvars array */
+   int                   pricerindex;        /**< index used by the pricer to store data of the variable */
 };
 typedef struct GCG_PricingVarData GCG_PRICINGVARDATA;
-
 
 /** data for master variables */
 struct GCG_MasterVarData
@@ -100,6 +104,13 @@ struct GCG_MasterVarData
 };
 typedef struct GCG_MasterVarData GCG_MASTERVARDATA;
 
+/** data for inferred pricing variables */
+struct GCG_InferredPricingVarData
+{
+   GCG_EXTENDEDMASTERCONSDATA*    extendedmasterconsdata;      /**< extended master cons data that was used to infer the pricing variable */
+};
+typedef struct GCG_InferredPricingVarData GCG_INFERREDPRICINGVARDATA;
+
 /** variable data structure */
 struct SCIP_VarData
 {
@@ -108,6 +119,7 @@ struct SCIP_VarData
       GCG_ORIGVARDATA    origvardata;        /**< data for original variables */
       GCG_PRICINGVARDATA pricingvardata;     /**< data for pricing variables */
       GCG_MASTERVARDATA  mastervardata;      /**< data for variable of the master problem */
+      GCG_INFERREDPRICINGVARDATA inferredpricingvardata; /**< data for inferred pricing variables */
    } data;
    GCG_VARTYPE           vartype;            /**< type of variable */
    int                   blocknr;            /**< number of the block and pricing problem, the variable belongs to,

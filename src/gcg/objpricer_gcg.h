@@ -42,6 +42,7 @@
 #include "pub_gcgcol.h"
 #include "pub_colpool.h"
 #include "pricestore_gcg.h"
+#include "type_branchgcg.h"
 
 using gcg::Pricingcontroller;
 using gcg::Stabilization;
@@ -260,8 +261,13 @@ public:
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
-   /** compute master cut coefficients of column */
-   SCIP_RETCODE computeColMastercuts(
+   /** compute original separator master cut coefficients of column */
+   SCIP_RETCODE computeColOriginalSepaCuts(
+      GCG_COL*              gcgcol              /**< GCG column data structure */
+      );
+
+   /** compute generic extended master cons coefficients of column */
+   SCIP_RETCODE computeColExtendedMasterconss(
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
@@ -333,8 +339,8 @@ private:
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
-   /** add variable with computed coefficients to the master cuts */
-   SCIP_RETCODE addVariableToMastercuts(
+   /** add variable with computed coefficients to the original separator master cuts */
+   SCIP_RETCODE addVariableToOriginalSepaCuts(
       SCIP_VAR*             newvar,             /**< The new variable to add */
       int                   prob,               /**< number of the pricing problem the solution belongs to */
       SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
@@ -342,10 +348,15 @@ private:
       int                   nsolvars            /**< number of variables in array solvars */
       );
 
-   /** add variable with computed coefficients to the master cuts */
-   SCIP_RETCODE addVariableToMastercutsFromGCGCol(
+   /** add variable with computed coefficients to the original separator master cuts */
+   SCIP_RETCODE addVariableToOriginalSepaCutsFromGCGCol(
       SCIP_VAR*             newvar,             /**< The new variable to add */
       GCG_COL*              gcgcol              /**< GCG column data structure */
+      );
+
+   /** add variable to the extended master conss */
+   SCIP_RETCODE addVariableToExtendedmastercons(
+      SCIP_VAR*             newvar              /**< The new variable to add */
       );
 
    /**

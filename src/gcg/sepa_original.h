@@ -25,46 +25,65 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_pricingjob.h
- * @ingroup DATASTRUCTURES
- * @brief  data structure for pricing jobs
- * @author Christian Puchert
+/**@file   sepa_original.h
+ * @ingroup SEPARATORS
+ * @brief  original separator
+ * @author Gerald Gamrath
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_STRUCT_PRICINGJOB_H_
-#define GCG_STRUCT_PRICINGJOB_H_
+#ifndef GCG_SEPA_ORIGINAL_H__
+#define GCG_SEPA_ORIGINAL_H__
 
-#include "scip/def.h"
-#include "scip/type_misc.h"
+
 #include "scip/scip.h"
-
-#include "type_pricingjob.h"
-#include "type_pricingprob.h"
-#include "type_solver.h"
+#include "def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** pricing job data structure */
-struct GCG_PricingJob
-{
-   /* problem data */
-   GCG_PRICINGPROB*     pricingprob;        /**< data structure of the corresponding pricing problem */
-   GCG_SOLVER*          solver;             /**< solver with which to solve the pricing problem */
+/** creates the original separator and includes it in SCIP */
+GCG_EXPORT
+SCIP_RETCODE SCIPincludeSepaOriginal(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
 
-   /* strategic parameters */
-   int                  chunk;              /**< chunk the pricing job belongs to */
-   SCIP_Real            score;              /**< current score of the pricing job */
-   SCIP_Bool            heuristic;          /**< shall the pricing problem be solved heuristically? */
-   int                  nheuriters;         /**< number of times the pricing job was performed heuristically */
-   SCIP_Bool            solverchanged;      /**< was the solver changed after the last solver call? */
-};
+/** returns the array of original cuts in the original problem saved in the separator data */
+GCG_EXPORT
+SCIP_ROW** GCGsepaGetOriginalSepaOrigcuts(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** returns the number of cuts saved in the separator data */
+GCG_EXPORT
+int GCGsepaGetNOriginalSepaCuts(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** returns the array of original cuts in the master problem saved in the separator data */
+GCG_EXPORT
+SCIP_ROW** GCGsepaGetOriginalSepaMastercuts(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** adds given original cut in both the original and master problem to master separator data */
+GCG_EXPORT
+SCIP_RETCODE GCGsepaAddOriginalSepaCuts(
+   SCIP*                scip,               /**< SCIP data structure */
+   SCIP_ROW*            origcut,            /**< pointer to orginal cut in the original problem */
+   SCIP_ROW*            mastercut           /**< pointer to original cut in the master problem */
+   );
+
+/** checks whether a given original cut in the original problem is already known */
+SCIP_Bool GCGsepaOriginalSepaOrigcutExists(
+   SCIP*                scip,            /**< SCIP data structure */
+   SCIP_ROW*            origcut          /**< pointer to orginal cut in the original problem */
+   );
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* STRUCT_PRICINGJOB_H_ */
+#endif

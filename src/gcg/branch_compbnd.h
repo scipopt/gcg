@@ -25,46 +25,74 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_pricingjob.h
- * @ingroup DATASTRUCTURES
- * @brief  data structure for pricing jobs
- * @author Christian Puchert
+/**@file    branch_compbnd.h
+ * @ingroup BRANCHINGRULES-GCG
+ * @brief   component bound branching rule
+ * @author  Til Mohr
+ *
+ * This is an implementation of the component bound branching rule based on the papers:
+ *
+ * J. Desrosiers, M. L¨ubbecke, G. Desaulniers,
+ * J. B. Gauthier (Juin 2024). Branch-and-Price, Technical report,
+ * Les Cahiers du GERAD G–2024–36, GERAD, HEC Montr´eal, Canada.
+ *
+ * Vanderbeck, François, and Laurence A. Wolsey. "An exact algorithm for IP column generation."
+ * Operations research letters 19.4 (1996): 151-159.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_STRUCT_PRICINGJOB_H_
-#define GCG_STRUCT_PRICINGJOB_H_
+#ifndef GCG_BRANCH_COMPBND_H__
+#define GCG_BRANCH_COMPBND_H__
 
-#include "scip/def.h"
-#include "scip/type_misc.h"
+
 #include "scip/scip.h"
-
-#include "type_pricingjob.h"
-#include "type_pricingprob.h"
-#include "type_solver.h"
+#include "def.h"
+#include "type_branchgcg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** pricing job data structure */
-struct GCG_PricingJob
-{
-   /* problem data */
-   GCG_PRICINGPROB*     pricingprob;        /**< data structure of the corresponding pricing problem */
-   GCG_SOLVER*          solver;             /**< solver with which to solve the pricing problem */
+typedef enum {
+   GCG_BRANCH_DOWN = 0,
+   GCG_BRANCH_UP = 1
+} GCG_BRANCH_TYPE;
 
-   /* strategic parameters */
-   int                  chunk;              /**< chunk the pricing job belongs to */
-   SCIP_Real            score;              /**< current score of the pricing job */
-   SCIP_Bool            heuristic;          /**< shall the pricing problem be solved heuristically? */
-   int                  nheuriters;         /**< number of times the pricing job was performed heuristically */
-   SCIP_Bool            solverchanged;      /**< was the solver changed after the last solver call? */
+typedef enum {
+   GCG_COMPBND_SENSE_GE = 0,
+   GCG_COMPBND_SENSE_LE = 1
+} GCG_COMPBND_SENSE;
+
+/** component bound structure */
+struct ComponentBound
+{
+   SCIP_VAR*             component;          /**< variable to which this bound belongs */
+   GCG_COMPBND_SENSE     sense;              /**< sense of the bound */
+   int                   bound;              /**< bound value */
 };
+typedef struct ComponentBound GCG_COMPBND;
+
+/** creates the component bound branching rule and includes it in SCIP */
+GCG_EXPORT
+SCIP_RETCODE SCIPincludeBranchruleCompBnd(
+   SCIP*                 scip                /**< SCIP data structure */
+   );
+
+/** prepares informations for using the component bound branching scheme */
+SCIP_RETCODE GCGbranchCompBndInitbranch(
+   SCIP*                 masterscip,              /**< SCIP data structure */
+   SCIP_BRANCHRULE*      branchrule,              /**< branching rule */
+   SCIP_RESULT*          result                   /**< pointer to store the result of the branching call */
+   );
+
+/** returns true when the branch rule is the generic branchrule */
+SCIP_Bool GCGisBranchruleCompBnd(
+   SCIP_BRANCHRULE*      branchrule          /**< branchrule to check */
+);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* STRUCT_PRICINGJOB_H_ */
+#endif

@@ -90,6 +90,18 @@ int GCGpricingjobGetNHeurIters(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
+/** returns TRUE iff the solver was changed after the last solver call */
+GCG_EXPORT
+SCIP_Bool GCGpricingjobSolverChanged(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** inform the pricing job that the current solver was called */
+GCG_EXPORT
+void GCGpricingjobSolverCalled(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
 /**@} */
 #ifdef __cplusplus
 }

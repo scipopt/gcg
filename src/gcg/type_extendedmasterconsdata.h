@@ -25,46 +25,51 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_pricingjob.h
- * @ingroup DATASTRUCTURES
- * @brief  data structure for pricing jobs
- * @author Christian Puchert
+/**@file    type_extendedmasterconsdata.h
+ * @ingroup TYPEDEFINITIONS
+ * @brief   type definitions for extended master conss in GCG projects
+ * @author  Til Mohr
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_STRUCT_PRICINGJOB_H_
-#define GCG_STRUCT_PRICINGJOB_H_
+#ifndef GCG_TYPE_EXTENDEDMASTERCONSDATA_H_
+#define GCG_TYPE_EXTENDEDMASTERCONSDATA_H_
 
 #include "scip/def.h"
-#include "scip/type_misc.h"
-#include "scip/scip.h"
-
-#include "type_pricingjob.h"
-#include "type_pricingprob.h"
-#include "type_solver.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** pricing job data structure */
-struct GCG_PricingJob
+/** type of extended master constraint */
+enum GCG_ExtendedMasterConsType
 {
-   /* problem data */
-   GCG_PRICINGPROB*     pricingprob;        /**< data structure of the corresponding pricing problem */
-   GCG_SOLVER*          solver;             /**< solver with which to solve the pricing problem */
-
-   /* strategic parameters */
-   int                  chunk;              /**< chunk the pricing job belongs to */
-   SCIP_Real            score;              /**< current score of the pricing job */
-   SCIP_Bool            heuristic;          /**< shall the pricing problem be solved heuristically? */
-   int                  nheuriters;         /**< number of times the pricing job was performed heuristically */
-   SCIP_Bool            solverchanged;      /**< was the solver changed after the last solver call? */
+   GCG_EXTENDEDMASTERCONSTYPE_CONS,                   /**< extended master cons is represented by a constraint */
+   GCG_EXTENDEDMASTERCONSTYPE_ROW                     /**< extended master cons is represented by a row */
 };
+typedef enum GCG_ExtendedMasterConsType GCG_EXTENDEDMASTERCONSTYPE;
+
+typedef union GCG_ExtendedMasterCons GCG_EXTENDEDMASTERCONS;
+
+typedef struct GCG_PricingModification GCG_PRICINGMODIFICATION;
+typedef struct GCG_ExtendedMasterConsData GCG_EXTENDEDMASTERCONSDATA;
+
+/** determine the coefficient of a column solution in the extended master cons
+ *
+ *  input:
+ *    scip            : SCIP main data structure of the original problem
+ *    extendedmasterconsdata   : the extended master cons data
+ *    solvars         : array of column solution variables
+ *    solvals         : array of column solution values
+ *    nsolvars        : number of column solution variables and values
+ *    probnr          : the pricing problem that the column belongs to
+ *    coef            : the calculated coefficient
+ */
+#define GCG_DECL_EXTENDEDMASTERCONSGETCOEFF(x) SCIP_RETCODE x (SCIP* scip, GCG_EXTENDEDMASTERCONSDATA* extendedmasterconsdata, SCIP_VAR** solvars, SCIP_Real* solvals, int nsolvars, int probnr, SCIP_Real* coef)
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* STRUCT_PRICINGJOB_H_ */
+#endif

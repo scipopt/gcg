@@ -25,62 +25,39 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   sepa_master.h
- * @ingroup SEPARATORS
- * @brief  master separator
- * @author Gerald Gamrath
+/**@file    struct_gcgvarhistory.h
+ * @ingroup DATASTRUCTURES
+ * @brief   data structures for managing variable history
+ * @author  Til Mohr
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_SEPA_MASTER_H__
-#define GCG_SEPA_MASTER_H__
+#ifndef GCG_STRUCT_GCGVARHISTORY_H_
+#define GCG_STRUCT_GCGVARHISTORY_H_
 
-
-#include "scip/scip.h"
-#include "def.h"
+#include <scip/type_cons.h>
+#include <scip/type_lp.h>
+#include <scip/type_var.h>
+#include "type_gcgvarhistory.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** creates the master separator and includes it in SCIP */
-GCG_EXPORT
-SCIP_RETCODE SCIPincludeSepaMaster(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
+#define GCG_VARHISTORYBUFFER_SIZE 50
 
-/** returns the array of original cuts saved in the separator data */
-GCG_EXPORT
-SCIP_ROW** GCGsepaGetOrigcuts(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
+struct GCG_VarHistoryBuffer {
+   int                   nvars;              /**< number of variables */
+   GCG_VARHISTORYBUFFER* next;               /**< next buffer */
+   int                   nuses;              /**< number of uses */
+   SCIP_VAR*             vars[GCG_VARHISTORYBUFFER_SIZE]; /**< variables */
+};
 
-/** returns the number of cuts saved in the separator data */
-GCG_EXPORT
-int GCGsepaGetNCuts(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** returns the array of master cuts saved in the separator data */
-GCG_EXPORT
-SCIP_ROW** GCGsepaGetMastercuts(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** adds given original and master cut to master separator data */
-GCG_EXPORT
-SCIP_RETCODE GCGsepaAddMastercuts(
-   SCIP*                scip,               /**< SCIP data structure */
-   SCIP_ROW*            origcut,            /**< pointer to orginal cut */
-   SCIP_ROW*            mastercut           /**< pointer to master cut */
-);
-
-/** checks whether a given original cut is already known */
-SCIP_Bool GCGsepaOrigcutExists(
-      SCIP*                scip,            /**< SCIP data structure */
-      SCIP_ROW*            origcut          /**< pointer to orginal cut */
-);
+struct GCG_VarHistory {
+   GCG_VARHISTORYBUFFER* buffer;             /**< buffer */
+   int                   pos;                /**< position in the buffer */
+};
 
 #ifdef __cplusplus
 }

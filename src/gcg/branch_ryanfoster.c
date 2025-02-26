@@ -297,6 +297,9 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteRyanfoster)
    assert(scip != NULL);
    assert(branchdata != NULL);
 
+   if( origbranch && !force )
+      return SCIP_OKAY;
+
    SCIPdebugMessage("branchDataDeleteRyanfoster: %s(%s, %s)\n", ( (*branchdata)->same ? "same" : "differ" ),
       SCIPvarGetName((*branchdata)->var1), SCIPvarGetName((*branchdata)->var2));
 
@@ -484,7 +487,7 @@ SCIP_RETCODE createChildNodesRyanfoster(
 
       /* release constraints */
       SCIP_CALL( SCIPreleaseCons(masterscip, &cons2) );
-   } 
+   }
    return SCIP_OKAY;
 }
 
@@ -694,7 +697,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
                      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &ovar1s, npairs, npairs+1) );
                      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &ovar2s, npairs, npairs+1) );
                      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &nspricingblock, npairs, npairs+1) );
-                     
+
                      ovar1s[npairs] = ovar1;
                      ovar2s[npairs] = ovar2;
                      nspricingblock[npairs] = GCGvarGetBlock(mvar1);
@@ -765,7 +768,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
                         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &ovar1s, npairs, npairs+1) );
                         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &ovar2s, npairs, npairs+1) );
                         SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &nspricingblock, npairs, npairs+1) );
-                        
+
                         ovar1s[npairs] = ovar1;
                         ovar2s[npairs] = ovar2;
                         nspricingblock[npairs] = GCGvarGetBlock(mvar1);
@@ -936,7 +939,7 @@ SCIP_DECL_BRANCHINIT(branchInitRyanfoster)
    assert(origprob != NULL);
 
    SCIP_CALL( GCGrelaxIncludeBranchrule(origprob, branchrule, branchActiveMasterRyanfoster,
-         branchDeactiveMasterRyanfoster, branchPropMasterRyanfoster, NULL, branchDataDeleteRyanfoster) );
+         branchDeactiveMasterRyanfoster, branchPropMasterRyanfoster, NULL, branchDataDeleteRyanfoster, NULL, NULL) );
 
    return SCIP_OKAY;
 }

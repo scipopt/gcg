@@ -64,6 +64,7 @@ SCIP_RETCODE GCGpricingjobCreate(
    (*pricingjob)->score = 0.0;
    (*pricingjob)->heuristic = FALSE;
    (*pricingjob)->nheuriters = 0;
+   (*pricingjob)->solverchanged = TRUE;
 
    return SCIP_OKAY;
 }
@@ -163,6 +164,7 @@ void GCGpricingjobResetSolver(
          break;
       }
    }
+   pricingjob->solverchanged = TRUE;
 
    assert(pricingjob->solver != NULL);
 }
@@ -200,6 +202,23 @@ void GCGpricingjobNextSolver(
          break;
       }
    }
+   pricingjob->solverchanged = TRUE;
+}
+
+/** returns TRUE iff the solver was changed after the last solver call */
+SCIP_Bool GCGpricingjobSolverChanged(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   return pricingjob->solverchanged;
+}
+
+/** inform the pricing job that the current solver was called */
+void GCGpricingjobSolverCalled(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   )
+{
+   pricingjob->solverchanged = FALSE;
 }
 
 /** get the chunk of a pricing job */

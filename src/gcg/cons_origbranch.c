@@ -268,14 +268,16 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
    for( i = 0; i < (*consdata)->nchildconss; ++i )
       assert((*consdata)->childconss[i] == NULL);
 
-   /* delete branchdata if no mastercons is linked which would still need the branchdata;
-    * otherwise, the mastercons deletes the branchdata when it is deleted itself
-    */
-   if( (*consdata)->mastercons == NULL && (*consdata)->branchdata != NULL && (*consdata)->branchrule != NULL )
+   /* allow the correspondig branchrule to delete the branch data */
+   if( (*consdata)->branchdata != NULL && (*consdata)->branchrule != NULL )
    {
-      SCIP_CALL( GCGrelaxBranchDataDelete(scip, (*consdata)->branchrule, &(*consdata)->branchdata) );
-      (*consdata)->branchdata = NULL;
+      SCIP_Bool force = ((*consdata)->mastercons == NULL);
+      SCIP_CALL( GCGrelaxBranchDataDelete(scip, (*consdata)->branchrule, &(*consdata)->branchdata, TRUE, force) );
+      if( (*consdata)->mastercons != NULL && (*consdata)->branchdata == NULL )
+         GCGconsMasterbranchSetBranchdata((*consdata)->mastercons, NULL);
    }
+
+   (*consdata)->branchdata = NULL;
 
    SCIPfreeBlockMemoryArrayNull(scip, &(*consdata)->childconss, (*consdata)->maxchildconss);
    (*consdata)->childconss = NULL;
@@ -467,14 +469,6 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    /* create constraint data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &consdata) );
 
-   if( branchdata == NULL && branchrule != NULL )
-   {
-      if( strcmp(SCIPbranchruleGetName(branchrule), "generic") == 0 )
-      {
-         SCIP_CALL( GCGbranchGenericCreateBranchdata(scip, &branchdata) );
-      }
-   }
-
    /* initialize the fields in the constraint data */
    consdata->node = node;
    consdata->parentcons = parentcons;
@@ -569,7 +563,7 @@ void GCGconsOrigbranchGetStack(
    *nstackelements = conshdlrData->nstack;
 }
 
-/** returns the branching data for a given origbranch constraint */
+/** sets the branching data for a given origbranch constraint */
 void GCGconsOrigbranchSetBranchdata(
    SCIP_CONS*            cons,               /**< origbranch constraint for which the branching data is requested */
    GCG_BRANCHDATA*       branchdata          /**< branching data */
