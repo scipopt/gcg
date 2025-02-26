@@ -80,16 +80,12 @@ enum cliquerConsType
 };
 typedef enum cliquerConsType CLIQUER_CONSTYPE;
 
-typedef void (*DistrVarObjCoefHeur)(SCIP*, int, SCIP_Bool*, int**, SCIP_VAR**, int, SCIP_Real*, SCIP_CONS**, int,
-                                    int*, CLIQUER_CONSTYPE*);
-
-struct GCG_SolverData 
+struct GCG_SolverData
 {
    SCIP_Real             density;            /**< graph density threshold above which to use solver */
    int                   nodelimit;          /**< graph node threshold below which to use solver */
    SCIP_Bool*            isnotapplicable;    /**< array tracking if solver is not applicable in root node (& no cuts) */
    int                   objcoefdistr;       /**< param deciding strategy for distributing obj coefs of coupling vars */
-   DistrVarObjCoefHeur   execdistrheur;      /**< function pointer to selected obj coef distribution heuristic */
 };
 
 
@@ -765,10 +761,9 @@ int getNSuccessorsRelevant(
 
 /** Coupling(-like) Variable Objective Distribution Strategy 1: Natural Coefficient Share Distribution. */
 static INLINE
-void distributeVarCoefHeuristic(
+void objCoefDistrHeurNatural(
    SCIP*                 scip,               /**< The problem instance */
    int                   actvarind,          /**< Index of actual variable */
-   SCIP_Bool*            isdistributed,      /**< Array storing if a coupled variable was visited */
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
@@ -803,7 +798,8 @@ void distributeVarCoefHeuristic(
    j = 0;
    for( i = 0; i < nvarsincouplings; i++ )
    {
-      if( couplingmatrix[actvarind][i] > 0 && isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+      if( couplingmatrix[actvarind][i] > 0 &&
+          isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
       {
          SCIPhashmapSetImageInt(vartocoefsharemap, (void*)(size_t)i, j);
          j++;
@@ -870,7 +866,8 @@ void distributeVarCoefHeuristic(
    actvarcoef = aggrobjcoef[SCIPvarGetProbindex(varsincouplings[actvarind])];
    for( i = 0; i < nvarsincouplings; i++ )
    {
-      if( couplingmatrix[actvarind][i] > 0 && isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+      if( couplingmatrix[actvarind][i] > 0 &&
+          isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
       {
          frac = coefshares[SCIPhashmapGetImageInt(vartocoefsharemap, (void *) (size_t) i)];
          aggrobjcoef[SCIPvarGetProbindex(varsincouplings[i])] += actvarcoef * (frac / denominator);
@@ -904,10 +901,9 @@ void distributeVarCoefHeuristic(
 
 /** Coupling(-like) Variable Objective Distribution Strategy 2: Independent Set-based share distribution. */
 static INLINE
-void distributeVarCoefHeuristicIS(
+void objCoefDistrHeurIS(
    SCIP*                 scip,               /**< The problem instance */
    int                   actvarind,          /**< Index of actual variable */
-   SCIP_Bool*            isdistributed,      /**< Array storing if a coupled variable was visited */
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
@@ -1013,8 +1009,11 @@ void distributeVarCoefHeuristicIS(
    actvarcoef = aggrobjcoef[SCIPvarGetProbindex(varsincouplings[actvarind])];
    for( i = 0; i < nvarsincouplings; i++ )
    {
-      if( couplingmatrix[actvarind][i] > 0 && isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+      if( couplingmatrix[actvarind][i] > 0 &&
+          isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+      {
          aggrobjcoef[SCIPvarGetProbindex(varsincouplings[i])] += actvarcoef / denominator;
+      }
    }
 
    /* Free memory */
@@ -1024,7 +1023,41 @@ void distributeVarCoefHeuristicIS(
    SCIPhashmapFree(&vartosuccmap);
 }
 
-// TODO: Loop detection / handling !?
+/*
+ * Idea - Distribution Strategy 3: Uniform Coefficient Share Distribution. (Fastest heuristic implemented)
+ *
+ * Uniformly distributes the objective coefficient of a variable among all its relevant coupled successor variables.
+ * Each successor receives an equal share, ensuring no overestimation of the redistributed objective coefficient.
+ */
+
+/** Coupling(-like) Variable Objective Distribution Strategy 3: Uniform Coefficient Share Distribution. */
+static INLINE
+void objCoefDistrHeurUniform(
+   SCIP*                 scip,               /**< The problem instance */
+   int                   actvarind,          /**< Index of actual variable */
+   int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
+   SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
+   int                   nvarsincouplings,   /**< Index of varsincouplings array */
+   SCIP_Real*            aggrobjcoef         /**< Array of aggregated objective coefficients. */
+)
+{
+   int            i;
+   int            nsuccessors;
+   SCIP_Real      actvarcoef;
+
+   nsuccessors = getNSuccessorsRelevant(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef);
+
+   /* Distribute coeff. of act. var to all successor variables. */
+   actvarcoef = aggrobjcoef[SCIPvarGetProbindex(varsincouplings[actvarind])];
+   for( i = 0; i < nvarsincouplings; i++ )
+   {
+      if( couplingmatrix[actvarind][i] > 0 &&
+          isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+      {
+         aggrobjcoef[SCIPvarGetProbindex(varsincouplings[i])] += (actvarcoef / nsuccessors);
+      }
+   }
+}
 
 
 /** Distributes the objective coefficient of coupling(-like) vars to all other vars occurring in those constraints.
@@ -1042,7 +1075,7 @@ void distributeObjCoefRec(
    int                   nconss,             /**< Index of constraints array */
    int*                  couplingcoefindices,/**< Array for coupling coefficient of each constraint (if coupling) */
    CLIQUER_CONSTYPE*     cliquerconstypes,   /**< Array holding constraint types (specific to this solver) */
-   DistrVarObjCoefHeur   execdistrheur       /**< Function ptr to the selected obj coef distribution heuristic. */
+   int                   selecteddistrheur   /**< Number of selected obj coef distribution heuristic. */
    )
 {
    int            i;
@@ -1064,14 +1097,30 @@ void distributeObjCoefRec(
          continue;
       if( couplingmatrix[i][actvarind] > 0 && !isdistributed[i] )
          distributeObjCoefRec(scip, i, isdistributed, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
-                              constraints, nconss, couplingcoefindices, cliquerconstypes, execdistrheur);
+                              constraints, nconss, couplingcoefindices, cliquerconstypes, selecteddistrheur);
    }
 
    /* Base case: All predecessors are distributed. */
    /* If now has positive (aggr.) obj. coeff.: Distribute coeff. of act. var to all successor variables. */
    if( SCIPisGT(scip, aggrobjcoef[SCIPvarGetProbindex(varsincouplings[actvarind])], 0))
-      execdistrheur(scip, actvarind, isdistributed, couplingmatrix, varsincouplings, nvarsincouplings,
-                    aggrobjcoef, constraints, nconss, couplingcoefindices, cliquerconstypes);
+   {
+      switch( selecteddistrheur )
+      {
+         case 1:
+            objCoefDistrHeurNatural(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
+                                    constraints, nconss, couplingcoefindices, cliquerconstypes);
+            break;
+         case 2:
+            objCoefDistrHeurIS(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
+                               constraints, nconss, couplingcoefindices, cliquerconstypes);
+            break;
+         case 3:
+            objCoefDistrHeurUniform(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef);
+            break;
+         default:
+            break;
+      }
+   }
 }
 
 /*
@@ -1111,7 +1160,7 @@ void distributeObjCoef(
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
    SCIP_Real*            aggrobjcoef,        /**< Array of aggregated objective coefficients. */
-   DistrVarObjCoefHeur   execdistrheur       /**< Function ptr to the selected obj coef distribution heuristic. */
+   int                   selecteddistrheur   /**< Number of selected obj coef distribution heuristic. */
    )
 {
    int            i;
@@ -1881,6 +1930,8 @@ SCIP_RETCODE solveCliquer(
    SCIP_CALL( SCIPallocBufferArray(pricingprob, &aggrobjcoef, npricingprobvars) );
    ismemgraphallocated = TRUE;
 
+   SCIPdebugMessage("nlinkedvars = %i , ncouplvars = %i , coefdistrheur = %i\n", nlinkedvars, ncouplvars, solver->objcoefdistr);
+
    /* If any variable is linked or coupled, aggrobjcoef array needs to be initialized. */
    if( nlinkedvars > 0 || ncouplvars > 0 )
    {
@@ -1895,7 +1946,7 @@ SCIP_RETCODE solveCliquer(
    /* If there are coupling or standard varbound constraints, it may be necessary to distribute objective coefficients. */
    if( solver->objcoefdistr > 0 && ncouplvars > 0 )
       distributeObjCoef(pricingprob, constraints, nconss, couplingcoefindices, cliquerconstypes, couplingmatrix,
-                        couplvars, ncouplvars, aggrobjcoef, solver->execdistrheur);
+                        couplvars, ncouplvars, aggrobjcoef, solver->objcoefdistr);
 
    /* Now calculate scaling factor based on maximum aggregated objective coefficient value. */
 
@@ -2396,23 +2447,6 @@ GCG_DECL_SOLVERINITSOL(solverInitsolCliquer)
 
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
-
-   /* set distribution strategy function pointer based on objcoefdistr parameter. */
-   switch( solverdata->objcoefdistr )
-   {
-      case 1:
-         /* 'Natural' share coefficient distribution heuristic */
-         solverdata->execdistrheur = distributeVarCoefHeuristic;
-         break;
-      case 2:
-         /* Max. Indipendent Set coefficient distribution heuristic */
-         solverdata->execdistrheur = distributeVarCoefHeuristicIS;
-         break;
-      default:
-         /* Default (especially value 0): No objective coefficient distribution */
-         solverdata->execdistrheur = NULL;
-         break;
-   }
 
    /* allocate and initialize isnotapplicable array */
    npricingprobs = GCGgetNPricingprobs(GCGmasterGetOrigprob(scip));
