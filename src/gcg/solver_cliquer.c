@@ -618,7 +618,6 @@ void updateCouplingDiGraph(
 
 /** Recursive function - should be called through isCouplingRelevant() or other non-recursive methods.
  *  Checks if a variable for a given index in the coupling digraph is relevant for distributing the coefficients. */
-// TODO: Mark visited nodes (or count till max depth).
 static
 SCIP_Bool isCouplingRelevantRec(
    SCIP*                 scip,               /**< The problem instance */
@@ -626,7 +625,8 @@ SCIP_Bool isCouplingRelevantRec(
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
-   SCIP_Real*            aggrobjcoef         /**< Array of aggregated objective coefficients. */
+   SCIP_Real*            aggrobjcoef,        /**< Array of aggregated objective coefficients. */
+   int                   maxdepth            /**< Integer limiting recursion to finite depth in case of a cycle. */
 )
 {
    int            i;
@@ -634,10 +634,13 @@ SCIP_Bool isCouplingRelevantRec(
    if( SCIPisLT(scip, aggrobjcoef[SCIPvarGetProbindex(varsincouplings[varind])], 0) )
       return TRUE;
 
+   if( maxdepth <= 0 )
+      return FALSE;
+
    for( i = 0; i < nvarsincouplings; i++ )
    {
       if( couplingmatrix[varind][i] > 0 &&
-          isCouplingRelevantRec(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+          isCouplingRelevantRec(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef, maxdepth - 1) )
          return TRUE;
    }
    return FALSE;
@@ -657,7 +660,8 @@ SCIP_Bool isCouplingRelevant(
    SCIP_Real*            aggrobjcoef         /**< Array of aggregated objective coefficients. */
    )
 {
-   return isCouplingRelevantRec(scip, varind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef);
+   return isCouplingRelevantRec(scip, varind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
+                                nvarsincouplings);
 }
 
 /** Same as isCouplingRelevant(), but takes a SCIP_VAR pointer instead of the digraph index. */
@@ -676,7 +680,8 @@ SCIP_Bool isCouplingRelevantVar(
    varind = getNodeIndex(var, varsincouplings, nvarsincouplings);
    assert(varind > -1);
 
-   return isCouplingRelevantRec(scip, varind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef);
+   return isCouplingRelevantRec(scip, varind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
+                                nvarsincouplings);
 }
 
 /** Checks in the coupling digraph if a var with a given index has a coupling relevant successor. */
@@ -695,7 +700,8 @@ SCIP_Bool hasSuccessorRel(
    for( i = 0; i < nvarsincouplings; i++ )
    {
       if( couplingmatrix[varind][i] > 0 &&
-          isCouplingRelevantRec(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+          isCouplingRelevantRec(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
+                                nvarsincouplings) )
          return TRUE;
    }
    return FALSE;
@@ -718,8 +724,12 @@ int getNSuccessorsRelevant(
    nsuccessors = 0;
    for( i = 0; i < nvarsincouplings; i++ )
    {
-      if( couplingmatrix[varind][i] > 0 && isCouplingRelevantRec(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+      if( couplingmatrix[varind][i] > 0 &&
+          isCouplingRelevantRec(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
+                                nvarsincouplings) )
+      {
          nsuccessors += 1;
+      }
    }
    return nsuccessors;
 }
@@ -1016,7 +1026,9 @@ void distributeVarCoefHeuristicIS(
 
 // TODO: Loop detection / handling !?
 
-/** Recursive function: Should be called through non-recursive function 'distributeObjCoef()'. */
+
+/** Distributes the objective coefficient of coupling(-like) vars to all other vars occurring in those constraints.
+ *  -> Recursive function: Should be called through non-recursive wrapper function 'distributeObjCoef()'. */
 static
 void distributeObjCoefRec(
    SCIP*                 scip,               /**< The problem instance */
@@ -1035,11 +1047,15 @@ void distributeObjCoefRec(
 {
    int            i;
 
-   isdistributed[actvarind] = TRUE;               /* mark actual variable visited. */
-
-   /* Base case      : No successor. */
-   if( !hasSuccessorRel(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+   if( isdistributed[actvarind] )
+   {
+      /* Cycle in digraph detected. Could improve handling, but because very unlikely we just end recursion here.
+       * Cyle of form: x <= y, y <= z, z <= x
+       * (-> i.e. it follows x = y = z; aggegated coef. could be distributed equally among other coupled vars.) */
       return;
+   }
+
+   isdistributed[actvarind] = TRUE;               /* mark actual variable visited. */
 
    /* Recursive case : if var has predecessor(s) - visit unvisited predecessor(s) first. */
    for( i = 0; i < nvarsincouplings; i++ )
@@ -1051,7 +1067,7 @@ void distributeObjCoefRec(
                               constraints, nconss, couplingcoefindices, cliquerconstypes, execdistrheur);
    }
 
-   /* All predecessors are distributed now. */
+   /* Base case: All predecessors are distributed. */
    /* If now has positive (aggr.) obj. coeff.: Distribute coeff. of act. var to all successor variables. */
    if( SCIPisGT(scip, aggrobjcoef[SCIPvarGetProbindex(varsincouplings[actvarind])], 0))
       execdistrheur(scip, actvarind, isdistributed, couplingmatrix, varsincouplings, nvarsincouplings,
@@ -1107,9 +1123,14 @@ void distributeObjCoef(
 
    for( i = 0; i < nvarsincouplings; i++ )
    {
-      if( !isdistributed[i] )
+      if( !isdistributed[i] &&
+          hasSuccessorRel(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+      {
          distributeObjCoefRec(scip, i, isdistributed, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
                               constraints, nconss, couplingcoefindices, cliquerconstypes, execdistrheur);
+         continue;
+      }
+      isdistributed[i] = TRUE;               /* mark actual variable visited. */
    }
 
    SCIPfreeBufferArray(scip, &isdistributed);
