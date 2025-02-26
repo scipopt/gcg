@@ -1127,7 +1127,7 @@ void distributeObjCoef(
           hasSuccessorRel(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
       {
          distributeObjCoefRec(scip, i, isdistributed, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
-                              constraints, nconss, couplingcoefindices, cliquerconstypes, execdistrheur);
+                              constraints, nconss, couplingcoefindices, cliquerconstypes, selecteddistrheur);
          continue;
       }
       isdistributed[i] = TRUE;               /* mark actual variable visited. */
@@ -2490,8 +2490,8 @@ SCIP_RETCODE GCGincludeSolverCliquer(
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/cliquer/objcoefdistr",
          "distribution of objective coefficients of coupling variables (disabled = 0, natural share = 1, "
-         "MIS-based = 2)",
-         &solverdata->nodelimit, TRUE, DEFAULT_OBJCOEFDISTR, 0, 2, NULL, NULL) );
+         "MIS-based = 2, uniform = 3)",
+         &solverdata->objcoefdistr, TRUE, DEFAULT_OBJCOEFDISTR, 0, 3, NULL, NULL) );
 
    return SCIP_OKAY;
 }
