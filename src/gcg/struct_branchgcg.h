@@ -47,14 +47,14 @@ extern "C" {
 /** branching rule */
 struct GCG_Branchrule
 {
-   SCIP_BRANCHRULE*      branchrule;         /**< pointer to the SCIP branching rule */
+   SCIP_BRANCHRULE*      branchrule;                        /**< pointer to the SCIP branching rule */
    GCG_DECL_BRANCHACTIVEMASTER ((*branchactivemaster));     /**< node activation method of branching rule */
    GCG_DECL_BRANCHDEACTIVEMASTER ((*branchdeactivemaster)); /**< node deactivation method of branching rule */
    GCG_DECL_BRANCHPROPMASTER ((*branchpropmaster));         /**< propagation method of branching rule */
    GCG_DECL_BRANCHMASTERSOLVED((*branchmastersolved));      /**< lp solved method of branching rule */
    GCG_DECL_BRANCHDATADELETE ((*branchdatadelete));         /**< deinitialization method of branching rule */
-   GCG_DECL_BRANCHNEWCOL ((*branchnewcol));  /**< new column handler method of branching rule */
-   GCG_DECL_BRANCHGETMASTERCUT ((*branchgetmastercut));     /**< mastercut getter of branching rule */
+   GCG_DECL_BRANCHNEWCOL ((*branchnewcol));                 /**< new column handler method of branching rule */
+   GCG_DECL_BRANCHGETEXTENDEDMASTERCONS ((*branchgetextendedmastercons));     /**< extended master cons getter of branching rule */
 };
 
 #ifdef __cplusplus

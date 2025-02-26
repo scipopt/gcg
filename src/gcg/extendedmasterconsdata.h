@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,37 +25,64 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    type_mastercutdata.h
- * @ingroup TYPEDEFINITIONS
- * @brief   type definitions for master cuts in GCG projects
+/**@file    extendedmasterconsdata.h
+ * @ingroup INTERNALAPI-GCG
+ * @brief   internal methods for interacting with GCG_EXTENDEDMASTERCONSDATA
  * @author  Til Mohr
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_TYPE_MASTERCUTDATA_H_
-#define GCG_TYPE_MASTERCUTDATA_H_
+#ifndef GCG_EXTENDEDMASTERCONSDATA_H_
+#define GCG_EXTENDEDMASTERCONSDATA_H_
+
+#include "def.h"
+
+#include "pricer_gcg.h"
+#include "struct_extendedmasterconsdata.h"
+#include "type_extendedmasterconsdata.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct GCG_PricingModification GCG_PRICINGMODIFICATION;
-typedef struct GCG_MasterCutData GCG_MASTERCUTDATA;
-
-/** determine the coefficient of a column solution in the mastercut
- *
- *  input:
- *    scip            : SCIP main data structure of the original problem
- *    mastercutdata   : the generic mastercut data
- *    solvars         : array of column solution variables
- *    solvals         : array of column solution values
- *    nsolvars        : number of column solution variables and values
- *    probnr          : the pricing problem that the column belongs to
- *    coef            : the calculated coefficient
+/**
+ * @ingroup GCG_EXTENDEDMASTERCONSDATA
+ * @{
  */
-#define GCG_DECL_MASTERCUTGETCOEFF(x) SCIP_RETCODE x (SCIP* scip, GCG_MASTERCUTDATA* mastercutdata, SCIP_VAR** solvars, SCIP_Real* solvals, int nsolvars, int probnr, SCIP_Real* coef)
 
+/** update the extended master cons with the new dual value */
+SCIP_RETCODE GCGextendedmasterconsUpdateDualValue(
+   SCIP*                         masterscip,             /**< master scip */
+   GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata, /**< extended master cons data */
+   SCIP_Real                     dualvalue               /**< dual value */
+   );
+
+/** apply a pricing modification */
+SCIP_RETCODE GCGpricingmodificationApply(
+   SCIP*                         pricingscip,            /**< pricing scip */
+   GCG_PRICINGMODIFICATION       pricingmodification     /**< pricing modification */
+   );
+
+/** apply all pricing modifications */
+SCIP_RETCODE GCGextendedmasterconsApplyPricingModifications(
+   SCIP*                         masterscip,             /**< master scip */
+   GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata  /**< extended master cons data */
+   );
+
+/** undo a pricing modification */
+SCIP_RETCODE GCGpricingmodificationUndo(
+   SCIP*                         pricingscip,            /**< pricing scip */
+   GCG_PRICINGMODIFICATION       pricingmodification     /**< pricing modification */
+   );
+
+/** undo all pricing modifications */
+SCIP_RETCODE GCGextendedmasterconsUndoPricingModifications(
+   SCIP*                         masterscip,             /**< master scip */
+   GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata  /**< extended master cons data */
+   );
+
+/**@} */
 #ifdef __cplusplus
 }
 #endif

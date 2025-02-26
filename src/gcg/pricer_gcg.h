@@ -37,7 +37,7 @@
 #ifndef GCG_PRICER_GCG__
 #define GCG_PRICER_GCG__
 
-#include "misc_varhistory.h"
+#include "gcgvarhistory.h"
 #include "scip/scip.h"
 #include "def.h"
 #include "type_solver.h"

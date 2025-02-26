@@ -40,7 +40,6 @@
 #include "struct_vardata.h"
 #include "relax_gcg.h"
 #include "scip/cons_linear.h"
-#include <scip/type_retcode.h>
 
 #define STARTMAXMASTERVARS 8
 #define STARTMAXORIGVARS 1
@@ -143,8 +142,7 @@ SCIP_DECL_VARDELORIG(GCGvarDelInferredPricing)
    return SCIP_OKAY;
 }
 
-
-
+#ifndef NDEBUG
 /** returns TRUE or FALSE whether variable is a pricing variable or not */
 SCIP_Bool GCGvarIsPricing(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -159,6 +157,7 @@ SCIP_Bool GCGvarIsPricing(
 
    return vardata->vartype == GCG_VARTYPE_PRICING;
 }
+#endif
 
 #ifndef NDEBUG
 /** returns TRUE or FALSE whether variable is a master variable or not */
@@ -179,7 +178,7 @@ SCIP_Bool GCGvarIsMaster(
 #ifndef NDEBUG
 /** returns TRUE or FALSE whether variable is a inferred pricing variable or not
   *
-  * inferred pricing variables are auxilary variables that are required by specific generic mastercuts */
+  * inferred pricing variables are auxilary variables that are required by specific extended master cons */
 GCG_EXPORT
 SCIP_Bool GCGvarIsInferredPricing(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -1083,6 +1082,40 @@ SCIP_VAR** GCGpricingVarGetOrigvars(
 #endif
 
 #ifndef NDEBUG
+/** returns the index used by the pricer to refer to the variable */
+int GCGpricingVarGetPricerIndex(
+   SCIP_VAR*             var                 /**< SCIP variable structure */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsPricing(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+   assert(vardata->data.pricingvardata.pricerindex >= 0);
+
+   return vardata->data.pricingvardata.pricerindex;
+}
+#endif
+
+/** returns the index used by the pricer to refer to the variable */
+void GCGpricingVarSetPricerIndex(
+   SCIP_VAR*             var,                /**< SCIP variable structure */
+   int                   index               /**< index used by the pricer */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsPricing(var));
+
+   vardata = SCIPvarGetData(var);
+   assert(vardata != NULL);
+
+   vardata->data.pricingvardata.pricerindex = index;
+}
+
+#ifndef NDEBUG
 /** returns the block of the variable */
 int GCGvarGetBlock(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -1291,6 +1324,7 @@ SCIP_RETCODE GCGoriginalVarCreatePricingVar(
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(vardata->data.pricingvardata.origvars), vardata->data.pricingvardata.maxorigvars) ); /*lint !e506*/
    vardata->data.pricingvardata.origvars[0] = origvar;
    vardata->data.pricingvardata.norigvars = 1;
+   vardata->data.pricingvardata.pricerindex = -1;
 
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", pricingprobnr, SCIPvarGetName(origvar));
    SCIP_CALL( SCIPcreateVar(scip, var, name, SCIPvarGetLbGlobal(origvar),
@@ -1325,6 +1359,7 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
    SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &(vardata->data.pricingvardata.origvars), vardata->data.pricingvardata.maxorigvars) ); /*lint !e506*/
    vardata->data.pricingvardata.origvars[0] = origvar;
    vardata->data.pricingvardata.norigvars = 1;
+   vardata->data.pricingvardata.pricerindex = -1;
 
    /* create and add variable */
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", pricingprobnr, SCIPvarGetName(origvar));
@@ -1618,7 +1653,7 @@ SCIP_RETCODE GCGcreateArtificialVar(
    return SCIP_OKAY;
 }
 
-/** creates a pricing variable inferred from a master cut
+/** creates a pricing variable inferred from an extended master cons
  * that does not correspond to any original variable and its vardata */
 SCIP_RETCODE GCGcreateInferredPricingVar(
    SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
@@ -1640,7 +1675,7 @@ SCIP_RETCODE GCGcreateInferredPricingVar(
    SCIP_CALL( SCIPallocBlockMemory(pricingscip, &newvardata) );
    newvardata->vartype = GCG_VARTYPE_INFERREDPRICING;
    newvardata->blocknr = prob;
-   newvardata->data.inferredpricingvardata.mastercutdata = NULL; // will be set in GCGmastercutCreateFrom*
+   newvardata->data.inferredpricingvardata.extendedmasterconsdata = NULL; // will be set in GCGextendedmasterconsCreateFrom*
 
    /* create variable in the master problem */
    SCIP_CALL( SCIPcreateVar(pricingscip, newvar, varname, lb, ub,

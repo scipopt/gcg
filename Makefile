@@ -260,7 +260,6 @@ LIBOBJ = \
 			gcg/branch_ryanfoster.o \
 			gcg/branch_bpstrong.o \
 			gcg/branch_compbnd.o \
-			gcg/branch_staticvar.o \
 			gcg/class_conspartition.o \
 			gcg/class_indexpartition.o \
 			gcg/class_pricingcontroller.o \
@@ -361,10 +360,10 @@ LIBOBJ = \
 			gcg/heur_setcover.o \
 			gcg/heur_xpcrossover.o \
 			gcg/heur_xprins.o \
-			gcg/mastercutdata.o \
+			gcg/extendedmasterconsdata.o \
 			gcg/masterplugins.o \
 			gcg/bendersplugins.o \
-			gcg/misc_varhistory.o \
+			gcg/gcgvarhistory.o \
 			gcg/misc.o \
 			gcg/miscvisualization.o \
 			gcg/nodesel_master.o \

@@ -52,11 +52,15 @@ extern "C" {
  * @{
  */
 
+#ifdef NDEBUG
+#define GCGvarIsPricing(var)                (SCIPvarGetData(var)->vartype == GCG_VARTYPE_PRICING)
+#else
 /** returns TRUE or FALSE whether variable is a pricing variable or not */
 GCG_EXPORT
 SCIP_Bool GCGvarIsPricing(
    SCIP_VAR*             var                 /**< SCIP variable structure */
    );
+#endif
 
 #ifdef NDEBUG
 #define GCGvarIsOriginal(var)                (SCIPvarGetData(var)->vartype == GCG_VARTYPE_ORIGINAL)
@@ -83,7 +87,7 @@ SCIP_Bool GCGvarIsMaster(
 #else
 /** returns TRUE or FALSE whether variable is a inferred pricing variable or not
   *
-  * inferred pricing variables are auxilary variables that are required by specific generic mastercuts */
+  * inferred pricing variables are auxilary variables that are required by specific extended master conss */
 GCG_EXPORT
 SCIP_Bool GCGvarIsInferredPricing(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -401,6 +405,23 @@ SCIP_VAR** GCGpricingVarGetOrigvars(
 #endif
 
 #ifdef NDEBUG
+#define GCGpricingVarGetPricerIndex(var)        (SCIPvarGetData(var)->data.pricingvardata.pricerindex)
+#else
+/** returns the index used by the pricer to refer to the variable */
+GCG_EXPORT
+int GCGpricingVarGetPricerIndex(
+   SCIP_VAR*             var                 /**< SCIP variable structure */
+   );
+#endif
+
+/** returns the index used by the pricer to refer to the variable */
+GCG_EXPORT
+void GCGpricingVarSetPricerIndex(
+   SCIP_VAR*             var,                /**< SCIP variable structure */
+   int                   index               /**< index used by the pricer */
+   );
+
+#ifdef NDEBUG
 #define GCGvarGetBlock(var)             (SCIPvarGetData(var)->blocknr)
 #else
 /** returns the block of the variable */
@@ -539,7 +560,7 @@ SCIP_RETCODE GCGcreateArtificialVar(
    SCIP_Real             objcoef             /**< objective coefficient of artificial variable */
    );
 
-/** creates a pricing variable inferred from a master cut
+/** creates a pricing variable inferred from an extended master cons
  * that does not correspond to any original variable and its vardata */
 SCIP_RETCODE GCGcreateInferredPricingVar(
    SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */

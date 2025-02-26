@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,30 +25,23 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    branch_staticvar.h
- * @ingroup BRANCHINGRULES-GCG
- * @brief   static master variable branching rule
+/**@file    type_gcgvarhistory.h
+ * @ingroup TYPEDEFINITIONS
+ * @brief   type definitions for managing variable history
  * @author  Til Mohr
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_BRANCH_XYZ_H__
-#define GCG_BRANCH_XYZ_H__
-
-
-#include "scip/scip.h"
-#include "def.h"
+#ifndef GCG_TYPE_GCGVARHISTORY_H_
+#define GCG_TYPE_GCGVARHISTORY_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** creates the staticvar branching rule and includes it in SCIP */
-GCG_EXPORT
-SCIP_RETCODE SCIPincludeBranchruleStaticVar(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
+typedef struct GCG_VarHistoryBuffer GCG_VARHISTORYBUFFER;
+typedef struct GCG_VarHistory GCG_VARHISTORY;
 
 #ifdef __cplusplus
 }

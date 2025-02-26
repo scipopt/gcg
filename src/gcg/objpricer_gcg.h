@@ -266,8 +266,8 @@ public:
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
-   /** compute generic master cut coefficients of column */
-   SCIP_RETCODE computeColMastercuts(
+   /** compute generic extended master cons coefficients of column */
+   SCIP_RETCODE computeColExtendedMasterconss(
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
@@ -354,8 +354,8 @@ private:
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
-   /** add variable to the master cuts */
-   SCIP_RETCODE addVariableToMastercuts(
+   /** add variable to the extended master conss */
+   SCIP_RETCODE addVariableToExtendedmastercons(
       SCIP_VAR*             newvar              /**< The new variable to add */
       );
 

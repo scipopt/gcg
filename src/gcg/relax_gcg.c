@@ -44,9 +44,6 @@
 
 //#define SCIP_DEBUG
 
-#include <scip/def.h>
-#include <scip/type_branch.h>
-#include <scip/type_retcode.h>
 #include <string.h>
 #ifdef _OPENMP
 #include <omp.h>
@@ -79,7 +76,6 @@
 
 #include "gcg.h"
 #include "type_branchgcg.h"
-#include "struct_mastercutdata.h"
 
 #ifndef NO_AUT_LIB
 #include "symmetry/pub_automorphism.h"
@@ -153,11 +149,11 @@ struct SCIP_RelaxData
    /* branchrule data */
    GCG_BRANCHRULE**      branchrules;        /**< branching rules registered in the relaxator */
    int                   nbranchrules;       /**< number of branching rules registered in the relaxator */
-   GCG_BRANCHRULE**      activebranchrules;  /**< branching rules that created mastercuts (cache) */
+   GCG_BRANCHRULE**      activebranchrules;  /**< branching rules that created extended master conss (cache) */
    GCG_BRANCHDATA**      activebranchdata;   /**< data represeting the branching decisions of the active nodes (cache) */
-   GCG_MASTERCUTDATA**   activebranchmastercuts; /**< array of master cuts that are active in the current node (cache) */
-   int                   nactivebranchmastercuts; /**< number of master cuts that are active in the current node */
-   int                   maxactivebranchmastercuts; /**< capacity of activebranchmastercuts */
+   GCG_EXTENDEDMASTERCONSDATA**   activebranchextendedmasterconss; /**< array of extended master conss that are active in the current node (cache) */
+   int                   nactivebranchextendedmasterconss; /**< number of extended master conss that are active in the current node */
+   int                   maxactivebranchextendedmasterconss; /**< capacity of activebranchextendedmasterconss */
 
    /* parameter data */
    SCIP_Bool             discretization;     /**< TRUE: use discretization approach; FALSE: use convexification approach */
@@ -209,63 +205,63 @@ struct SCIP_RelaxData
  * Local methods
  */
 
-/** add the activated branch node's mastercut to the cache */
+/** add the activated branch node's extended master cons to the cache */
 static
-SCIP_RETCODE addActiveBranchMastercut(
+SCIP_RETCODE addActiveBranchExtendedmastercons(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_RELAXDATA*       relaxdata,          /**< relaxator data data structure */
    GCG_BRANCHRULE*       branchrule,         /**< branchrule that was activated */
    GCG_BRANCHDATA*       branchdata          /**< branchdata that was activated */
    )
 {
-   GCG_MASTERCUTDATA* mastercutdata;
+   GCG_EXTENDEDMASTERCONSDATA* extendedmasterconsdata;
 
    assert(scip != NULL);
    assert(relaxdata != NULL);
    assert(branchrule != NULL);
    assert(branchdata != NULL);
 
-   /* add only if branch creates a mastercut */
-   mastercutdata = NULL;
-   if( branchrule->branchgetmastercut == NULL )
+   /* add only if branch creates an extended master cons */
+   extendedmasterconsdata = NULL;
+   if( branchrule->branchgetextendedmastercons == NULL )
       return SCIP_OKAY;
-   SCIP_CALL( branchrule->branchgetmastercut(scip, branchdata, &mastercutdata) );
-   if( mastercutdata == NULL )
+   SCIP_CALL( branchrule->branchgetextendedmastercons(scip, branchdata, &extendedmasterconsdata) );
+   if( extendedmasterconsdata == NULL )
       return SCIP_OKAY;
 
-   if( relaxdata->maxactivebranchmastercuts == 0 )
+   if( relaxdata->maxactivebranchextendedmasterconss == 0 )
    {
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->activebranchrules), 1) );
       SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->activebranchdata), 1) );
-      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->activebranchmastercuts), 1) );
-      relaxdata->maxactivebranchmastercuts = 1;
+      SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(relaxdata->activebranchextendedmasterconss), 1) );
+      relaxdata->maxactivebranchextendedmasterconss = 1;
    }
    else
-   if( relaxdata->nactivebranchmastercuts == relaxdata->maxactivebranchmastercuts )
+   if( relaxdata->nactivebranchextendedmasterconss == relaxdata->maxactivebranchextendedmasterconss )
    {
       int newsize;
-      newsize = SCIPcalcMemGrowSize(scip, relaxdata->nactivebranchmastercuts+1);
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(relaxdata->activebranchrules), relaxdata->maxactivebranchmastercuts, newsize) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(relaxdata->activebranchdata), relaxdata->maxactivebranchmastercuts, newsize) );
-      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(relaxdata->activebranchmastercuts), relaxdata->maxactivebranchmastercuts, newsize) );
-      relaxdata->maxactivebranchmastercuts = newsize;
+      newsize = SCIPcalcMemGrowSize(scip, relaxdata->nactivebranchextendedmasterconss+1);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(relaxdata->activebranchrules), relaxdata->maxactivebranchextendedmasterconss, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(relaxdata->activebranchdata), relaxdata->maxactivebranchextendedmasterconss, newsize) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &(relaxdata->activebranchextendedmasterconss), relaxdata->maxactivebranchextendedmasterconss, newsize) );
+      relaxdata->maxactivebranchextendedmasterconss = newsize;
    }
-   assert(relaxdata->nactivebranchmastercuts < relaxdata->maxactivebranchmastercuts);
+   assert(relaxdata->nactivebranchextendedmasterconss < relaxdata->maxactivebranchextendedmasterconss);
    assert(relaxdata->activebranchrules != NULL);
    assert(relaxdata->activebranchdata != NULL);
-   assert(relaxdata->activebranchmastercuts != NULL);
+   assert(relaxdata->activebranchextendedmasterconss != NULL);
 
-   relaxdata->activebranchrules[relaxdata->nactivebranchmastercuts] = branchrule;
-   relaxdata->activebranchdata[relaxdata->nactivebranchmastercuts] = branchdata;
-   relaxdata->activebranchmastercuts[relaxdata->nactivebranchmastercuts] = mastercutdata;
-   relaxdata->nactivebranchmastercuts++;
+   relaxdata->activebranchrules[relaxdata->nactivebranchextendedmasterconss] = branchrule;
+   relaxdata->activebranchdata[relaxdata->nactivebranchextendedmasterconss] = branchdata;
+   relaxdata->activebranchextendedmasterconss[relaxdata->nactivebranchextendedmasterconss] = extendedmasterconsdata;
+   relaxdata->nactivebranchextendedmasterconss++;
 
    return SCIP_OKAY;
 }
 
-/** drop the most recently added branch mastercut data */
+/** drop the most recently added branch extended master cons data */
 static
-SCIP_RETCODE dropActiveBranchMastercut(
+SCIP_RETCODE dropActiveBranchExtendedmastercons(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_RELAXDATA*       relaxdata,          /**< relaxator data data structure */
    GCG_BRANCHRULE*       branchrule,         /**< branchrule that was deactivated */
@@ -275,17 +271,17 @@ SCIP_RETCODE dropActiveBranchMastercut(
    assert(scip != NULL);
    assert(relaxdata != NULL);
 
-   if( relaxdata->nactivebranchmastercuts == 0 )
+   if( relaxdata->nactivebranchextendedmasterconss == 0 )
       return SCIP_OKAY;
 
-   /* drop only if branch created a mastercut */
-   if( relaxdata->activebranchrules[relaxdata->nactivebranchmastercuts-1] != branchrule
-      || relaxdata->activebranchdata[relaxdata->nactivebranchmastercuts-1] != branchdata )
+   /* drop only if branch created an extended master cons */
+   if( relaxdata->activebranchrules[relaxdata->nactivebranchextendedmasterconss-1] != branchrule
+      || relaxdata->activebranchdata[relaxdata->nactivebranchextendedmasterconss-1] != branchdata )
       return SCIP_OKAY;
 
-   assert(relaxdata->activebranchmastercuts != NULL);
-   relaxdata->nactivebranchmastercuts--;
-   relaxdata->activebranchmastercuts[relaxdata->nactivebranchmastercuts] = NULL;
+   assert(relaxdata->activebranchextendedmasterconss != NULL);
+   relaxdata->nactivebranchextendedmasterconss--;
+   relaxdata->activebranchextendedmasterconss[relaxdata->nactivebranchextendedmasterconss] = NULL;
 
    return SCIP_OKAY;
 }
@@ -2583,9 +2579,9 @@ SCIP_RETCODE initRelaxdata(
 
    relaxdata->activebranchrules = NULL;
    relaxdata->activebranchdata = NULL;
-   relaxdata->activebranchmastercuts = NULL;
-   relaxdata->nactivebranchmastercuts = 0;
-   relaxdata->maxactivebranchmastercuts = 0;
+   relaxdata->activebranchextendedmasterconss = NULL;
+   relaxdata->nactivebranchextendedmasterconss = 0;
+   relaxdata->maxactivebranchextendedmasterconss = 0;
 
    SCIP_CALL( GCGcreateParamsVisu(scip, &(relaxdata->paramsvisu)) );
    assert(relaxdata->paramsvisu != NULL);
@@ -2932,13 +2928,13 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
       relaxdata->rootnodetime = NULL;
    }
 
-   if( relaxdata->maxactivebranchmastercuts > 0 )
+   if( relaxdata->maxactivebranchextendedmasterconss > 0 )
    {
-      SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->activebranchrules), relaxdata->maxactivebranchmastercuts);
-      SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->activebranchdata), relaxdata->maxactivebranchmastercuts);
-      SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->activebranchmastercuts), relaxdata->maxactivebranchmastercuts);
-      relaxdata->maxactivebranchmastercuts = 0;
-      relaxdata->nactivebranchmastercuts = 0;
+      SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->activebranchrules), relaxdata->maxactivebranchextendedmasterconss);
+      SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->activebranchdata), relaxdata->maxactivebranchextendedmasterconss);
+      SCIPfreeBlockMemoryArrayNull(scip, &(relaxdata->activebranchextendedmasterconss), relaxdata->maxactivebranchextendedmasterconss);
+      relaxdata->maxactivebranchextendedmasterconss = 0;
+      relaxdata->nactivebranchextendedmasterconss = 0;
    }
 
    relaxdata->relaxisinitialized = FALSE;
@@ -3567,7 +3563,7 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
    GCG_DECL_BRANCHMASTERSOLVED((*branchmastersolved)),/**<  master solved method for branchrule */
    GCG_DECL_BRANCHDATADELETE((*branchdatadelete)),/**<  branchdata deletion method for branchrule */
    GCG_DECL_BRANCHNEWCOL ((*branchnewcol)),  /**< new column handler method of branching rule */
-   GCG_DECL_BRANCHGETMASTERCUT ((*branchgetmastercut))/**< mastercut getter of branching rule */
+   GCG_DECL_BRANCHGETEXTENDEDMASTERCONS ((*branchgetextendedmastercons))/**< extended master cons getter of branching rule */
    )
 {
    SCIP_RELAX* relax;
@@ -3596,7 +3592,7 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
    relaxdata->branchrules[pos]->branchmastersolved = branchmastersolved;
    relaxdata->branchrules[pos]->branchdatadelete = branchdatadelete;
    relaxdata->branchrules[pos]->branchnewcol = branchnewcol;
-   relaxdata->branchrules[pos]->branchgetmastercut = branchgetmastercut;
+   relaxdata->branchrules[pos]->branchgetextendedmastercons = branchgetextendedmastercons;
    relaxdata->nbranchrules++;
 
    return SCIP_OKAY;
@@ -3631,7 +3627,7 @@ SCIP_RETCODE GCGrelaxBranchActiveMaster(
          if( relaxdata->branchrules[i]->branchactivemaster != NULL )
             SCIP_CALL( relaxdata->branchrules[i]->branchactivemaster(relaxdata->masterprob, branchdata) );
 
-         SCIP_CALL( addActiveBranchMastercut(scip, relaxdata, relaxdata->branchrules[i], branchdata) );
+         SCIP_CALL( addActiveBranchExtendedmastercons(scip, relaxdata, relaxdata->branchrules[i], branchdata) );
 
          break;
       }
@@ -3671,7 +3667,7 @@ SCIP_RETCODE GCGrelaxBranchDeactiveMaster(
          if( relaxdata->branchrules[i]->branchdeactivemaster != NULL )
             SCIP_CALL( relaxdata->branchrules[i]->branchdeactivemaster(relaxdata->masterprob, branchdata) );
 
-         SCIP_CALL( dropActiveBranchMastercut(scip, relaxdata, relaxdata->branchrules[i], branchdata) );
+         SCIP_CALL( dropActiveBranchExtendedmastercons(scip, relaxdata, relaxdata->branchrules[i], branchdata) );
 
          break;
       }
@@ -3728,7 +3724,9 @@ SCIP_RETCODE GCGrelaxBranchPropMaster(
 SCIP_RETCODE GCGrelaxBranchDataDelete(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
-   GCG_BRANCHDATA**      branchdata          /**< data representing the branching decision */
+   GCG_BRANCHDATA**      branchdata,         /**< data representing the branching decision */
+   SCIP_Bool             origbranch,         /**< true iff an origbranch triggered this call */
+   SCIP_Bool             force               /**< branch data must be deleted if true */
    )
 {
    SCIP_RELAX* relax;
@@ -3752,7 +3750,7 @@ SCIP_RETCODE GCGrelaxBranchDataDelete(
       {
          /* call branchrule data deletion method of the branching rule */
          if( relaxdata->branchrules[i]->branchdatadelete != NULL )
-            SCIP_CALL( relaxdata->branchrules[i]->branchdatadelete(scip, branchdata) );
+            SCIP_CALL( relaxdata->branchrules[i]->branchdatadelete(scip, branchdata, origbranch, force) );
          else
          {
             if( *branchdata != NULL )
@@ -3829,12 +3827,12 @@ SCIP_RETCODE GCGrelaxBranchNewColWithGCGBranchrule(
    return SCIP_OKAY;
 }
 
-/** gets the mastercutdata created by this branching rule, if any */
-SCIP_RETCODE GCGrelaxBranchGetMasterCut(
+/** gets the extendedmasterconsdata created by this branching rule, if any */
+SCIP_RETCODE GCGrelaxBranchGetExtendedMasterCons(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
-   GCG_MASTERCUTDATA**   mastercutdata       /**< the mastercutdata to grab */
+   GCG_EXTENDEDMASTERCONSDATA**   extendedmasterconsdata       /**< the extendedmasterconsdata to grab */
    )
 {
    SCIP* original;
@@ -3845,7 +3843,7 @@ SCIP_RETCODE GCGrelaxBranchGetMasterCut(
    assert(scip != NULL);
    assert(GCGisMaster(scip));
    assert(branchrule != NULL);
-   assert(mastercutdata == NULL);
+   assert(extendedmasterconsdata == NULL);
 
    original = GCGmasterGetOrigprob(scip);
    assert(original != NULL);
@@ -3861,12 +3859,12 @@ SCIP_RETCODE GCGrelaxBranchGetMasterCut(
    {
       if( branchrule == relaxdata->branchrules[i]->branchrule )
       {
-         /* call mastercut getter method of branching rule */
-         if( relaxdata->branchrules[i]->branchgetmastercut != NULL )
+         /* call extended master cons getter method of branching rule */
+         if( relaxdata->branchrules[i]->branchgetextendedmastercons != NULL )
          {
             assert(relaxdata->masterprob == scip);
-            SCIP_CALL( relaxdata->branchrules[i]->branchgetmastercut(scip, branchdata, mastercutdata) );
-            assert(*mastercutdata != NULL);
+            SCIP_CALL( relaxdata->branchrules[i]->branchgetextendedmastercons(scip, branchdata, extendedmasterconsdata) );
+            assert(*extendedmasterconsdata != NULL);
          }
 
          break;
@@ -3878,13 +3876,13 @@ SCIP_RETCODE GCGrelaxBranchGetMasterCut(
    return SCIP_OKAY;
 }
 
-/** get mastercuts of all active nodes */
-SCIP_RETCODE GCGrelaxBranchGetAllActiveMasterCuts(
+/** get extended master conss of all active nodes */
+SCIP_RETCODE GCGrelaxBranchGetAllActiveExtendedMasterConss(
    SCIP*                 scip,               /**< SCIP data structure */
-   GCG_BRANCHRULE***     branchrules,        /**< branching rules that created mastercuts */
+   GCG_BRANCHRULE***     branchrules,        /**< branching rules that created extended master conss */
    GCG_BRANCHDATA***     branchdata,         /**< data represeting the branching decisions of the active nodes */
-   GCG_MASTERCUTDATA***  mastercutdata,      /**< array of mastercuts generated by branching in all currently active nodes */
-   int*                  nmastercuts         /**< number of currently active branching rules that created mastercuts */
+   GCG_EXTENDEDMASTERCONSDATA***  extendedmasterconsdata,      /**< array of extended master conss generated by branching in all currently active nodes */
+   int*                  nextendedmasterconss         /**< number of currently active branching rules that created extended master conss */
    )
 {
    SCIP* original;
@@ -3905,8 +3903,8 @@ SCIP_RETCODE GCGrelaxBranchGetAllActiveMasterCuts(
 
    *branchrules = relaxdata->activebranchrules;
    *branchdata = relaxdata->activebranchdata;
-   *mastercutdata = relaxdata->activebranchmastercuts;
-   *nmastercuts = relaxdata->nactivebranchmastercuts;
+   *extendedmasterconsdata = relaxdata->activebranchextendedmasterconss;
+   *nextendedmasterconss = relaxdata->nactivebranchextendedmasterconss;
 
    return SCIP_OKAY;
 }

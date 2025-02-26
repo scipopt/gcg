@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    misc_varhistory.h
+/**@file    gcgvarhistory.h
  * @ingroup INTERNALAPI-GCG
  * @brief   methods for managing variable history
  * @author  Til Mohr
@@ -34,12 +34,12 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 
-#ifndef GCG_MISC_VARHISTORY_H__
-#define GCG_MISC_VARHISTORY_H__
+#ifndef GCG_GCGVARHISTORY_H__
+#define GCG_GCGVARHISTORY_H__
 
 #include "scip/scip.h"
 #include "def.h"
-#include "struct_varhistory.h"
+#include "type_gcgvarhistory.h"
 
 #ifdef __cplusplus
 extern "C" {

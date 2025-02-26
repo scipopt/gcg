@@ -39,17 +39,17 @@
 
 #include "branch_generic.h"
 #include "pub_gcgvar.h"
-#include "mastercutdata.h"
+#include "pub_extendedmasterconsdata.h"
 #include "relax_gcg.h"
 #include "cons_masterbranch.h"
 #include "cons_origbranch.h"
 #include "pricer_gcg.h"
-#include "scip/cons_linear.h"
 #include "type_branchgcg.h"
 #include "gcg.h"
 #include "cons_integralorig.h"
 #include "gcgsort.h"
 
+#include "scip/cons_linear.h"
 #include "scip/nodesel_bfs.h"
 #include "scip/nodesel_dfs.h"
 #include "scip/nodesel_estimate.h"
@@ -65,8 +65,6 @@
 #include "scip/branch_relpscost.h"
 
 #include <assert.h>
-#include <scip/def.h>
-#include <scip/scip_numerics.h>
 #include <string.h>
 
 
@@ -90,7 +88,6 @@ struct GCG_BranchData
    int                   consSsize;          /**< size of the component bound sequence */
    int                   maxconsS;           /**< size of consS */
    int                   consblocknr;        /**< id of the pricing problem (or block) to which this branching constraint belongs */
-   int                   nvars;              /**< number of master variables the last time the node has been visited */
 };
 
 /** set of component bounds in separate */
@@ -117,48 +114,14 @@ typedef struct GCG_Record GCG_RECORD;
 /** computes the generator of mastervar for the entry in origvar
  * @return entry of the generator corresponding to origvar */
 static
-SCIP_Real getGeneratorEntryCol(
-   SCIP_VAR**            solvars,            /**< column solution variables */
-   SCIP_Real*            solvals,            /**< column solution values */
-   int                   nsolvars,           /**< number of column solution variables */
-   SCIP_VAR*             origvar             /**< corresponding origvar */
-   )
-{
-   int i;
-
-   assert(origvar != NULL);
-
-   for( i = 0; i < nsolvars; ++i )
-   {
-      if( SCIPvarCompare(solvars[i], origvar) == 0 )
-      {
-         return solvals[i];
-      }
-   }
-
-   return 0.0;
-}
-
-/** computes the generator of mastervar for the entry in origvar
- * @return entry of the generator corresponding to origvar */
-static
 SCIP_Real getGeneratorEntry(
    SCIP_VAR*             mastervar,          /**< current mastervariable */
    SCIP_VAR*             origvar             /**< corresponding origvar */
    )
 {
-   SCIP_VAR** origvars;
-   SCIP_Real* origvals;
-   int norigvars;
+   SCIP_Real entry = GCGmasterVarGetOrigval(mastervar, origvar);
 
-   assert(mastervar != NULL);
-   assert(origvar != NULL);
-
-   origvars = GCGmasterVarGetOrigvars(mastervar);
-   norigvars = GCGmasterVarGetNOrigvars(mastervar);
-   origvals = GCGmasterVarGetOrigvals(mastervar);
-
-   return getGeneratorEntryCol(origvars, origvals, norigvars, origvar);
+   return entry != SCIP_INVALID ? entry : 0.;
 }
 
 /** determine the coefficient for a column */
@@ -166,9 +129,7 @@ static
 SCIP_Real getColCoefficient(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_BRANCHDATA*       branchdata,         /**< branching data structure where the variable should be added */
-   SCIP_VAR**            solvars,            /**< column solution variables */
-   SCIP_Real*            solvals,            /**< column solution values */
-   int                   nsolvars,           /**< number of column solution variables */
+   SCIP_VAR*             mastervar,          /**< cmaster variable */
    int                   probnr              /**< number of the pricing problem */
    )
 {
@@ -189,7 +150,7 @@ SCIP_Real getColCoefficient(
    {
       SCIP_Real generatorentry;
 
-      generatorentry = getGeneratorEntryCol(solvars, solvals, nsolvars, GCGbranchGenericBranchdataGetConsS(branchdata)[p].component);
+      generatorentry = getGeneratorEntry(mastervar, GCGbranchGenericBranchdataGetConsS(branchdata)[p].component);
 
       if( GCGbranchGenericBranchdataGetConsS(branchdata)[p].sense == GCG_COMPSENSE_GE )
       {
@@ -209,7 +170,7 @@ SCIP_Real getColCoefficient(
       }
    }
 
-   if(varinS)
+   if( varinS )
       return 1.;
    else
       return 0.;
@@ -222,25 +183,18 @@ SCIP_RETCODE addVarToMasterbranch(
    SCIP_VAR*             mastervar,          /**< the variable to add */
    GCG_BRANCHDATA*       branchdata,         /**< branching data structure where the variable should be added */
    SCIP_Bool*            added               /**< whether the variable was added */
-)
+   )
 {
    SCIP_Real coef;
-   SCIP_VAR** origvars;
-   SCIP_Real* origvals;
-   int norigvars;
 
    assert(scip != NULL);
    assert(mastervar != NULL);
    assert(branchdata != NULL);
    assert(added != NULL);
 
-   origvars = GCGmasterVarGetOrigvars(mastervar);
-   norigvars = GCGmasterVarGetNOrigvars(mastervar);
-   origvals = GCGmasterVarGetOrigvals(mastervar);
-
    *added = FALSE;
 
-   coef = getColCoefficient(scip, branchdata, origvars, origvals, norigvars, GCGvarGetBlock(mastervar));
+   coef = getColCoefficient(scip, branchdata, mastervar, GCGvarGetBlock(mastervar));
 
    if( !SCIPisZero(scip, coef) )
    {
@@ -258,7 +212,7 @@ SCIP_RETCODE createDirectBranchingCons(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_NODE*            node,               /**< node to add constraint */
    GCG_BRANCHDATA*       branchdata          /**< branching data structure */
-)
+   )
 {
    char name[SCIP_MAXSTRLEN];
 
@@ -292,7 +246,7 @@ SCIP_RETCODE createBranchingCons(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_NODE*            node,               /**< node to add constraint */
    GCG_BRANCHDATA*       branchdata          /**< branching data structure */
-)
+   )
 {
    char name[SCIP_MAXSTRLEN];
    SCIP_Bool added = FALSE;
@@ -316,7 +270,6 @@ SCIP_RETCODE createBranchingCons(
 
    for( int i = 0; i < nvars; ++i )
    {
-      added = FALSE;
       SCIP_CALL( addVarToMasterbranch(scip, vars[i], branchdata, &added) );
    }
 
@@ -1939,6 +1892,9 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteGeneric)
    assert(scip != NULL);
    assert(branchdata != NULL);
 
+   if( origbranch && !force )
+      return SCIP_OKAY;
+
    if( *branchdata == NULL )
    {
       SCIPdebugMessage("branchDataDeleteGeneric: cannot delete empty branchdata\n");
@@ -2103,7 +2059,6 @@ SCIP_RETCODE initNodeBranchdata(
    (*nodebranchdata)->C = NULL;
    (*nodebranchdata)->maxconsS = 0;
    (*nodebranchdata)->consSsize = 0;
-   (*nodebranchdata)->nvars = 0;
 
    return SCIP_OKAY;
 }

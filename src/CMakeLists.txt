@@ -22,7 +22,6 @@ set(gcgsources
     gcg/branch_orig.c
     gcg/branch_relpsprob.c
     gcg/branch_ryanfoster.c
-    gcg/branch_staticvar.c
     gcg/class_conspartition.cpp
     gcg/class_detprobdata.cpp
     gcg/class_indexpartition.cpp
@@ -116,9 +115,9 @@ set(gcgsources
     gcg/heur_setcover.c
     gcg/heur_xpcrossover.c
     gcg/heur_xprins.c
-    gcg/mastercutdata.c
+    gcg/extendedmasterconsdata.c
     gcg/masterplugins.c
-    gcg/misc_varhistory.c
+    gcg/gcgvarhistory.c
     gcg/misc.c
     gcg/miscvisualization.cpp
     gcg/nodesel_master.c
@@ -171,10 +170,9 @@ set(gcgheaders
     gcg/branch_orig.h
     gcg/branch_relpsprob.h
     gcg/branch_ryanfoster.h
-    gcg/branch_staticvar.h
     gcg/class_conspartition.h
     gcg/class_indexpartition.h
-    gcg/misc_varhistory.h
+    gcg/gcgvarhistory.h
     gcg/miscvisualization.h
     gcg/class_pricingcontroller.h
     gcg/class_pricingtype.h
@@ -254,7 +252,7 @@ set(gcgheaders
     gcg/heur_setcover.h
     gcg/heur_xpcrossover.h
     gcg/heur_xprins.h
-    gcg/mastercutdata.h
+    gcg/extendedmasterconsdata.h
     gcg/masterplugins.h
     gcg/nodesel_master.h
     gcg/objdialog.h
@@ -274,6 +272,7 @@ set(gcgheaders
     gcg/pub_gcgsepa.h
     gcg/pub_gcgpqueue.h
     gcg/pub_gcgvar.h
+    gcg/pub_extendedmasterconsdata.h
     gcg/pub_pricingjob.h
     gcg/pub_pricingprob.h
     gcg/pub_score.h
@@ -311,14 +310,14 @@ set(gcgheaders
     gcg/struct_detector.h
     gcg/struct_gcgcol.h
     gcg/struct_gcgpqueue.h
-    gcg/struct_mastercutdata.h
+    gcg/struct_extendedmasterconsdata.h
     gcg/struct_pricestore_gcg.h
     gcg/struct_pricingjob.h
     gcg/struct_pricingprob.h
     gcg/struct_score.h
     gcg/struct_solver.h
     gcg/struct_vardata.h
-    gcg/struct_varhistory.h
+    gcg/struct_gcgvarhistory.h
     gcg/type_branchgcg.h
     gcg/type_classifier.h
     gcg/type_colpool.h
@@ -328,7 +327,7 @@ set(gcgheaders
     gcg/type_gcgcol.h
     gcg/type_gcgpqueue.h
     gcg/type_locks.h
-    gcg/type_mastercutdata.h
+    gcg/type_extendedmasterconsdata.h
     gcg/type_masterdiving.h
     gcg/type_origdiving.h
     gcg/type_parameter.h
@@ -339,7 +338,7 @@ set(gcgheaders
     gcg/type_score.h
     gcg/type_solver.h
     gcg/type_varclassifier.h
-    gcg/type_varhistory.h
+    gcg/type_gcgvarhistory.h
 )
 
 set(gcggraphheaders

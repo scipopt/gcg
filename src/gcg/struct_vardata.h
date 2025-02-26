@@ -37,11 +37,7 @@
 #ifndef GCG_STRUCT_VARDATA_H__
 #define GCG_STRUCT_VARDATA_H__
 
-#include <scip/type_cons.h>
-#include <scip/type_misc.h>
-#include <scip/type_var.h>
-#include "struct_mastercutdata.h"
-#include "type_mastercutdata.h"
+#include "type_extendedmasterconsdata.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,7 +49,7 @@ enum GCG_Vartype
    GCG_VARTYPE_ORIGINAL = 0,                /**< variable belongs to original problem */
    GCG_VARTYPE_PRICING = 1,                 /**< variable belongs to a pricing problem */
    GCG_VARTYPE_MASTER = 2,                   /**< variable belongs to the master problem */
-   GCG_VARTYPE_INFERREDPRICING = 3,         /**< pricing variable inferred from a master cut
+   GCG_VARTYPE_INFERREDPRICING = 3,         /**< pricing variable inferred from an extended master cons
                                                 and does not correspond to any original variable */
 };
 typedef enum GCG_Vartype GCG_VARTYPE;
@@ -89,6 +85,7 @@ struct GCG_PricingVarData
    SCIP_VAR**            origvars;           /**< corresponding variables in the original program */
    int                   norigvars;          /**< number of corresponding variables in the original program */
    int                   maxorigvars;        /**< length of origvars array */
+   int                   pricerindex;        /**< index used by the pricer to store data of the variable */
 };
 typedef struct GCG_PricingVarData GCG_PRICINGVARDATA;
 
@@ -110,7 +107,7 @@ typedef struct GCG_MasterVarData GCG_MASTERVARDATA;
 /** data for inferred pricing variables */
 struct GCG_InferredPricingVarData
 {
-   GCG_MASTERCUTDATA*    mastercutdata;      /**< master cut data that was used to infer the pricing variable */
+   GCG_EXTENDEDMASTERCONSDATA*    extendedmasterconsdata;      /**< extended master cons data that was used to infer the pricing variable */
 };
 typedef struct GCG_InferredPricingVarData GCG_INFERREDPRICINGVARDATA;
 

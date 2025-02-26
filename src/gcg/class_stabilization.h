@@ -38,8 +38,7 @@
 
 #include "objscip/objscip.h"
 #include "class_pricingtype.h"
-#include "struct_mastercutdata.h"
-#include "type_mastercutdata.h"
+#include "type_extendedmasterconsdata.h"
 #include <scip/type_misc.h>
 #include <scip/type_retcode.h>
 
@@ -60,10 +59,10 @@ private:
    SCIP_Real* stabcenteroriginalsepacutvals;
    int stabcenteroriginalsepacutvalssize;
    int nstabcenteroriginalsepacutvals;
-   GCG_MASTERCUTDATA** stabcentermastercuts;
-   int nstabcentermastercuts;
-   int stabcentermastercutssize;
-   SCIP_Real* stabcentermastercutvals;
+   GCG_EXTENDEDMASTERCONSDATA** stabcenterextendedmasterconss;
+   int nstabcenterextendedmasterconss;
+   int stabcenterextendedmasterconsssize;
+   SCIP_Real* stabcenterextendedmasterconsvals;
    SCIP_Real* stabcenterlinkingconsvals;
    int nstabcenterlinkingconsvals;
    int stabcenterlinkingconsvalssize;
@@ -76,10 +75,10 @@ private:
    SCIP_Real* subgradientoriginalsepacutvals;
    int subgradientoriginalsepacutvalssize;
    int nsubgradientoriginalsepacutvals;
-   GCG_MASTERCUTDATA** subgradientmastercuts;
-   int nsubgradientmastercuts;
-   int subgradientmastercutssize;
-   SCIP_Real* subgradientmastercutvals;
+   GCG_EXTENDEDMASTERCONSDATA** subgradientextendedmasterconss;
+   int nsubgradientextendedmasterconss;
+   int subgradientextendedmasterconsssize;
+   SCIP_Real* subgradientextendedmasterconsvals;
    SCIP_Real* subgradientlinkingconsvals;
    int subgradientlinkingconsvalssize;
    SCIP_Real subgradientnorm;
@@ -127,8 +126,8 @@ public:
       int i
    );
 
-   SCIP_RETCODE mastercutGetDual(
-      GCG_MASTERCUTDATA*    mastercutdata,      /**< mastercutdata */
+   SCIP_RETCODE extendedmasterconsGetDual(
+      GCG_EXTENDEDMASTERCONSDATA*    extendedmasterconsdata,      /**< extendedmasterconsdata */
       SCIP_Real*            dual                /**< return pointer for dual value */
    );
 
@@ -206,8 +205,8 @@ private:
    /** updates the original cuts in the stability center (and allocates more memory) */
    SCIP_RETCODE updateStabcenteroriginalcutvals();
 
-   /** updates the generic mastercuts in the stability center (and allocates more memory) */
-   SCIP_RETCODE updateStabcentermastercutvals();
+   /** updates the extended master conss in the stability center (and allocates more memory) */
+   SCIP_RETCODE updateStabcenterextendedmasterconsvals();
 
    /** updates the constraints in the subgradient (and allocates more memory) */
    SCIP_RETCODE updateSubgradientconsvals();
@@ -215,8 +214,8 @@ private:
    /** updates the original cuts in the subgradient (and allocates more memory) */
    SCIP_RETCODE updateSubgradientoriginalcutvals();
 
-   /** updates the generic mastercuts in the subgradient (and allocates more memory) */
-   SCIP_RETCODE updateSubgradientmastercutvals();
+   /** updates the extended master conss in the subgradient (and allocates more memory) */
+   SCIP_RETCODE updateSubgradientextendedmasterconsvals();
 
    /** increase the alpha value */
    void increaseAlpha();

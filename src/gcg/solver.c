@@ -270,7 +270,7 @@ SCIP_RETCODE GCGsolverUpdate(
    assert(pricingprob != NULL);
    assert(solver != NULL);
 
-   if( solver->solverupdate != NULL )
+   if( solver->solverupdate != NULL && (varobjschanged || varbndschanged || consschanged) )
    {
       SCIP_CALL( solver->solverupdate(pricingprob, solver, probnr, varobjschanged, varbndschanged, consschanged) );
    }

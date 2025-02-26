@@ -706,6 +706,9 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteOrig)
    assert(scip != NULL);
    assert(branchdata != NULL);
 
+   if( !origbranch && !force )
+      return SCIP_OKAY;
+
    if( *branchdata == NULL )
       return SCIP_OKAY;
 
@@ -881,8 +884,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
       assert(GCGvarIsOriginal(branchcands[i]));
 
       /* variable belongs to no block or the block is not unique */
-      if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGgetNIdenticalBlocks(origscip,
-                                                                         GCGvarGetBlock(branchcands[i])) != 1 )
+      if( GCGvarGetBlock(branchcands[i]) <= -1 || GCGgetNIdenticalBlocks(origscip, GCGvarGetBlock(branchcands[i])) != 1 )
          continue;
 
       branchvar = branchcands[i];

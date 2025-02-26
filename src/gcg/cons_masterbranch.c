@@ -38,21 +38,16 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /* #define SCIP_DEBUG */
 #include <assert.h>
-#include <scip/def.h>
-#include <scip/scip.h>
-#include <scip/type_cons.h>
-#include <scip/cons_linear.h>
-#include <scip/struct_var.h>
 #include <string.h>
 
-#include "branch_generic.h"
 #include "gcg.h"
+#include "branch_generic.h"
 #include "cons_masterbranch.h"
 #include "cons_origbranch.h"
 #include "relax_gcg.h"
 #include "pricer_gcg.h"
 #include "pub_colpool.h"
-#include "misc_varhistory.h"
+#include "gcgvarhistory.h"
 
 
 /*#define CHECKPROPAGATEDVARS*/
@@ -1490,9 +1485,6 @@ SCIP_RETCODE forwardUpdateSeenHistory(
    SCIP_CONSDATA*        consdata            /**< constraint data */
    )
 {
-   GCG_VARHISTORYBUFFER* next;
-   int i;
-
    assert(scip != NULL);
    assert(origscip != NULL);
    assert(consdata != NULL);
@@ -1503,49 +1495,19 @@ SCIP_RETCODE forwardUpdateSeenHistory(
    }
    else
    {
-      if( consdata->knownvarhistory->buffer->nvars == 0 )
+      SCIP_VAR* var = NULL;
+      while( GCGvarhistoryHasNext(consdata->knownvarhistory) )
       {
-         return SCIP_OKAY;
-      }
-
-      if( consdata->knownvarhistory->pos < 0 )
-      {
-         consdata->knownvarhistory->pos = -1;
-      }
-
-      do
-      {
-         assert(consdata->knownvarhistory->buffer->nvars > 0);
-         assert(consdata->knownvarhistory->pos < consdata->knownvarhistory->buffer->nvars);
-
-         for( i = consdata->knownvarhistory->pos + 1; i < consdata->knownvarhistory->buffer->nvars; i++ )
+         SCIP_CALL( GCGvarhistoryNext(scip, &consdata->knownvarhistory) );
+         SCIP_CALL( GCGvarhistoryGetVar(consdata->knownvarhistory, &var) );
+         assert(var != NULL);
+         if( SCIPvarIsDeleted(var) )
          {
-            if( consdata->knownvarhistory->buffer->vars[i]->deleted )
-            {
-               SCIPdebugMessage("Skipping deleted Variable <%s>!\n", SCIPvarGetName(consdata->knownvarhistory->buffer->vars[i]));
-               continue;
-            }
-            SCIP_CALL( GCGrelaxBranchNewCol(origscip, consdata->branchrule, consdata->branchdata, consdata->knownvarhistory->buffer->vars[i]) );
+            SCIPdebugMessage("Skipping deleted Variable <%s>!\n", SCIPvarGetName(var));
+            continue;
          }
-         next = consdata->knownvarhistory->buffer->next;
-         if( next != NULL )
-         {
-            SCIP_CALL( GCGvarhistoryCaptureBuffer(next) );
-            SCIP_CALL( GCGvarhistoryReleaseBuffer(scip, &consdata->knownvarhistory->buffer) );
-
-            consdata->knownvarhistory->buffer = next;
-            consdata->knownvarhistory->pos = -1;
-         }
-         else
-         {
-            break;
-         }
+         SCIP_CALL( GCGrelaxBranchNewCol(origscip, consdata->branchrule, consdata->branchdata, var) );
       }
-      while( TRUE );
-
-      consdata->knownvarhistory->pos = consdata->knownvarhistory->buffer->nvars - 1;
-      assert(consdata->knownvarhistory->buffer->next == NULL);
-      assert(consdata->knownvarhistory->pos >= 0);
    }
 
    return SCIP_OKAY;
@@ -1913,13 +1875,12 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
    assert((*consdata)->origcons == NULL || GCGconsOrigbranchGetMastercons((*consdata)->origcons) == cons);
 
-   /* delete branchdata if the corresponding origcons has already been deleted or if created by the generic branchrule;
-    * otherwise, it will be deleted by the corresponding origbranch constraint
-    */
-   if( (*consdata)->branchdata != NULL && ((*consdata)->origcons == NULL || GCGisBranchruleGeneric((*consdata)->branchrule)) )
+   /* allow the correspondig branchrule to delete the branch data */
+   if( (*consdata)->branchdata != NULL && (*consdata)->branchrule != NULL )
    {
-      SCIP_CALL( GCGrelaxBranchDataDelete(origscip, (*consdata)->branchrule, &(*consdata)->branchdata) );
-      if( (*consdata)->origcons != NULL )
+      SCIP_Bool force = ((*consdata)->origcons == NULL);
+      SCIP_CALL( GCGrelaxBranchDataDelete(origscip, (*consdata)->branchrule, &(*consdata)->branchdata, FALSE, force) );
+      if( (*consdata)->origcons != NULL && (*consdata)->branchdata == NULL )
          GCGconsOrigbranchSetBranchdata((*consdata)->origcons, NULL);
    }
 
@@ -2634,6 +2595,19 @@ GCG_BRANCHDATA* GCGconsMasterbranchGetBranchdata(
    assert(consdata != NULL);
 
    return consdata->branchdata;
+}
+
+void GCGconsMasterbranchSetBranchdata(
+   SCIP_CONS*            cons,               /**< masterbranch constraint for which the branching data is requested */
+   GCG_BRANCHDATA*       branchdata          /**< branching data */
+   )
+{
+   SCIP_CONSDATA* consdata;
+
+   consdata = SCIPconsGetData(cons);
+   assert(consdata != NULL);
+
+   consdata->branchdata = branchdata;
 }
 
 /** returns the branching rule of the constraint */

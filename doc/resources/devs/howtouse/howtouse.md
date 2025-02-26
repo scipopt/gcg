@@ -11,7 +11,7 @@ On this page, we link to guides for **advanced features that GCG offers**.
 - @subpage master-menu
 - @subpage useaslibrary
 - @subpage dual-bounds
-- @subpage generic-mastercuts
+- @subpage extendedmasterconss
 
 #### Miscellaneous
 - @subpage doc

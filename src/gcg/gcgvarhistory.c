@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2023 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,17 +25,13 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    misc_varhistory.c
+/**@file    gcgvarhistory.c
  * @brief   methods for managing variable history
  * @author  Til Mohr
  */
 
-#include <scip/def.h>
-#include <scip/pub_message.h>
-#include <scip/scip.h>
-#include <scip/type_retcode.h>
-#include <scip/type_scip.h>
-#include "misc_varhistory.h"
+#include "gcgvarhistory.h"
+#include "struct_gcgvarhistory.h"
 
 /** free a history buffer */
 static
@@ -80,7 +76,6 @@ SCIP_RETCODE GCGvarhistoryGetVar(
    assert(pointer != NULL);
    assert(0 <= pointer->pos);
    assert(var != NULL);
-   assert(*var == NULL);
    assert(pointer->buffer != NULL);
    assert(pointer->pos < pointer->buffer->nvars);
    assert((pointer->buffer->nvars == GCG_VARHISTORYBUFFER_SIZE) >= (pointer->buffer->next != NULL));
@@ -222,7 +217,7 @@ SCIP_RETCODE GCGvarhistoryJumpAndRetrieveVars(
    int*                   nvars              /**< pointer to store the number of variables */
    )
 {
-   GCG_VARHISTORY weak_copy;
+   GCG_VARHISTORY weakcopy;
    int curridx;
    int i;
    GCG_VARHISTORYBUFFER* next;
@@ -252,16 +247,16 @@ SCIP_RETCODE GCGvarhistoryJumpAndRetrieveVars(
       (*pointer)->pos = -1;
    }
 
-   weak_copy.buffer = (*pointer)->buffer;
-   weak_copy.pos = (*pointer)->pos;
+   weakcopy.buffer = (*pointer)->buffer;
+   weakcopy.pos = (*pointer)->pos;
    do
    {
-      *nvars += weak_copy.buffer->nvars - weak_copy.pos - 1;
+      *nvars += weakcopy.buffer->nvars - weakcopy.pos - 1;
 
-      if( weak_copy.buffer->next != NULL )
+      if( weakcopy.buffer->next != NULL )
       {
-         weak_copy.buffer = weak_copy.buffer->next;
-         weak_copy.pos = -1;
+         weakcopy.buffer = weakcopy.buffer->next;
+         weakcopy.pos = -1;
       }
       else
       {

@@ -262,3 +262,7 @@
    * @ingroup DATASTRUCTURES
    * @brief C++ Data structures that can store partitions of variables and constraints.
    */
+
+  /**@defgroup GCG_EXTENDEDMASTERCONSDATA GCG Extended Master Cons Data
+   * @ingroup DATASTRUCTURES
+   */
