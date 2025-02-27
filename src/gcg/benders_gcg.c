@@ -673,7 +673,7 @@ SCIP_DECL_BENDERSPOSTSOLVE(bendersPostsolveGcg)
    /* if there are merge candidates, then they will be merged into the master problem.
     * TODO: maybe check to see whether the merge could be avoided
     */
-   if( nmergecands > 0 )
+   if( nmergecands > 0 && type != SCIP_BENDERSENFOTYPE_CHECK )
    {
       SCIP_CALL( mergeSubproblemsIntoMaster(scip, benders, mergecands, npriomergecands, nmergecands, merged) );
    }

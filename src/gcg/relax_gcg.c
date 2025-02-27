@@ -1309,6 +1309,9 @@ SCIP_RETCODE createMasterProblem(
        * original problem
        */
       SCIP_CALL( SCIPsetIntParam(GCGgetOriginalprob(masterscip), "heuristics/trysol/freq", 1) );
+
+      /* disabling pricing problem aggregation */
+      SCIP_CALL( SCIPsetBoolParam(GCGgetOriginalprob(masterscip), "relaxing/gcg/aggregation", FALSE) );
    }
 
    return SCIP_OKAY;

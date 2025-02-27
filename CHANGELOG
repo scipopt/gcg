@@ -116,6 +116,7 @@ Bug fixes
 ---------
 
 - store pending global bound changes only once (for the same variable) and update older ones
+- prohibits subproblem merging during CONSCHECK calls in Benders' decomposition
 
 
 @section RN371 GCG 3.7.1

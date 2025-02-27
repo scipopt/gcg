@@ -521,7 +521,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPincludeDetectorGeneralmastersetcover(scip) );
    SCIP_CALL( SCIPincludeDetectorVarclass(scip) );
 
-   #ifdef WITH_BLISS
+   #ifndef NO_AUT_LIB
       SCIP_CALL( SCIPincludeDetectorIsomorphism(scip) );
    #endif
 
