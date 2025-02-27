@@ -58,8 +58,12 @@
 #define SOLVER_HEURENABLED   TRUE            /**< indicates whether the solver should be enabled */
 #define SOLVER_EXACTENABLED  FALSE           /**< indicates whether the solver should be enabled */
 
-#define DEFAULT_DENSITY      0.85
 #define DEFAULT_NODELIMIT    200
+#define DEFAULT_DENSITY      0.85
+#define DEFAULT_DENSITYSTART 0
+#define DEFAULT_USELINCUTOFF FALSE
+#define DEFAULT_SLOPE        -1980
+#define DEFAULT_INTERCEPT    1900
 #define DEFAULT_OBJCOEFDISTR 0
 
 /*
@@ -83,9 +87,13 @@ typedef enum cliquerConsType CLIQUER_CONSTYPE;
 struct GCG_SolverData
 {
    SCIP_Real             density;            /**< graph density threshold above which to use solver */
+   int                   densitystart;       /**< graph node threshold above which to apply density and linear cutoff */
    int                   nodelimit;          /**< graph node threshold below which to use solver */
    SCIP_Bool*            isnotapplicable;    /**< array tracking if solver is not applicable in root node (& no cuts) */
    int                   objcoefdistr;       /**< param deciding strategy for distributing obj coefs of coupling vars */
+   SCIP_Bool             uselincutoff;       /**< boolean for activating linear cutoff */
+   SCIP_Real             lincutoffslope;     /**< slope for linear cutoff */
+   SCIP_Real             lincutoffintercept; /**< intercept for linear cutoff */
 };
 
 
@@ -1758,6 +1766,7 @@ SCIP_RETCODE solveCliquer(
    SCIP_VAR**        couplvars;
    SCIP_Real*        solvals;
    SCIP_Real*        aggrobjcoef;
+   SCIP_Real         density;
    SCIP_Real         scalingfactor;
    SCIP_Bool         retcode;
    SCIP_Bool         ismemgraphallocated;
@@ -2235,16 +2244,9 @@ SCIP_RETCODE solveCliquer(
    }
    nedges /= 2;
 
-   SCIPdebugMessage("Problem Number: %i ; Graph size: %d ; Graph density: %g\n",
-                    probnr, indexcount, (float)nedges / ((float)(g->n - 1) * (g->n) / 2));
+   density = (SCIP_Real)nedges / ((SCIP_Real)(g->n - 1) * (g->n) / 2);
 
-   /* Test if the density criteria is met */
-   if( SCIPisGT(pricingprob, (float)nedges/((float)(g->n - 1) * (g->n) / 2), solver->density) )
-   {
-      SCIPdebugMessage("Exit: Density criteria not met, density: %g.\n", (float)nedges / ((float)(g->n - 1) * (g->n) / 2));
-      *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
-      goto TERMINATE;
-   }
+   SCIPdebugMessage("Problem number: %i ; Graph size: %d ; Graph density: %g\n", probnr, indexcount, density);
 
    /* Test if the node threshold is respected */
    if( SCIPisGT(pricingprob, indexcount, solver->nodelimit) )
@@ -2252,6 +2254,31 @@ SCIP_RETCODE solveCliquer(
       SCIPdebugMessage("Exit: Node threshold exceeded, number of nodes: %i.\n", indexcount);
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
       goto TERMINATE;
+   }
+
+   /* Only apply density / linear cutoff if density start threshold is exceeded. */
+   if( SCIPisGT(pricingprob, indexcount, solver->densitystart) )
+   {
+      /* Test if the density criteria is met */
+      if( SCIPisGT(pricingprob, density, solver->density) )
+      {
+         SCIPdebugMessage("Exit: Density criteria not met, density: %g.\n", density);
+         *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
+         goto TERMINATE;
+      }
+
+      /* Next, check if linear cutoff is activated, If yes, check if linear cutoff equation is met.
+       * If (n)odes and (d)ensity have values n > m*d + b (with slope m and intercept b), solver is not applied.
+       * Default values currently are: m = -1980, b = 1900
+       */
+      if( solver->uselincutoff &&
+          SCIPisGT(pricingprob, indexcount, solver->lincutoffslope * density + solver->lincutoffintercept) )
+      {
+         SCIPdebugMessage("Exit: Linear threshold n <= m*d + b exceeded (i.e.: %i > %.1f * %.2f + %.1f).\n",
+                          indexcount, solver->lincutoffslope, density, solver->lincutoffintercept);
+         *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
+         goto TERMINATE;
+      }
    }
 
    ASSERT( indexcount <= npricingprobvars );
@@ -2518,6 +2545,10 @@ SCIP_RETCODE GCGincludeSolverCliquer(
          "graph density threshold below which to use solver",
          &solverdata->density, TRUE, DEFAULT_DENSITY, 0.0, 1.0, NULL, NULL) );
 
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/cliquer/densitystart",
+         "graph node threshold above which to apply density threshold / linear cutoff (below not applied)",
+         &solverdata->densitystart, TRUE, DEFAULT_DENSITYSTART, 0, INT_MAX, NULL, NULL) );
+
    SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/cliquer/nodelimit",
          "graph node threshold below which to use solver",
          &solverdata->nodelimit, TRUE, DEFAULT_NODELIMIT, 0, INT_MAX, NULL, NULL) );
@@ -2526,6 +2557,19 @@ SCIP_RETCODE GCGincludeSolverCliquer(
          "distribution of objective coefficients of coupling variables (disabled = 0, natural share = 1, "
          "MIS-based = 2, uniform = 3)",
          &solverdata->objcoefdistr, TRUE, DEFAULT_OBJCOEFDISTR, 0, 3, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricingsolver/cliquer/lincutoff/enable",
+         "should linear cutoff (n > m*d + b) for usage of solver <cliquer>, based on graph (d)ensity and (n)odes, "
+         "be enabled?",
+         &solverdata->uselincutoff, FALSE, DEFAULT_USELINCUTOFF, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/cliquer/lincutoff/slope",
+         "slope m in the linear cutoff formula (n > m*d + b), with (d)ensity and (n)odes",
+         &solverdata->lincutoffslope, TRUE, DEFAULT_SLOPE, SCIP_REAL_MIN, SCIP_REAL_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/cliquer/lincutoff/intercept",
+         "intercept b in the linear cutoff formula (n > m*d + b), with (d)ensity and (n)odes",
+         &solverdata->lincutoffintercept, TRUE, DEFAULT_INTERCEPT, SCIP_REAL_MIN, SCIP_REAL_MAX, NULL, NULL) );
 
    return SCIP_OKAY;
 }
