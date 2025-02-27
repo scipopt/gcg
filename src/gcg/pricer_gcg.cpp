@@ -1707,7 +1707,7 @@ SCIP_RETCODE ObjPricerGcg::addRootBounds(
 
       for( j = 0; j < nprobvars; j++ )
       {
-         idx = GCGpricingVarGetPricerIndex(probvars[j];
+         idx = GCGpricingVarGetPricerIndex(probvars[j]);
          pricerdata->dualvalues[pricerdata->nrootbounds][i][idx] = pricerdata->realdualvalues[i][idx];
       }
    }
@@ -2155,7 +2155,8 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       if( !SCIPisZero(scip_, boundval * dualsol) )
       {
          SCIPdebugMessage("  add %g (<%s>, dualsol: %g, bnds: [%g, %g] - %g)\n",
-            boundval * dualsol, SCIProwGetName(originalsepamastercuts[i]), dualsol, lhs, rhs, SCIProwGetConstant(originalsepamastercuts[i]));
+            boundval * dualsol, GCGextendedmasterconsGetName(branchextendedmasterconsdata[i]),
+            dualsol, lhs, rhs, GCGextendedmasterconsGetConstant(scip_, branchextendedmasterconsdata[i]));
       }
 #endif
       *stabdualval += boundval * dualsol;
@@ -2331,7 +2332,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
             {
                SCIPdebugMessage("  stabredcost <%s> add %g * %g = %g (cut <%s>)\n",
                   SCIPvarGetName(staticvars[varindex]), dualsol, consvals[j], -dualsol * consvals[j],
-                  SCIProwGetName(origcuts[i]));
+                  SCIProwGetName(originalsepaorigcuts[i]));
             }
 #endif
          }
@@ -2402,7 +2403,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
             {
                SCIPdebugMessage("  stabredcost <%s> add %g * %g = %g (cut <%s>)\n",
                   SCIPvarGetName(staticvars[varindex]), dualsol, consvals[j], -dualsol * consvals[j],
-                  SCIProwGetName(origcuts[i]));
+                  GCGextendedmasterconsGetName(branchextendedmasterconsdata[i]));
             }
 #endif
          }
