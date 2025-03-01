@@ -147,7 +147,7 @@ SCIP_Bool areVarsLinkedRec(
    }
 
    /* More complex link by transitivity? */
-   /* Mark current noted visited by adding it to the trace. */
+   /* Mark current node visited by adding it to the trace. */
    vartrace[*traceindex] = vindex1;
    (*traceindex)++;
    for( i = 0; i < nlinkedvars; ++i )
@@ -202,6 +202,7 @@ SCIP_Bool areVarsLinked(
    }
 
    SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &vartrace, nlinkedvars) );
+
    traceindex = 0;
    for( i = 0; i < nlinkedvars; ++i )
    {
@@ -397,9 +398,7 @@ void aggregateObjCoef(
 static INLINE
 SCIP_Real getAggrObjCoef(
    SCIP_VAR*      var,                            /**< The variable for which the aggr. obj. coef. should be returned */
-   SCIP_VAR**     linkedvars,                     /**< Array of variables that are linked by eq-constraints */
    int            nlinkedvars,                    /**< Index of linkedvars array */
-   SCIP_VAR**     varsincouplings,                /**< Array of variables that are involved in coupling */
    int            nvarsincouplings,               /**< Index of varsincouplings array */
    SCIP_Real*     aggrobjcoef                     /**< Array of aggregated objective coefficients. */
    )
@@ -407,6 +406,35 @@ SCIP_Real getAggrObjCoef(
    if( nlinkedvars > 0 || nvarsincouplings > 0 )
       return aggrobjcoef[SCIPvarGetProbindex(var)];
    return SCIPvarGetObj(var);
+}
+
+/** Set (/update) aggregated objective coefficients savely. */
+static INLINE
+void setAggrObjCoef(
+   SCIP*          scip,                           /**< The problem instance */
+   SCIP_VAR*      var,                            /**< The variable for which the aggr. obj. coef. should be updated */
+   SCIP_Real      value,                          /**< Value to set for given var (and linked vars) */
+   SCIP_VAR**     linkedvars,                     /**< Array of variables that are linked by eq-constraints */
+   int            nlinkedvars,                    /**< Index of linkedvars array */
+   int**          linkmatrix,                     /**< Matrix indicating which variables are linked by a node */
+   SCIP_Real*     aggrobjcoef                     /**< Array of aggregated objective coefficients. */
+)
+{
+   int            i;
+
+   /* If variable is linked, we need to update all linked variables' objective coefficients too */
+   if( isVarLinked(linkedvars, nlinkedvars, var) )
+   {
+      for( i = 0; i < nlinkedvars; i++ )
+      {
+         if( areVarsLinked(scip, linkmatrix, var, linkedvars[i], linkedvars, nlinkedvars) )
+            aggrobjcoef[SCIPvarGetProbindex(linkedvars[i])] = value;
+      }
+   }
+   else
+   {
+      aggrobjcoef[SCIPvarGetProbindex(var)] = value;
+   }
 }
 
 /** Add a variable to the bijection graph g and indsetvars array. Returns the index of the corresponding node in the graph. */
@@ -421,6 +449,7 @@ int addVarToGraph(
    int**          linkmatrix,                     /**< Matrix indicating which variables are linked by a node */
    SCIP_VAR**     linkedvars,                     /**< Array of variables that are linked by eq-constraints */
    int            nlinkedvars,                    /**< Index of linkedvars array */
+   // TODO : Remove varsincouplings
    SCIP_VAR**     varsincouplings,                /**< Array of variables that are involved in coupling */
    int            nvarsincouplings,               /**< Index of varsincouplings array */
    SCIP_Real*     aggrobjcoef                     /**< Array of aggregated objective coefficients. */
@@ -440,8 +469,7 @@ int addVarToGraph(
    {
       /* Var not yet part of graph, add it with its corresponding weight */
       indsetvars[*indexcount] = consvar;
-      aggrObj = getAggrObjCoef(indsetvars[*indexcount], linkedvars, nlinkedvars, varsincouplings, nvarsincouplings,
-                               aggrobjcoef);
+      aggrObj = getAggrObjCoef(indsetvars[*indexcount], nlinkedvars, nvarsincouplings, aggrobjcoef);
       if( SCIPisLT(scip, aggrObj, 0.0) )
       {
          g->weights[*indexcount] = 1 + abs((int) (scalingfactor * aggrObj));
@@ -507,7 +535,7 @@ SCIP_Bool areObjectivesIntegral(
 
    for( i = 0; i < nvars; ++i )
    {
-      objval = getAggrObjCoef(vars[i], linkedvars, nlinkedvars, varsincouplings, nvarsincouplings, aggrobjcoef);
+      objval = getAggrObjCoef(vars[i], nlinkedvars, nvarsincouplings, aggrobjcoef);
       if( !SCIPisZero(scip, objval-((int)objval)) )
       {
          return FALSE;
@@ -543,7 +571,7 @@ SCIP_Real scaleRelativeToMax(
    biggestobj = 0.0;
    for( i = 0; i < nvars; ++i )
    {
-      varval = getAggrObjCoef(vars[i], linkedvars, nlinkedvars, varsincouplings, nvarsincouplings, aggrobjcoef);
+      varval = getAggrObjCoef(vars[i], nlinkedvars, nvarsincouplings, aggrobjcoef);
       if( SCIPisLT(scip, varval, biggestobj) )
       {
          biggestobj = varval;
@@ -629,13 +657,14 @@ SCIP_Bool isCouplingRelevantRec(
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
+   int                   nlinkedvars,        /**< Index of linkedvars array */
    SCIP_Real*            aggrobjcoef,        /**< Array of aggregated objective coefficients. */
    int                   maxdepth            /**< Integer limiting recursion to finite depth in case of a cycle. */
 )
 {
    int            i;
 
-   if( SCIPisLT(scip, aggrobjcoef[SCIPvarGetProbindex(varsincouplings[varind])], 0) )
+   if( SCIPisLT(scip, getAggrObjCoef(varsincouplings[varind], nlinkedvars, nvarsincouplings, aggrobjcoef), 0) )
       return TRUE;
 
    if( maxdepth <= 0 )
@@ -644,8 +673,11 @@ SCIP_Bool isCouplingRelevantRec(
    for( i = 0; i < nvarsincouplings; i++ )
    {
       if( couplingmatrix[varind][i] > 0 &&
-          isCouplingRelevantRec(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef, maxdepth - 1) )
+          isCouplingRelevantRec(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, nlinkedvars, aggrobjcoef,
+                                maxdepth - 1))
+      {
          return TRUE;
+      }
    }
    return FALSE;
 }
@@ -661,11 +693,12 @@ SCIP_Bool isCouplingRelevant(
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
+   int                   nlinkedvars,        /**< Index of linkedvars array */
    SCIP_Real*            aggrobjcoef         /**< Array of aggregated objective coefficients. */
    )
 {
-   return isCouplingRelevantRec(scip, varind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
-                                nvarsincouplings);
+   return isCouplingRelevantRec(scip, varind, couplingmatrix, varsincouplings, nvarsincouplings, nlinkedvars,
+                                aggrobjcoef, nvarsincouplings);
 }
 
 /** Same as isCouplingRelevant(), but takes a SCIP_VAR pointer instead of the digraph index. */
@@ -676,6 +709,7 @@ SCIP_Bool isCouplingRelevantVar(
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
+   int                   nlinkedvars,        /**< Index of linkedvars array */
    SCIP_Real*            aggrobjcoef         /**< Array of aggregated objective coefficients. */
 )
 {
@@ -684,8 +718,8 @@ SCIP_Bool isCouplingRelevantVar(
    varind = getNodeIndex(var, varsincouplings, nvarsincouplings);
    assert(varind > -1);
 
-   return isCouplingRelevantRec(scip, varind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
-                                nvarsincouplings);
+   return isCouplingRelevantRec(scip, varind, couplingmatrix, varsincouplings, nvarsincouplings, nlinkedvars,
+                                aggrobjcoef, nvarsincouplings);
 }
 
 /** Checks in the coupling digraph if a var with a given index has a coupling relevant successor. */
@@ -696,6 +730,7 @@ SCIP_Bool hasSuccessorRel(
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
+   int                   nlinkedvars,        /**< Index of linkedvars array */
    SCIP_Real*            aggrobjcoef         /**< Array of aggregated objective coefficients. */
    )
 {
@@ -704,9 +739,11 @@ SCIP_Bool hasSuccessorRel(
    for( i = 0; i < nvarsincouplings; i++ )
    {
       if( couplingmatrix[varind][i] > 0 &&
-          isCouplingRelevantRec(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
+          isCouplingRelevantRec(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, nlinkedvars, aggrobjcoef,
                                 nvarsincouplings) )
+      {
          return TRUE;
+      }
    }
    return FALSE;
 }
@@ -719,6 +756,7 @@ int getNSuccessorsRelevant(
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
+   int                   nlinkedvars,        /**< Index of linkedvars array */
    SCIP_Real*            aggrobjcoef         /**< Array of aggregated objective coefficients. */
 )
 {
@@ -729,7 +767,7 @@ int getNSuccessorsRelevant(
    for( i = 0; i < nvarsincouplings; i++ )
    {
       if( couplingmatrix[varind][i] > 0 &&
-          isCouplingRelevantRec(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
+          isCouplingRelevantRec(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, nlinkedvars, aggrobjcoef,
                                 nvarsincouplings) )
       {
          nsuccessors += 1;
@@ -775,6 +813,9 @@ void objCoefDistrHeurNatural(
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
+   SCIP_VAR**            linkedvars,         /**< Array of variables that are linked by eq-constraints */
+   int                   nlinkedvars,        /**< Index of linkedvars array */
+   int**                 linkmatrix,         /**< Matrix indicating which variables are linked by eq-constraints */
    SCIP_Real*            aggrobjcoef,        /**< Array of aggregated objective coefficients. */
    SCIP_CONS**           constraints,        /**< Array containing pointers to SCIP constraints of pricing problem */
    int                   nconss,             /**< Index of constraints array */
@@ -790,6 +831,7 @@ void objCoefDistrHeurNatural(
    int            nlconsvars;
    int            couplingindex;
    SCIP_Real      frac;
+   SCIP_Real      coeftodistr;
    SCIP_Real      actvarcoef;
    SCIP_Real*     coefshares;                /* array storing the fraction of the actvar coefficient they receive */
    SCIP_HASHMAP*  vartocoefsharemap;         /* hash storing relevant var index; image is index for coefshares array */
@@ -798,7 +840,8 @@ void objCoefDistrHeurNatural(
 
    denominator = 0;
 
-   nsuccessors = getNSuccessorsRelevant(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef);
+   nsuccessors = getNSuccessorsRelevant(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings,
+                                        nlinkedvars, aggrobjcoef);
    SCIP_CALL_ABORT( SCIPallocClearBufferArray(scip, &coefshares, nsuccessors) );
    SCIP_CALL_ABORT( SCIPhashmapCreate(&vartocoefsharemap, SCIPblkmem(scip), nvarsincouplings) );
 
@@ -807,7 +850,7 @@ void objCoefDistrHeurNatural(
    for( i = 0; i < nvarsincouplings; i++ )
    {
       if( couplingmatrix[actvarind][i] > 0 &&
-          isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+          isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, nlinkedvars, aggrobjcoef) )
       {
          SCIPhashmapSetImageInt(vartocoefsharemap, (void*)(size_t)i, j);
          j++;
@@ -825,7 +868,7 @@ void objCoefDistrHeurNatural(
          case VARBND_STD:
             if( SCIPgetVbdvarVarbound(scip, constraints[i]) == varsincouplings[actvarind] &&
                 isCouplingRelevantVar(scip, SCIPgetVarVarbound(scip, constraints[i]), couplingmatrix, varsincouplings,
-                                      nvarsincouplings, aggrobjcoef) )
+                                      nvarsincouplings, nlinkedvars, aggrobjcoef) )
             {
                nrelconsvars++;
                couplingindex = getNodeIndex(SCIPgetVarVarbound(scip, constraints[i]), varsincouplings, nvarsincouplings);
@@ -843,7 +886,8 @@ void objCoefDistrHeurNatural(
                {
                   if( j == couplingcoefindices[i] )
                      continue;
-                  if( isCouplingRelevantVar(scip, lconsvars[j], couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+                  if( isCouplingRelevantVar(scip, lconsvars[j], couplingmatrix, varsincouplings, nvarsincouplings,
+                                            nlinkedvars, aggrobjcoef) )
                      nrelconsvars++;
                }
                /* Add values to coefshares of variables in constraint */
@@ -855,7 +899,7 @@ void objCoefDistrHeurNatural(
                      if( j == couplingcoefindices[i] )
                         continue;
                      if( isCouplingRelevantVar(scip, lconsvars[j], couplingmatrix, varsincouplings, nvarsincouplings,
-                                               aggrobjcoef) )
+                                               nlinkedvars, aggrobjcoef) )
                      {
                         couplingindex = getNodeIndex(lconsvars[j], varsincouplings, nvarsincouplings);
                         coefshares[SCIPhashmapGetImageInt(vartocoefsharemap, (void*)(size_t)couplingindex)] += frac;
@@ -871,14 +915,16 @@ void objCoefDistrHeurNatural(
    }
 
    /* Distribute coeff. of act. var to all successor variables. */
-   actvarcoef = aggrobjcoef[SCIPvarGetProbindex(varsincouplings[actvarind])];
+   coeftodistr = getAggrObjCoef(varsincouplings[actvarind], nlinkedvars, nvarsincouplings, aggrobjcoef);
    for( i = 0; i < nvarsincouplings; i++ )
    {
       if( couplingmatrix[actvarind][i] > 0 &&
-          isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+          isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, nlinkedvars, aggrobjcoef) )
       {
          frac = coefshares[SCIPhashmapGetImageInt(vartocoefsharemap, (void *) (size_t) i)];
-         aggrobjcoef[SCIPvarGetProbindex(varsincouplings[i])] += actvarcoef * (frac / denominator);
+         actvarcoef = getAggrObjCoef(varsincouplings[i], nlinkedvars, nvarsincouplings, aggrobjcoef);
+         setAggrObjCoef(scip, varsincouplings[i], actvarcoef + coeftodistr * (frac / denominator),
+                        linkedvars, nlinkedvars, linkmatrix, aggrobjcoef);
       }
    }
 
@@ -915,6 +961,9 @@ void objCoefDistrHeurIS(
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
+   SCIP_VAR**            linkedvars,         /**< Array of variables that are linked by eq-constraints */
+   int                   nlinkedvars,        /**< Index of linkedvars array */
+   int**                 linkmatrix,         /**< Matrix indicating which variables are linked by eq-constraints */
    SCIP_Real*            aggrobjcoef,        /**< Array of aggregated objective coefficients. */
    SCIP_CONS**           constraints,        /**< Array containing pointers to SCIP constraints of pricing problem */
    int                   nconss,             /**< Index of constraints array */
@@ -931,6 +980,7 @@ void objCoefDistrHeurIS(
    int            nsuccessors;
    int            nlconsvars;
    SCIP_Real      actvarcoef;
+   SCIP_Real      coeftodistr;
    SCIP_HASHMAP*  vartosuccmap;       /* hash storing relevant var index; image is index for corresponding graph node */
    SCIP_VAR**     lconsvars;
    SCIP_Bool      retcode;
@@ -938,7 +988,8 @@ void objCoefDistrHeurIS(
    graph_t*       g;
    clique_options cl_opts;
 
-   nsuccessors = getNSuccessorsRelevant(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef);
+   nsuccessors = getNSuccessorsRelevant(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings,
+                                        nlinkedvars, aggrobjcoef);
 
    if( nsuccessors > 200 )
       return;
@@ -957,7 +1008,8 @@ void objCoefDistrHeurIS(
    SCIP_CALL_ABORT( SCIPhashmapCreate(&vartosuccmap, SCIPblkmem(scip), nvarsincouplings) );
    for( i = 0; i < nvarsincouplings; i++ )
    {
-      if( couplingmatrix[actvarind][i] > 0 && isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+      if( couplingmatrix[actvarind][i] > 0 &&
+          isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, nlinkedvars, aggrobjcoef) )
       {
          SCIPhashmapSetImageInt(vartosuccmap, (void*)(size_t)i, j);
          j++;
@@ -978,13 +1030,15 @@ void objCoefDistrHeurIS(
          {
             if( j == couplingcoefindices[i] )
                continue;
-            if( isCouplingRelevantVar(scip, lconsvars[j], couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+            if( isCouplingRelevantVar(scip, lconsvars[j], couplingmatrix, varsincouplings, nvarsincouplings,
+                                      nlinkedvars, aggrobjcoef) )
             {
                for( k = j + 1; k < nlconsvars; k++ )
                {
                   if( k == couplingcoefindices[i] )
                      continue;
-                  if( isCouplingRelevantVar(scip, lconsvars[k], couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+                  if( isCouplingRelevantVar(scip, lconsvars[k], couplingmatrix, varsincouplings, nvarsincouplings,
+                                            nlinkedvars, aggrobjcoef) )
                   {
                      couplind1 = getNodeIndex(lconsvars[j], varsincouplings, nvarsincouplings);
                      couplind2 = getNodeIndex(lconsvars[k], varsincouplings, nvarsincouplings);
@@ -1014,13 +1068,15 @@ void objCoefDistrHeurIS(
    denominator = set_size(clique);
 
    /* Distribute coeff. of act. var to all successor variables. */
-   actvarcoef = aggrobjcoef[SCIPvarGetProbindex(varsincouplings[actvarind])];
+   coeftodistr = getAggrObjCoef(varsincouplings[actvarind], nlinkedvars, nvarsincouplings, aggrobjcoef);
    for( i = 0; i < nvarsincouplings; i++ )
    {
       if( couplingmatrix[actvarind][i] > 0 &&
-          isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+          isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, nlinkedvars, aggrobjcoef) )
       {
-         aggrobjcoef[SCIPvarGetProbindex(varsincouplings[i])] += actvarcoef / denominator;
+         actvarcoef = getAggrObjCoef(varsincouplings[i], nlinkedvars, nvarsincouplings, aggrobjcoef);
+         setAggrObjCoef(scip, varsincouplings[i], actvarcoef + (coeftodistr / denominator), linkedvars, nlinkedvars,
+                        linkmatrix, aggrobjcoef);
       }
    }
 
@@ -1046,23 +1102,30 @@ void objCoefDistrHeurUniform(
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
+   SCIP_VAR**            linkedvars,         /**< Array of variables that are linked by eq-constraints */
+   int                   nlinkedvars,        /**< Index of linkedvars array */
+   int**                 linkmatrix,         /**< Matrix indicating which variables are linked by eq-constraints */
    SCIP_Real*            aggrobjcoef         /**< Array of aggregated objective coefficients. */
 )
 {
    int            i;
    int            nsuccessors;
    SCIP_Real      actvarcoef;
+   SCIP_Real      coeftodistr;
 
-   nsuccessors = getNSuccessorsRelevant(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef);
+   nsuccessors = getNSuccessorsRelevant(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings,
+                                        nlinkedvars, aggrobjcoef);
 
    /* Distribute coeff. of act. var to all successor variables. */
-   actvarcoef = aggrobjcoef[SCIPvarGetProbindex(varsincouplings[actvarind])];
+   coeftodistr = getAggrObjCoef(varsincouplings[actvarind], nlinkedvars, nvarsincouplings, aggrobjcoef);
    for( i = 0; i < nvarsincouplings; i++ )
    {
       if( couplingmatrix[actvarind][i] > 0 &&
-          isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+          isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, nlinkedvars, aggrobjcoef) )
       {
-         aggrobjcoef[SCIPvarGetProbindex(varsincouplings[i])] += (actvarcoef / nsuccessors);
+         actvarcoef = getAggrObjCoef(varsincouplings[i], nlinkedvars, nvarsincouplings, aggrobjcoef);
+         setAggrObjCoef(scip, varsincouplings[i], actvarcoef + (coeftodistr / nsuccessors), linkedvars, nlinkedvars,
+                        linkmatrix, aggrobjcoef);
       }
    }
 }
@@ -1078,6 +1141,9 @@ void distributeObjCoefRec(
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
+   SCIP_VAR**            linkedvars,         /**< Array of variables that are linked by eq-constraints */
+   int                   nlinkedvars,        /**< Index of linkedvars array */
+   int**                 linkmatrix,         /**< Matrix indicating which variables are linked by eq-constraints */
    SCIP_Real*            aggrobjcoef,        /**< Array of aggregated objective coefficients. */
    SCIP_CONS**           constraints,        /**< Array containing pointers to SCIP constraints of pricing problem */
    int                   nconss,             /**< Index of constraints array */
@@ -1104,26 +1170,30 @@ void distributeObjCoefRec(
       if( actvarind == i )
          continue;
       if( couplingmatrix[i][actvarind] > 0 && !isdistributed[i] )
-         distributeObjCoefRec(scip, i, isdistributed, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
-                              constraints, nconss, couplingcoefindices, cliquerconstypes, selecteddistrheur);
+         distributeObjCoefRec(scip, i, isdistributed, couplingmatrix, varsincouplings, nvarsincouplings, linkedvars,
+                              nlinkedvars, linkmatrix, aggrobjcoef, constraints, nconss, couplingcoefindices,
+                              cliquerconstypes, selecteddistrheur);
    }
 
    /* Base case: All predecessors are distributed. */
    /* If now has positive (aggr.) obj. coeff.: Distribute coeff. of act. var to all successor variables. */
-   if( SCIPisGT(scip, aggrobjcoef[SCIPvarGetProbindex(varsincouplings[actvarind])], 0))
+   if( SCIPisGT(scip, getAggrObjCoef(varsincouplings[actvarind], nlinkedvars, nvarsincouplings, aggrobjcoef), 0))
    {
       switch( selecteddistrheur )
       {
          case 1:
-            objCoefDistrHeurNatural(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
-                                    constraints, nconss, couplingcoefindices, cliquerconstypes);
+            objCoefDistrHeurNatural(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, linkedvars,
+                                    nlinkedvars, linkmatrix, aggrobjcoef, constraints, nconss, couplingcoefindices,
+                                    cliquerconstypes);
             break;
          case 2:
-            objCoefDistrHeurIS(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
-                               constraints, nconss, couplingcoefindices, cliquerconstypes);
+            objCoefDistrHeurIS(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, linkedvars,
+                               nlinkedvars, linkmatrix, aggrobjcoef, constraints, nconss, couplingcoefindices,
+                               cliquerconstypes);
             break;
          case 3:
-            objCoefDistrHeurUniform(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef);
+            objCoefDistrHeurUniform(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, linkedvars,
+                                    nlinkedvars, linkmatrix, aggrobjcoef);
             break;
          default:
             break;
@@ -1167,6 +1237,9 @@ void distributeObjCoef(
    int**                 couplingmatrix,     /**< Matrix indicating which variables are linked by a node */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
+   SCIP_VAR**            linkedvars,         /**< Array of variables that are linked by eq-constraints */
+   int                   nlinkedvars,        /**< Index of linkedvars array */
+   int**                 linkmatrix,         /**< Matrix indicating which variables are linked by eq-constraints */
    SCIP_Real*            aggrobjcoef,        /**< Array of aggregated objective coefficients. */
    int                   selecteddistrheur   /**< Number of selected obj coef distribution heuristic. */
    )
@@ -1181,10 +1254,11 @@ void distributeObjCoef(
    for( i = 0; i < nvarsincouplings; i++ )
    {
       if( !isdistributed[i] &&
-          hasSuccessorRel(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef) )
+          hasSuccessorRel(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, nlinkedvars, aggrobjcoef) )
       {
-         distributeObjCoefRec(scip, i, isdistributed, couplingmatrix, varsincouplings, nvarsincouplings, aggrobjcoef,
-                              constraints, nconss, couplingcoefindices, cliquerconstypes, selecteddistrheur);
+         distributeObjCoefRec(scip, i, isdistributed, couplingmatrix, varsincouplings, nvarsincouplings, linkedvars,
+                              nlinkedvars, linkmatrix, aggrobjcoef, constraints, nconss, couplingcoefindices,
+                              cliquerconstypes, selecteddistrheur);
          continue;
       }
       isdistributed[i] = TRUE;               /* mark actual variable visited. */
@@ -1436,7 +1510,7 @@ SCIP_Bool determineCliquerConsTypes(
    int typeCount[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
    for( i = 0; i < nconss; i++ )
       typeCount[cliquerconstypes[i]]++;
-   for( i = LINEAR_IS; i < VARBND_IS; i++ )
+   for( i = LINEAR_IS; i <= VARBND_IS; i++ )
    {
       SCIPdebugMessage("   Type '%s' : %i \n", typeNames[i], typeCount[i]);
    }
@@ -1955,7 +2029,7 @@ SCIP_RETCODE solveCliquer(
    /* If there are coupling or standard varbound constraints, it may be necessary to distribute objective coefficients. */
    if( solver->objcoefdistr > 0 && ncouplvars > 0 )
       distributeObjCoef(pricingprob, constraints, nconss, couplingcoefindices, cliquerconstypes, couplingmatrix,
-                        couplvars, ncouplvars, aggrobjcoef, solver->objcoefdistr);
+                        couplvars, ncouplvars, linkedvars, nlinkedvars, linkmatrix, aggrobjcoef, solver->objcoefdistr);
 
    /* Now calculate scaling factor based on maximum aggregated objective coefficient value. */
 
@@ -2035,7 +2109,7 @@ SCIP_RETCODE solveCliquer(
    {
       /* Since we know that all marked constraints at this point are same constraints, we can just add them to the graph. */
       vconsvars[0] = SCIPgetVarVarbound(pricingprob, constraints[markedconsindices[i]]);
-      if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[0], linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef), 0) )
+      if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[0], nlinkedvars, ncouplvars, aggrobjcoef), 0) )
       {
          nodeindex0 = addVarToGraph(pricingprob, g, vconsvars[0], &indexcount, scalingfactor, indsetvars, linkmatrix,
                                     linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
@@ -2061,8 +2135,8 @@ SCIP_RETCODE solveCliquer(
          lconsvars = SCIPgetVarsLinear(pricingprob, constraints[i]);
 
          if((cliquerconstypes[i] == LINEAR_IS &&
-              (SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[0], linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef), 0) ||
-               SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[1], linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef), 0))) ||
+              (SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[0], nlinkedvars, ncouplvars, aggrobjcoef), 0) ||
+               SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[1], nlinkedvars, ncouplvars, aggrobjcoef), 0))) ||
              cliquerconstypes[i] == LINEAR_IS_LIKE )
          {
             /* One variable fixed to 0 (the other is not fixed): constraint is relaxed -> continue. */
@@ -2071,12 +2145,12 @@ SCIP_RETCODE solveCliquer(
 
             /* Add variables nodes to graph if they have a negative (aggregated) objective coefficient. */
             nodeindex0 = -1;
-            if( SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[0], linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef), 0) )
+            if( SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[0], nlinkedvars, ncouplvars, aggrobjcoef), 0) )
                nodeindex0 = addVarToGraph(pricingprob, g, lconsvars[0], &indexcount, scalingfactor, indsetvars, linkmatrix,
                                           linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
 
             nodeindex1 = -1;
-            if( SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[1], linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef), 0) )
+            if( SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[1], nlinkedvars, ncouplvars, aggrobjcoef), 0) )
                nodeindex1 = addVarToGraph(pricingprob, g, lconsvars[1], &indexcount, scalingfactor, indsetvars, linkmatrix,
                                           linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
 
@@ -2122,7 +2196,7 @@ SCIP_RETCODE solveCliquer(
                {
                   /* We are only interested in vars potentially relevant for pricing (obj < 0) */
                   if((cliquerconstypes[i] != LINEAR_COUPLING_CLIQUE || j != couplingcoefindices[i]) &&
-                     SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[j], linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef), 0) &&
+                     SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[j], nlinkedvars, ncouplvars, aggrobjcoef), 0) &&
                       solvals[SCIPvarGetProbindex(lconsvars[j])] != 0.0 )
                   {
                      /* Determine nodeindex0 */
@@ -2133,7 +2207,7 @@ SCIP_RETCODE solveCliquer(
                      for( k = j + 1; k < nvars; ++k )
                      {
                         if((cliquerconstypes[i] != LINEAR_COUPLING_CLIQUE || k != couplingcoefindices[i]) &&
-                           SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[k], linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef), 0) &&
+                           SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[k], nlinkedvars, ncouplvars, aggrobjcoef), 0) &&
                             solvals[SCIPvarGetProbindex(lconsvars[k])] != 0.0 )
                         {
                            nodeindex1 = addVarToGraph(pricingprob, g, lconsvars[k], &indexcount, scalingfactor, indsetvars, linkmatrix,
@@ -2169,7 +2243,7 @@ SCIP_RETCODE solveCliquer(
                continue;
 
             /* if x may be relevant, add both x and y to graph */
-            if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[0], linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef), 0) )
+            if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[0], nlinkedvars, ncouplvars, aggrobjcoef), 0) )
             {
                nodeindex0 = addVarToGraph(pricingprob, g, vconsvars[0], &indexcount, scalingfactor, indsetvars, linkmatrix,
                                           linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
@@ -2181,7 +2255,7 @@ SCIP_RETCODE solveCliquer(
                ++markedcount;
             }
             /* If only y may be relevant, add only y to the graph */
-            else if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[1], linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef), 0) )
+            else if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[1], nlinkedvars, ncouplvars, aggrobjcoef), 0) )
             {
                nodeindex1 = addVarToGraph(pricingprob, g, vconsvars[1], &indexcount, scalingfactor, indsetvars, linkmatrix,
                                           linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
@@ -2204,16 +2278,16 @@ SCIP_RETCODE solveCliquer(
                continue;
 
             /* Preprocessing: Constraint is only relevant for pricing if one of the variables has an objective value < 0 */
-            if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[0], linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef), 0) ||
-                SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[1], linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef), 0) )
+            if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[0], nlinkedvars, ncouplvars, aggrobjcoef), 0) ||
+                SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[1], nlinkedvars, ncouplvars, aggrobjcoef), 0) )
             {
                nodeindex0 = -1;
-               if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[0], linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef), 0) )
+               if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[0], nlinkedvars, ncouplvars, aggrobjcoef), 0) )
                   nodeindex0 = addVarToGraph(pricingprob, g, vconsvars[0], &indexcount, scalingfactor, indsetvars, linkmatrix,
                                              linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
 
                nodeindex1 = -1;
-               if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[1], linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef), 0) )
+               if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[1], nlinkedvars, ncouplvars, aggrobjcoef), 0) )
                   nodeindex1 = addVarToGraph(pricingprob, g, vconsvars[1], &indexcount, scalingfactor, indsetvars, linkmatrix,
                                              linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
 
@@ -2246,7 +2320,8 @@ SCIP_RETCODE solveCliquer(
 
    density = (SCIP_Real)nedges / ((SCIP_Real)(g->n - 1) * (g->n) / 2);
 
-   SCIPdebugMessage("Problem number: %i ; Graph size: %d ; Graph density: %g\n", probnr, indexcount, density);
+   SCIPdebugMessage("Problem number: %i ; Tree depth: %i ; Graph size: %d ; Graph density: %g\n",
+                    probnr, SCIPgetFocusDepth(scip), indexcount, density);
 
    /* Test if the node threshold is respected */
    if( SCIPisGT(pricingprob, indexcount, solver->nodelimit) )
@@ -2335,7 +2410,7 @@ SCIP_RETCODE solveCliquer(
        *       The max-weighted-clique solver would need to support also negative costs to heal this.
        */
       if( SET_CONTAINS(clique, i) &&
-          (SCIPisLT(pricingprob, getAggrObjCoef(indsetvars[i], linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef), 0) ||
+          (SCIPisLT(pricingprob, getAggrObjCoef(indsetvars[i], nlinkedvars, ncouplvars, aggrobjcoef), 0) ||
            solvals[SCIPvarGetProbindex(indsetvars[i])] == -2.0) &&
           solvals[SCIPvarGetProbindex(indsetvars[i])] != 0.0 )
       {
@@ -2390,7 +2465,7 @@ SCIP_RETCODE solveCliquer(
    {
       if( solvals[i] == -1.0 )
       {
-         if( SCIPisLT(pricingprob, getAggrObjCoef(pricingprobvars[i], linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef), 0) )
+         if( SCIPisLT(pricingprob, getAggrObjCoef(pricingprobvars[i], nlinkedvars, ncouplvars, aggrobjcoef), 0) )
          {
             solvals[i] = 1.0;
          }
