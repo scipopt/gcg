@@ -1279,9 +1279,6 @@ SCIP_Bool determineCliquerConsTypes(
    SCIP_CONS**           constraints,        /**< Array containing pointers to SCIP constraints of pricing problem */
    SCIP_VAR**            linkedvars,         /**< Array of variables that are linked by eq-constraints */
    SCIP_VAR**            vconsvars,          /**< Array to store variables of a varbound constraint. */
-   SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
-   int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
-   int*                  nvarsincouplings,   /**< Index of varsincouplings array */
    int*                  markedconsindices,  /**< Array containing pointers to SCIP constraints to mark them */
    int**                 linkmatrix,         /**< Matrix indicating which variables are linked by a node */
    int*                  couplingcoefindices,/**< Array for coupling coefficient of each constraint (if coupling) */
@@ -1365,20 +1362,15 @@ SCIP_Bool determineCliquerConsTypes(
                /* Check if we have a coupling constraint (rhs 0) */
                else if( (couplingcoefindices[i] != -1) && SCIPisEQ(pricingprob, SCIPgetRhsLinear(pricingprob, constraints[i]), 0.0) )
                {
-                  lconsvars = SCIPgetVarsLinear(pricingprob, constraints[i]);
                   /* Special case: The coupling constraint is purely decorative (coefficient + 1 of coupling var >= #vars)*/
                   if( abs(consvals[couplingcoefindices[i]]) + 1 >= nvars )
                   {
                      cliquerconstypes[i] = LINEAR_COUPLING_DECORATIVE;
-                     updateCouplingDiGraph(lconsvars, nvars, lconsvars[couplingcoefindices[i]], couplingmatrix,
-                                           varsincouplings, nvarsincouplings);
                   }
                   /* Special case: The coefficient is -1, we treat the case like a clique constraint. */
                   else if( abs(consvals[couplingcoefindices[i]]) == 1 )
                   {
                      cliquerconstypes[i] = LINEAR_COUPLING_CLIQUE;
-                     updateCouplingDiGraph(lconsvars, nvars, lconsvars[couplingcoefindices[i]], couplingmatrix,
-                                           varsincouplings, nvarsincouplings);
                   }
                   else
                   {
@@ -1441,7 +1433,6 @@ SCIP_Bool determineCliquerConsTypes(
                    SCIPisEQ(pricingprob, SCIPgetVbdcoefVarbound(pricingprob, constraints[i]), -1) )
                {
                   cliquerconstypes[i] = VARBND_STD;
-                  updateCouplingDiGraph(vconsvars, 2, vconsvars[1], couplingmatrix, varsincouplings, nvarsincouplings);
                }
                else
                {
@@ -1530,8 +1521,11 @@ SCIP_Bool propagateVariablefixings(
    SCIP_CONS**           constraints,        /**< Array containing pointers to SCIP constraints of pricing problem */
    SCIP_VAR**            linkedvars,         /**< Array of variables that are linked by eq-constraints */
    SCIP_VAR**            vconsvars,          /**< Array to store variables of a varbound constraint. */
+   SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    SCIP_Real*            solvals,            /**< Array holding the current solution values of all problem variables */
+   int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    int**                 linkmatrix,         /**< Matrix indicating which variables are linked by a node */
+   int*                  nvarsincouplings,   /**< Index of varsincouplings array */
    int*                  couplingcoefindices,/**< Array for coupling coefficient of each constraint (if coupling) */
    int*                  consvarsfixedcount, /**< Array for counting how many variables are fixed per constraint */
    int*                  nlinkedvars,        /**< Index of linkedvars array */
@@ -1576,11 +1570,19 @@ SCIP_Bool propagateVariablefixings(
          /* The constraint may be of type 'linear' */
          if( strcmp(SCIPconshdlrGetName(conshdlr), "linear") == 0 )
          {
+            lconsvars = SCIPgetVarsLinear(pricingprob, constraints[i]);
+
+            /* Add coupling cons vars to coupling digraph. */
+            if( cliquerconstypes[i] == LINEAR_COUPLING_CLIQUE || cliquerconstypes[i] == LINEAR_COUPLING_DECORATIVE )
+            {
+               SCIPgetConsNVars(pricingprob, constraints[i], &nvars, &retcode);
+               updateCouplingDiGraph(lconsvars, nvars, lconsvars[couplingcoefindices[i]], couplingmatrix,
+                                     varsincouplings, nvarsincouplings);
+            }
+
             /* If all variables are fixed, constraint can be skipped */
             if( consvarsfixedcount[i] == SCIPgetNVarsLinear(pricingprob, constraints[i]) )
                continue;
-
-            lconsvars = SCIPgetVarsLinear(pricingprob, constraints[i]);
 
             if( cliquerconstypes[i] == LINEAR_IS || cliquerconstypes[i] == LINEAR_IS_LIKE )
             {
@@ -1701,11 +1703,15 @@ SCIP_Bool propagateVariablefixings(
          /* Constraint may be of type varbound: lhs <= x + c*y <= rhs */
          else if( strcmp(SCIPconshdlrGetName(conshdlr), "varbound") == 0 )
          {
-            if( consvarsfixedcount[i] == 2 )
-               continue; /* If all variables are fixed, constraint can be skipped */
-
             vconsvars[0] = SCIPgetVarVarbound(pricingprob, constraints[i]);
             vconsvars[1] = SCIPgetVbdvarVarbound(pricingprob, constraints[i]);
+
+            /* Add coupling-like varbound cons vars to coupling digraph. */
+            if( cliquerconstypes[i] == VARBND_STD )
+               updateCouplingDiGraph(vconsvars, 2, vconsvars[1], couplingmatrix, varsincouplings, nvarsincouplings);
+
+            if( consvarsfixedcount[i] == 2 )
+               continue; /* If all variables are fixed, constraint can be skipped */
 
             if( cliquerconstypes[i] == VARBND_SAME )
             {
@@ -1979,8 +1985,7 @@ SCIP_RETCODE solveCliquer(
 
    /* Determine constraint types for easier handling later on.
     * Also, it is checked for constraints that cannot be handled by this solver. */
-   if( !determineCliquerConsTypes(pricingprob, constraints, linkedvars, vconsvars, couplvars,
-                                  couplingmatrix, &ncouplvars, markedconsindices, linkmatrix,
+   if( !determineCliquerConsTypes(pricingprob, constraints, linkedvars, vconsvars, markedconsindices, linkmatrix,
                                   couplingcoefindices, &nlinkedvars, nconss, &markedcount, cliquerconstypes) )
    {
       /* Encountered constraint that can not be handled. */
@@ -1989,10 +1994,12 @@ SCIP_RETCODE solveCliquer(
       goto TERMINATE;
    }
 
-   /* Propagate the already fixed variables to (potentially) get more fixed variables. */
-   if( (nlinkedvars > 0 || nfixedvars > 0) &&
-       !propagateVariablefixings(pricingprob, constraints, linkedvars, vconsvars, solvals, linkmatrix, couplingcoefindices,
-                                 consvarsfixedcount, &nlinkedvars, nconss, &nfixedvars, cliquerconstypes) )
+   /* Propagate the already fixed variables to (potentially) get more fixed variables.
+    * Also, builds coupling digraph to distribute objective coefficients of coupling variables. */
+   if( (nlinkedvars > 0 || nfixedvars > 0 || solver->objcoefdistr > 0) &&
+       !propagateVariablefixings(pricingprob, constraints, linkedvars, vconsvars, couplvars, solvals, couplingmatrix,
+                                 linkmatrix, &ncouplvars, couplingcoefindices, consvarsfixedcount, &nlinkedvars,
+                                 nconss, &nfixedvars, cliquerconstypes) )
    {
       /* Variables are fixed in a conflicting way. -> problem is infeasible. */
       *status = GCG_PRICINGSTATUS_INFEASIBLE;
