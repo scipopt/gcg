@@ -65,6 +65,7 @@
 #define DEFAULT_SLOPE        -1980
 #define DEFAULT_INTERCEPT    1900
 #define DEFAULT_OBJCOEFDISTR 0
+#define DEFAULT_USEMULTIPL   FALSE
 
 /*
  * Data structures.
@@ -91,6 +92,7 @@ struct GCG_SolverData
    int                   nodelimit;          /**< graph node threshold below which to use solver */
    SCIP_Bool*            isnotapplicable;    /**< array tracking if solver is not applicable in root node (& no cuts) */
    int                   objcoefdistr;       /**< param deciding strategy for distributing obj coefs of coupling vars */
+   SCIP_Bool             usemultiplicity;    /**< boolean for activating usage of var multiplicities for weighting */
    SCIP_Bool             uselincutoff;       /**< boolean for activating linear cutoff */
    SCIP_Real             lincutoffslope;     /**< slope for linear cutoff */
    SCIP_Real             lincutoffintercept; /**< intercept for linear cutoff */
@@ -347,6 +349,97 @@ int getLinkedNodeIndex(
    return -1;
 }
 
+/** Computes the number of reachable nodes from a given variable */
+static INLINE
+int countReachableVars(
+   SCIP*          scip,         /**< The problem instance */
+   int**          linkmatrix,   /**< Matrix indicating which variables are linked */
+   SCIP_VAR*      var,          /**< The starting variable */
+   SCIP_VAR**     linkedvars,   /**< Array of variables that are linked by eq-constraints */
+   int            nlinkedvars   /**< Number of linked variables */
+)
+{
+   int*       stack;           /* Stack for DFS */
+   SCIP_Bool* varvisited;      /* Array to track visited nodes */
+   int        stacksize;        /* Current size of stack */
+   int        count;            /* Count of reachable nodes */
+   int        actind;
+   int        popedvarind;
+   int        i;
+
+   count = 0;
+   stacksize = 0;
+
+   actind = SCIPvarGetProbindex(var);
+
+   SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &stack, nlinkedvars) );
+   SCIP_CALL_ABORT( SCIPallocCleanBufferArray(scip, &varvisited, nlinkedvars) );
+
+   /* Start DFS from the given variable */
+   stack[stacksize++] = actind;
+   varvisited[getNodeIndex(var, linkedvars, nlinkedvars)] = TRUE;
+
+   while( stacksize > 0 )
+   {
+      popedvarind = stack[--stacksize];         /* pop from stack */
+      count++;
+
+      /* Explore all linked variables */
+      for( i = 0; i < nlinkedvars; i++ )
+      {
+         actind = SCIPvarGetProbindex(linkedvars[i]);
+         if( linkmatrix[popedvarind][actind] && !varvisited[i] )
+         {
+            stack[stacksize++] = actind;
+            varvisited[i] = TRUE;
+         }
+      }
+   }
+
+   SCIPfreeBufferArray(scip, &varvisited);
+   SCIPfreeBufferArray(scip, &stack);
+
+   return count;
+}
+
+/** Returns a representative variable for a given variable in the linked variable-bijection, if any, else NULL.*/
+static INLINE
+SCIP_VAR* getLinkedNodeVar(
+   SCIP*          scip,                           /**< The problem instance */
+   SCIP_VAR*      var,                            /**< Variable for which the node index is to be determined */
+   int**          linkmatrix,                     /**< Matrix indicating which variables are linked by a node */
+   SCIP_VAR**     linkedvars,                     /**< Array of variables that are linked by eq-constraints */
+   int            nlinkedvars                     /**< Index of linkedvars array */
+)
+{
+   int        i;
+
+   for( i = 0; i < nlinkedvars; ++i )
+   {
+      if( linkedvars[i] == var || areVarsLinked(scip, linkmatrix, var, linkedvars[i], linkedvars, nlinkedvars) )
+         return linkedvars[i];
+   }
+   return NULL;
+}
+
+/** Returns the index of the representative variable for a given variable in the linked variable-bijection, if any.*/
+static INLINE
+int getNodeIndexCouplDigraph(
+   SCIP*          scip,                           /**< The problem instance */
+   SCIP_VAR*      var,                            /**< Variable for which the node index is to be determined */
+   int**          linkmatrix,                     /**< Matrix indicating which variables are linked by a node */
+   SCIP_VAR**     linkedvars,                     /**< Array of variables that are linked by eq-constraints */
+   int            nlinkedvars,                    /**< Index of linkedvars array */
+   SCIP_VAR**     varsincouplings,                /**< Array of variables that are involved in couplings */
+   int            nvarsincouplings                /**< Index of varsincouplings array */
+   )
+{
+   if( isVarLinked(linkedvars, nlinkedvars, var) )
+      var = getLinkedNodeVar(scip, var, linkmatrix, linkedvars, nlinkedvars);
+
+   return (var == NULL) ? -1 : getNodeIndex(var, varsincouplings, nvarsincouplings);
+}
+
 /** Aggregates objective coefficients for linked variables in the aggrobjcoef array. */
 static
 void aggregateObjCoef(
@@ -600,12 +693,21 @@ void setProblemNotApplicable(
 /** Returns index in adjacency matrix of coupling digraph (after inserting it if not already contained). */
 static INLINE
 int assureInCouplingGraph(
+   SCIP*                 scip,               /**< The problem instance */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in coupling */
    int*                  nvarsincouplings,   /**< Index of varsincouplings array */
-   SCIP_VAR*             var                 /**< Variable whose membership in the varsincouplings array is to be checked */
+   SCIP_VAR*             var,                /**< Variable whose membership in the varsincouplings array is to be checked */
+   SCIP_VAR**            linkedvars,         /**< Array of variables that are linked by eq-constraints */
+   int                   nlinkedvars,        /**< Index of linkedvars array */
+   int**                 linkmatrix          /**< Matrix indicating which variables are linked by eq-constraints */
    )
 {
    int       i;
+   int       j;
+
+   /* If var is linked, we map all linked vars to one representative digraph node and return its index. */
+   if( isVarLinked(linkedvars, nlinkedvars, var) )
+      var = getLinkedNodeVar(scip, var, linkmatrix, linkedvars, nlinkedvars);
 
    for( i = 0; i < *nvarsincouplings; ++i )
    {
@@ -622,19 +724,24 @@ int assureInCouplingGraph(
  *  Then, directed edges from coupling var to each other var involved in the constraint are inserted. */
 static INLINE
 void updateCouplingDiGraph(
+   SCIP*                 scip,               /**< The problem instance */
    SCIP_VAR**            consvars,           /**< Array of variables in constraint for which to update the graph */
    int                   nconsvars,          /**< Index of consvars array */
    SCIP_VAR*             var,                /**< Coupling / vbd variable for which to update graph */
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
-   int*                  nvarsincouplings    /**< Index of varsincouplings array */
+   int*                  nvarsincouplings,   /**< Index of varsincouplings array */
+   SCIP_VAR**            linkedvars,         /**< Array of variables that are linked by eq-constraints */
+   int                   nlinkedvars,        /**< Index of linkedvars array */
+   int**                 linkmatrix          /**< Matrix indicating which variables are linked by eq-constraints */
    )
 {
    int            i;
    int            couplingvarind;
    int            consvarind;
 
-   couplingvarind = assureInCouplingGraph(varsincouplings, nvarsincouplings, var);
+   couplingvarind = assureInCouplingGraph(scip, varsincouplings, nvarsincouplings, var, linkedvars, nlinkedvars,
+                                          linkmatrix);
 
    /* Insert (increment) edges for all non-coupling variables in the constraint. */
    for( i = 0; i < nconsvars; i++ )
@@ -642,7 +749,8 @@ void updateCouplingDiGraph(
       if( consvars[i] == var )
          continue;
 
-      consvarind = assureInCouplingGraph(varsincouplings, nvarsincouplings, consvars[i]);
+      consvarind  = assureInCouplingGraph(scip, varsincouplings, nvarsincouplings, consvars[i], linkedvars, nlinkedvars,
+                                          linkmatrix);
       if( !couplingmatrix[couplingvarind][consvarind] )
          couplingmatrix[couplingvarind][consvarind] = 1;
    }
@@ -709,13 +817,15 @@ SCIP_Bool isCouplingRelevantVar(
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
+   int**                 linkmatrix,         /**< Matrix indicating which variables are linked by eq-constraints */
+   SCIP_VAR**            linkedvars,         /**< Array of variables that are linked by eq-constraints */
    int                   nlinkedvars,        /**< Index of linkedvars array */
    SCIP_Real*            aggrobjcoef         /**< Array of aggregated objective coefficients. */
 )
 {
    int            varind;
 
-   varind = getNodeIndex(var, varsincouplings, nvarsincouplings);
+   varind = getNodeIndexCouplDigraph(scip, var, linkmatrix, linkedvars, nlinkedvars, varsincouplings, nvarsincouplings);
    assert(varind > -1);
 
    return isCouplingRelevantRec(scip, varind, couplingmatrix, varsincouplings, nvarsincouplings, nlinkedvars,
@@ -757,7 +867,9 @@ int getNSuccessorsRelevant(
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
    int                   nlinkedvars,        /**< Index of linkedvars array */
-   SCIP_Real*            aggrobjcoef         /**< Array of aggregated objective coefficients. */
+   SCIP_Real*            aggrobjcoef,        /**< Array of aggregated objective coefficients. */
+   int*                  varmultiplicities,  /**< Array holding number of vars represented by digraph node */
+   SCIP_Bool             usemultiplicities   /**< Wether to use the given multiplicities */
 )
 {
    int            i;
@@ -770,10 +882,34 @@ int getNSuccessorsRelevant(
           isCouplingRelevantRec(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, nlinkedvars, aggrobjcoef,
                                 nvarsincouplings) )
       {
-         nsuccessors += 1;
+         nsuccessors += usemultiplicities ? varmultiplicities[i] : 1;
       }
    }
    return nsuccessors;
+}
+
+/** Compute entries for varmultiplicities array holding counts of represented variables per digraph node */
+static INLINE
+void initVarMultiplicities(
+   SCIP*                 scip,               /**< The problem instance */
+   int**                 linkmatrix,         /**< Matrix indicating which variables are linked */
+   SCIP_VAR**            linkedvars,         /**< Array of variables that are linked by eq-constraints */
+   int                   nlinkedvars,        /**< Number of linked variables */
+   int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
+   SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
+   int                   nvarsincouplings,   /**< Index of varsincouplings array */
+   int*                  varmultiplicities   /**< Array holding number of vars represented by digraph node */
+   )
+{
+   int            i;
+
+   for( i = 0; i < nvarsincouplings; i++ )
+   {
+      if( isVarLinked(linkedvars, nlinkedvars, varsincouplings[i]) )
+         varmultiplicities[i] = countReachableVars(scip, linkmatrix, varsincouplings[i], linkedvars, nlinkedvars);
+      else
+         varmultiplicities[i] = 1;
+   }
 }
 
 /*
@@ -813,6 +949,8 @@ void objCoefDistrHeurNatural(
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
+   int*                  varmultiplicities,  /**< Array holding number of vars represented by digraph node */
+   SCIP_Bool             usemultipl,         /**< Wether varmultiplicities should be used for weighting */
    SCIP_VAR**            linkedvars,         /**< Array of variables that are linked by eq-constraints */
    int                   nlinkedvars,        /**< Index of linkedvars array */
    int**                 linkmatrix,         /**< Matrix indicating which variables are linked by eq-constraints */
@@ -830,6 +968,7 @@ void objCoefDistrHeurNatural(
    int            nsuccessors;
    int            nlconsvars;
    int            couplingindex;
+   int            mappedindex;
    SCIP_Real      frac;
    SCIP_Real      coeftodistr;
    SCIP_Real      actvarcoef;
@@ -841,7 +980,7 @@ void objCoefDistrHeurNatural(
    denominator = 0;
 
    nsuccessors = getNSuccessorsRelevant(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings,
-                                        nlinkedvars, aggrobjcoef);
+                                        nlinkedvars, aggrobjcoef, varmultiplicities, FALSE);
    SCIP_CALL_ABORT( SCIPallocClearBufferArray(scip, &coefshares, nsuccessors) );
    SCIP_CALL_ABORT( SCIPhashmapCreate(&vartocoefsharemap, SCIPblkmem(scip), nvarsincouplings) );
 
@@ -868,11 +1007,13 @@ void objCoefDistrHeurNatural(
          case VARBND_STD:
             if( SCIPgetVbdvarVarbound(scip, constraints[i]) == varsincouplings[actvarind] &&
                 isCouplingRelevantVar(scip, SCIPgetVarVarbound(scip, constraints[i]), couplingmatrix, varsincouplings,
-                                      nvarsincouplings, nlinkedvars, aggrobjcoef) )
+                                      nvarsincouplings, linkmatrix, linkedvars, nlinkedvars, aggrobjcoef) )
             {
-               nrelconsvars++;
-               couplingindex = getNodeIndex(SCIPgetVarVarbound(scip, constraints[i]), varsincouplings, nvarsincouplings);
-               coefshares[SCIPhashmapGetImageInt(vartocoefsharemap, (void*)(size_t)couplingindex)] += 1;
+               couplingindex = getNodeIndexCouplDigraph(scip, SCIPgetVarVarbound(scip, constraints[i]), linkmatrix,
+                                                        linkedvars, nlinkedvars, varsincouplings, nvarsincouplings);
+               mappedindex = SCIPhashmapGetImageInt(vartocoefsharemap, (void*)(size_t)couplingindex);
+               nrelconsvars += usemultipl ? varmultiplicities[couplingindex] : 1;
+               coefshares[mappedindex] += usemultipl ? varmultiplicities[couplingindex] : 1;
             }
             break;
          case LINEAR_COUPLING_CLIQUE:
@@ -887,8 +1028,12 @@ void objCoefDistrHeurNatural(
                   if( j == couplingcoefindices[i] )
                      continue;
                   if( isCouplingRelevantVar(scip, lconsvars[j], couplingmatrix, varsincouplings, nvarsincouplings,
-                                            nlinkedvars, aggrobjcoef) )
-                     nrelconsvars++;
+                                            linkmatrix, linkedvars, nlinkedvars, aggrobjcoef))
+                  {
+                     couplingindex = getNodeIndexCouplDigraph(scip, lconsvars[j], linkmatrix, linkedvars,
+                                                              nlinkedvars, varsincouplings, nvarsincouplings);
+                     nrelconsvars += usemultipl ? varmultiplicities[couplingindex] : 1;
+                  }
                }
                /* Add values to coefshares of variables in constraint */
                if( nrelconsvars > 0 )
@@ -899,10 +1044,14 @@ void objCoefDistrHeurNatural(
                      if( j == couplingcoefindices[i] )
                         continue;
                      if( isCouplingRelevantVar(scip, lconsvars[j], couplingmatrix, varsincouplings, nvarsincouplings,
-                                               nlinkedvars, aggrobjcoef) )
+                                               linkmatrix, linkedvars, nlinkedvars, aggrobjcoef) )
                      {
-                        couplingindex = getNodeIndex(lconsvars[j], varsincouplings, nvarsincouplings);
-                        coefshares[SCIPhashmapGetImageInt(vartocoefsharemap, (void*)(size_t)couplingindex)] += frac;
+                        couplingindex = getNodeIndexCouplDigraph(scip, lconsvars[j], linkmatrix, linkedvars,
+                                                                 nlinkedvars, varsincouplings, nvarsincouplings);
+                        mappedindex = SCIPhashmapGetImageInt(vartocoefsharemap, (void*)(size_t)couplingindex);
+
+                        nrelconsvars += usemultipl ? varmultiplicities[couplingindex] : 1;
+                        coefshares[mappedindex] += (usemultipl ? varmultiplicities[couplingindex] : 1) * frac;
                      }
                   }
                }
@@ -961,6 +1110,8 @@ void objCoefDistrHeurIS(
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
+   int*                  varmultiplicities,  /**< Array holding number of vars represented by digraph node */
+   SCIP_Bool             usemultipl,         /**< Wether varmultiplicities should be used for weighting */
    SCIP_VAR**            linkedvars,         /**< Array of variables that are linked by eq-constraints */
    int                   nlinkedvars,        /**< Index of linkedvars array */
    int**                 linkmatrix,         /**< Matrix indicating which variables are linked by eq-constraints */
@@ -989,9 +1140,9 @@ void objCoefDistrHeurIS(
    clique_options cl_opts;
 
    nsuccessors = getNSuccessorsRelevant(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings,
-                                        nlinkedvars, aggrobjcoef);
+                                        nlinkedvars, aggrobjcoef, varmultiplicities, FALSE);
 
-   if( nsuccessors > 200 )
+   if( nsuccessors > 200 || nsuccessors == 0)
       return;
 
    g = graph_new(nsuccessors);
@@ -999,7 +1150,7 @@ void objCoefDistrHeurIS(
    {
       for( j = i + 1; j < nsuccessors; ++j )
       {
-            GRAPH_ADD_EDGE(g, i, j);
+         GRAPH_ADD_EDGE(g, i, j);
       }
    }
 
@@ -1012,6 +1163,8 @@ void objCoefDistrHeurIS(
           isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, nlinkedvars, aggrobjcoef) )
       {
          SCIPhashmapSetImageInt(vartosuccmap, (void*)(size_t)i, j);
+         if( usemultipl )
+            g->weights[j] = varmultiplicities[i];
          j++;
       }
    }
@@ -1023,7 +1176,7 @@ void objCoefDistrHeurIS(
       if( LINEAR_COUPLING_CLIQUE == cliquerconstypes[i] &&
           SCIPgetVarsLinear(scip, constraints[i])[couplingcoefindices[i]] == varsincouplings[actvarind] )
       {
-         /* Get # of relevant variables in constraint */
+         /* Delete edges between nodes of relevant variables in constraint */
          lconsvars = SCIPgetVarsLinear(scip, constraints[i]);
          SCIPgetConsNVars(scip, constraints[i], &nlconsvars, &retcode);
          for( j = 0; j < nlconsvars; j++ )
@@ -1031,19 +1184,22 @@ void objCoefDistrHeurIS(
             if( j == couplingcoefindices[i] )
                continue;
             if( isCouplingRelevantVar(scip, lconsvars[j], couplingmatrix, varsincouplings, nvarsincouplings,
-                                      nlinkedvars, aggrobjcoef) )
+                                      linkmatrix, linkedvars, nlinkedvars, aggrobjcoef) )
             {
                for( k = j + 1; k < nlconsvars; k++ )
                {
                   if( k == couplingcoefindices[i] )
                      continue;
                   if( isCouplingRelevantVar(scip, lconsvars[k], couplingmatrix, varsincouplings, nvarsincouplings,
-                                            nlinkedvars, aggrobjcoef) )
+                                            linkmatrix, linkedvars, nlinkedvars, aggrobjcoef) )
                   {
-                     couplind1 = getNodeIndex(lconsvars[j], varsincouplings, nvarsincouplings);
-                     couplind2 = getNodeIndex(lconsvars[k], varsincouplings, nvarsincouplings);
-                     GRAPH_DEL_EDGE(g, SCIPhashmapGetImageInt(vartosuccmap, (void*)(size_t)couplind1),
-                                    SCIPhashmapGetImageInt(vartosuccmap, (void*)(size_t)couplind2));
+                     couplind1 = getNodeIndexCouplDigraph(scip, lconsvars[j], linkmatrix, linkedvars, nlinkedvars,
+                                                          varsincouplings, nvarsincouplings);
+                     couplind2 = getNodeIndexCouplDigraph(scip, lconsvars[k], linkmatrix, linkedvars, nlinkedvars,
+                                                          varsincouplings, nvarsincouplings);
+                     if( couplind1 != couplind2)
+                        GRAPH_DEL_EDGE(g, SCIPhashmapGetImageInt(vartosuccmap, (void*)(size_t)couplind1),
+                                       SCIPhashmapGetImageInt(vartosuccmap, (void*)(size_t)couplind2));
                   }
                }
             }
@@ -1065,7 +1221,18 @@ void objCoefDistrHeurIS(
 
    /* Find maximum weight clique using the cliquer library */
    clique = clique_find_single(g, 0, 0, FALSE, &cl_opts);
-   denominator = set_size(clique);
+
+   if( !usemultipl )
+      denominator = set_size(clique);
+   else if( !graph_weighted(g) )
+      denominator = set_size(clique) * g->weights[0];
+   else
+   {
+      i = -1;
+      denominator = 0;
+      while( (i = set_return_next(clique, i)) >= 0 )
+         denominator += g->weights[i];
+   }
 
    /* Distribute coeff. of act. var to all successor variables. */
    coeftodistr = getAggrObjCoef(varsincouplings[actvarind], nlinkedvars, nvarsincouplings, aggrobjcoef);
@@ -1075,14 +1242,14 @@ void objCoefDistrHeurIS(
           isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, nlinkedvars, aggrobjcoef) )
       {
          actvarcoef = getAggrObjCoef(varsincouplings[i], nlinkedvars, nvarsincouplings, aggrobjcoef);
-         setAggrObjCoef(scip, varsincouplings[i], actvarcoef + (coeftodistr / denominator), linkedvars, nlinkedvars,
-                        linkmatrix, aggrobjcoef);
+         setAggrObjCoef(scip, varsincouplings[i],
+                        actvarcoef + coeftodistr * ((SCIP_Real)(usemultipl ? varmultiplicities[i] : 1.0) / denominator),
+                        linkedvars, nlinkedvars, linkmatrix, aggrobjcoef);
       }
    }
 
    /* Free memory */
-   if( nsuccessors > 0 )
-      set_free(clique);
+   set_free(clique);
    graph_free(g);
    SCIPhashmapFree(&vartosuccmap);
 }
@@ -1102,6 +1269,8 @@ void objCoefDistrHeurUniform(
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
+   int*                  varmultiplicities,  /**< Array holding number of vars represented by digraph node */
+   SCIP_Bool             usemultipl,         /**< Wether varmultiplicities should be used for weighting */
    SCIP_VAR**            linkedvars,         /**< Array of variables that are linked by eq-constraints */
    int                   nlinkedvars,        /**< Index of linkedvars array */
    int**                 linkmatrix,         /**< Matrix indicating which variables are linked by eq-constraints */
@@ -1114,7 +1283,7 @@ void objCoefDistrHeurUniform(
    SCIP_Real      coeftodistr;
 
    nsuccessors = getNSuccessorsRelevant(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings,
-                                        nlinkedvars, aggrobjcoef);
+                                        nlinkedvars, aggrobjcoef, varmultiplicities, usemultipl);
 
    /* Distribute coeff. of act. var to all successor variables. */
    coeftodistr = getAggrObjCoef(varsincouplings[actvarind], nlinkedvars, nvarsincouplings, aggrobjcoef);
@@ -1124,8 +1293,9 @@ void objCoefDistrHeurUniform(
           isCouplingRelevant(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, nlinkedvars, aggrobjcoef) )
       {
          actvarcoef = getAggrObjCoef(varsincouplings[i], nlinkedvars, nvarsincouplings, aggrobjcoef);
-         setAggrObjCoef(scip, varsincouplings[i], actvarcoef + (coeftodistr / nsuccessors), linkedvars, nlinkedvars,
-                        linkmatrix, aggrobjcoef);
+         setAggrObjCoef(scip, varsincouplings[i],
+                        actvarcoef + coeftodistr * ((SCIP_Real)(usemultipl ? varmultiplicities[i] : 1.0) / nsuccessors),
+                        linkedvars, nlinkedvars, linkmatrix, aggrobjcoef);
       }
    }
 }
@@ -1141,6 +1311,8 @@ void distributeObjCoefRec(
    int**                 couplingmatrix,     /**< Matrix indicating which variables are involved in couplings */
    SCIP_VAR**            varsincouplings,    /**< Array of variables that are involved in couplings */
    int                   nvarsincouplings,   /**< Index of varsincouplings array */
+   int*                  varmultiplicities,  /**< Array holding number of vars represented by digraph node */
+   SCIP_Bool             usemultipl,         /**< Wether varmultiplicities should be used for weighting */
    SCIP_VAR**            linkedvars,         /**< Array of variables that are linked by eq-constraints */
    int                   nlinkedvars,        /**< Index of linkedvars array */
    int**                 linkmatrix,         /**< Matrix indicating which variables are linked by eq-constraints */
@@ -1170,9 +1342,9 @@ void distributeObjCoefRec(
       if( actvarind == i )
          continue;
       if( couplingmatrix[i][actvarind] > 0 && !isdistributed[i] )
-         distributeObjCoefRec(scip, i, isdistributed, couplingmatrix, varsincouplings, nvarsincouplings, linkedvars,
-                              nlinkedvars, linkmatrix, aggrobjcoef, constraints, nconss, couplingcoefindices,
-                              cliquerconstypes, selecteddistrheur);
+         distributeObjCoefRec(scip, i, isdistributed, couplingmatrix, varsincouplings, nvarsincouplings,
+                              varmultiplicities, usemultipl, linkedvars, nlinkedvars, linkmatrix, aggrobjcoef,
+                              constraints, nconss, couplingcoefindices, cliquerconstypes, selecteddistrheur);
    }
 
    /* Base case: All predecessors are distributed. */
@@ -1182,18 +1354,18 @@ void distributeObjCoefRec(
       switch( selecteddistrheur )
       {
          case 1:
-            objCoefDistrHeurNatural(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, linkedvars,
-                                    nlinkedvars, linkmatrix, aggrobjcoef, constraints, nconss, couplingcoefindices,
-                                    cliquerconstypes);
+            objCoefDistrHeurNatural(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings,
+                                    varmultiplicities, usemultipl, linkedvars, nlinkedvars, linkmatrix, aggrobjcoef,
+                                    constraints, nconss, couplingcoefindices, cliquerconstypes);
             break;
          case 2:
-            objCoefDistrHeurIS(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, linkedvars,
-                               nlinkedvars, linkmatrix, aggrobjcoef, constraints, nconss, couplingcoefindices,
-                               cliquerconstypes);
+            objCoefDistrHeurIS(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, varmultiplicities,
+                               usemultipl, linkedvars, nlinkedvars, linkmatrix, aggrobjcoef, constraints, nconss,
+                               couplingcoefindices, cliquerconstypes);
             break;
          case 3:
-            objCoefDistrHeurUniform(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings, linkedvars,
-                                    nlinkedvars, linkmatrix, aggrobjcoef);
+            objCoefDistrHeurUniform(scip, actvarind, couplingmatrix, varsincouplings, nvarsincouplings,
+                                    varmultiplicities, usemultipl, linkedvars, nlinkedvars, linkmatrix, aggrobjcoef);
             break;
          default:
             break;
@@ -1241,29 +1413,40 @@ void distributeObjCoef(
    int                   nlinkedvars,        /**< Index of linkedvars array */
    int**                 linkmatrix,         /**< Matrix indicating which variables are linked by eq-constraints */
    SCIP_Real*            aggrobjcoef,        /**< Array of aggregated objective coefficients. */
-   int                   selecteddistrheur   /**< Number of selected obj coef distribution heuristic. */
+   int                   selecteddistrheur,  /**< Number of selected obj coef distribution heuristic. */
+   SCIP_Bool             usemultipl          /**< Wether varmultiplicities should be used for weighting */
    )
 {
    int            i;
    SCIP_Bool*     isdistributed;                   /* array storing if a coupled variable was visited */
+   int*           varmultiplicities;               /* array holding the number of linked (represented) vars per node */
 
-   assert(execdistrheur != NULL);
-
+   /* Local memory allocation */
+   varmultiplicities = NULL;
    SCIP_CALL_ABORT( SCIPallocClearBufferArray(scip, &isdistributed, nvarsincouplings) );
+   if( usemultipl )
+   {
+      SCIP_CALL_ABORT( SCIPallocBufferArray(scip, &varmultiplicities, nvarsincouplings) );
+      initVarMultiplicities(scip, linkmatrix, linkedvars, nlinkedvars, couplingmatrix, varsincouplings,
+                            nvarsincouplings, varmultiplicities);
+   }
 
    for( i = 0; i < nvarsincouplings; i++ )
    {
       if( !isdistributed[i] &&
           hasSuccessorRel(scip, i, couplingmatrix, varsincouplings, nvarsincouplings, nlinkedvars, aggrobjcoef) )
       {
-         distributeObjCoefRec(scip, i, isdistributed, couplingmatrix, varsincouplings, nvarsincouplings, linkedvars,
-                              nlinkedvars, linkmatrix, aggrobjcoef, constraints, nconss, couplingcoefindices,
-                              cliquerconstypes, selecteddistrheur);
+         distributeObjCoefRec(scip, i, isdistributed, couplingmatrix, varsincouplings, nvarsincouplings,
+                              varmultiplicities, usemultipl, linkedvars, nlinkedvars, linkmatrix, aggrobjcoef,
+                              constraints, nconss, couplingcoefindices, cliquerconstypes, selecteddistrheur);
          continue;
       }
       isdistributed[i] = TRUE;               /* mark actual variable visited. */
    }
 
+   /* Free local memory */
+   if( usemultipl )
+      SCIPfreeBufferArray(scip, &varmultiplicities);
    SCIPfreeBufferArray(scip, &isdistributed);
 }
 
@@ -1528,6 +1711,7 @@ SCIP_Bool propagateVariablefixings(
    int*                  nvarsincouplings,   /**< Index of varsincouplings array */
    int*                  couplingcoefindices,/**< Array for coupling coefficient of each constraint (if coupling) */
    int*                  consvarsfixedcount, /**< Array for counting how many variables are fixed per constraint */
+   // TODO : replace ptr to nlinkedvars with int parameter
    int*                  nlinkedvars,        /**< Index of linkedvars array */
    int                   nconss,             /**< Index of constraints array */
    int*                  nfixedvars,         /**< Integer counting the number of currently fixed problem variables */
@@ -1576,8 +1760,8 @@ SCIP_Bool propagateVariablefixings(
             if( cliquerconstypes[i] == LINEAR_COUPLING_CLIQUE || cliquerconstypes[i] == LINEAR_COUPLING_DECORATIVE )
             {
                SCIPgetConsNVars(pricingprob, constraints[i], &nvars, &retcode);
-               updateCouplingDiGraph(lconsvars, nvars, lconsvars[couplingcoefindices[i]], couplingmatrix,
-                                     varsincouplings, nvarsincouplings);
+               updateCouplingDiGraph(pricingprob, lconsvars, nvars, lconsvars[couplingcoefindices[i]], couplingmatrix,
+                                     varsincouplings, nvarsincouplings, linkedvars, *nlinkedvars, linkmatrix);
             }
 
             /* If all variables are fixed, constraint can be skipped */
@@ -1708,7 +1892,8 @@ SCIP_Bool propagateVariablefixings(
 
             /* Add coupling-like varbound cons vars to coupling digraph. */
             if( cliquerconstypes[i] == VARBND_STD )
-               updateCouplingDiGraph(vconsvars, 2, vconsvars[1], couplingmatrix, varsincouplings, nvarsincouplings);
+               updateCouplingDiGraph(pricingprob, vconsvars, 2, vconsvars[1], couplingmatrix, varsincouplings,
+                                     nvarsincouplings, linkedvars, *nlinkedvars, linkmatrix);
 
             if( consvarsfixedcount[i] == 2 )
                continue; /* If all variables are fixed, constraint can be skipped */
@@ -2036,7 +2221,8 @@ SCIP_RETCODE solveCliquer(
    /* If there are coupling or standard varbound constraints, it may be necessary to distribute objective coefficients. */
    if( solver->objcoefdistr > 0 && ncouplvars > 0 )
       distributeObjCoef(pricingprob, constraints, nconss, couplingcoefindices, cliquerconstypes, couplingmatrix,
-                        couplvars, ncouplvars, linkedvars, nlinkedvars, linkmatrix, aggrobjcoef, solver->objcoefdistr);
+                        couplvars, ncouplvars, linkedvars, nlinkedvars, linkmatrix, aggrobjcoef, solver->objcoefdistr,
+                        solver->usemultiplicity);
 
    /* Now calculate scaling factor based on maximum aggregated objective coefficient value. */
 
@@ -2639,6 +2825,11 @@ SCIP_RETCODE GCGincludeSolverCliquer(
          "distribution of objective coefficients of coupling variables (disabled = 0, natural share = 1, "
          "MIS-based = 2, uniform = 3)",
          &solverdata->objcoefdistr, TRUE, DEFAULT_OBJCOEFDISTR, 0, 3, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricingsolver/cliquer/usemultiplicity",
+          "should the usage of multiplicity of linked variables be used to weight distributed coefficients be enabled? "
+          "(only useful with objcoefdistr != 0)",
+          &solverdata->usemultiplicity, TRUE, DEFAULT_USEMULTIPL, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricingsolver/cliquer/lincutoff/enable",
          "should linear cutoff (n > m*d + b) for usage of solver <cliquer>, based on graph (d)ensity and (n)odes, "
