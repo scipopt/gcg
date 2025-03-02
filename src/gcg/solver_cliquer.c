@@ -542,8 +542,6 @@ int addVarToGraph(
    int**          linkmatrix,                     /**< Matrix indicating which variables are linked by a node */
    SCIP_VAR**     linkedvars,                     /**< Array of variables that are linked by eq-constraints */
    int            nlinkedvars,                    /**< Index of linkedvars array */
-   // TODO : Remove varsincouplings
-   SCIP_VAR**     varsincouplings,                /**< Array of variables that are involved in coupling */
    int            nvarsincouplings,               /**< Index of varsincouplings array */
    SCIP_Real*     aggrobjcoef                     /**< Array of aggregated objective coefficients. */
    )
@@ -1711,8 +1709,7 @@ SCIP_Bool propagateVariablefixings(
    int*                  nvarsincouplings,   /**< Index of varsincouplings array */
    int*                  couplingcoefindices,/**< Array for coupling coefficient of each constraint (if coupling) */
    int*                  consvarsfixedcount, /**< Array for counting how many variables are fixed per constraint */
-   // TODO : replace ptr to nlinkedvars with int parameter
-   int*                  nlinkedvars,        /**< Index of linkedvars array */
+   int                   nlinkedvars,        /**< Index of linkedvars array */
    int                   nconss,             /**< Index of constraints array */
    int*                  nfixedvars,         /**< Integer counting the number of currently fixed problem variables */
    CLIQUER_CONSTYPE*     cliquerconstypes    /**< Array holding constraint types (specific to this solver) */
@@ -1761,7 +1758,7 @@ SCIP_Bool propagateVariablefixings(
             {
                SCIPgetConsNVars(pricingprob, constraints[i], &nvars, &retcode);
                updateCouplingDiGraph(pricingprob, lconsvars, nvars, lconsvars[couplingcoefindices[i]], couplingmatrix,
-                                     varsincouplings, nvarsincouplings, linkedvars, *nlinkedvars, linkmatrix);
+                                     varsincouplings, nvarsincouplings, linkedvars, nlinkedvars, linkmatrix);
             }
 
             /* If all variables are fixed, constraint can be skipped */
@@ -1793,11 +1790,11 @@ SCIP_Bool propagateVariablefixings(
                }
                else if( solvals[SCIPvarGetProbindex(lconsvars[0])] == -1 &&
                         solvals[SCIPvarGetProbindex(lconsvars[1])] == -1 &&
-                        areVarsLinked(pricingprob, linkmatrix, lconsvars[0], lconsvars[1], linkedvars, *nlinkedvars) )
+                        areVarsLinked(pricingprob, linkmatrix, lconsvars[0], lconsvars[1], linkedvars, nlinkedvars) )
                {
                   /* The two variables are linked and appear in an IS-constraint, i.e., x = y and x + y <= 1.
                    * -> Both variables must be fixed to 0. Thus calling the setter for one is sufficient */
-                  setLinkedSolvals(pricingprob, solvals, linkmatrix, linkedvars, *nlinkedvars, lconsvars[0], 0.0);
+                  setLinkedSolvals(pricingprob, solvals, linkmatrix, linkedvars, nlinkedvars, lconsvars[0], 0.0);
                   *nfixedvars += 2;
                   consvarsfixedcount[i] = 2;
                }
@@ -1893,7 +1890,7 @@ SCIP_Bool propagateVariablefixings(
             /* Add coupling-like varbound cons vars to coupling digraph. */
             if( cliquerconstypes[i] == VARBND_STD )
                updateCouplingDiGraph(pricingprob, vconsvars, 2, vconsvars[1], couplingmatrix, varsincouplings,
-                                     nvarsincouplings, linkedvars, *nlinkedvars, linkmatrix);
+                                     nvarsincouplings, linkedvars, nlinkedvars, linkmatrix);
 
             if( consvarsfixedcount[i] == 2 )
                continue; /* If all variables are fixed, constraint can be skipped */
@@ -1969,11 +1966,11 @@ SCIP_Bool propagateVariablefixings(
                else if( cliquerconstypes[i] == VARBND_IS &&
                         solvals[SCIPvarGetProbindex(vconsvars[0])] == -1 &&
                         solvals[SCIPvarGetProbindex(vconsvars[1])] == -1 &&
-                        areVarsLinked(pricingprob, linkmatrix, vconsvars[0], vconsvars[1], linkedvars, *nlinkedvars) )
+                        areVarsLinked(pricingprob, linkmatrix, vconsvars[0], vconsvars[1], linkedvars, nlinkedvars) )
                {
                   /* The two variables are linked and appear in an IS-constraint, i.e., x = y and x + y <= 1.
                    * -> Both variables must be fixed to 0. Thus calling the setter for one is sufficient */
-                  setLinkedSolvals(pricingprob, solvals, linkmatrix, linkedvars, *nlinkedvars, vconsvars[0], 0.0);
+                  setLinkedSolvals(pricingprob, solvals, linkmatrix, linkedvars, nlinkedvars, vconsvars[0], 0.0);
                   *nfixedvars += 2;
                   consvarsfixedcount[i] = 2; /* All variables of this constraint are fixed now. */
                }
@@ -2183,7 +2180,7 @@ SCIP_RETCODE solveCliquer(
     * Also, builds coupling digraph to distribute objective coefficients of coupling variables. */
    if( (nlinkedvars > 0 || nfixedvars > 0 || solver->objcoefdistr > 0) &&
        !propagateVariablefixings(pricingprob, constraints, linkedvars, vconsvars, couplvars, solvals, couplingmatrix,
-                                 linkmatrix, &ncouplvars, couplingcoefindices, consvarsfixedcount, &nlinkedvars,
+                                 linkmatrix, &ncouplvars, couplingcoefindices, consvarsfixedcount, nlinkedvars,
                                  nconss, &nfixedvars, cliquerconstypes) )
    {
       /* Variables are fixed in a conflicting way. -> problem is infeasible. */
@@ -2305,7 +2302,7 @@ SCIP_RETCODE solveCliquer(
       if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[0], nlinkedvars, ncouplvars, aggrobjcoef), 0) )
       {
          nodeindex0 = addVarToGraph(pricingprob, g, vconsvars[0], &indexcount, scalingfactor, indsetvars, linkmatrix,
-                                    linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
+                                    linkedvars, nlinkedvars, ncouplvars, aggrobjcoef);
       }
    }
 
@@ -2340,12 +2337,12 @@ SCIP_RETCODE solveCliquer(
             nodeindex0 = -1;
             if( SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[0], nlinkedvars, ncouplvars, aggrobjcoef), 0) )
                nodeindex0 = addVarToGraph(pricingprob, g, lconsvars[0], &indexcount, scalingfactor, indsetvars, linkmatrix,
-                                          linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
+                                          linkedvars, nlinkedvars, ncouplvars, aggrobjcoef);
 
             nodeindex1 = -1;
             if( SCIPisLT(pricingprob, getAggrObjCoef(lconsvars[1], nlinkedvars, ncouplvars, aggrobjcoef), 0) )
                nodeindex1 = addVarToGraph(pricingprob, g, lconsvars[1], &indexcount, scalingfactor, indsetvars, linkmatrix,
-                                          linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
+                                          linkedvars, nlinkedvars, ncouplvars, aggrobjcoef);
 
             /* If both vairables nodes are added and an edge exists between the two in the graph: delete this edge. */
             if( nodeindex0 >= 0 && nodeindex1 >= 0 && GRAPH_IS_EDGE(g, nodeindex0, nodeindex1) )
@@ -2370,7 +2367,7 @@ SCIP_RETCODE solveCliquer(
                /* We cannot guarantee that there is no constraint of the form x+CouplingVar <= 1 */
                /* If the node is part of the maximum clique, it is safe to set it to one, so we simply add it to the graph */
                nodeindex0 = addVarToGraph(pricingprob, g, lconsvars[couplingcoefindices[i]], &indexcount, scalingfactor, indsetvars,
-                                          linkmatrix, linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
+                                          linkmatrix, linkedvars, nlinkedvars, ncouplvars, aggrobjcoef);
 
                /* We additionally have to mark the variable to later set it to one */
                if( solvals[SCIPvarGetProbindex(lconsvars[couplingcoefindices[i]])] < 0.0 )
@@ -2394,7 +2391,7 @@ SCIP_RETCODE solveCliquer(
                   {
                      /* Determine nodeindex0 */
                      nodeindex0 = addVarToGraph(pricingprob, g, lconsvars[j], &indexcount, scalingfactor, indsetvars, linkmatrix,
-                                                linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
+                                                linkedvars, nlinkedvars, ncouplvars, aggrobjcoef);
 
                      /* Determine nodeindex1 */
                      for( k = j + 1; k < nvars; ++k )
@@ -2404,7 +2401,7 @@ SCIP_RETCODE solveCliquer(
                             solvals[SCIPvarGetProbindex(lconsvars[k])] != 0.0 )
                         {
                            nodeindex1 = addVarToGraph(pricingprob, g, lconsvars[k], &indexcount, scalingfactor, indsetvars, linkmatrix,
-                                                      linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
+                                                      linkedvars, nlinkedvars, ncouplvars, aggrobjcoef);
 
                            if( (nodeindex0 != nodeindex1) && GRAPH_IS_EDGE(g, nodeindex0, nodeindex1) )
                            {
@@ -2439,9 +2436,9 @@ SCIP_RETCODE solveCliquer(
             if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[0], nlinkedvars, ncouplvars, aggrobjcoef), 0) )
             {
                nodeindex0 = addVarToGraph(pricingprob, g, vconsvars[0], &indexcount, scalingfactor, indsetvars, linkmatrix,
-                                          linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
+                                          linkedvars, nlinkedvars, ncouplvars, aggrobjcoef);
                nodeindex1 = addVarToGraph(pricingprob, g, vconsvars[1], &indexcount, scalingfactor, indsetvars, linkmatrix,
-                                          linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
+                                          linkedvars, nlinkedvars, ncouplvars, aggrobjcoef);
                /* It may be the case, that both the constraints x - y <= 0 and x + y <= 1 are part of the problem */
                /* Although rare, we later ensure that we do not set x to 1 while y is set to 0 */
                markedconsindices[markedcount] = i;
@@ -2451,7 +2448,7 @@ SCIP_RETCODE solveCliquer(
             else if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[1], nlinkedvars, ncouplvars, aggrobjcoef), 0) )
             {
                nodeindex1 = addVarToGraph(pricingprob, g, vconsvars[1], &indexcount, scalingfactor, indsetvars, linkmatrix,
-                                          linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
+                                          linkedvars, nlinkedvars, ncouplvars, aggrobjcoef);
             }
             /* If none of the nodes are relevant, force x to be zero, since the constraint would be violated if x = 1 and y = 0 */
             else
@@ -2477,12 +2474,12 @@ SCIP_RETCODE solveCliquer(
                nodeindex0 = -1;
                if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[0], nlinkedvars, ncouplvars, aggrobjcoef), 0) )
                   nodeindex0 = addVarToGraph(pricingprob, g, vconsvars[0], &indexcount, scalingfactor, indsetvars, linkmatrix,
-                                             linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
+                                             linkedvars, nlinkedvars, ncouplvars, aggrobjcoef);
 
                nodeindex1 = -1;
                if( SCIPisLT(pricingprob, getAggrObjCoef(vconsvars[1], nlinkedvars, ncouplvars, aggrobjcoef), 0) )
                   nodeindex1 = addVarToGraph(pricingprob, g, vconsvars[1], &indexcount, scalingfactor, indsetvars, linkmatrix,
-                                             linkedvars, nlinkedvars, couplvars, ncouplvars, aggrobjcoef);
+                                             linkedvars, nlinkedvars, ncouplvars, aggrobjcoef);
 
                if( nodeindex0 >= 0 && nodeindex1 >= 0 && GRAPH_IS_EDGE(g, nodeindex0, nodeindex1) )
                {
