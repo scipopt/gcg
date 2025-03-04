@@ -59,11 +59,11 @@
 #define SOLVER_EXACTENABLED  FALSE           /**< indicates whether the solver should be enabled */
 
 #define DEFAULT_NODELIMIT    200
-#define DEFAULT_DENSITY      0.85
-#define DEFAULT_DENSITYSTART 0
-#define DEFAULT_USELINCUTOFF FALSE
+#define DEFAULT_DENSITY      1.0
+#define DEFAULT_DENSITYSTART 75
+#define DEFAULT_USELINCUTOFF TRUE
 #define DEFAULT_SLOPE        -1980
-#define DEFAULT_INTERCEPT    1900
+#define DEFAULT_INTERCEPT    2000
 #define DEFAULT_OBJCOEFDISTR 0
 #define DEFAULT_USEMULTIPL   FALSE
 
