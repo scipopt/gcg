@@ -701,7 +701,6 @@ int assureInCouplingGraph(
    )
 {
    int       i;
-   int       j;
 
    /* If var is linked, we map all linked vars to one representative digraph node and return its index. */
    if( isVarLinked(linkedvars, nlinkedvars, var) )
@@ -1471,7 +1470,6 @@ SCIP_Bool determineCliquerConsTypes(
 {
    /* Local variables. */
    SCIP_CONSHDLR*    conshdlr;
-   SCIP_VAR**        lconsvars;
    SCIP_Real*        consvals;
    SCIP_Bool         retcode;
    int               nvars;
