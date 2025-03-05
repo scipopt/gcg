@@ -66,7 +66,6 @@ SCIP_DECL_DIALOGFREE(dialogFreeObj)
    dialogdata = SCIPdialogGetData(dialog);
    assert(dialogdata != 0);
    assert(dialogdata->objdialog != 0);
-   assert(dialogdata->objdialog->scip_ == scip);
 
    /* call virtual method of dialog object */
    SCIP_CALL( dialogdata->objdialog->scip_free(scip, dialog) );
@@ -92,7 +91,6 @@ SCIP_DECL_DIALOGDESC(dialogDescObj)
    dialogdata = SCIPdialogGetData(dialog);
    assert(dialogdata != 0);
    assert(dialogdata->objdialog != 0);
-   assert(dialogdata->objdialog->scip_ == scip);
 
    /* call virtual method of dialog object */
    SCIP_CALL( dialogdata->objdialog->scip_desc(scip, dialog) );
@@ -125,12 +123,13 @@ SCIP_DECL_DIALOGEXEC(dialogExecObj)
 
 /** creates the dialog for the given dialog object and includes it in SCIP */
 SCIP_RETCODE GCGincludeObjDialog(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_DIALOG*          parentdialog,       /**< parent dialog */
    gcg::ObjDialog*       objdialog,          /**< dialog object */
    SCIP_Bool             deleteobject        /**< should the dialog object be deleted when dialog is freed? */
    )
 {/*lint --e{429} */
+   SCIP* scip = GCGgetOrigprob(gcg);
    assert(scip != 0);
    assert(objdialog != 0);
    assert(parentdialog != 0);

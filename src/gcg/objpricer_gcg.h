@@ -56,6 +56,7 @@ class ObjPricerGcg : public scip::ObjPricer
 public:
    /*lint --e{1540}*/
 
+   GCG*                   gcg;                /**< GCG data structure */
    SCIP*                  origprob;           /**< the original program */
    SCIP_PRICERDATA*       pricerdata;         /**< pricerdata data structure */
    GCG_COLPOOL*           colpool;            /**< column pool */
@@ -63,8 +64,7 @@ public:
 
    /** default constructor */
    ObjPricerGcg(
-         SCIP* scip, /**< SCIP data structure */
-         SCIP*              origscip,           /**< SCIP data structure of original problem */
+         GCG* gcgstruct, /**< GCG data structure */
          const char* name, /**< name of variable pricer */
          const char* desc, /**< description of variable pricer */
          int priority, /**< priority of the variable pricer */
@@ -187,9 +187,14 @@ public:
       return reducedcostpricing;
    }
 
-   SCIP* getOrigprob()
+   SCIP* getOrigprob() const
    {
       return origprob;
+   }
+
+   GCG* getGcg() const
+   {
+      return gcg;
    }
 
    /** get the number of columns to be added to the master LP in the current pricing round */

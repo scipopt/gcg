@@ -47,7 +47,8 @@
 class PricingType
 {
 protected:
-   SCIP*                 scip_;                 /**< SCIP instance (master problem) */
+   GCG*                  gcg;                   /**< GCG data structure */
+   SCIP*                 masterprob;            /**< SCIP instance (master problem) */
    GCG_PRICETYPE         type;                  /**< type of pricing */
    SCIP_CLOCK*           clock;                 /**< CPU clock */
 
@@ -67,10 +68,10 @@ protected:
 
 public:
    /** constructor */
-   PricingType();
+   PricingType() = delete;
 
    PricingType(
-      SCIP*                  p_scip
+      GCG*                   gcgstruct
       );
 
    /** destructor */
@@ -159,7 +160,7 @@ public:
    SCIP_RETCODE resetCalls()
    {
       calls = 0;
-      SCIP_CALL( SCIPresetClock(scip_, clock) );
+      SCIP_CALL( SCIPresetClock(masterprob, clock) );
       return SCIP_OKAY;
    }
 
@@ -169,10 +170,10 @@ class ReducedCostPricing : public PricingType
 {
 public:
    /** constructor */
-   ReducedCostPricing();
+   ReducedCostPricing() = delete;
 
    ReducedCostPricing(
-      SCIP*                 p_scip
+      GCG*                  gcgstruct
       );
 
    /** destructor */
@@ -212,10 +213,10 @@ class FarkasPricing : public PricingType
 {
 public:
    /** constructor */
-   FarkasPricing();
+   FarkasPricing() = delete;
 
    FarkasPricing(
-      SCIP*                 p_scip
+      GCG*                  gcgstruct
       );
 
    /** destructor */

@@ -37,7 +37,8 @@
 #define GCG_EVENT_BESTSOL_H__
 
 #include "scip/scip.h"
-#include "gcg/def.h"
+
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +47,7 @@ extern "C" {
 /** creates event handler for best event */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeEventHdlrBestsol(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

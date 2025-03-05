@@ -61,7 +61,7 @@
  *   (we want to "fix" as many rows as possible with the least damage to the objective function)
  */
 static
-GCG_DECL_DIVINGSELECTVAR(heurSelectVarMastervecldiving) /*lint --e{715}*/
+GCG_DECL_MASTER_DIVINGSELECTVAR(heurSelectVarMastervecldiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    SCIP_VAR** lpcands;
    SCIP_Real* lpcandssol;
@@ -69,15 +69,16 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarMastervecldiving) /*lint --e{715}*/
    int nlpcands;
    SCIP_Real bestscore;
    int c;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
    /* check preconditions */
-   assert(scip != NULL);
+   assert(masterprob != NULL);
    assert(heur != NULL);
    assert(bestcand != NULL);
    assert(bestcandmayround != NULL);
 
    /* get fractional variables that should be integral */
-   SCIP_CALL( SCIPgetLPBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL) );
+   SCIP_CALL( SCIPgetLPBranchCands(masterprob, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL) );
    assert(lpcands != NULL);
    assert(lpcandsfrac != NULL);
    assert(lpcandssol != NULL);
@@ -117,7 +118,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarMastervecldiving) /*lint --e{715}*/
       *bestcandmayround = *bestcandmayround && (SCIPvarMayRoundDown(var) || SCIPvarMayRoundUp(var));
 
       /* smaller score is better */
-      score = (objdelta + SCIPsumepsilon(scip))/((SCIP_Real)colveclen+1.0);
+      score = (objdelta + SCIPsumepsilon(masterprob))/((SCIP_Real)colveclen+1.0);
 
       /* penalize negative scores (i.e. improvements in the objective) */
       if( score <= 0.0 )
@@ -145,13 +146,13 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarMastervecldiving) /*lint --e{715}*/
 
 /** creates the mastervecldiving heuristic and includes it in GCG */
 SCIP_RETCODE GCGincludeHeurMastervecldiving(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_HEUR* heur;
 
    /* include diving heuristic */
-   SCIP_CALL( GCGincludeDivingHeurMaster(scip, &heur,
+   SCIP_CALL( GCGincludeDivingHeurMaster(gcg, &heur,
          HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, NULL, NULL, NULL, NULL, NULL, NULL, NULL, heurSelectVarMastervecldiving, NULL) );
 

@@ -38,7 +38,7 @@
 
 
 #include "scip/scip.h"
-#include "gcg/def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +47,8 @@ extern "C" {
 /** includes the master display columns in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeDispMaster(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
+   SCIP*                 masterprob          /**< SCIP data structure */
    );
 
 #ifdef __cplusplus

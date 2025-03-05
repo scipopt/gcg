@@ -44,8 +44,8 @@ namespace gcg {
 
 template <class T>
 Graph<T>::Graph(
-   SCIP*                 scip               /**< SCIP data structure */
-) : name("graph"),scip_(scip),graph(NULL),nconss(0),nvars(0),nnonzeroes(0),dummynodes(0)
+   GCG*                  gcgstruct                /**< GCG data structure */
+) : name("graph"),gcg(gcgstruct),graph(NULL),nconss(0),nvars(0),nnonzeroes(0),dummynodes(0)
 {
    graph = new T();
 }
@@ -172,13 +172,15 @@ SCIP_RETCODE Graph<T>::writeToFile(
    int nedges;
    FILE* file;
    file = fdopen(fd, "wx");
+   SCIP* scip = GCGgetOrigprob(gcg);
+
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 
    nnodes = Graph<T>::getNNodes();
    nedges = Graph<T>::getNEdges();
 
-   SCIPinfoMessage(scip_, file, "%d %d\n", nnodes+dummynodes, nedges/2);
+   SCIPinfoMessage(scip, file, "%d %d\n", nnodes+dummynodes, nedges/2);
 
    for( int i = 0; i < nnodes; ++i )
    {
@@ -187,18 +189,18 @@ SCIP_RETCODE Graph<T>::writeToFile(
 
       if( writeweights )
       {
-         SCIPinfoMessage(scip_, file, "%d ", Graph<T>::getWeight(i));
+         SCIPinfoMessage(scip, file, "%d ", Graph<T>::getWeight(i));
       }
       for( int j = 0; j < nneighbors; ++j )
       {
-         SCIPinfoMessage(scip_, file, "%d ", neighbors[j]+1);
+         SCIPinfoMessage(scip, file, "%d ", neighbors[j]+1);
       }
-      SCIPinfoMessage(scip_, file, "\n");
+      SCIPinfoMessage(scip, file, "\n");
    }
 
    for( int i = 0; i < dummynodes; ++i )
    {
-      SCIPinfoMessage(scip_, file, "\n");
+      SCIPinfoMessage(scip, file, "\n");
    }
 
    return SCIP_OKAY;

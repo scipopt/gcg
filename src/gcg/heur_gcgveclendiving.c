@@ -161,7 +161,7 @@ SCIP_Bool areVarsInSameBlock(
  */
 static
 SCIP_RETCODE getMasterDownScore(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DIVINGDATA*       divingdata,         /**< diving heuristic data */
    SCIP_VAR*             var,                /**< original variable to get fractionality for */
    SCIP_Real*            score               /**< pointer to store fractionality */
@@ -173,11 +173,11 @@ SCIP_RETCODE getMasterDownScore(
    int nmastervars;
    int norigmastervars;
    SCIP_Real roundval;
-
    int i;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(gcg);
    assert(masterprob != NULL);
 
    /* get master variable information */
@@ -187,7 +187,7 @@ SCIP_RETCODE getMasterDownScore(
    origmastervals = GCGoriginalVarGetMastervals(var);
    norigmastervars = GCGoriginalVarGetNMastervars(var);
 
-   roundval = SCIPfeasFloor(scip, SCIPgetRelaxSolVal(scip, var));
+   roundval = SCIPfeasFloor(origprob, SCIPgetRelaxSolVal(origprob, var));
    *score = 0.0;
 
    /* calculate sum of scores over all master variables
@@ -218,7 +218,7 @@ SCIP_RETCODE getMasterDownScore(
  */
 static
 SCIP_RETCODE getMasterUpScore(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DIVINGDATA*       divingdata,         /**< diving heuristic data */
    SCIP_VAR*             var,                /**< original variable to get fractionality for */
    SCIP_Real*            score               /**< pointer to store fractionality */
@@ -230,11 +230,11 @@ SCIP_RETCODE getMasterUpScore(
    int nmastervars;
    int norigmastervars;
    SCIP_Real roundval;
-
    int i;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(gcg);
    assert(masterprob != NULL);
 
    /* get master variable information */
@@ -244,7 +244,7 @@ SCIP_RETCODE getMasterUpScore(
    origmastervals = GCGoriginalVarGetMastervals(var);
    norigmastervars = GCGoriginalVarGetNMastervars(var);
 
-   roundval = SCIPfeasCeil(scip, SCIPgetRelaxSolVal(scip, var));
+   roundval = SCIPfeasCeil(origprob, SCIPgetRelaxSolVal(origprob, var));
    *score = 0.0;
 
    /* calculate sum of scores over all master variables
@@ -272,7 +272,7 @@ SCIP_RETCODE getMasterUpScore(
 /** for a variable, calculate the vector length score w.r.t. the master problem */
 static
 SCIP_RETCODE calculateScoreMaster(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DIVINGDATA*       divingdata,         /**< diving heuristic data */
    SCIP_VAR*             var,                /**< variable to calculate score for */
    SCIP_Real*            score,              /**< pointer to return the score */
@@ -283,8 +283,8 @@ SCIP_RETCODE calculateScoreMaster(
    SCIP_Real upscore;
 
    /* calculate scores for rounding down or up */
-   SCIP_CALL( getMasterDownScore(scip, divingdata, var, &downscore) );
-   SCIP_CALL( getMasterUpScore(scip, divingdata, var, &upscore) );
+   SCIP_CALL( getMasterDownScore(gcg, divingdata, var, &downscore) );
+   SCIP_CALL( getMasterUpScore(gcg, divingdata, var, &upscore) );
 
    *score = MIN(downscore, upscore);
    *roundup = upscore <= downscore;
@@ -309,12 +309,11 @@ GCG_DECL_DIVINGFREE(heurFreeGcgveclendiving) /*lint --e{715}*/
    GCG_DIVINGDATA* divingdata;
 
    assert(heur != NULL);
-   assert(scip != NULL);
 
    /* free diving rule specific data */
    divingdata = GCGheurGetDivingDataOrig(heur);
    assert(divingdata != NULL);
-   SCIPfreeMemory(scip, &divingdata);
+   SCIPfreeMemory(GCGgetOrigprob(gcg), &divingdata);
    GCGheurSetDivingDataOrig(heur, NULL);
 
    return SCIP_OKAY;
@@ -330,8 +329,8 @@ GCG_DECL_DIVINGINITEXEC(heurInitexecGcgveclendiving) /*lint --e{715}*/
    SCIP_SOL* masterlpsol;
    SCIP_VAR** mastervars;
    int nmastervars;
-
    int i;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    assert(heur != NULL);
 
@@ -344,14 +343,14 @@ GCG_DECL_DIVINGINITEXEC(heurInitexecGcgveclendiving) /*lint --e{715}*/
       return SCIP_OKAY;
 
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(gcg);
    assert(masterprob != NULL);
 
    /* get master variables */
    SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
 
    /* allocate memory */
-   SCIP_CALL( SCIPallocBufferArray(scip, &divingdata->masterscores, nmastervars) );
+   SCIP_CALL( SCIPallocBufferArray(origprob, &divingdata->masterscores, nmastervars) );
    SCIP_CALL( SCIPcreateSol(masterprob, &masterlpsol, NULL) );
 
    /* get master LP solution */
@@ -368,7 +367,7 @@ GCG_DECL_DIVINGINITEXEC(heurInitexecGcgveclendiving) /*lint --e{715}*/
       objdelta = SCIPfeasFrac(masterprob, SCIPgetSolVal(masterprob, masterlpsol, mastervar)) * SCIPvarGetObj(mastervar);
       objdelta = ABS(objdelta);
       colveclen = (SCIPvarGetStatus(mastervar) == SCIP_VARSTATUS_COLUMN ? SCIPcolGetNNonz(SCIPvarGetCol(mastervar)) : 0);
-      divingdata->masterscores[i] = (objdelta + SCIPsumepsilon(scip))/((SCIP_Real)colveclen+1.0);
+      divingdata->masterscores[i] = (objdelta + SCIPsumepsilon(origprob))/((SCIP_Real)colveclen+1.0);
    }
 
    /* free memory */
@@ -383,6 +382,7 @@ static
 GCG_DECL_DIVINGEXITEXEC(heurExitexecGcgveclendiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    GCG_DIVINGDATA* divingdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    assert(heur != NULL);
 
@@ -395,7 +395,7 @@ GCG_DECL_DIVINGEXITEXEC(heurExitexecGcgveclendiving) /*lint --e{715}*/
       return SCIP_OKAY;
 
    /* free memory */
-   SCIPfreeBufferArray(scip, &divingdata->masterscores);
+   SCIPfreeBufferArray(origprob, &divingdata->masterscores);
 
    return SCIP_OKAY;
 }
@@ -416,9 +416,10 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgveclendiving) /*lint --e{715}*/
    int nlpcands;
    SCIP_Real bestscore;
    int c;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* check preconditions */
-   assert(scip != NULL);
+   assert(origprob != NULL);
    assert(heur != NULL);
    assert(bestcand != NULL);
    assert(bestcandmayround != NULL);
@@ -429,7 +430,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgveclendiving) /*lint --e{715}*/
    assert(divingdata != NULL);
 
    /* get fractional variables that should be integral */
-   SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, NULL, &nlpcands, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetExternBranchCands(origprob, &lpcands, &lpcandssol, NULL, &nlpcands, NULL, NULL, NULL, NULL) );
    assert(lpcands != NULL);
    assert(lpcandssol != NULL);
 
@@ -453,11 +454,11 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgveclendiving) /*lint --e{715}*/
       /* calculate score */
       if( divingdata->usemasterscores )
       {
-         SCIP_CALL( calculateScoreMaster(scip, divingdata, lpcands[c], &score, &roundup) );
+         SCIP_CALL( calculateScoreMaster(gcg, divingdata, lpcands[c], &score, &roundup) );
       }
       else
       {
-         SCIP_CALL( calculateScoreOrig(scip, lpcands[c], lpcandssol[c] - SCIPfloor(scip, lpcandssol[c]), &score, &roundup) );
+         SCIP_CALL( calculateScoreOrig(origprob, lpcands[c], lpcandssol[c] - SCIPfloor(origprob, lpcandssol[c]), &score, &roundup) );
       }
 
       /* check whether the variable is roundable */
@@ -482,17 +483,18 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgveclendiving) /*lint --e{715}*/
 
 /** creates the gcgveclendiving heuristic and includes it in GCG */
 SCIP_RETCODE GCGincludeHeurGcgveclendiving(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_HEUR* heur;
    GCG_DIVINGDATA* divingdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* create gcgguideddiving primal heuristic data */
-   SCIP_CALL( SCIPallocMemory(scip, &divingdata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &divingdata) );
 
    /* include diving heuristic */
-   SCIP_CALL( GCGincludeDivingHeurOrig(scip, &heur,
+   SCIP_CALL( GCGincludeDivingHeurOrig(gcg, &heur,
          HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, heurFreeGcgveclendiving, NULL, NULL, NULL, NULL, heurInitexecGcgveclendiving,
          heurExitexecGcgveclendiving, heurSelectVarGcgveclendiving, divingdata) );
@@ -500,7 +502,7 @@ SCIP_RETCODE GCGincludeHeurGcgveclendiving(
    assert(heur != NULL);
 
    /* add gcgveclendiving specific parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/usemasterscores",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "heuristics/"HEUR_NAME"/usemasterscores",
          "calculate vector length scores w.r.t. the master LP?",
          &divingdata->usemasterscores, TRUE, DEFAULT_USEMASTERSCORES, NULL, NULL) );
 

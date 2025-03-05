@@ -35,11 +35,8 @@
 #ifndef GCG_PRICINGJOB_H__
 #define GCG_PRICINGJOB_H__
 
-#include "gcg/def.h"
-#include "gcg/struct_pricingjob.h"
-#include "gcg/type_pricingjob.h"
 
-#include "gcg/type_pricingprob.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +44,7 @@ extern "C" {
 
 /** create a pricing job */
 SCIP_RETCODE GCGpricingjobCreate(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_PRICINGJOB**      pricingjob,         /**< pricing job to be created */
    GCG_PRICINGPROB*      pricingprob,        /**< data structure of the corresponding pricing problem */
    GCG_SOLVER*           solver,             /**< pricing solver responsible for the pricing job */
@@ -56,13 +53,13 @@ SCIP_RETCODE GCGpricingjobCreate(
 
 /** free a pricing job */
 void GCGpricingjobFree(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_PRICINGJOB**      pricingjob          /**< pricing job to be freed */
 );
 
 /** setup a pricing job at the beginning of the pricing loop */
 SCIP_RETCODE GCGpricingjobSetup(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
    SCIP_Bool             heuristic,          /**< shall the pricing job be performed heuristically? */
    int                   scoring,            /**< scoring parameter */
@@ -74,13 +71,13 @@ SCIP_RETCODE GCGpricingjobSetup(
 
 /** reset the pricing solver to be used to the one with the highest priority */
 void GCGpricingjobResetSolver(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 
 /** get the next pricing solver to be used, or NULL of there is none */
 void GCGpricingjobNextSolver(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 

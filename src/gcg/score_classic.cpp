@@ -96,7 +96,8 @@ GCG_DECL_SCORECALC(scoreCalcClassic)
    alphalinking = 0.2;
    alphadensity = 0.2;
 
-   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
+   SCIP* scip = GCGgetOrigprob(gcg);
+   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(gcg, partialdecid);
    gcg::DETPROBDATA* detprobdata = partialdec->getDetprobdata();
 
    SCIP_CALL( SCIPallocBufferArray(scip, &nzblocks, partialdec->getNBlocks()) );
@@ -236,13 +237,13 @@ GCG_DECL_SCORECALC(scoreCalcClassic)
 
 /** creates the classic score and includes it in SCIP */
 SCIP_RETCODE GCGincludeScoreClassic(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_SCOREDATA* scoredata = NULL;
 
    SCIP_CALL(
-      GCGincludeScore(scip, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata,
+      GCGincludeScore(gcg, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata,
          scoreFreeClassic, scoreCalcClassic) );
 
    return SCIP_OKAY;

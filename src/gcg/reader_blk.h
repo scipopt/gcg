@@ -52,7 +52,8 @@
 
 
 #include "scip/scip.h"
-#include "gcg/def.h"
+#include "gcg/gcg.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,7 +62,7 @@ extern "C" {
 /** includes the blk file reader into SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeReaderBlk(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 

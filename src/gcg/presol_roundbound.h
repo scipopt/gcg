@@ -41,8 +41,9 @@
 #define __SCIP_PRESOL_ROUNDBOUND_H__
 
 
-#include "gcg/def.h"
+
 #include "scip/scip.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {

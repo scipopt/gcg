@@ -71,10 +71,10 @@
                        while( FALSE )
 
 PricingType::PricingType(
-   SCIP*                 scip
-   )
+   GCG*                 gcgstruct
+   ) : gcg(gcgstruct)
 {
-   scip_ = scip;                             /* SCIP instance (master problem) */
+   masterprob = GCGgetMasterprob(gcg);       /* SCIP instance (master problem) */
    type  = GCG_PRICETYPE_UNKNOWN;            /* type of pricing */
 
    /* statistical values */
@@ -91,36 +91,36 @@ PricingType::PricingType(
    relmaxprobs = 1.0;                        /* maximal percentage of pricing problems that are solved if variables have already been found */
    relmaxsuccessfulprobs = 1.0;              /* maximal percentage of successfully solved pricing problems until pricing loop is aborted */
 
-   SCIP_CALL_EXC( SCIPcreateCPUClock(scip, &(clock)) );
+   SCIP_CALL_EXC( SCIPcreateCPUClock(masterprob, &(clock)) );
 }
 
 PricingType::~PricingType()
 {
-   SCIP_CALL_ABORT( SCIPfreeClock(scip_, &(clock)) );
+   SCIP_CALL_ABORT( SCIPfreeClock(masterprob, &(clock)) );
 
-   scip_ = (SCIP*) NULL;
+   masterprob = (SCIP*) NULL;
 }
 
 SCIP_RETCODE PricingType::startClock()
 {
-   SCIP_CALL( SCIPstartClock(scip_, clock) );
+   SCIP_CALL( SCIPstartClock(masterprob, clock) );
    return SCIP_OKAY;
 }
 
 SCIP_RETCODE PricingType::stopClock()
 {
-   SCIP_CALL( SCIPstopClock(scip_, clock) );
+   SCIP_CALL( SCIPstopClock(masterprob, clock) );
    return SCIP_OKAY;
 }
 
 SCIP_Real PricingType::getClockTime() const
 {
-   return SCIPgetClockTime(scip_, clock);
+   return SCIPgetClockTime(masterprob, clock);
 }
 
 FarkasPricing::FarkasPricing(
-   SCIP*                 scip
-   ) : PricingType(scip)
+   GCG*                  gcgstruct
+   ) : PricingType(gcgstruct)
 {
    type = GCG_PRICETYPE_FARKAS;
 }
@@ -187,7 +187,7 @@ SCIP_Real FarkasPricing::getRelmaxprobs() const
 
 SCIP_RETCODE FarkasPricing::addParameters()
 {
-   SCIP* origprob = GCGmasterGetOrigprob(scip_);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/maxcolsroundfarkas",
          "maximal number of columns per Farkas pricing round",
@@ -239,8 +239,8 @@ SCIP_Real ReducedCostPricing::extendedmasterconsGetDual(
 }
 
 ReducedCostPricing::ReducedCostPricing(
-   SCIP*                 p_scip
-   ) : PricingType(p_scip)
+   GCG*                  gcgstruct
+   ) : PricingType(gcgstruct)
 {
    type = GCG_PRICETYPE_REDCOST;
 }
@@ -263,24 +263,24 @@ SCIP_Real ReducedCostPricing::varGetObj(
 /** returns the maximal number of columns per pricing round */
 int ReducedCostPricing::getMaxcolsround() const
 {
-   return GCGisRootNode(scip_) ? maxcolsroundroot : maxcolsround;
+   return GCGisRootNode(masterprob) ? maxcolsroundroot : maxcolsround;
 }
 
 /** returns the maximal number of columns per problem to be generated during pricing */
 int ReducedCostPricing::getMaxcolsprob() const
 {
-   return GCGisRootNode(scip_) ? maxcolsprobroot : maxcolsprob;
+   return GCGisRootNode(masterprob) ? maxcolsprobroot : maxcolsprob;
 }
 
 /** returns the maximal percentage of pricing problems that are solved if variables have already been found */
 SCIP_Real ReducedCostPricing::getRelmaxprobs() const
 {
-   return GCGisRootNode(scip_) ? relmaxprobsroot : relmaxprobs;
+   return GCGisRootNode(masterprob) ? relmaxprobsroot : relmaxprobs;
 }
 
 SCIP_RETCODE ReducedCostPricing::addParameters()
 {
-   SCIP* origprob = GCGmasterGetOrigprob(scip_);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/maxroundsredcost",
          "maximal number of pricing rounds per node after the root node",

@@ -55,6 +55,7 @@ class Pricingcontroller
 {
 
 private:
+   GCG*                  gcg;                /**< GCG data structure */
    SCIP*                 scip_;              /**< SCIP instance (master problem) */
    SCIP*                 origprob;           /**< SCIP instance (original problem) */
    GCG_PRICINGPROB**     pricingprobs;       /**< pricing problems */
@@ -96,8 +97,7 @@ public:
 
    /** constructor */
    Pricingcontroller(
-      SCIP* scip,                               /**< SCIP instance (master problem) */
-      SCIP* origproblem                         /**< SCIP instance (original problem) */
+      GCG*  gcgstruct                        /**< GCG data structure */
       );
 
    /** destructor */

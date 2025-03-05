@@ -86,11 +86,12 @@ SCIP_RETCODE colpoolEnsureColsMem(
 
 /** creates col pool */
 SCIP_RETCODE GCGcolpoolCreate(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_COLPOOL**         colpool,            /**< pointer to store col pool */
    int                   agelimit            /**< maximum age a col can reach before it is deleted from the pool (-1 fpr no limit) */
    )
 {
+   SCIP* scip = GCGgetMasterprob(gcg);
    assert(colpool != NULL);
    assert(agelimit >= -1);
 
@@ -102,6 +103,7 @@ SCIP_RETCODE GCGcolpoolCreate(
          (GCG_USESMALLTABLES ? GCG_HASHSIZE_COLPOOLS_SMALL :  GCG_HASHSIZE_COLPOOLS),
          GCGhashGetKeyCol, GCGhashKeyEqCol, GCGhashKeyValCol, (void*) scip) );
 
+   (*colpool)->gcg = gcg;
    (*colpool)->scip = scip;
    (*colpool)->nodenr = -1;
    (*colpool)->infarkas = FALSE;
@@ -325,7 +327,7 @@ SCIP_RETCODE GCGcolpoolPrice(
             (void*)col, redcost );
 
          SCIP_CALL( colpoolDelCol(colpool, col, FALSE) );
-         SCIP_CALL( GCGpricerAddColResult(colpool->scip, col, &added) );
+         SCIP_CALL( GCGpricerAddColResult(colpool->gcg, col, &added) );
 
          if( added )
             *nfoundvars = *nfoundvars + 1;
@@ -393,9 +395,9 @@ SCIP_RETCODE GCGcolpoolUpdateRedcost(
 
       col = cols[i];
 
-      SCIP_CALL( GCGcomputeColMastercoefs(colpool->scip, col) );
+      SCIP_CALL( GCGcomputeColMastercoefs(colpool->gcg, col) );
 
-      redcost = GCGcomputeRedCostGcgCol(colpool->scip, colpool->infarkas, col, NULL);
+      redcost = GCGcomputeRedCostGcgCol(colpool->gcg, colpool->infarkas, col, NULL);
 
       GCGcolUpdateRedcost(col, redcost, FALSE);
    }

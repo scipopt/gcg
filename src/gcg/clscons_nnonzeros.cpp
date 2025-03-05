@@ -81,13 +81,14 @@ static
 GCG_DECL_CONSCLASSIFY(classifierClassify)
 {
    gcg::DETPROBDATA* detprobdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
    if( transformed )
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(gcg);
    }
    else
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
    }
 
    std::vector<int> nconssforclass( 0 );
@@ -124,7 +125,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify)
    }
 
    /* secondly, use these information to create a ConsPartition */
-   gcg::ConsPartition* classifier = new gcg::ConsPartition(scip, "nonzeros", (int) differentNNonzeros.size(), detprobdata->getNConss() );
+   gcg::ConsPartition* classifier = new gcg::ConsPartition(gcg, "nonzeros", (int) differentNNonzeros.size(), detprobdata->getNConss() );
 
    /* set class names and descriptions of every class */
    for( int c = 0; c < classifier->getNClasses(); ++ c )
@@ -143,7 +144,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify)
    {
       classifier->assignConsToClass( i, classForCons[i] );
    }
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d  different constraint classes \n", classifier->getName(), classifier->getNClasses() );
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d  different constraint classes \n", classifier->getName(), classifier->getNClasses() );
 
    detprobdata->addConsPartition(classifier);
    return SCIP_OKAY;
@@ -155,13 +156,13 @@ GCG_DECL_CONSCLASSIFY(classifierClassify)
 
 /** creates the handler for classifier for Nnonzeros and includes it in SCIP */
 SCIP_RETCODE GCGincludeConsClassifierNNonzeros(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_CLASSIFIERDATA* classifierdata = NULL;
 
    SCIP_CALL(
-      GCGincludeConsClassifier(scip, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
+      GCGincludeConsClassifier(gcg, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
                                classifierFree, classifierClassify) );
 
    return SCIP_OKAY;

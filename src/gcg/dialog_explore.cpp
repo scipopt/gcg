@@ -140,16 +140,16 @@ private:
 };
 
 bool updatePartialdecList(
-   SCIP* scip,
+   GCG* gcg,
    std::vector<PARTIALDECOMP*>& partialdeclist,
    unsigned int& npartialdecs,
    bool includeopenpartialdecs
    )
 {
-   unsigned int newnpartialdecs = GCGconshdlrDecompGetNPartialdecs(scip);
+   unsigned int newnpartialdecs = GCGconshdlrDecompGetNPartialdecs(gcg);
    if( newnpartialdecs != npartialdecs || (includeopenpartialdecs != (npartialdecs == partialdeclist.size())) )
    {
-      std::vector<PARTIALDECOMP*>* partialdecs = GCGconshdlrDecompGetPartialdecs(scip);
+      std::vector<PARTIALDECOMP*>* partialdecs = GCGconshdlrDecompGetPartialdecs(gcg);
 
       npartialdecs = newnpartialdecs;
       partialdeclist.clear();
@@ -204,17 +204,20 @@ void sortPartialdecList(
  * @returns SCIP return code */
 static
 SCIP_RETCODE GCGdialogSetNEntires(
-   SCIP* scip,                   /**< SCIP data structure */
+   GCG* gcg,                     /**< GCG data structure */
    SCIP_DIALOGHDLR* dialoghdlr,  /**< dialog handler for user input management */
    SCIP_DIALOG* dialog,          /**< dialog for user input management */
    int listlength,               /**< length of partialdec id list */
    int& menulength               /**< current menu length to be modified */
    )
 {
+   SCIP* scip;
    char* ntovisualize;
    SCIP_Bool endoffile;
    int newlength;
    int commandlen;
+
+   scip = GCGgetOrigprob(gcg);
 
    SCIPdialogMessage(scip, NULL, "Please specify the amount of entries to be shown in this menu:\n");
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
@@ -226,7 +229,7 @@ SCIP_RETCODE GCGdialogSetNEntires(
 
    /* check whether there are decompositions,
     * (preventing "Why doesn't it show anything? Maybe the entry number is 0") */
-   if( GCGconshdlrDecompGetNPartialdecs(scip) == 0 )
+   if( GCGconshdlrDecompGetNPartialdecs(gcg) == 0 )
    {
       SCIPinfoMessage(scip, NULL, "No decompositions available. Please detect first.\n");
       return SCIP_OKAY;
@@ -255,19 +258,22 @@ SCIP_RETCODE GCGdialogSetNEntires(
  */
 static
 SCIP_RETCODE GCGdialogChangeScore(
-   SCIP* scip,                         /**< SCIP data structure */
+   GCG* gcg,                           /**< GCG data structure */
    SCIP_DIALOGHDLR* dialoghdlr,        /**< dialog handler for user input management */
    SCIP_DIALOG* dialog                 /**< dialog for user input management */
    )
 {
+   SCIP* scip;
    char* getscore;
    SCIP_Bool endoffile;
    int commandlen;
 
+   scip = GCGgetOrigprob(gcg);
+
    SCIPdialogMessage(scip, NULL, "\nPlease specify the new score:\n");
-   for( int i = 0; i < GCGconshdlrDecompGetNScores(scip); i++)
+   for( int i = 0; i < GCGconshdlrDecompGetNScores(gcg); i++)
    {
-      GCG_SCORE* score = GCGconshdlrDecompGetScores(scip)[i];
+      GCG_SCORE* score = GCGconshdlrDecompGetScores(gcg)[i];
 
       SCIPdialogMessage(scip, NULL, "%d: %s\n", i, GCGscoreGetName(score));      
    }
@@ -282,10 +288,10 @@ SCIP_RETCODE GCGdialogChangeScore(
       int scorenr = atoi(getscore);
 
       /* check if the value is in valid range */
-      if( scorenr >= 0 && scorenr <= GCGconshdlrDecompGetNScores(scip) - 1 )
+      if( scorenr >= 0 && scorenr <= GCGconshdlrDecompGetNScores(gcg) - 1 )
       {
          /* set score */
-         GCG_SCORE* score = GCGconshdlrDecompGetScores(scip)[scorenr];
+         GCG_SCORE* score = GCGconshdlrDecompGetScores(gcg)[scorenr];
 
          SCIP_CALL( SCIPsetStringParam(scip, "detection/scores/selected", GCGscoreGetShortname(score)) );
          SCIPdialogMessage(scip, NULL, "Score set to %s.\n", GCGscoreGetName(score));
@@ -321,7 +327,7 @@ SCIP_RETCODE outputCharXTimes(
  */
 static
 SCIP_RETCODE GCGdialogShowMenu(
-   SCIP* scip,                                     /**< SCIP data structure */
+   GCG* gcg,                                       /**< GCG data structure */
    std::vector<AbstractColumn*>& columns,          /**< vector of pointers to columns */
    unsigned int& npartialdecs,                     /**< max number of partialdecs */
    const int startindex,                           /**< index (in partialdec list) of uppermost partialdec in extract */
@@ -332,10 +338,13 @@ SCIP_RETCODE GCGdialogShowMenu(
    bool listopenpartialdecs                        /**< open partialdecs will be listed iff set to true*/
    )
 {
-   assert(scip != NULL);
+   SCIP* scip;
+   assert(gcg != NULL);
+
+   scip = GCGgetOrigprob(gcg);
 
    /* update partialdec list in case it changed (in which case the amount of partialdecs should have changed)*/
-   updatePartialdecList(scip, partialdeclist, npartialdecs, listopenpartialdecs);
+   updatePartialdecList(gcg, partialdeclist, npartialdecs, listopenpartialdecs);
 
    /* sort partialdec ids by score, descending (in case score was changed or id list was updated)*/
    sortPartialdecList(partialdeclist, sortby, columns, sortasc);
@@ -384,7 +393,7 @@ SCIP_RETCODE GCGdialogShowMenu(
       if( header != "score" )
          newheader = header;
       else
-         newheader = GCGscoreGetShortname(GCGgetCurrentScore(scip));
+         newheader = GCGscoreGetShortname(GCGgetCurrentScore(gcg));
 
       /* make sure the header name is unique and add a length for header */
       assert(columnlength.find(header) == columnlength.end());
@@ -474,12 +483,15 @@ SCIP_RETCODE GCGdialogShowMenu(
  * @returns SCIP status */
 static
 SCIP_RETCODE GCGdialogShowLegend(
-   SCIP* scip,                            /**< SCIP data structure */
+   GCG* gcg,                              /**< GCG data structure */
    std::vector<AbstractColumn*>& columns  /**< vector of pointers to columns */
    )
 {
-   assert(scip != NULL);
+   SCIP* scip;
+   assert(gcg != NULL);
    GCG_DETECTOR** detectors;
+
+   scip = GCGgetOrigprob(gcg);
 
    /* print header for detector list */
    SCIPdialogMessage(scip, NULL, "List of included detectors for decompositions histories: \n");
@@ -488,9 +500,9 @@ SCIP_RETCODE GCGdialogShowLegend(
    SCIPdialogMessage(scip, NULL, "%30s    %4s\n", "--------" , "----");
 
    /* get and print char of each detector */
-   detectors = GCGconshdlrDecompGetDetectors(scip);
+   detectors = GCGconshdlrDecompGetDetectors(gcg);
 
-   for( int det = 0; det < GCGconshdlrDecompGetNDetectors(scip); ++det )
+   for( int det = 0; det < GCGconshdlrDecompGetNDetectors(gcg); ++det )
    {
       GCG_DETECTOR* detector;
       detector = detectors[det];
@@ -525,7 +537,7 @@ SCIP_RETCODE GCGdialogShowLegend(
       /* if the header is "score" replace with shortname of the current score */
       else
       {
-         GCG_SCORE* score = GCGgetCurrentScore(scip);
+         GCG_SCORE* score = GCGgetCurrentScore(gcg);
          SCIPdialogMessage(scip, NULL, "%30s     %s\n", GCGscoreGetShortname(score), GCGscoreGetDesc(score));
       }
 
@@ -541,10 +553,13 @@ SCIP_RETCODE GCGdialogShowLegend(
  * @returns SCIP status */
 static
 SCIP_RETCODE GCGdialogShowHelp(
-   SCIP* scip  /**< SCIP data structure */
+   GCG* gcg  /**< GCG data structure */
    )
 {
-   assert(scip != NULL);
+   SCIP* scip;
+   assert(gcg != NULL);
+
+   scip = GCGgetOrigprob(gcg);
 
    SCIPdialogMessage(scip, NULL, "=================================================================================================== \n");
    SCIPdialogMessage(scip, NULL, "\n" );
@@ -580,19 +595,22 @@ SCIP_RETCODE GCGdialogShowHelp(
  * @returns SCIP status */
 static
 SCIP_RETCODE GCGdialogSelectVisualize(
-   SCIP*                         scip,           /**< SCIP data structure */
+   GCG*                          gcg,            /**< GCG data structure */
    SCIP_DIALOGHDLR*              dialoghdlr,     /**< dialog handler for user input management */
    SCIP_DIALOG*                  dialog,         /**< dialog for user input management */
    std::vector<PARTIALDECOMP*>&  partialdeclist, /**< current list of partialdecs */
    SCIP_Bool                     open            /**< compile and open gnuplot file? */
    )
 {
+   SCIP* scip;
    char* ntovisualize;
    SCIP_Bool endoffile;
    int idtovisu;
    int commandlen;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
+
+   scip = GCGgetOrigprob(gcg);
 
    SCIPdialogMessage(scip, NULL, "Please specify the nr of the decomposition to be visualized:\n");
    SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog, " ", &ntovisualize, &endoffile) );
@@ -627,12 +645,13 @@ SCIP_RETCODE GCGdialogSelectVisualize(
  */
 static
 SCIP_RETCODE GCGdialogInspectPartialdec(
-   SCIP*                         scip,           /**< SCIP data structure */
+   GCG*                          gcg,            /**< GCG data structure */
    SCIP_DIALOGHDLR*              dialoghdlr,     /**< dialog handler for user input management */
    SCIP_DIALOG*                  dialog,         /**< dialog for user input management */
    std::vector<PARTIALDECOMP*>&  partialdeclist  /**< current list of partialdecs */
    )
 {
+   SCIP* scip;
    char* ntoinspect;
    char* ndetaillevel;
    SCIP_Bool endoffile;
@@ -641,7 +660,9 @@ SCIP_RETCODE GCGdialogInspectPartialdec(
 
    int commandlen;
 
-   assert( scip != NULL );
+   assert( gcg != NULL );
+
+   scip = GCGgetOrigprob(gcg);
 
    /* read the id of the decomposition to be inspected */
    SCIPdialogMessage( scip, NULL, "Please specify the nr of the decomposition to be inspected:\n");
@@ -690,19 +711,22 @@ SCIP_RETCODE GCGdialogInspectPartialdec(
  * @returns SCIP status */
 static
 SCIP_RETCODE GCGdialogSelect(
-   SCIP*                         scip,           /**< SCIP data structure */
+   GCG*                          gcg,            /**< GCG data structure */
    SCIP_DIALOGHDLR*              dialoghdlr,     /**< dialog handler for user input management */
    SCIP_DIALOG*                  dialog,         /**< dialog for user input management */
    std::vector<PARTIALDECOMP*>&  partialdeclist  /**< current list of partialdecs */
    )
 {
+   SCIP* scip;
    char* ntovisualize;
    SCIP_Bool endoffile;
    int idtovisu;
 
    int commandlen;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
+
+   scip = GCGgetOrigprob(gcg);
 
    /* get input */
    SCIPdialogMessage(scip, NULL, "\nPlease specify the nr of the decomposition to be selected:\n");
@@ -734,17 +758,20 @@ SCIP_RETCODE GCGdialogSelect(
  * @returns SCIP return code */
 static
 SCIP_RETCODE GCGdialogSortAsc(
-   SCIP*                   scip,       /**< SCIP data structure */
+   GCG*                    gcg,        /**< GCG data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
    bool&                   asc         /**< true iff sorting should be ascending */
    )
 {
+   SCIP* scip;
    char* ascen;
    SCIP_Bool endoffile;
    int commandlen;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
+
+   scip = GCGgetOrigprob(gcg);
 
    /* get input */
    SCIPdialogMessage(scip, NULL, "\nPlease enter \"true\"/\"1\" for ascending or \"false\"/\"0\" for descending order:\n");
@@ -792,18 +819,21 @@ bool isHeader(
  * @returns SCIP return code */
 static
 SCIP_RETCODE GCGdialogSortBy(
-   SCIP*                         scip,       /**< SCIP data structure */
+   GCG*                          gcg,        /**< GCG data structure */
    SCIP_DIALOGHDLR*              dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*                  dialog,     /**< dialog for user input management */
    std::vector<AbstractColumn*>& columns,    /**< vector of pointers to columns */
    std::string&                  sortby      /**< table header, identifies by which column to sort by */
    )
 {
+   SCIP* scip;
    char* newsort;
    SCIP_Bool endoffile;
    int commandlen;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
+
+   scip = GCGgetOrigprob(gcg);
 
    /* get input */
    SCIPdialogMessage(scip, NULL, "\nPlease enter the table header of the column by which you would like to sort:\n");
@@ -818,7 +848,7 @@ SCIP_RETCODE GCGdialogSortBy(
       if( isHeader(input, columns) )
          sortby = input;
       /* if the score abbreviation is entered, the header would not be in the column info */
-      else if( input == GCGscoreGetShortname(GCGgetCurrentScore(scip)) )
+      else if( input == GCGscoreGetShortname(GCGgetCurrentScore(gcg)) )
          sortby = "score";
    }
    return SCIP_OKAY;
@@ -829,18 +859,21 @@ SCIP_RETCODE GCGdialogSortBy(
  *
  * @returns SCIP return code */
 static
-   SCIP_RETCODE GCGdialogChangeListMode(
-   SCIP*                   scip,       /**< SCIP data structure */
+SCIP_RETCODE GCGdialogChangeListMode(
+   GCG*                    gcg,        /**< GCG data structure */
    SCIP_DIALOGHDLR*        dialoghdlr, /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog,     /**< dialog for user input management */
    bool&                   listopenpartialdecs /** will be updated */
    )
 {
+   SCIP* scip;
    char* input;
    SCIP_Bool endoffile;
    int commandlen;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
+
+   scip = GCGgetOrigprob(gcg);
 
    /* get input */
    SCIPdialogMessage(scip, NULL, "\nShould incomplete decompositions be listed? Please enter \"true\" or \"false\":\n");
@@ -863,7 +896,7 @@ static
 
 static
 SCIP_RETCODE GCGdialogExecCommand(
-   SCIP*                         scip,                   /**< SCIP data structure */
+   GCG*                          gcg,                    /**< GCG data structure */
    SCIP_DIALOGHDLR*              dialoghdlr,             /**< dialog handler for user input management */
    SCIP_DIALOG*                  dialog,                 /**< dialog for user input management */
    std::vector<AbstractColumn*>& columns,                /**< vector of pointers to columns */
@@ -909,55 +942,55 @@ SCIP_RETCODE GCGdialogExecCommand(
 
       else if( strncmp( command, "legend", commandlen) == 0 )
       {
-         SCIP_CALL( GCGdialogShowLegend(scip, columns) );
+         SCIP_CALL( GCGdialogShowLegend(gcg, columns) );
       }
 
       else if( strncmp( command, "help", commandlen) == 0 )
       {
-         SCIP_CALL( GCGdialogShowHelp(scip) );
+         SCIP_CALL( GCGdialogShowHelp(gcg) );
       }
 
       else if( strncmp( command, "entries", commandlen) == 0 )
       {
-         SCIP_CALL( GCGdialogSetNEntires(scip, dialoghdlr, dialog, (int) partialdeclist.size(), menulength) );
+         SCIP_CALL( GCGdialogSetNEntires(gcg, dialoghdlr, dialog, (int) partialdeclist.size(), menulength) );
       }
 
       else if( strncmp( command, "visualize", commandlen) == 0 )
       {
-         SCIP_CALL( GCGdialogSelectVisualize(scip, dialoghdlr, dialog, partialdeclist, TRUE) );
+         SCIP_CALL( GCGdialogSelectVisualize(gcg, dialoghdlr, dialog, partialdeclist, TRUE) );
       }
 
       else if( strncmp( command, "export", commandlen) == 0 )
       {
-         SCIP_CALL( GCGdialogSelectVisualize(scip, dialoghdlr, dialog, partialdeclist, FALSE) );
+         SCIP_CALL( GCGdialogSelectVisualize(gcg, dialoghdlr, dialog, partialdeclist, FALSE) );
       }
 
       else if( strncmp( command, "inspect", commandlen) == 0 )
       {
-         SCIP_CALL( GCGdialogInspectPartialdec( scip, dialoghdlr, dialog, partialdeclist) );
+         SCIP_CALL( GCGdialogInspectPartialdec(gcg, dialoghdlr, dialog, partialdeclist) );
       }
 
       else if( strncmp( command, "select", commandlen) == 0 )
       {
-         SCIP_CALL( GCGdialogSelect(scip, dialoghdlr, dialog, partialdeclist) );
+         SCIP_CALL( GCGdialogSelect(gcg, dialoghdlr, dialog, partialdeclist) );
       }
 
       else if( strncmp( command, "score", commandlen) == 0 )
       {
-         SCIP_CALL( GCGdialogChangeScore(scip, dialoghdlr, dialog) );
+         SCIP_CALL( GCGdialogChangeScore(gcg, dialoghdlr, dialog) );
       }
 
       else if( strncmp( command, "ascending", commandlen) == 0 )
       {
-         SCIP_CALL( GCGdialogSortAsc(scip, dialoghdlr, dialog, sortasc) );
+         SCIP_CALL( GCGdialogSortAsc(gcg, dialoghdlr, dialog, sortasc) );
       }
       else if( strncmp( command, "sort", commandlen) == 0 )
       {
-         SCIP_CALL( GCGdialogSortBy(scip, dialoghdlr, dialog, columns, sortby) );
+         SCIP_CALL( GCGdialogSortBy(gcg, dialoghdlr, dialog, columns, sortby) );
       }
       else if( strncmp( command, "list", commandlen) == 0 )
       {
-         SCIP_CALL( GCGdialogChangeListMode(scip, dialoghdlr, dialog, listopenpartialdecs) );
+         SCIP_CALL( GCGdialogChangeListMode(gcg, dialoghdlr, dialog, listopenpartialdecs) );
       }
 
    return SCIP_OKAY;
@@ -966,7 +999,7 @@ SCIP_RETCODE GCGdialogExecCommand(
 extern "C" {
 
 SCIP_RETCODE GCGdialogExecExplore(
-   SCIP*                   scip,
+   GCG*                    gcg,
    SCIP_DIALOGHDLR*        dialoghdlr,
    SCIP_DIALOG*            dialog
    )
@@ -981,11 +1014,11 @@ SCIP_RETCODE GCGdialogExecExplore(
    /* check for available partialdecs */
    unsigned int npartialdecs = 0;   /**< stores the last known number of partialdecs, is handed down to check for changes in partialdec number */
    std::vector<PARTIALDECOMP*> partialdeclist;
-   updatePartialdecList(scip, partialdeclist, npartialdecs, listopenpartialdecs);
+   updatePartialdecList(gcg, partialdeclist, npartialdecs, listopenpartialdecs);
 
    if(npartialdecs == 0)
    {
-      SCIPdialogMessage( scip, NULL, "There are no decompositions to explore yet, please detect first.\n" );
+      SCIPdialogMessage(GCGgetOrigprob(gcg), NULL, "There are no decompositions to explore yet, please detect first.\n");
       return SCIP_OKAY;
    }
 
@@ -1120,12 +1153,12 @@ SCIP_RETCODE GCGdialogExecExplore(
    SCIP_Bool endoffile;
    while( !finished )
    {
-      GCGdialogShowMenu(scip, columns, npartialdecs, startindex, menulength, partialdeclist, sortasc, sortby, listopenpartialdecs);
+      GCGdialogShowMenu(gcg, columns, npartialdecs, startindex, menulength, partialdeclist, sortasc, sortby, listopenpartialdecs);
 
       SCIP_CALL( SCIPdialoghdlrGetWord(dialoghdlr, dialog,
          "Please enter command   (or \"h\" for help) : \nGCG/explore> ", &command, &endoffile) );
 
-      GCGdialogExecCommand(scip, dialoghdlr, dialog, columns, command, startindex, menulength, finished, partialdeclist, sortasc, sortby, listopenpartialdecs);
+      GCGdialogExecCommand(gcg, dialoghdlr, dialog, columns, command, startindex, menulength, finished, partialdeclist, sortasc, sortby, listopenpartialdecs);
    }
 
    for( auto column : columns )

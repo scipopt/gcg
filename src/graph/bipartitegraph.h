@@ -47,7 +47,7 @@ private:
    Graph<T> graph;
 public:
    BipartiteGraph(
-         SCIP*                 scip,              /**< SCIP data structure */
+         GCG*                  gcgstruct,         /**< GCG data structure */
          Weights               w                  /**< weights for the given graph */
       );
    virtual ~BipartiteGraph();

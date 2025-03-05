@@ -38,7 +38,8 @@
 #define GCG_HEUR_GCGRENS_H__
 
 #include "scip/scip.h"
-#include "gcg/def.h"
+#include "gcg/gcg.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +48,7 @@ extern "C" {
 /** creates RENS primal heuristic and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeHeurGcgrens(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** main procedure of the GCG RENS heuristic, creates and solves a sub-SCIP */

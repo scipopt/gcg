@@ -118,7 +118,7 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
 
 /** creates the handler for xyz classifier and includes it in SCIP */
 SCIP_RETCODE GCGincludeVarClassifierXyz(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_CLASSIFIERDATA* classifierdata;
@@ -126,7 +126,7 @@ SCIP_RETCODE GCGincludeVarClassifierXyz(
    /**@todo create xyz classifier data here*/
    classifierdata = NULL;
 
-   SCIP_CALL( GCGincludeVarClassifier(scip, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( GCGincludeVarClassifier(gcg, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

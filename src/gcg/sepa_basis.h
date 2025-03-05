@@ -38,7 +38,8 @@
 
 
 #include "scip/scip.h"
-#include "gcg/def.h"
+#include "gcg/gcg.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +48,7 @@ extern "C" {
 /** creates the basis separator and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeSepaBasis(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** returns the array of original cuts saved in the separator data */
@@ -77,7 +78,7 @@ int GCGsepaBasisGetNMastercuts(
 /** transforms cut in pricing variables to cut in original variables and adds it to newcuts array */
 GCG_EXPORT
 SCIP_RETCODE GCGsepaBasisAddPricingCut(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    int                  ppnumber,           /**< number of pricing problem */
    SCIP_ROW*            cut                 /**< cut to be added */
    );
@@ -86,7 +87,7 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
  *  (reduced cost non-negative) */
 GCG_EXPORT
 SCIP_RETCODE SCIPsepaBasisAddPPObjConss(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    int                  ppnumber,           /**< number of pricing problem */
    SCIP_Real            dualsolconv,        /**< dual solution corresponding to convexity constraint */
    SCIP_Bool            newcuts             /**< add cut to newcuts in sepadata? (otherwise add it just to the cutpool) */

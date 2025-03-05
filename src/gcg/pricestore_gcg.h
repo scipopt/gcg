@@ -60,8 +60,7 @@ extern "C" {
 /** creates price storage */
 GCG_EXPORT
 SCIP_RETCODE GCGpricestoreCreate(
-   SCIP*                 scip,                /**< SCIP data structure (master problem) */
-   SCIP*                 origscip,            /**< SCIP data structure (original problem) */
+   GCG*                  gcg,                 /**< GCG data structure */
    GCG_PRICESTORE**      pricestore,          /**< pointer to store price storage */
    SCIP_Real             redcostfac,          /**< factor of -redcost/norm in score function */
    SCIP_Real             objparalfac,         /**< factor of objective parallelism in score function */
@@ -108,7 +107,6 @@ void GCGpricestoreEndForceCols(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGpricestoreAddCol(
-   SCIP*                 scip,               /**< SCIP data structure */
    GCG_PRICESTORE*       pricestore,         /**< price storage */
    GCG_COL*              col,                /**< priced col */
    SCIP_Bool             forcecol,           /**< should the col be forced to enter the LP? */

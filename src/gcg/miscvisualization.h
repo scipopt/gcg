@@ -48,8 +48,8 @@ using namespace gcg;
  *
  */
 void GCGgetVisualizationFilename(
-   SCIP* scip,             /**< scip data structure */
-   PARTIALDECOMP* partialdec,         /**< partialdec that is to be visualized */
+   GCG* gcg,                        /**< GCG data structure */
+   PARTIALDECOMP* partialdec,       /**< partialdec that is to be visualized */
    const char* extension,  /**< future file extension (to be included in the name) */
    char* filename          /**< filename output */
    );

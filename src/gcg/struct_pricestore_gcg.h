@@ -52,7 +52,8 @@ extern "C" {
 /** storage for priced cols */
 struct GCG_PriceStore
 {
-   SCIP*                 scip;               /**< SCIP data structure */
+   GCG*                  gcg;                /**< GCG data structure */
+   SCIP*                 masterprob;         /**< SCIP data structure */
    GCG_COL***            cols;               /**< array with priced cols sorted by score */
    SCIP_HASHTABLE*       hashtable;          /**< hashtable that maps the cols to their indices in the cols array */
    SCIP_Real**           objparallelisms;    /**< parallelism of col to the objective function */

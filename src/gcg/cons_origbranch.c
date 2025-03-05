@@ -272,7 +272,7 @@ SCIP_DECL_CONSDELETE(consDeleteOrigbranch)
    if( (*consdata)->branchdata != NULL && (*consdata)->branchrule != NULL )
    {
       SCIP_Bool force = ((*consdata)->mastercons == NULL);
-      SCIP_CALL( GCGrelaxBranchDataDelete(scip, (*consdata)->branchrule, &(*consdata)->branchdata, TRUE, force) );
+      SCIP_CALL( GCGrelaxBranchDataDelete(GCGorigGetGcg(scip), (*consdata)->branchrule, &(*consdata)->branchdata, TRUE, force) );
       if( (*consdata)->mastercons != NULL && (*consdata)->branchdata == NULL )
          GCGconsMasterbranchSetBranchdata((*consdata)->mastercons, NULL);
    }
@@ -412,33 +412,35 @@ SCIP_DECL_CONSLOCK(consLockOrigbranch)
 
 /** creates the handler for origbranch constraints and includes it in SCIP */
 SCIP_RETCODE GCGincludeConshdlrOrigbranch(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_CONSHDLRDATA* conshdlrData;
    SCIP_CONSHDLR* conshdlr;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
-   SCIP_CALL( SCIPallocMemory(scip, &conshdlrData) );
+   SCIP_CALL( SCIPallocMemory(origprob, &conshdlrData) );
    conshdlrData->stack = NULL;
    conshdlrData->nstack = 0;
    conshdlrData->maxstacksize = 25;
    conshdlrData->rootcons = NULL;
 
    /* include constraint handler */
-   SCIP_CALL( SCIPincludeConshdlrBasic(scip, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,
+   SCIP_CALL( SCIPincludeConshdlrBasic(origprob, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,
          CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY, CONSHDLR_EAGERFREQ, CONSHDLR_NEEDSCONS,
          consEnfolpOrigbranch, consEnfopsOrigbranch, consCheckOrigbranch,
          consLockOrigbranch, conshdlrData) );
    assert(conshdlr != NULL);
 
-   SCIP_CALL( SCIPsetConshdlrEnforelax(scip, conshdlr, consEnforeOrigbranch) );
-   SCIP_CALL( SCIPsetConshdlrFree(scip, conshdlr, consFreeOrigbranch) );
-   SCIP_CALL( SCIPsetConshdlrExit(scip, conshdlr, consExitOrigbranch) );
-   SCIP_CALL( SCIPsetConshdlrInitsol(scip, conshdlr, consInitsolOrigbranch) );
-   SCIP_CALL( SCIPsetConshdlrExitsol(scip, conshdlr, consExitsolOrigbranch) );
-   SCIP_CALL( SCIPsetConshdlrDelete(scip, conshdlr, consDeleteOrigbranch) );
-   SCIP_CALL( SCIPsetConshdlrActive(scip, conshdlr, consActiveOrigbranch) );
-   SCIP_CALL( SCIPsetConshdlrDeactive(scip, conshdlr, consDeactiveOrigbranch) );
+   SCIP_CALL( SCIPsetConshdlrEnforelax(origprob, conshdlr, consEnforeOrigbranch) );
+   SCIP_CALL( SCIPsetConshdlrFree(origprob, conshdlr, consFreeOrigbranch) );
+   SCIP_CALL( SCIPsetConshdlrExit(origprob, conshdlr, consExitOrigbranch) );
+   SCIP_CALL( SCIPsetConshdlrInitsol(origprob, conshdlr, consInitsolOrigbranch) );
+   SCIP_CALL( SCIPsetConshdlrExitsol(origprob, conshdlr, consExitsolOrigbranch) );
+   SCIP_CALL( SCIPsetConshdlrDelete(origprob, conshdlr, consDeleteOrigbranch) );
+   SCIP_CALL( SCIPsetConshdlrActive(origprob, conshdlr, consActiveOrigbranch) );
+   SCIP_CALL( SCIPsetConshdlrDeactive(origprob, conshdlr, consDeactiveOrigbranch) );
 
    return SCIP_OKAY;
 }

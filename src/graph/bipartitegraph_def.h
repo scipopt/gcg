@@ -42,9 +42,9 @@ namespace gcg {
 
 template <class T>
 BipartiteGraph<T>::BipartiteGraph(
-      SCIP*                 scip,              /**< SCIP data structure */
+      GCG*                  gcgstruct,        /**< GCG data structure */
       Weights               w                 /**< weights for the given graph */
-   ): MatrixGraph<T>(scip,w), graph(scip)
+   ): MatrixGraph<T>(gcgstruct,w), graph(gcgstruct)
 {
    this->graphiface = &graph;
    this->name = std::string("bipartite");
@@ -76,6 +76,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
    int i;
    int j;
    SCIP_Bool success;
+   SCIP* scip = GCGgetOrigprob(this->gcg);
 
    assert(conss != NULL);
    assert(vars != NULL);
@@ -103,7 +104,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
       SCIP_VAR** curvars = NULL;
 
       int ncurvars;
-      SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars, &success) );
+      SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &ncurvars, &success) );
       assert(success);
       if( ncurvars == 0 )
          continue;
@@ -112,8 +113,8 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
        * may work as is, as we are copying the constraint later regardless
        * if there are variables in it or not
        */
-      SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars, ncurvars) );
-      SCIP_CALL( SCIPgetConsVars(this->scip_, conss[i], curvars, ncurvars, &success) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+      SCIP_CALL( SCIPgetConsVars(scip, conss[i], curvars, ncurvars, &success) );
       assert(success);
 
       /** @todo skip all variables that have a zero coeffient or where all coefficients add to zero */
@@ -124,7 +125,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
          SCIP_VAR* var = NULL;
          int varIndex;
 
-         if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+         if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
             var = SCIPvarGetProbvar(curvars[j]);
          else
             var = curvars[j];
@@ -139,7 +140,7 @@ SCIP_RETCODE BipartiteGraph<T>::createFromMatrix(
 
          SCIP_CALL( this->graph.addEdge(varIndex, this->nvars+i) );
       }
-      SCIPfreeBufferArray(this->scip_, &curvars);
+      SCIPfreeBufferArray(scip, &curvars);
    }
 
    this->graph.flush();

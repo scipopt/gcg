@@ -36,7 +36,7 @@
 #ifndef GCG_CLASS_CONSPARTITION_H__
 #define GCG_CLASS_CONSPARTITION_H__
 
-#include "gcg/def.h"
+
 #include "gcg/class_indexpartition.h"
 
 namespace gcg
@@ -63,7 +63,7 @@ public:
    /** constructor */
    GCG_EXPORT
    ConsPartition(
-      SCIP*                scip,                /**< scip data structure */
+      GCG*                 gcgstruct,           /**< GCG data structure */
       const char*          name,                /**< name of partition (will be copied) */
       int                  nClasses,            /**< initial number of classes */
       int                  nConss               /**< number of constraints to be classified */

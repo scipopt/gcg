@@ -81,13 +81,15 @@ static
 GCG_DECL_VARCLASSIFY(classifierClassify)
 {
    gcg::DETPROBDATA* detprobdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
    if( transformed )
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(gcg);
    }
    else
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
    }
 
    // CLASSIFICATION
@@ -106,7 +108,7 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
       /* check whether current objective funtion value already exists */
       for( size_t c = 0; c < foundobjvals.size(); ++c )
       {
-         if( SCIPisEQ(scip, curobjval, foundobjvals[c]) )
+         if( SCIPisEQ(origprob, curobjval, foundobjvals[c]) )
          {
             curclassindex = (int) c;
             break;
@@ -125,7 +127,7 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
       }
    }
 
-   classifier = new gcg::VarPartition(scip, "varobjvals", (int) foundobjvals.size(), detprobdata->getNVars());
+   classifier = new gcg::VarPartition(gcg, "varobjvals", (int) foundobjvals.size(), detprobdata->getNVars());
 
    /* set up class information */
    for ( int c = 0; c < classifier->getNClasses(); ++c )
@@ -146,7 +148,7 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
       classifier->assignVarToClass(v, classforvars[v]);
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes\n", classifier->getName(), classifier->getNClasses()) ;
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes\n", classifier->getName(), classifier->getNClasses()) ;
 
    detprobdata->addVarPartition(classifier);
    return SCIP_OKAY;
@@ -157,12 +159,12 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
  */
 
 SCIP_RETCODE GCGincludeVarClassifierObjValues(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_CLASSIFIERDATA* classifierdata = NULL;
 
-   SCIP_CALL( GCGincludeVarClassifier(scip, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( GCGincludeVarClassifier(gcg, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

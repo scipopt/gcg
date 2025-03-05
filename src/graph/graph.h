@@ -54,7 +54,7 @@ class Graph : public GraphInterface {
 public:
    std::string name;
 protected:
-   SCIP* scip_;
+   GCG* gcg;
    Bridge* graph;
    int nconss;
    int nvars;
@@ -64,14 +64,14 @@ protected:
 public:
    /** Constructor */
    Graph(
-      SCIP*                 scip               /**< SCIP data structure */
+      GCG*                  gcgstruct                /**< GCG data structure */
    );
 
    void swap(Graph & other) // the swap member function (should never fail!)
    {
       // swap all the members (and base subobject, if applicable) with other
       std::swap(partition, other.partition);
-      std::swap(scip_ , other.scip_);
+      std::swap(gcg , other.gcg);
       std::swap(graph , other.graph);
       std::swap(nconss , other.nconss);
       std::swap(nvars , other.nvars);

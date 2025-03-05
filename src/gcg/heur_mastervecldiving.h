@@ -43,8 +43,9 @@
 #define __SCIP_HEUR_MASTERVECLDIVING_H__
 
 
-#include "gcg/def.h"
+
 #include "scip/scip.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,7 +54,7 @@ extern "C" {
 /** creates the mastervecldiving heuristic and includes it in GCG */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeHeurMastervecldiving(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

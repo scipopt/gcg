@@ -42,11 +42,8 @@
 extern "C" {
 #endif
 
-#include "gcg/def.h"
-#include "gcg/type_decomp.h"
-#include "gcg/type_parameter.h"
-
 #include "scip/scip.h"
+#include "gcg/gcg.h"
 
 /** Colorscheme selection for the visualizations */
 enum Colorscheme
@@ -62,7 +59,7 @@ typedef enum Colorscheme VISU_COLORSCHEME; /**< visualization colorscheme type *
  * @returns SCIP return code */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateParamsVisu(
-   SCIP* scip,                /**< SCIP data structure */
+   GCG*  gcg,                 /**< GCG data structure */
    GCG_PARAMDATA** paramdata  /**< input empty paramdata, oputput new set of param data */
    );
 
@@ -71,7 +68,7 @@ SCIP_RETCODE GCGcreateParamsVisu(
  * @returns true if draftmode is on */
 GCG_EXPORT
 SCIP_Bool GCGvisuGetDraftmode(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** sets draftmode
@@ -79,7 +76,7 @@ SCIP_Bool GCGvisuGetDraftmode(
  */
 GCG_EXPORT
 void GCGvisuSetDraftmode(
-   SCIP* scip,       /**< SCIP data structure */
+   GCG*  gcg,        /**< GCG data structure */
    SCIP_Bool setmode /**< true iff draftmode should be on */
    );
 
@@ -87,7 +84,7 @@ void GCGvisuSetDraftmode(
  * @returns current colorscheme */
 GCG_EXPORT
 VISU_COLORSCHEME GCGvisuGetColorscheme(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** sets colorscheme for visualizations
@@ -95,7 +92,7 @@ VISU_COLORSCHEME GCGvisuGetColorscheme(
  */
 GCG_EXPORT
 void GCGvisuSetColorscheme(
-   SCIP* scip,                   /**< SCIP data structure */
+   GCG*  gcg,                    /**< GCG data structure */
    VISU_COLORSCHEME newscheme    /**< new colorscheme */
    );
 
@@ -104,7 +101,7 @@ void GCGvisuSetColorscheme(
  */
 GCG_EXPORT
 void GCGvisuSetColorManMasterconss(
-   SCIP* scip,          /**< SCIP data structure */
+   GCG*  gcg,           /**< GCG data structure */
    const char* newcolor /**< new color */
    );
 
@@ -113,7 +110,7 @@ void GCGvisuSetColorManMasterconss(
  */
 GCG_EXPORT
 void GCGvisuSetColorManMastervars(
-   SCIP* scip,          /**< SCIP data structure */
+   GCG*  gcg,           /**< GCG data structure */
    const char* newcolor /**< new color */
    );
 
@@ -122,7 +119,7 @@ void GCGvisuSetColorManMastervars(
  */
 GCG_EXPORT
 void GCGvisuSetColorManLinking(
-   SCIP* scip,          /**< SCIP data structure */
+   GCG*  gcg,           /**< GCG data structure */
    const char* newcolor /**< new color */
    );
 
@@ -131,7 +128,7 @@ void GCGvisuSetColorManLinking(
  */
 GCG_EXPORT
 void GCGvisuSetColorManStairlinking(
-   SCIP* scip,          /**< SCIP data structure */
+   GCG*  gcg,           /**< GCG data structure */
    const char* newcolor /**< new color */
    );
 
@@ -140,7 +137,7 @@ void GCGvisuSetColorManStairlinking(
  */
 GCG_EXPORT
 void GCGvisuSetColorManBlock(
-   SCIP* scip,          /**< SCIP data structure */
+   GCG*  gcg,           /**< GCG data structure */
    const char* newcolor /**< new color */
    );
 
@@ -149,7 +146,7 @@ void GCGvisuSetColorManBlock(
  */
 GCG_EXPORT
 void GCGvisuSetColorManOpen(
-   SCIP* scip,          /**< SCIP data structure */
+   GCG*  gcg,           /**< GCG data structure */
    const char* newcolor /**< new color */
    );
 
@@ -158,7 +155,7 @@ void GCGvisuSetColorManOpen(
  */
 GCG_EXPORT
 void GCGvisuSetColorManNonzero(
-   SCIP* scip,          /**< SCIP data structure */
+   GCG*  gcg,           /**< GCG data structure */
    const char* newcolor /**< new color */
    );
 
@@ -167,7 +164,7 @@ void GCGvisuSetColorManNonzero(
  */
 GCG_EXPORT
 void GCGvisuSetColorManLine(
-   SCIP* scip,          /**< SCIP data structure */
+   GCG*  gcg,           /**< GCG data structure */
    const char* newcolor /**< new color */
    );
 
@@ -175,56 +172,56 @@ void GCGvisuSetColorManLine(
  * @returns mastercons color */
 GCG_EXPORT
 const char* GCGvisuGetColorMasterconss(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets color for mastervar block in current color scheme
  * @returns mastervar color */
 GCG_EXPORT
 const char* GCGvisuGetColorMastervars(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets color for linking blocks in current color scheme
  * @returns linking color */
 GCG_EXPORT
 const char* GCGvisuGetColorLinking(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets color for stairlinking blocks in current color scheme
  * @returns stairlinking color */
 GCG_EXPORT
 const char* GCGvisuGetColorStairlinking(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets color for normal decomp blocks in current color scheme
  * @returns block color */
 GCG_EXPORT
 const char* GCGvisuGetColorBlock(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets color for open blocks in current color scheme
  * @returns open color */
 GCG_EXPORT
 const char* GCGvisuGetColorOpen(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets color for non-zero points in current color scheme
  * @returns non-zero color */
 GCG_EXPORT
 const char* GCGvisuGetColorNonzero(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets color for lines in current color scheme
  * @returns line color */
 GCG_EXPORT
 const char* GCGvisuGetColorLine(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets appropriate radius for nonzeros
@@ -232,7 +229,7 @@ const char* GCGvisuGetColorLine(
  * @returns radius */
 GCG_EXPORT
 float GCGvisuGetNonzeroRadius(
-   SCIP* scip,          /**< SCIP data structure */
+   GCG*  gcg,           /**< GCG data structure */
    int maxindx,         /**< highest index x-axis */
    int maxindy,         /**< highest index y-axis */
    float scalingfactor  /**< percentage to scale radius, 1 if no scaling */
@@ -243,49 +240,49 @@ float GCGvisuGetNonzeroRadius(
  * @returns true if gp reader should be used, false if tex reader should be used */
 GCG_EXPORT
 SCIP_Bool GCGgetUseGp(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets the name of the pdf reader that should be used
  * @returns name of pdf reader */
 GCG_EXPORT
 const char* GCGVisuGetPdfReader(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets the max number of decomps to be included in reports
  * @returns max number of decomps */
 GCG_EXPORT
 int GCGreportGetMaxNDecomps(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets what type of decomps to show in reports (where 0 corresponds to 'show all')
  * @returns type of decomps */
 GCG_EXPORT
 GCG_DECTYPE GCGreportGetDecompTypeToShow(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets whether a titlepage should be included in reports
  * @returns true iff title page should be generated */
 GCG_EXPORT
 SCIP_Bool GCGreportGetShowTitlepage(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets whether a table of contents should be included in reports
  * @returns true iff table of contents should be generated */
 GCG_EXPORT
 SCIP_Bool GCGreportGetShowToc(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets whether statistics should be included for each decomp in reports
  * @returns true iff statistics for each decomp should be generated */
 GCG_EXPORT
 SCIP_Bool GCGreportGetShowStatistics(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** frees all visualization parameters
@@ -293,7 +290,7 @@ SCIP_Bool GCGreportGetShowStatistics(
  */
 GCG_EXPORT
 void GCGVisuFreeParams(
-   SCIP* scip,                /**< SCIP data structure */
+   GCG*  gcg,                 /**< GCG data structure */
    GCG_PARAMDATA* paramdata   /**< input empty paramdata, oputput new set of param data */
    );
 

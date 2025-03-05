@@ -47,7 +47,7 @@
  * @returns scip return code
  */
 SCIP_RETCODE GCGincludeScore(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    const char*           name,               /**< name of score */
    const char*           shortname,          /**< shortname of score */
    const char*           description,        /**< description of score */
@@ -57,13 +57,13 @@ SCIP_RETCODE GCGincludeScore(
    )
 {
    /* check whether score is already present */
-   if( GCGfindScore(scip, name) != NULL || GCGfindScoreByShortname(scip, shortname) != NULL )
+   if( GCGfindScore(gcg, name) != NULL || GCGfindScoreByShortname(gcg, shortname) != NULL )
    {
       SCIPerrorMessage("Score <%s> is already included.\n", name);
       return SCIP_INVALIDDATA;
    }
 
-   SCIP_CALL( GCGconshdlrDecompIncludeScore(scip, name, shortname, description, scoredata, scorefree, scorecalc) );
+   SCIP_CALL( GCGconshdlrDecompIncludeScore(gcg, name, shortname, description, scoredata, scorefree, scorecalc) );
 
    return SCIP_OKAY;
 }
@@ -73,14 +73,14 @@ SCIP_RETCODE GCGincludeScore(
  * @returns score pointer or NULL if score with given name is not found
  */
 GCG_SCORE* GCGfindScore(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    const char*           name                /**< name of score */
    )
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(name != NULL);
 
-   return GCGconshdlrDecompFindScore(scip, name);
+   return GCGconshdlrDecompFindScore(gcg, name);
 }
 
 /**
@@ -88,34 +88,34 @@ GCG_SCORE* GCGfindScore(
  * @returns score pointer or NULL if score with given shortname is not found
  */
 GCG_SCORE* GCGfindScoreByShortname(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    const char*           shortname           /**< shortname of score */
    )
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(shortname != NULL);
 
-   return GCGconshdlrDecompFindScoreByShortname(scip, shortname);
+   return GCGconshdlrDecompFindScoreByShortname(gcg, shortname);
 }
 
 /** returns the array of currently available scores */
 GCG_SCORE** GCGgetScores(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   return GCGconshdlrDecompGetScores(scip);
+   return GCGconshdlrDecompGetScores(gcg);
 }
 
 /** returns the number of currently available scores */
 int GCGgetNScores(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   return GCGconshdlrDecompGetNScores(scip);
+   return GCGconshdlrDecompGetNScores(gcg);
 }
 
 /** gets user data of score */

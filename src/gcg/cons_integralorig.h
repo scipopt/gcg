@@ -47,13 +47,13 @@ extern "C" {
 /** creates the handler for the integrality constraint and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeConshdlrIntegralOrig(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** insert branchrule in constraint handler data */
 GCG_EXPORT
 SCIP_RETCODE GCGconsIntegralorigAddBranchrule(
-   SCIP*                 scip,
+   GCG*                  gcg,
    SCIP_BRANCHRULE*      branchrule
    );
 

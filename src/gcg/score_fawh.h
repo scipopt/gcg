@@ -46,7 +46,7 @@ extern "C" {
 /** creates the maximum foreseeing white area score with aggregation info score and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeScoreFawh(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

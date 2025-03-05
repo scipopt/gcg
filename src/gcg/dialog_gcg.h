@@ -174,7 +174,7 @@ SCIP_RETCODE GCGcreateRootDialog(
 /** includes or updates the GCG dialog menus in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeDialogGcg(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

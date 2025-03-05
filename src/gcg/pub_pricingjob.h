@@ -35,7 +35,7 @@
 #ifndef GCG_PUB_PRICINGJOB_H__
 #define GCG_PUB_PRICINGJOB_H__
 
-#include "gcg/def.h"
+
 #include "gcg/type_pricingjob.h"
 #include "scip/type_scip.h"
 

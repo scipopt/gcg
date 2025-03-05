@@ -35,6 +35,7 @@
 #define __GCG_TYPE_SCORE_H__
 
 #include "scip/def.h"
+#include "type_gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,21 +48,21 @@ typedef struct GCG_ScoreData GCG_SCOREDATA;       /**< score specific data */
 /** destructor of score to free score data (called when GCG is exiting)
  *
  *  input:
- *  - scip            : SCIP main data structure
+ *  - gcg             : GCG main data structure
  *  - score           : score data structure
  */
-#define GCG_DECL_SCOREFREE(x) SCIP_RETCODE x (SCIP* scip, GCG_SCORE* score)
+#define GCG_DECL_SCOREFREE(x) SCIP_RETCODE x (GCG* gcg, GCG_SCORE* score)
 
 /**
  * calculates the score value of partialdecid and stores it in scorevalue
  *
  * input:
- *  - scip                 : SCIP data structure
+ *  - gcg                  : GCG data structure
  *  - score                : score data structure
  *  - partialdecid         : id of partialdec to calculate its score
  *  - scorevalue           : value of the score
  */
-#define GCG_DECL_SCORECALC(x) SCIP_RETCODE x (SCIP* scip, GCG_SCORE* score, int partialdecid, SCIP_Real* scorevalue)
+#define GCG_DECL_SCORECALC(x) SCIP_RETCODE x (GCG* gcg, GCG_SCORE* score, int partialdecid, SCIP_Real* scorevalue)
 
 #ifdef __cplusplus
 }

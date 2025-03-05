@@ -59,20 +59,23 @@
 /** constraint handler data */
 struct SCIP_ConshdlrData
 {
+   GCG*                        gcg;                      /**< GCG data structure */
    SCIP_BRANCHRULE**           branchrules;              /**< stack for storing active branchrules */
    int                         nbranchrules;             /**< number of active branchrules */
 };
 
 /** insert branchrule in constraint handler data */
 SCIP_RETCODE GCGconsIntegralorigAddBranchrule(
-   SCIP*                 scip,
+   GCG*                  gcg,
    SCIP_BRANCHRULE*      branchrule
    )
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP* masterprob;
 
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   masterprob = GCGgetMasterprob(gcg);
+   conshdlr = SCIPfindConshdlr(masterprob, CONSHDLR_NAME);
    assert(conshdlr != NULL);
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
@@ -81,12 +84,12 @@ SCIP_RETCODE GCGconsIntegralorigAddBranchrule(
    assert(conshdlrdata->nbranchrules >= 0);
    if( conshdlrdata->nbranchrules == 0 )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrdata->branchrules), 1) ); /*lint !e506*/
+      SCIP_CALL( SCIPallocMemoryArray(masterprob, &(conshdlrdata->branchrules), 1) ); /*lint !e506*/
       conshdlrdata->nbranchrules = 1;
    }
    else
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrdata->branchrules), (size_t)conshdlrdata->nbranchrules+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(masterprob, &(conshdlrdata->branchrules), (size_t)conshdlrdata->nbranchrules+1) );
       ++conshdlrdata->nbranchrules;
    }
 
@@ -155,10 +158,10 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
    assert(scip != NULL);
 
-   origprob = GCGmasterGetOrigprob(scip);
-   assert(origprob != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
+   origprob = GCGgetOrigprob(conshdlrdata->gcg);
+   assert(origprob != NULL);
 
    SCIPdebugMessage("LP solution enforcing method of integralorig constraint\n");
 
@@ -173,7 +176,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
    }
 
    /* if the transferred master solution is feasible, the current node is solved to optimality and can be pruned */
-   if( GCGrelaxIsOrigSolFeasible(origprob) )
+   if( GCGrelaxIsOrigSolFeasible(conshdlrdata->gcg) )
    {
       SCIPdebugMessage("Orig sol is feasible\n");
       *result = SCIP_FEASIBLE;
@@ -223,10 +226,10 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
    assert(nconss == 0);
    assert(result != NULL);
 
-   origprob = GCGmasterGetOrigprob(scip);
-   assert(origprob != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
+   origprob = GCGgetOrigprob(conshdlrdata->gcg);
+   assert(origprob != NULL);
 
    *result = SCIP_FEASIBLE;
    i = 0;
@@ -273,12 +276,15 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    SCIP_Bool discretization;
    int v;
    SCIP_Bool violatesvarbnds;
+   SCIP_CONSHDLRDATA* conshdlrdata;
 
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
    assert(scip != NULL);
 
-   origprob = GCGmasterGetOrigprob(scip);
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+   origprob = GCGgetOrigprob(conshdlrdata->gcg);
    assert(origprob != NULL);
 
    SCIPdebugMessage("Check method of integralorig constraint\n");
@@ -294,7 +300,7 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    }
 
    /* get corresponding origsol in order to check integrality */
-   SCIP_CALL( GCGtransformMastersolToOrigsol(origprob, sol, &origsol, TRUE, &violatesvarbnds) );
+   SCIP_CALL( GCGtransformMastersolToOrigsol(conshdlrdata->gcg, sol, &origsol, TRUE, &violatesvarbnds) );
 
    if( violatesvarbnds )
    {
@@ -378,26 +384,32 @@ SCIP_DECL_CONSFREE(consFreeIntegralOrig)
 
 /** creates the handler for integrality constraint and includes it in SCIP */
 SCIP_RETCODE GCGincludeConshdlrIntegralOrig(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP* masterprob;
+
+   assert(gcg != NULL);
 
    /* create integral constraint handler data */
+   masterprob = GCGgetMasterprob(gcg);
+   assert(masterprob != NULL);
    conshdlrdata = NULL;
-   SCIP_CALL( SCIPallocMemory(scip, &conshdlrdata) );
+   SCIP_CALL( SCIPallocMemory(masterprob, &conshdlrdata) );
+   conshdlrdata->gcg = gcg;
    conshdlrdata->branchrules = NULL;
    conshdlrdata->nbranchrules = 0;
 
    /* include constraint handler */
-   SCIP_CALL( SCIPincludeConshdlrBasic(scip, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,
+   SCIP_CALL( SCIPincludeConshdlrBasic(masterprob, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,
          CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY, CONSHDLR_EAGERFREQ, CONSHDLR_NEEDSCONS,
          consEnfolpIntegralOrig, consEnfopsIntegralOrig, consCheckIntegralOrig, consLockIntegralOrig,
          conshdlrdata) );
    assert(conshdlr != NULL);
 
-   SCIP_CALL( SCIPsetConshdlrFree(scip, conshdlr, consFreeIntegralOrig) );
+   SCIP_CALL( SCIPsetConshdlrFree(masterprob, conshdlr, consFreeIntegralOrig) );
 
    return SCIP_OKAY;
 }

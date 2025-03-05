@@ -35,7 +35,7 @@
 #ifndef GCG_PUB_PRICINGPROB_H__
 #define GCG_PUB_PRICINGPROB_H__
 
-#include "gcg/def.h"
+
 #include "gcg/type_pricingprob.h"
 #include "scip/type_scip.h"
 

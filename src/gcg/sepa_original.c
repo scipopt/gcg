@@ -63,6 +63,7 @@
 /** separator data */
 struct SCIP_SepaData
 {
+   GCG*                  gcg;                /**< GCG data structure */
    SCIP_ROW**            mastercuts;         /**< cuts in the master problem */
    SCIP_ROW**            origcuts;           /**< cuts in the original problem */
    int                   ncuts;          /**< number of cuts in the original problem */
@@ -142,7 +143,7 @@ SCIP_DECL_SEPAEXIT(sepaExitOriginal)
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
 
-   origscip = GCGmasterGetOrigprob(scip);
+   origscip = GCGgetOrigprob(sepadata->gcg);
    assert(origscip != NULL);
 
    for( i = 0; i < sepadata->ncuts; i++ )
@@ -166,7 +167,7 @@ SCIP_DECL_SEPAEXITSOL(sepaExitsolOriginal)
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
 
-   assert(GCGmasterGetOrigprob(scip) != NULL);
+   assert(GCGgetOrigprob(sepadata->gcg) != NULL);
 
    for( i = 0; i < sepadata->ncuts; i++ )
    {
@@ -180,7 +181,7 @@ SCIP_DECL_SEPAEXITSOL(sepaExitsolOriginal)
 static
 SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
 {
-   SCIP*   origscip;
+   SCIP* origscip;
    SCIP_Bool delayed;
    SCIP_Bool cutoff;
    SCIP_CUT** cuts;
@@ -188,6 +189,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
    SCIP_VAR** rowvars;
    SCIP_SEPADATA* sepadata;
    SCIP_CUTPOOL* cutpool;
+   GCG* gcg;
 
    SCIP_VAR** mastervars;
    SCIP_Real* mastervals;
@@ -205,11 +207,12 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
    assert(scip != NULL);
    assert(result != NULL);
 
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
-
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
+   gcg = sepadata->gcg;
+
+   origscip = GCGgetOrigprob(gcg);
+   assert(origscip != NULL);
 
    SCIPdebugMessage("sepaExeclpOriginal\n");
 
@@ -227,7 +230,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
       return SCIP_OKAY;
    }
 
-   if( GCGgetNRelPricingprobs(origscip) < GCGgetNPricingprobs(origscip) )
+   if( GCGgetNRelPricingprobs(gcg) < GCGgetNPricingprobs(gcg) )
    {
       SCIPdebugMessage("aggregated pricing problems, do no separation!\n");
       *result = SCIP_DIDNOTRUN;
@@ -235,9 +238,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
    }
 
    /* ensure to separate current sol */
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
+   SCIP_CALL( GCGrelaxUpdateCurrentSol(gcg) );
 
-   if( GCGrelaxIsOrigSolFeasible(origscip) )
+   if( GCGrelaxIsOrigSolFeasible(gcg) )
    {
       SCIPdebugMessage("Current solution is feasible, no separation necessary!\n");
       *result = SCIP_DIDNOTRUN;
@@ -249,14 +252,14 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
    /* set parameter setting for separation */
    SCIP_CALL( SCIPsetSeparating(origscip, (SCIP_PARAMSETTING) sepadata->separationsetting, TRUE) );
 
-   SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(origscip),
+   SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(gcg),
          isroot, TRUE, FALSE, &delayed, &cutoff) );
 
    if( delayed && !cutoff )
    {
       SCIPdebugMessage("call delayed separators\n");
 
-      SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(origscip),
+      SCIP_CALL( SCIPseparateSol(origscip, GCGrelaxGetCurrentOrigSol(gcg),
             isroot, TRUE, TRUE, &delayed, &cutoff) );
    }
 
@@ -310,7 +313,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
       }
 
       /* transform the original variables to master variables */
-      shift = GCGtransformOrigvalsToMastervals(GCGmasterGetOrigprob(scip), rowvars, vals, ncols, mastervars, mastervals,
+      shift = GCGtransformOrigvalsToMastervals(gcg, rowvars, vals, ncols, mastervars, mastervals,
             nmastervars);
 
       /* create new cut in the master problem */
@@ -363,31 +366,33 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
 
 /** creates the original separator and includes it in SCIP */
 SCIP_RETCODE GCGincludeSepaOriginal(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_SEPADATA* sepadata;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
    /* create original separator data */
-   SCIP_CALL( SCIPallocBlockMemory(scip, &sepadata) );
+   SCIP_CALL( SCIPallocBlockMemory(masterprob, &sepadata) );
+   sepadata->gcg = gcg;
 
-   sepadata->maxcuts = SCIPcalcMemGrowSize(scip, STARTMAXCUTS);
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(sepadata->origcuts), sepadata->maxcuts) ); /*lint !e506*/
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(sepadata->mastercuts), sepadata->maxcuts) ); /*lint !e506*/
-   SCIP_CALL( SCIPhashmapCreate(&sepadata->origcutidxmap, SCIPblkmem(scip), sepadata->maxcuts) );
+   sepadata->maxcuts = SCIPcalcMemGrowSize(masterprob, STARTMAXCUTS);
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(sepadata->origcuts), sepadata->maxcuts) ); /*lint !e506*/
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(sepadata->mastercuts), sepadata->maxcuts) ); /*lint !e506*/
+   SCIP_CALL( SCIPhashmapCreate(&sepadata->origcutidxmap, SCIPblkmem(masterprob), sepadata->maxcuts) );
    sepadata->ncuts = 0;
 
    /* include separator */
-   SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST, SEPA_USESSUBSCIP, SEPA_DELAY,
+   SCIP_CALL( SCIPincludeSepa(masterprob, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST, SEPA_USESSUBSCIP, SEPA_DELAY,
          sepaCopyOriginal, sepaFreeOriginal, sepaInitOriginal, sepaExitOriginal,
          sepaInitsolOriginal, sepaExitsolOriginal,
          sepaExeclpOriginal, sepaExecsolOriginal,
          sepadata) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enable", "enable original separator",
+   SCIP_CALL( SCIPaddBoolParam(GCGgetOrigprob(gcg), "sepa/" SEPA_NAME "/enable", "enable original separator",
          &(sepadata->enable), FALSE, TRUE, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/paramsetting", "parameter returns which parameter setting is used for "
+   SCIP_CALL( SCIPaddIntParam(GCGgetOrigprob(gcg), "sepa/" SEPA_NAME "/paramsetting", "parameter returns which parameter setting is used for "
       "separation (default = 0, aggressive = 1, fast = 2", &(sepadata->separationsetting), FALSE, 0, 0, 2, NULL, NULL) );
 
    return SCIP_OKAY;

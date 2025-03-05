@@ -38,7 +38,8 @@
 
 
 #include "scip/scip.h"
-#include "gcg/def.h"
+#include "gcg/gcg.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,14 +48,13 @@ extern "C" {
 /** creates event handler for relaxsol event */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeEventHdlrRelaxsol(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** return whether event has been triggered */
 GCG_EXPORT
 SCIP_Bool GCGeventhdlrRelaxsolIsTriggered(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP*                 masterprob          /**< the SCIP data structure for the master problem */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

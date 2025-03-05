@@ -46,7 +46,7 @@ extern "C" {
 /** creates the max foreseeing white score and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeScoreForswh(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

@@ -233,11 +233,12 @@ void DETPROBDATA::getTranslatedPartialdecs(
    )
 {
    DETPROBDATA* origdetprobdata = NULL;
+
    if( translatesymmetry )
    {
       // even if presolving is disabled some vars might be fixed to 0
       // @todo: we could check if symmetry is still valid
-      origdetprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      origdetprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
       if( origdetprobdata->getNConss() != getNConss() || origdetprobdata->getNVars() != getNVars() )
          translatesymmetry = FALSE;
    }
@@ -247,7 +248,7 @@ void DETPROBDATA::getTranslatedPartialdecs(
 
       SCIPverbMessage(this->scip, SCIP_VERBLEVEL_FULL, NULL, " transform partialdec %d \n", otherpartialdec->getID());
 
-      newpartialdec = new PARTIALDECOMP(scip, original);
+      newpartialdec = new PARTIALDECOMP(gcg, original);
 
       /* prepare new partialdec */
       newpartialdec->setNBlocks(otherpartialdec->getNBlocks());
@@ -312,7 +313,7 @@ void DETPROBDATA::getTranslatedPartialdecs(
       otherpartialdec->setTranslatedpartialdecid(newpartialdec->getID());
 
       if( otherpartialdec->getFinishedByFinisher() )
-         newpartialdec->setDetectorFinishedOrig(otherpartialdec->getDetectorchain()[otherpartialdec->getNDetectors() - 1]);
+         newpartialdec->setDetectorFinishedOrig();
 
       newpartialdec->setFinishedByFinisher(otherpartialdec->getFinishedByFinisher());
       newpartialdec->prepare();
@@ -343,7 +344,7 @@ void DETPROBDATA::getTranslatedPartialdecs(
          );
       }
 
-      newpartialdec->getScore(GCGgetCurrentScore(scip)) ;
+      newpartialdec->getScore(GCGgetCurrentScore(gcg)) ;
 
       translatedpartialdecs.push_back(newpartialdec);
    }
@@ -351,11 +352,11 @@ void DETPROBDATA::getTranslatedPartialdecs(
 
 
 DETPROBDATA::DETPROBDATA(
-   SCIP* givenScip,
+   GCG* gcgstruct,
    SCIP_Bool _originalProblem
    ) :
-      scip(givenScip), openpartialdecs(0), ancestorpartialdecs( 0 ), origfixedtozerovars(0),
-      nvars(SCIPgetNVars(givenScip)), nconss(SCIPgetNConss(givenScip)), nnonzeros(0), original(_originalProblem), candidatesNBlocks(0),
+      gcg(gcgstruct), scip(GCGgetOrigprob(gcg)), openpartialdecs(0), ancestorpartialdecs( 0 ), origfixedtozerovars(0),
+      nvars(SCIPgetNVars(GCGgetOrigprob(gcg))), nconss(SCIPgetNConss(GCGgetOrigprob(gcg))), nnonzeros(0), original(_originalProblem), candidatesNBlocks(0),
       classificationtime(0.), nblockscandidatescalctime(0.), postprocessingtime(0.), translatingtime(0.)
 {
    SCIP_CONS** conss;
@@ -503,7 +504,7 @@ DETPROBDATA::~DETPROBDATA()
    }
 
    // Delete all partialdecs
-   GCGconshdlrDecompDeregisterPartialdecs(scip, original);
+   GCGconshdlrDecompDeregisterPartialdecs(gcg, original);
 
    for( size_t i = 0; i < conspartitioncollection.size(); ++ i )
    {
@@ -935,16 +936,22 @@ SCIP* DETPROBDATA::getScip()
 }
 
 
+GCG* DETPROBDATA::getGcg()
+{
+   return gcg;
+}
+
+
 void DETPROBDATA::getSortedCandidatesNBlocks(
    std::vector<int>& candidates
    )
 {
-   int nusercandidates = GCGconshdlrDecompGetNBlockNumberCandidates(scip);
+   int nusercandidates = GCGconshdlrDecompGetNBlockNumberCandidates(gcg);
    /* get the block number candidates directly given by the user */
    SCIPdebugMessage("number of user block number candidates: %d\n", nusercandidates);
    for( int i = 0; i < nusercandidates; ++i )
    {
-      int candidate = GCGconshdlrDecompGetBlockNumberCandidate(scip, i);
+      int candidate = GCGconshdlrDecompGetBlockNumberCandidate(gcg, i);
       candidates.push_back(candidate);
       SCIPdebugMessage("  %d\n", candidate);
    }
@@ -1267,7 +1274,7 @@ void DETPROBDATA::printPartitionInformation(
  void DETPROBDATA::sortFinishedForScore()
 {
    /* get scoretype once, no need to call it twice for every comparison */
-   GCG_SCORE* score = GCGgetCurrentScore(scip);
+   GCG_SCORE* score = GCGgetCurrentScore(gcg);
    
    /* sort by score in descending order */
    std::sort(finishedpartialdecs.begin(), finishedpartialdecs.end(), [&](PARTIALDECOMP* a, PARTIALDECOMP* b) {return (a->getScore(score) > b->getScore(score)); });

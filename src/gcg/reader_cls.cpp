@@ -60,9 +60,10 @@ struct SCIP_ConshdlrData
 
 
 
-/** data for dec reader */
+/** data for cls reader */
 struct SCIP_ReaderData
 {
+   GCG* gcg;
    SCIP_Bool usetransform;
 };
 
@@ -73,14 +74,17 @@ struct SCIP_ReaderData
 
 /** write classification data */
 SCIP_RETCODE GCGwriteCls(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    FILE*                 file                /**< File pointer to write to */
    )
 {
+   SCIP* scip;
    SCIP_Bool transformed;
    gcg::DETPROBDATA* detprobdata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
+
+   scip = GCGgetOrigprob(gcg);
 
    SCIP_CALL( SCIPgetBoolParam(scip,
          "reading/clsreader/usetransform", &transformed));
@@ -89,14 +93,14 @@ SCIP_RETCODE GCGwriteCls(
       transformed = FALSE;
 
    if( !transformed )
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
    else
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(gcg);
 
    if( detprobdata->conspartitioncollection.empty() )
    {
-      GCGconshdlrDecompClassify(scip, !detprobdata->isAssignedToOrigProb());
-      GCGconshdlrDecompCalcCandidatesNBlocks(scip, !detprobdata->isAssignedToOrigProb());
+      GCGconshdlrDecompClassify(gcg, !detprobdata->isAssignedToOrigProb());
+      GCGconshdlrDecompCalcCandidatesNBlocks(gcg, !detprobdata->isAssignedToOrigProb());
    }
 
    SCIPinfoMessage(scip, file, "# a1) <number of partitions>\n" );
@@ -205,7 +209,11 @@ static
 SCIP_DECL_READERWRITE(readerWriteCls)
 {
    /*lint --e{715}*/
-   SCIP_CALL( GCGwriteCls( scip, file ) );
+   SCIP_READERDATA* readerdata;
+
+   readerdata = SCIPreaderGetData( reader );
+   assert( readerdata != NULL );
+   SCIP_CALL( GCGwriteCls( readerdata->gcg, file ) );
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
@@ -214,19 +222,22 @@ SCIP_DECL_READERWRITE(readerWriteCls)
 
 /** includes the cls reader into SCIP */
 SCIP_RETCODE GCGincludeReaderCls(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_READERDATA* readerdata = NULL;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    /* create cls reader data */
-   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &readerdata) );
+   readerdata->gcg = gcg;
 
    /* include cls reader */
-   SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
+   SCIP_CALL( SCIPincludeReader(origprob, READER_NAME, READER_DESC, READER_EXTENSION,
       readerCopyCls, readerFreeCls, readerReadCls, readerWriteCls, readerdata) );
 
-   SCIP_CALL( SCIPaddBoolParam(scip,
+   SCIP_CALL( SCIPaddBoolParam(origprob,
       "reading/clsreader/usetransform",
       "should the transformed (and possibly presolved problem) be use or original one",
       &readerdata->usetransform, FALSE, DEFAULT_USETRANSFORM, NULL, NULL) );

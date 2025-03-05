@@ -33,7 +33,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "gcg/def.h"
+
 #include "gcg/cons_decomp.h"
 #include "gcg/miscvisualization.h"
 #include "gcg/class_detprobdata.h"
@@ -58,16 +58,18 @@ using namespace gcg;
  * @returns standardized filename
  */
 void GCGgetVisualizationFilename(
-   SCIP* scip,             /* scip data structure */
-   PARTIALDECOMP* partialdec,         /* partialdec that is to be visualized */
+   GCG* gcg,                        /* scip data structure */
+   PARTIALDECOMP* partialdec,       /* partialdec that is to be visualized */
    const char* extension,  /* file extension (to be included in the name) */
    char* filename          /* filename output */
    )
 {
+   SCIP* scip;
    char* name;
    char detectorchainstring[SCIP_MAXSTRLEN];
    char probname[SCIP_MAXSTRLEN];
 
+   scip = GCGgetOrigprob(gcg);
    (void) SCIPsnprintf(probname, SCIP_MAXSTRLEN, "%s", SCIPgetProbName(scip));
    SCIPsplitFilename(probname, NULL, &name, NULL, NULL);
 

@@ -125,6 +125,7 @@ typedef struct VarTuple{
 /** branching rule data */
 struct SCIP_BranchruleData
 {
+   GCG*                  gcg;                   /**< GCG data structure */
    int                   lastcand;              /**< last evaluated candidate of last branching rule execution */
    int                   nvars;                 /**< the number of candidates currently in the hashtable */
    int                   maxvars;               /**< the maximal number of cands that were in the hashtable at the same
@@ -345,10 +346,11 @@ int calculateNCands(
  */
 static
 int assignUniqueBlockFlags(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             branchcand          /**< branching candidate to be considered */
 )
 {
+   SCIP* origprob = GCGgetOrigprob(gcg);
    assert(GCGvarIsOriginal(branchcand));
 
    for ( int iter = 0; iter <= 1; iter++ )
@@ -361,7 +363,7 @@ int assignUniqueBlockFlags(
             continue;
 
          /* block is not unique (non-linking variables) */
-         if ( !GCGoriginalVarIsLinking(branchcand) && GCGgetNIdenticalBlocks(scip, GCGvarGetBlock(branchcand)) != 1 )
+         if ( !GCGoriginalVarIsLinking(branchcand) && GCGgetNIdenticalBlocks(gcg, GCGvarGetBlock(branchcand)) != 1 )
             continue;
 
          /* check that blocks of linking variable are unique */
@@ -373,15 +375,15 @@ int assignUniqueBlockFlags(
             int j;
 
             nvarblocks = GCGlinkingVarGetNBlocks(branchcand);
-            SCIP_CALL( SCIPallocBufferArray(scip, &varblocks, nvarblocks) );
+            SCIP_CALL( SCIPallocBufferArray(origprob, &varblocks, nvarblocks) );
             SCIP_CALL( GCGlinkingVarGetBlocks(branchcand, nvarblocks, varblocks) );
 
             unique = TRUE;
             for ( j = 0; j < nvarblocks; ++j )
-               if ( GCGgetNIdenticalBlocks(scip, varblocks[j]) != 1 )
+               if ( GCGgetNIdenticalBlocks(gcg, varblocks[j]) != 1 )
                   unique = FALSE;
 
-            SCIPfreeBufferArray(scip, &varblocks);
+            SCIPfreeBufferArray(origprob, &varblocks);
 
             if( !unique )
                continue;
@@ -404,14 +406,14 @@ int assignUniqueBlockFlags(
 /** adds branching candidates to branchruledata to collect infos about it */
 static
 SCIP_RETCODE addBranchcandsToData(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
    SCIP_VAR**            var1s,              /**< first parts of branching candidates */
    SCIP_VAR**            var2s,              /**< second parts of branching candidates */
    int                   ncands              /**< number of priority branching candidates */
    )
 {
-   SCIP* masterscip;
+   SCIP* masterprob;
    SCIP_BRANCHRULEDATA* branchruledata;
    int i;
    VarTuple* vartuple = NULL;
@@ -422,7 +424,7 @@ SCIP_RETCODE addBranchcandsToData(
    branchruledata = SCIPbranchruleGetData(branchrule);
    assert(branchruledata != NULL);
 
-   masterscip = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(gcg);
 
    /* if var is not in hashtable, insert it */
    for( i = 0; i < ncands; i++ )
@@ -430,23 +432,23 @@ SCIP_RETCODE addBranchcandsToData(
       nvars = branchruledata->nvars;
 
       /* if variable is not in hashmtable insert it, initialize its array entries, and increase array sizes */
-      SCIP_CALL( SCIPallocBlockMemory(masterscip, &vartuple) );
+      SCIP_CALL( SCIPallocBlockMemory(masterprob, &vartuple) );
       vartuple->var1 = var1s[i];
       vartuple->var2 = var2s!=NULL? var2s[i] : NULL;
       vartuple->index = nvars;
 
       if( !SCIPhashtableExists(branchruledata->candhashtable, (void *) vartuple) )
       {
-         newsize = SCIPcalcMemGrowSize(masterscip, nvars + 1);
-         SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->strongbranchscore,
+         newsize = SCIPcalcMemGrowSize(masterprob, nvars + 1);
+         SCIP_CALL( SCIPreallocBlockMemoryArray(masterprob, &branchruledata->strongbranchscore,
                      branchruledata->maxvars, newsize) );
-         SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->sbscoreisrecent,
+         SCIP_CALL( SCIPreallocBlockMemoryArray(masterprob, &branchruledata->sbscoreisrecent,
                      branchruledata->maxvars, newsize) );
-         SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->lastevalnode, branchruledata->maxvars,
+         SCIP_CALL( SCIPreallocBlockMemoryArray(masterprob, &branchruledata->lastevalnode, branchruledata->maxvars,
                      newsize) );
-         SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->uniqueblockflags,
+         SCIP_CALL( SCIPreallocBlockMemoryArray(masterprob, &branchruledata->uniqueblockflags,
                      branchruledata->maxvars, newsize) );
-         SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &branchruledata->vartuples,
+         SCIP_CALL( SCIPreallocBlockMemoryArray(masterprob, &branchruledata->vartuples,
                      branchruledata->maxvars, newsize) );
          branchruledata->maxvars = newsize;
 
@@ -466,7 +468,7 @@ SCIP_RETCODE addBranchcandsToData(
       }
       else
       {
-         SCIPfreeBlockMemory(masterscip, &vartuple);
+         SCIPfreeBlockMemory(masterprob, &vartuple);
       }
    }
 
@@ -498,7 +500,7 @@ static int geq_compare_function(
  */
 static
 SCIP_RETCODE newProbingNodeRyanfosterMaster(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
    SCIP_VAR*             ovar1,              /**< first original variable */
    SCIP_VAR*             ovar2,              /**< second original variable */
@@ -506,7 +508,8 @@ SCIP_RETCODE newProbingNodeRyanfosterMaster(
    SCIP_Bool             same                /**< do we want to create the same (TRUE) or differ (FALSE) branch? */
    )
 {
-   SCIP* masterscip;
+   SCIP* origprob;
+   SCIP* masterprob;
    SCIP_VAR* pricingvar1;
    SCIP_VAR* pricingvar2;
    GCG_BRANCHDATA* branchdata;
@@ -520,8 +523,9 @@ SCIP_RETCODE newProbingNodeRyanfosterMaster(
 
    SCIP_CONS** origbranchconss;
 
+   origprob = GCGgetOrigprob(gcg);
 
-   assert(scip != NULL);
+   assert(origprob != NULL);
    assert(branchrule != NULL);
    assert(ovar1 != NULL);
    assert(ovar2 != NULL);
@@ -530,13 +534,13 @@ SCIP_RETCODE newProbingNodeRyanfosterMaster(
 
    origbranchconss = NULL;
 
-   masterscip = GCGgetMasterprob(scip);
-   assert(masterscip != NULL);
+   masterprob = GCGgetMasterprob(gcg);
+   assert(masterprob != NULL);
 
    /* for cons_masterbranch */
 
    /* allocate branchdata for same child and store information */
-   SCIP_CALL( SCIPallocBlockMemory(scip, &branchdata) );
+   SCIP_CALL( SCIPallocBlockMemory(origprob, &branchdata) );
    branchdata->var1 = ovar1;
    branchdata->var2 = ovar2;
    branchdata->same = same;
@@ -562,8 +566,8 @@ SCIP_RETCODE newProbingNodeRyanfosterMaster(
 
    if( norigvars > 0 )
    {
-      maxorigvars = SCIPcalcMemGrowSize(masterscip, norigvars);
-      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &origbranchconss, maxorigvars) );
+      maxorigvars = SCIPcalcMemGrowSize(masterprob, norigvars);
+      SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &origbranchconss, maxorigvars) );
    }
    else
    {
@@ -579,15 +583,15 @@ SCIP_RETCODE newProbingNodeRyanfosterMaster(
       assert(origbranchconss != NULL);
 
       /* create constraint for same-child */
-      SCIP_CALL( SCIPcreateConsVarbound(scip, &origcons, name, origvars1[v], origvars2[v],
-            same? -1.0 : 1.0, same ? 0.0 : -SCIPinfinity(scip), same? 0.0 : 1.0, TRUE, TRUE,
+      SCIP_CALL( SCIPcreateConsVarbound(origprob, &origcons, name, origvars1[v], origvars2[v],
+            same? -1.0 : 1.0, same ? 0.0 : -SCIPinfinity(origprob), same? 0.0 : 1.0, TRUE, TRUE,
             TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE) );
 
       origbranchconss[v] = origcons;
    }
 
    /* create and add the masterbranch constraints */
-   SCIP_CALL( GCGrelaxNewProbingnodeMasterCons(scip, branchrule, branchdata, origbranchconss, norigvars,
+   SCIP_CALL( GCGrelaxNewProbingnodeMasterCons(gcg, branchrule, branchdata, origbranchconss, norigvars,
                                                maxorigvars) );
 
    return SCIP_OKAY;
@@ -596,7 +600,7 @@ SCIP_RETCODE newProbingNodeRyanfosterMaster(
 /* executes strong branching on one variable, with or without pricing */
 static
 SCIP_RETCODE executeStrongBranching(
-    SCIP                 *scip,              /* SCIP data structure */
+    GCG*                 gcg,                /* GCG data structure */
     SCIP_BRANCHRULE*     branchrule,         /* pointer to the branching rule */
     SCIP_VAR             *branchvar1,        /* first variable to get strong branching values for */
     SCIP_VAR             *branchvar2,        /* second variable to get strong branching values for */
@@ -611,10 +615,11 @@ SCIP_RETCODE executeStrongBranching(
     SCIP_Bool            *downvalid,         /* stores whether the down/differbranch was solved properly */
     SCIP_Bool            *upinf,             /* stores whether the up/samebranch is infeasible */
     SCIP_Bool            *downinf            /* stores whether the down/differbranch is infeasible */
-)
+   )
 {
    /* get bound values */
    SCIP_BRANCHRULEDATA* branchruledata;
+   SCIP* origprob;
 
    SCIP_Bool cutoff;
    SCIP_Bool lperror;
@@ -622,20 +627,21 @@ SCIP_RETCODE executeStrongBranching(
 
    branchruledata = SCIPbranchruleGetData(branchrule);
    assert(branchruledata != NULL);
+   origprob = GCGgetOrigprob(gcg);
 
    *downvalid = FALSE;
    *upvalid = FALSE;
    *downinf = FALSE;
    *upinf = FALSE;
 
-   assert(scip != NULL);
+   assert(origprob != NULL);
 
    /* probe for each child node */
    for( int cnode = 0; cnode <= 1; cnode++ )
    {
       /* start probing */
-      SCIP_CALL( GCGrelaxStartProbing(scip, NULL) );
-      SCIP_CALL( GCGrelaxNewProbingnodeOrig(scip) );
+      SCIP_CALL( GCGrelaxStartProbing(gcg, NULL) );
+      SCIP_CALL( GCGrelaxNewProbingnodeOrig(gcg) );
 
       cutoff = FALSE;
       lperror = FALSE;
@@ -645,35 +651,35 @@ SCIP_RETCODE executeStrongBranching(
       {
          if( cnode == 0 )
          {
-            SCIP_CALL( SCIPchgVarUbProbing(scip, branchvar1, SCIPfeasFloor(scip, solval1)) );
+            SCIP_CALL( SCIPchgVarUbProbing(origprob, branchvar1, SCIPfeasFloor(origprob, solval1)) );
          }
          else
          {
-            SCIP_CALL( SCIPchgVarLbProbing(scip, branchvar1, SCIPfeasCeil(scip, solval1)) );
+            SCIP_CALL( SCIPchgVarLbProbing(origprob, branchvar1, SCIPfeasCeil(origprob, solval1)) );
          }
       }
 
       /* propagate the new b&b-node */
-      SCIP_CALL( SCIPpropagateProbing(scip, -1, &cutoff, NULL) );
+      SCIP_CALL( SCIPpropagateProbing(origprob, -1, &cutoff, NULL) );
 
       /* solve the LP with or without pricing */
       if( !cutoff )
       {
          if( branchruledata->initiator == RYANFOSTER )
          {
-            SCIP_CALL( newProbingNodeRyanfosterMaster(scip, branchruledata->initiatorbranchrule, branchvar1,
+            SCIP_CALL( newProbingNodeRyanfosterMaster(gcg, branchruledata->initiatorbranchrule, branchvar1,
                                                       branchvar2, candinfo, cnode == 1) );
          }
          else
          {
-            SCIP_CALL( GCGrelaxNewProbingnodeMaster(scip) );
+            SCIP_CALL( GCGrelaxNewProbingnodeMaster(gcg) );
          }
 
          if( pricing )
          {
             int npricerounds;
 
-            SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, branchruledata->maxsbpricerounds, NULL, &npricerounds,
+            SCIP_CALL( GCGrelaxPerformProbingWithPricing(gcg, branchruledata->maxsbpricerounds, NULL, &npricerounds,
                                                          cnode == 0? down : up, &lpsolved, &lperror, &cutoff) );
             branchruledata->nphase2lps++;
             branchruledata->nsbpricerounds += npricerounds;
@@ -682,7 +688,7 @@ SCIP_RETCODE executeStrongBranching(
          {
             SCIP_Longint nlpiterations;
 
-            SCIP_CALL( GCGrelaxPerformProbing(scip, branchruledata->maxsblpiters, &nlpiterations,
+            SCIP_CALL( GCGrelaxPerformProbing(gcg, branchruledata->maxsblpiters, &nlpiterations,
                                               cnode == 0? down : up, &lpsolved, &lperror, &cutoff) );
             branchruledata->nphase1lps++;
             branchruledata->nsblpiterations += nlpiterations;
@@ -700,7 +706,7 @@ SCIP_RETCODE executeStrongBranching(
          *upinf = cutoff && pricing;
       }
 
-      SCIP_CALL( GCGrelaxEndProbing(scip) );
+      SCIP_CALL( GCGrelaxEndProbing(gcg) );
    }
    return SCIP_OKAY;
 }
@@ -714,7 +720,7 @@ SCIP_Bool isKAncestor(
     int                  ancestornodenr,     /**< number of the supposed ancestor */
     SCIP_NODE            *successornode,     /**< the supposed successor */
     int                  k                   /**< maximal allowed distance between the nodes */
-)
+   )
 {
    SCIP_NODE* curnode;
    curnode = successornode;
@@ -736,7 +742,7 @@ SCIP_Bool isKAncestor(
 /* Evaluates the given variable based on a score function of choice. Higher scores are given to better variables. */
 static
 SCIP_Real score_function(
-    SCIP                 *scip,              /**< SCIP data structure */
+    GCG*                 gcg,              /**< GCG data structure */
     SCIP_BRANCHRULE*     branchrule,         /**< pointer to the branching rule */
     SCIP_VAR             *var1,              /**< first var to be scored */
     SCIP_VAR             *var2,              /**< second var to be scored */
@@ -749,11 +755,13 @@ SCIP_Real score_function(
     SCIP_Real            *score,             /**< stores the computed score */
     SCIP_Bool            *upinf,             /**< stores whether the upbranch is infeasible */
     SCIP_Bool            *downinf            /**< stores whether the downbranch is infeasible */
-)
+   )
 {
+   SCIP* origprob;
    SCIP_BRANCHRULEDATA* branchruledata;
    VarTuple vartuple = {var1, var2, 0};
 
+   origprob = GCGgetOrigprob(gcg);
    branchruledata = SCIPbranchruleGetData(branchrule);
    assert(branchruledata != NULL);
 
@@ -772,23 +780,23 @@ SCIP_Real score_function(
       }
       else if( branchruledata->usepseudocosts )
       {
-         *score = SCIPgetVarPseudocostScore(scip, var1, solval1);
+         *score = SCIPgetVarPseudocostScore(origprob, var1, solval1);
          if( var2 != NULL )
-            *score = *score * SCIPgetVarPseudocostScore(scip, var2, solval2);
+            *score = *score * SCIPgetVarPseudocostScore(origprob, var2, solval2);
       }
       else
       {
          if( !branchruledata->mostfrac )
             return 1;
 
-         *score = solval1 - SCIPfloor(scip, solval1);
+         *score = solval1 - SCIPfloor(origprob, solval1);
          *score = MIN( *score, 1.0 - *score );
 
          if( var2 != NULL )
          {
             SCIP_Real frac2;
 
-            frac2 = solval2 - SCIPfloor(scip, solval2);
+            frac2 = solval2 - SCIPfloor(origprob, solval2);
             *score = *score * MIN( frac2, 1.0 - frac2 );
          }
       }
@@ -812,25 +820,25 @@ SCIP_Real score_function(
       SCIP_Real frac;
 
       /* get master problem */
-      masterscip = GCGgetMasterprob(scip);
+      masterscip = GCGgetMasterprob(gcg);
       assert(masterscip != NULL);
 
       assert(SCIPhashtableExists(branchruledata->candhashtable, &vartuple));
       hashindex = ((VarTuple *) SCIPhashtableRetrieve(branchruledata->candhashtable, (void *) &vartuple))->index;
-      currentnodenr = SCIPnodeGetNumber(SCIPgetFocusNode(scip));
+      currentnodenr = SCIPnodeGetNumber(SCIPgetFocusNode(origprob));
 
       if( !usecolgen
           || !branchruledata->sbscoreisrecent[hashindex]
-          || !isKAncestor(scip, branchruledata->lastevalnode[hashindex], SCIPgetFocusNode(scip),
+          || !isKAncestor(origprob, branchruledata->lastevalnode[hashindex], SCIPgetFocusNode(origprob),
                           branchruledata->reevalage) )
       {
-         up = -SCIPinfinity(scip);
-         down = -SCIPinfinity(scip);
+         up = -SCIPinfinity(origprob);
+         down = -SCIPinfinity(origprob);
 
          lpobjval = SCIPgetLPObjval(masterscip);
 
          /* usecolgen is True for phase 1 and False for phase 2 */
-         SCIP_CALL( executeStrongBranching(scip, branchrule, var1, var2, solval1, solval2, candinfo, usecolgen, -1,
+         SCIP_CALL( executeStrongBranching(gcg, branchrule, var1, var2, solval1, solval2, candinfo, usecolgen, -1,
                                            &up, &down, &upvalid, &downvalid, upinf, downinf) );
 
          down = downvalid? down : upvalid? up : 0;
@@ -839,11 +847,11 @@ SCIP_Real score_function(
          downgain = MAX(down - lpobjval, 0.0);
          upgain = MAX(up - lpobjval, 0.0);
 
-         *score = SCIPgetBranchScore(scip, var1, downgain, upgain);
+         *score = SCIPgetBranchScore(origprob, var1, downgain, upgain);
 
          if( usecolgen && upvalid && downvalid )
          {
-            frac = solval1 - SCIPfloor(scip, solval1);
+            frac = solval1 - SCIPfloor(origprob, solval1);
             if( !*upinf && !*downinf )
             {
                branchruledata->strongbranchscore[hashindex] = *score;
@@ -856,12 +864,12 @@ SCIP_Real score_function(
                /* update pseudocost scores */
                if( !*upinf )
                {
-                  SCIP_CALL( SCIPupdateVarPseudocost(scip, var1, 1.0-frac, upgain, 1.0) );
+                  SCIP_CALL( SCIPupdateVarPseudocost(origprob, var1, 1.0-frac, upgain, 1.0) );
                }
 
                if( !*downinf)
                {
-                  SCIP_CALL( SCIPupdateVarPseudocost(scip, var1, 0.0-frac, downgain, 1.0) );
+                  SCIP_CALL( SCIPupdateVarPseudocost(origprob, var1, 0.0-frac, downgain, 1.0) );
                }
             }
          }
@@ -878,7 +886,7 @@ SCIP_Real score_function(
 /** branching method for relaxation solutions */
 static
 SCIP_RETCODE selectCandidate(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branching rule */
    SCIP_VAR**            cand1s,             /**< first variable candidates */
    SCIP_VAR**            cand2s,             /**< second variable candidates (each cand2 corresponds to exactly one
@@ -896,6 +904,7 @@ SCIP_RETCODE selectCandidate(
    SCIP_RESULT*          result              /**< pointer to store the result of the branching call */
    )
 {
+   SCIP* origprob;
    SCIP* masterscip;
    SCIP_BRANCHRULEDATA* branchruledata;
 
@@ -945,11 +954,13 @@ SCIP_RETCODE selectCandidate(
 
    VarTuple vartuple = {NULL,NULL,0};
 
+   origprob = GCGgetOrigprob(gcg);
+
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
-   assert(scip != NULL);
+   assert(origprob != NULL);
    assert(result != NULL);
-   assert(SCIPisRelaxSolValid(scip));
+   assert(SCIPisRelaxSolValid(origprob));
 
    branchruledata = SCIPbranchruleGetData(branchrule);
 
@@ -961,13 +972,13 @@ SCIP_RETCODE selectCandidate(
    this_branchruledata = branchruledata;
 
    /* get master problem */
-   masterscip = GCGgetMasterprob(scip);
+   masterscip = GCGgetMasterprob(gcg);
    assert(masterscip != NULL);
 
    heurincumbentindex = -1;
 
    /* get the branching candidates */
-   SCIP_CALL( SCIPgetExternBranchCands(scip, &branchcands, &branchcandssol, NULL, NULL,
+   SCIP_CALL( SCIPgetExternBranchCands(origprob, &branchcands, &branchcandssol, NULL, NULL,
          &npriobranchcands, NULL, NULL, NULL) );
 
    if( branchruledata->initiator == ORIG )
@@ -977,7 +988,7 @@ SCIP_RETCODE selectCandidate(
    }
    else if( branchruledata->initiator == RYANFOSTER && (branchruledata->usepseudocosts || branchruledata->mostfrac ) )
    {
-      SCIP_CALL( SCIPhashmapCreate(&solhashmap, SCIPblkmem(scip), npriobranchcands) );
+      SCIP_CALL( SCIPhashmapCreate(&solhashmap, SCIPblkmem(origprob), npriobranchcands) );
       for( int r = 0; r<npriobranchcands; r++ )
       {
          SCIP_CALL( SCIPhashmapInsertReal(solhashmap, branchcands[r], branchcandssol[r]) );
@@ -993,12 +1004,12 @@ SCIP_RETCODE selectCandidate(
    *bestupinf = FALSE;
    *bestdowninf = FALSE;
 
-   depth = SCIPnodeGetDepth(SCIPgetFocusNode(scip));
+   depth = SCIPnodeGetDepth(SCIPgetFocusNode(origprob));
 
    /* set maximum strong branching lp iterations and pricing rounds to 2 times the average unless the value is
     * fixed in the settings (as it is done in SCIP)
     */
-   SCIP_CALL( SCIPgetLongintParam(scip, "branching/bp_strong/maxsblpiters", &branchruledata->maxsblpiters) );
+   SCIP_CALL( SCIPgetLongintParam(origprob, "branching/bp_strong/maxsblpiters", &branchruledata->maxsblpiters) );
    if( branchruledata->maxsblpiters == 0 )
    {
       SCIP_Longint nlpiterations;
@@ -1023,7 +1034,7 @@ SCIP_RETCODE selectCandidate(
       branchruledata->maxsblpiters = maxlpiters;
    }
 
-   SCIP_CALL( SCIPgetIntParam(scip, "branching/bp_strong/maxsbpricerounds", &branchruledata->maxsbpricerounds) );
+   SCIP_CALL( SCIPgetIntParam(origprob, "branching/bp_strong/maxsbpricerounds", &branchruledata->maxsbpricerounds) );
    if( branchruledata->maxsbpricerounds == 0 )
    {
       SCIP_Longint npricerounds;
@@ -1048,18 +1059,18 @@ SCIP_RETCODE selectCandidate(
       branchruledata->maxsbpricerounds = maxpricerounds;
    }
 
-   upperbound = SCIPgetUpperbound(scip);
-   nodelowerbound = SCIPnodeGetLowerbound( SCIPgetFocusNode(scip) );
+   upperbound = SCIPgetUpperbound(origprob);
+   nodelowerbound = SCIPnodeGetLowerbound( SCIPgetFocusNode(origprob) );
    nodegap = ((upperbound >= 0) == (nodelowerbound >= 0) && MIN( ABS( upperbound ), ABS( nodelowerbound ) ) != 0)?
              MIN( ABS( (upperbound-nodelowerbound) / MIN( ABS( upperbound ), ABS( nodelowerbound ) ) ), 1 ) : 1;
    assert(0 <= nodegap && nodegap <= 1);
 
    /* number of candidates we evaluate precisely should be based on the likely relevance of this branching decision
     * via the nodegap */
-   nneededcands = calculateNCands(scip, branchruledata, nodegap, 0, ncands);
+   nneededcands = calculateNCands(origprob, branchruledata, nodegap, 0, ncands);
 
    /* insert branchcands into hashtable */
-   SCIP_CALL( addBranchcandsToData(scip, branchrule, cand1s, cand2s, ncands) );
+   SCIP_CALL( addBranchcandsToData(gcg, branchrule, cand1s, cand2s, ncands) );
 
    SCIP_CALL( SCIPallocBufferArray(masterscip, &branchruledata->score, ncands) );
    for( int init = 0; init < ncands; ++init )
@@ -1099,7 +1110,7 @@ SCIP_RETCODE selectCandidate(
             {
                if( branchruledata->uniqueblockflags[hashindex] < -1 )
                {
-                  branchruledata->uniqueblockflags[hashindex] = assignUniqueBlockFlags(scip, cand1s[i]);
+                  branchruledata->uniqueblockflags[hashindex] = assignUniqueBlockFlags(gcg, cand1s[i]);
                }
 
                if( branchruledata->uniqueblockflags[hashindex] == 1 )
@@ -1157,7 +1168,7 @@ SCIP_RETCODE selectCandidate(
     * candidates for which we have historical scores, otherwise some candidates would be selected simply because they
     * have been scored before
     */
-   nneededhistcands = (int) SCIPfloor(scip, MIN( (SCIP_Real)nvalidhistcands / (SCIP_Real)(nvalidcands+nvalidhistcands),
+   nneededhistcands = (int) SCIPfloor(origprob, MIN( (SCIP_Real)nvalidhistcands / (SCIP_Real)(nvalidcands+nvalidhistcands),
                                                  branchruledata->histweight ) * nvalidcands);
    qsort(histindices, nvalidhistcands, sizeof(int), score_compare_function);
    qsort(histindices, nneededhistcands, sizeof(int), geq_compare_function);
@@ -1194,8 +1205,8 @@ SCIP_RETCODE selectCandidate(
                   nneededcands = 1;
 
                   /* strong branching can be fully stopped if all open nodes are below the max depth */
-                  if( SCIPgetEffectiveRootDepth(scip) > branchruledata->maxphase1depth &&
-                      SCIPgetEffectiveRootDepth(scip) > branchruledata->maxphase2depth )
+                  if( SCIPgetEffectiveRootDepth(origprob) > branchruledata->maxphase1depth &&
+                      SCIPgetEffectiveRootDepth(origprob) > branchruledata->maxphase2depth )
                      branchruledata->done = TRUE;
                }
                else
@@ -1203,14 +1214,14 @@ SCIP_RETCODE selectCandidate(
                   /* we only want to skip phase 1, so we need to set nneededcands to the number of output candidates
                    * for phase 1
                    */
-                  nneededcands = calculateNCands(scip, branchruledata, nodegap, 1, phase0nneededcands);
+                  nneededcands = calculateNCands(origprob, branchruledata, nodegap, 1, phase0nneededcands);
                }
             }
 
             break;
 
          case 1:
-            nneededcands = calculateNCands(scip, branchruledata, nodegap, 1, phase0nneededcands);
+            nneededcands = calculateNCands(origprob, branchruledata, nodegap, 1, phase0nneededcands);
 
             /* skip phase 2 if we are in lite mode,
              * or if the number of available candidates is lower than the min amount for phase 2,
@@ -1232,7 +1243,7 @@ SCIP_RETCODE selectCandidate(
             lookahead = branchruledata->maxlookahead;
             if( lookahead && branchruledata->lookaheadscales>0 )
             {
-               lookahead = MAX( 1, (int) SCIPround(scip,
+               lookahead = MAX( 1, (int) SCIPround(origprob,
                                                   (SCIP_Real) ((1-branchruledata->lookaheadscales) * lookahead) -
                                                   (SCIP_Real) (branchruledata->lookaheadscales *
                                                    ncands / branchruledata->maxphase1outcands) * lookahead) );
@@ -1253,15 +1264,15 @@ SCIP_RETCODE selectCandidate(
           */
          if( branchruledata->initiator == ORIG )
          {
-            minpscount = MIN( SCIPgetVarPseudocostCount(scip, cand1s[indices[c]], 0),
-                              SCIPgetVarPseudocostCount(scip, cand1s[indices[c]], 1) );
+            minpscount = MIN( SCIPgetVarPseudocostCount(origprob, cand1s[indices[c]], 0),
+                              SCIPgetVarPseudocostCount(origprob, cand1s[indices[c]], 1) );
 
             /* only call strong branching if this variable is not sufficiently reliable yet */
             if(  phase == 0 ||
                 (phase == 1 && minpscount < branchruledata->phase1reliable) ||
                 (phase == 2 && minpscount < branchruledata->phase2reliable)  )
             {
-            SCIP_CALL( score_function(scip, branchrule, cand1s[indices[c]], NULL, branchcandssol[indices[c]], 0, 0,
+            SCIP_CALL( score_function(gcg, branchrule, cand1s[indices[c]], NULL, branchcandssol[indices[c]], 0, 0,
                                       phase == 0, FALSE, phase == 2 && !branchruledata->usestronglite,
                                       &score, &upinf, &downinf) );
             }
@@ -1272,7 +1283,7 @@ SCIP_RETCODE selectCandidate(
          }
          else
          {
-            SCIP_CALL( score_function(scip, branchrule, cand1s[indices[c]], cand2s[indices[c]],
+            SCIP_CALL( score_function(gcg, branchrule, cand1s[indices[c]], cand2s[indices[c]],
                                       SCIPhashmapGetImageReal(solhashmap, cand1s[indices[c]]),
                                       SCIPhashmapGetImageReal(solhashmap, cand2s[indices[c]]),
                                       candinfos[indices[c]], phase == 0, FALSE,
@@ -1282,7 +1293,7 @@ SCIP_RETCODE selectCandidate(
          /* variable pointers for orig candidates sometimes change during probing in strong branching */
          if( branchruledata->initiator == ORIG && phase >= 1 )
          {
-            SCIP_CALL( SCIPgetExternBranchCands(scip, &cand1s, &branchcandssol, NULL, NULL,
+            SCIP_CALL( SCIPgetExternBranchCands(origprob, &cand1s, &branchcandssol, NULL, NULL,
                NULL, NULL, NULL, NULL) );
          }
 
@@ -1528,17 +1539,17 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
 
    SCIP_Real phase1depth;
 
-   origprob = GCGmasterGetOrigprob(scip);
+   branchruledata = SCIPbranchruleGetData(branchrule);
+
+   origprob = GCGgetOrigprob(branchruledata->gcg);
    assert(branchrule != NULL);
    assert(origprob != NULL);
 
    SCIPdebugMessage("Init BPStrong branching rule\n");
 
-   SCIP_CALL( GCGrelaxIncludeBranchrule( origprob, branchrule, branchActiveMasterBPStrong,
+   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, branchrule, branchActiveMasterBPStrong,
          branchDeactiveMasterBPStrong, branchPropMasterBPStrong, branchMasterSolvedBPStrong,
          branchDataDeleteBPStrong, NULL, NULL) );
-
-   branchruledata = SCIPbranchruleGetData(branchrule);
 
    /* free data if we already solved another instance but branchFreeBPStrong was not called inbetween */
    if( branchruledata->initialized )
@@ -1617,32 +1628,36 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
 
 /** creates the b&p strong-branching branching rule and includes it in SCIP */
 SCIP_RETCODE GCGincludeBranchruleBPStrong(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP* origscip;
+   SCIP* masterprob;
    SCIP_BRANCHRULE* branchrule;
    SCIP_BRANCHRULEDATA* branchruledata;
 
    SCIPdebugMessage("Include BPStrong branching rule\n");
 
    /* get original problem */
-   origscip = GCGmasterGetOrigprob(scip);
+   origscip = GCGgetOrigprob(gcg);
    assert(origscip != NULL);
+   masterprob = GCGgetMasterprob(gcg);
+   assert(masterprob != NULL);
 
    /* alloc branching rule data */
-   SCIP_CALL( SCIPallocBlockMemory(scip, &branchruledata) );
+   SCIP_CALL( SCIPallocBlockMemory(masterprob, &branchruledata) );
+   branchruledata->gcg = gcg;
 
    /* include branching rule */
-   SCIP_CALL( SCIPincludeBranchruleBasic(scip, &branchrule, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
+   SCIP_CALL( SCIPincludeBranchruleBasic(masterprob, &branchrule, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
             BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata) );
    assert(branchrule != NULL);
 
    branchruledata->initialized = FALSE;
 
    /* set non fundamental callbacks via setter functions */
-   SCIP_CALL( SCIPsetBranchruleInit(scip, branchrule, branchInitBPStrong) );
-   SCIP_CALL( SCIPsetBranchruleFree(scip, branchrule, branchFreeBPStrong) );
+   SCIP_CALL( SCIPsetBranchruleInit(masterprob, branchrule, branchInitBPStrong) );
+   SCIP_CALL( SCIPsetBranchruleFree(masterprob, branchrule, branchFreeBPStrong) );
 
    /* add branching rule parameters */
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/bp_strong/stronglite",
@@ -1748,14 +1763,13 @@ SCIP_RETCODE GCGincludeBranchruleBPStrong(
 
 
    /* notify cons_integralorig about the branching rule */
-   SCIP_CALL( GCGconsIntegralorigAddBranchrule(scip, branchrule) );
+   SCIP_CALL( GCGconsIntegralorigAddBranchrule(gcg, branchrule) );
 
    return SCIP_OKAY;
 }
 
-SCIP_RETCODE
-GCGbranchSelectCandidateStrongBranchingOrig(
-   SCIP*                 scip,               /**< SCIP data structure */
+SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingOrig(
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_BRANCHRULE       *origbranchrule,    /**< pointer storing original branching rule */
    SCIP_VAR              **branchvar,        /**< pointer to store output var pointer */
    SCIP_Bool             *upinf,             /**< pointer to store whether strong branching detected infeasibility in
@@ -1769,10 +1783,12 @@ GCGbranchSelectCandidateStrongBranchingOrig(
 {
    SCIP_BRANCHRULEDATA *branchruledata;
    SCIP_BRANCHRULE *branchrule;
-   SCIP* masterscip;
+   SCIP* origprob;
+   SCIP* masterprob;
 
-   masterscip = GCGgetMasterprob(scip);
-   branchrule = SCIPfindBranchrule(masterscip, BRANCHRULE_NAME);
+   origprob = GCGgetOrigprob(gcg);
+   masterprob = GCGgetMasterprob(gcg);
+   branchrule = SCIPfindBranchrule(masterprob, BRANCHRULE_NAME);
    assert(branchrule != NULL);
 
    branchruledata = SCIPbranchruleGetData(branchrule);
@@ -1781,26 +1797,26 @@ GCGbranchSelectCandidateStrongBranchingOrig(
    {
       branchruledata->initiator = ORIG;
 
-      SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/usepseudocosts", &branchruledata->usepseudocosts) );
-      SCIP_CALL( SCIPgetBoolParam(scip, "branching/orig/mostfrac", &branchruledata->mostfrac) );
+      SCIP_CALL( SCIPgetBoolParam(origprob, "branching/orig/usepseudocosts", &branchruledata->usepseudocosts) );
+      SCIP_CALL( SCIPgetBoolParam(origprob, "branching/orig/mostfrac", &branchruledata->mostfrac) );
 
-      SCIP_CALL( SCIPgetIntParam(scip, "branching/orig/minphase0outcands", &branchruledata->minphase0outcands) );
-      SCIP_CALL( SCIPgetIntParam(scip, "branching/orig/maxphase0outcands", &branchruledata->maxphase0outcands) );
-      SCIP_CALL( SCIPgetRealParam(scip, "branching/orig/maxphase0outcandsfrac",
+      SCIP_CALL( SCIPgetIntParam(origprob, "branching/orig/minphase0outcands", &branchruledata->minphase0outcands) );
+      SCIP_CALL( SCIPgetIntParam(origprob, "branching/orig/maxphase0outcands", &branchruledata->maxphase0outcands) );
+      SCIP_CALL( SCIPgetRealParam(origprob, "branching/orig/maxphase0outcandsfrac",
                                   &branchruledata->maxphase0outcandsfrac) );
-      SCIP_CALL( SCIPgetRealParam(scip, "branching/orig/phase1gapweight", &branchruledata->phase1gapweight) );
+      SCIP_CALL( SCIPgetRealParam(origprob, "branching/orig/phase1gapweight", &branchruledata->phase1gapweight) );
 
-      SCIP_CALL( SCIPgetIntParam(scip, "branching/orig/minphase1outcands", &branchruledata->minphase1outcands) );
-      SCIP_CALL( SCIPgetIntParam(scip, "branching/orig/maxphase1outcands", &branchruledata->maxphase1outcands) );
-      SCIP_CALL( SCIPgetRealParam(scip, "branching/orig/maxphase1outcandsfrac",
+      SCIP_CALL( SCIPgetIntParam(origprob, "branching/orig/minphase1outcands", &branchruledata->minphase1outcands) );
+      SCIP_CALL( SCIPgetIntParam(origprob, "branching/orig/maxphase1outcands", &branchruledata->maxphase1outcands) );
+      SCIP_CALL( SCIPgetRealParam(origprob, "branching/orig/maxphase1outcandsfrac",
                                   &branchruledata->maxphase1outcandsfrac) );
-      SCIP_CALL( SCIPgetRealParam(scip, "branching/orig/phase2gapweight", &branchruledata->phase2gapweight) );
+      SCIP_CALL( SCIPgetRealParam(origprob, "branching/orig/phase2gapweight", &branchruledata->phase2gapweight) );
 
       assert(branchruledata->maxphase0outcands >= branchruledata->minphase0outcands);
       assert(branchruledata->maxphase1outcands >= branchruledata->minphase1outcands);
    }
 
-   selectCandidate(scip, branchrule, NULL, NULL, NULL, 0, branchvar, NULL, NULL, upinf, downinf, result);
+   selectCandidate(gcg, branchrule, NULL, NULL, NULL, 0, branchvar, NULL, NULL, upinf, downinf, result);
 
    *stillusestrong = !branchruledata->done;
 
@@ -1808,9 +1824,8 @@ GCGbranchSelectCandidateStrongBranchingOrig(
 }
 
 /** interface method for Ryan-Foster branching to strong branching heuristics */
-SCIP_RETCODE
-GCGbranchSelectCandidateStrongBranchingRyanfoster(
-   SCIP*                 scip,               /**< original SCIP data structure */
+SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingRyanfoster(
+   GCG*                  gcg,               /**< original SCIP data structure */
    SCIP_BRANCHRULE*      rfbranchrule,       /**< Ryan-Foster branchrule */
    SCIP_VAR              **ovar1s,           /**< first elements of candidate pairs */
    SCIP_VAR              **ovar2s,           /**< second elements of candidate pairs */
@@ -1831,8 +1846,10 @@ GCGbranchSelectCandidateStrongBranchingRyanfoster(
    SCIP_BRANCHRULEDATA *branchruledata;
    SCIP_BRANCHRULE *branchrule;
    SCIP* masterscip;
+   SCIP* origprob;
 
-   masterscip = GCGgetMasterprob(scip);
+   origprob = GCGgetOrigprob(gcg);
+   masterscip = GCGgetMasterprob(gcg);
    branchrule = SCIPfindBranchrule(masterscip, BRANCHRULE_NAME);
    assert(branchrule != NULL);
 
@@ -1842,33 +1859,33 @@ GCGbranchSelectCandidateStrongBranchingRyanfoster(
    {
       branchruledata->initiator = RYANFOSTER;
       branchruledata->initiatorbranchrule = rfbranchrule;
-      SCIP_CALL( SCIPgetBoolParam(scip, "branching/bp_strong/ryanfoster/usepseudocosts",
+      SCIP_CALL( SCIPgetBoolParam(origprob, "branching/bp_strong/ryanfoster/usepseudocosts",
                                   &branchruledata->usepseudocosts) );
-      SCIP_CALL( SCIPgetBoolParam(scip, "branching/bp_strong/ryanfoster/usemostfrac", &branchruledata->mostfrac) );
+      SCIP_CALL( SCIPgetBoolParam(origprob, "branching/bp_strong/ryanfoster/usemostfrac", &branchruledata->mostfrac) );
 
-      SCIP_CALL( SCIPgetIntParam(scip, "branching/ryanfoster/minphase0outcands",
+      SCIP_CALL( SCIPgetIntParam(origprob, "branching/ryanfoster/minphase0outcands",
                                  &branchruledata->minphase0outcands) );
-      SCIP_CALL( SCIPgetIntParam(scip, "branching/ryanfoster/maxphase0outcands",
+      SCIP_CALL( SCIPgetIntParam(origprob, "branching/ryanfoster/maxphase0outcands",
                                  &branchruledata->maxphase0outcands) );
-      SCIP_CALL( SCIPgetRealParam(scip, "branching/ryanfoster/maxphase0outcandsfrac",
+      SCIP_CALL( SCIPgetRealParam(origprob, "branching/ryanfoster/maxphase0outcandsfrac",
                                   &branchruledata->maxphase0outcandsfrac) );
-      SCIP_CALL( SCIPgetRealParam(scip, "branching/ryanfoster/phase1gapweight",
+      SCIP_CALL( SCIPgetRealParam(origprob, "branching/ryanfoster/phase1gapweight",
                                   &branchruledata->phase1gapweight) );
 
-      SCIP_CALL( SCIPgetIntParam(scip, "branching/ryanfoster/minphase1outcands",
+      SCIP_CALL( SCIPgetIntParam(origprob, "branching/ryanfoster/minphase1outcands",
                                  &branchruledata->minphase1outcands) );
-      SCIP_CALL( SCIPgetIntParam(scip, "branching/ryanfoster/maxphase1outcands",
+      SCIP_CALL( SCIPgetIntParam(origprob, "branching/ryanfoster/maxphase1outcands",
                                  &branchruledata->maxphase1outcands) );
-      SCIP_CALL( SCIPgetRealParam(scip, "branching/ryanfoster/maxphase1outcandsfrac",
+      SCIP_CALL( SCIPgetRealParam(origprob, "branching/ryanfoster/maxphase1outcandsfrac",
                                   &branchruledata->maxphase1outcandsfrac) );
-      SCIP_CALL( SCIPgetRealParam(scip, "branching/ryanfoster/phase2gapweight",
+      SCIP_CALL( SCIPgetRealParam(origprob, "branching/ryanfoster/phase2gapweight",
                                   &branchruledata->phase2gapweight) );
 
       assert(branchruledata->maxphase0outcands >= branchruledata->minphase0outcands);
       assert(branchruledata->maxphase1outcands >= branchruledata->minphase1outcands);
    }
 
-   selectCandidate(scip, branchrule, ovar1s, ovar2s, nspricingblock, npairs,
+   selectCandidate(gcg, branchrule, ovar1s, ovar2s, nspricingblock, npairs,
                    ovar1, ovar2, pricingblock, sameinf, differinf, result);
 
    *stillusestrong = !branchruledata->done;

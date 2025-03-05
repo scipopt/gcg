@@ -43,7 +43,8 @@
 
 
 #include "scip/scip.h"
-#include "gcg/def.h"
+#include "gcg/gcg.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,7 +53,7 @@ extern "C" {
 /** creates the mastercoefdiving heuristic and includes it in GCG */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeHeurMastercoefdiving(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

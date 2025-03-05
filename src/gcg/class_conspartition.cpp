@@ -45,12 +45,12 @@ namespace gcg {
 
 /** constructor */
 ConsPartition::ConsPartition(
-   SCIP*          _scip,
+   GCG*           gcgstruct,
    const char*    givenName,
    int            givenNClasses,
    int            givenNCons
 ) :
-   IndexPartition(_scip, givenName, givenNClasses, givenNCons)
+   IndexPartition(gcgstruct, givenName, givenNClasses, givenNCons)
 {
 
 }
@@ -176,7 +176,7 @@ ConsPartition* ConsPartition::reduceClasses(int givenMaxNumber)
 
    /* create new ConsPartition */
    newName << getName() << "-red-to-" << givenMaxNumber;
-   newPartition = new ConsPartition(scip, newName.str().c_str(), givenMaxNumber, getNConss());
+   newPartition = new ConsPartition(gcg, newName.str().c_str(), givenMaxNumber, getNConss());
 
    /* reassign conss */
    for( int i = 0; i < newPartition->getNConss(); ++i)

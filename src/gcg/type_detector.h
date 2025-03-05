@@ -41,6 +41,7 @@
 #include "scip/type_scip.h"
 #include "scip/type_result.h"
 #include "gcg/type_decomp.h"
+#include "gcg/type_gcg.h"
 
 
 typedef struct GCG_Detector GCG_DETECTOR;
@@ -57,7 +58,7 @@ typedef struct Partialdec_Detection_Data PARTIALDEC_DETECTION_DATA;
  *  - scip            : SCIP main data structure
  *  - detector        : detector data structure
  */
-#define GCG_DECL_FREEDETECTOR(x) SCIP_RETCODE x (SCIP* scip, GCG_DETECTOR* detector)
+#define GCG_DECL_FREEDETECTOR(x) SCIP_RETCODE x (GCG* gcg, GCG_DETECTOR* detector)
 
 /**
  * detector initialization method (called after problem was transformed)
@@ -67,7 +68,7 @@ typedef struct Partialdec_Detection_Data PARTIALDEC_DETECTION_DATA;
  *  - scip            : SCIP data structure
  *  - detector        : detector data structure
  */
-#define GCG_DECL_INITDETECTOR(x) SCIP_RETCODE x (SCIP* scip, GCG_DETECTOR* detector)
+#define GCG_DECL_INITDETECTOR(x) SCIP_RETCODE x (GCG* gcg, GCG_DETECTOR* detector)
 
 /**
  * detector deinitialization method (called before the transformed problem is freed)
@@ -77,7 +78,7 @@ typedef struct Partialdec_Detection_Data PARTIALDEC_DETECTION_DATA;
  *  - scip            : SCIP data structure
  *  - detector        : detector data structure
  */
-#define GCG_DECL_EXITDETECTOR(x) SCIP_RETCODE x (SCIP* scip, GCG_DETECTOR* detector)
+#define GCG_DECL_EXITDETECTOR(x) SCIP_RETCODE x (GCG* gcg, GCG_DETECTOR* detector)
 
 
 /**
@@ -95,7 +96,7 @@ typedef struct Partialdec_Detection_Data PARTIALDEC_DETECTION_DATA;
  *  - SCIP_DIDNOTFIND : the method completed without finding a decomposition
  *  - SCIP_DIDNOTRUN  : the method did not run
  */
-#define GCG_DECL_PROPAGATEPARTIALDEC(x) SCIP_RETCODE x (SCIP* scip, GCG_DETECTOR* detector, PARTIALDEC_DETECTION_DATA* partialdecdetectiondata, SCIP_RESULT* result)
+#define GCG_DECL_PROPAGATEPARTIALDEC(x) SCIP_RETCODE x (GCG* gcg, GCG_DETECTOR* detector, PARTIALDEC_DETECTION_DATA* partialdecdetectiondata, SCIP_RESULT* result)
 
 
 /**
@@ -113,7 +114,7 @@ typedef struct Partialdec_Detection_Data PARTIALDEC_DETECTION_DATA;
  *  - SCIP_DIDNOTFIND : the method completed without finding a decomposition
  *  - SCIP_DIDNOTRUN  : the method did not run
  */
-#define GCG_DECL_FINISHPARTIALDEC(x) SCIP_RETCODE x (SCIP* scip, GCG_DETECTOR* detector, PARTIALDEC_DETECTION_DATA* partialdecdetectiondata, SCIP_RESULT* result)
+#define GCG_DECL_FINISHPARTIALDEC(x) SCIP_RETCODE x (GCG* gcg, GCG_DETECTOR* detector, PARTIALDEC_DETECTION_DATA* partialdecdetectiondata, SCIP_RESULT* result)
 
 /**
  * given a complete partialdec (complete decomposition) the detector
@@ -130,7 +131,7 @@ typedef struct Partialdec_Detection_Data PARTIALDEC_DETECTION_DATA;
  *  - SCIP_DIDNOTFIND : the method completed without finding a decomposition
  *  - SCIP_DIDNOTRUN  : the method did not run
  */
-#define GCG_DECL_POSTPROCESSPARTIALDEC(x) SCIP_RETCODE x (SCIP* scip, GCG_DETECTOR* detector, PARTIALDEC_DETECTION_DATA* partialdecdetectiondata, SCIP_RESULT* result)
+#define GCG_DECL_POSTPROCESSPARTIALDEC(x) SCIP_RETCODE x (GCG* gcg, GCG_DETECTOR* detector, PARTIALDEC_DETECTION_DATA* partialdecdetectiondata, SCIP_RESULT* result)
 
 /**
  * set the parameter of a detector to values according to fast emphasis and size of the instance
@@ -143,7 +144,7 @@ typedef struct Partialdec_Detection_Data PARTIALDEC_DETECTION_DATA;
  *  - SCIP_SUCCESS    : the method completed
  *  - SCIP_DIDNOTRUN  : the method did not run
  */
-#define GCG_DECL_SETPARAMFAST(x) SCIP_RETCODE x (SCIP* scip, GCG_DETECTOR* detector, SCIP_RESULT* result)
+#define GCG_DECL_SETPARAMFAST(x) SCIP_RETCODE x (GCG* gcg, GCG_DETECTOR* detector, SCIP_RESULT* result)
 
 /**
  * set the parameter of a detector to values according to aggressive emphasis and size of the instance
@@ -156,7 +157,7 @@ typedef struct Partialdec_Detection_Data PARTIALDEC_DETECTION_DATA;
  *  - SCIP_SUCCESS    : the method completed
  *  - SCIP_DIDNOTRUN  : the method did not run
  */
-#define GCG_DECL_SETPARAMAGGRESSIVE(x) SCIP_RETCODE x (SCIP* scip, GCG_DETECTOR* detector, SCIP_RESULT* result)
+#define GCG_DECL_SETPARAMAGGRESSIVE(x) SCIP_RETCODE x (GCG* gcg, GCG_DETECTOR* detector, SCIP_RESULT* result)
 
 /**
  * set the parameter of a detector to values according to default emphasis and size of the instance
@@ -169,7 +170,7 @@ typedef struct Partialdec_Detection_Data PARTIALDEC_DETECTION_DATA;
  *  - SCIP_SUCCESS    : the method completed
  *  - SCIP_DIDNOTRUN  : the method did not run
  */
-#define GCG_DECL_SETPARAMDEFAULT(x) SCIP_RETCODE x (SCIP* scip, GCG_DETECTOR* detector, SCIP_RESULT* result)
+#define GCG_DECL_SETPARAMDEFAULT(x) SCIP_RETCODE x (GCG* gcg, GCG_DETECTOR* detector, SCIP_RESULT* result)
 
 
 

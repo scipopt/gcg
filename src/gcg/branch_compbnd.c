@@ -78,7 +78,8 @@
 /** branching rule data */
 struct SCIP_BranchruleData
 {
-   SCIP_Bool             useMaxRangeMidrangeHeuristic; /** should the MaxRangeMidrangeHeuristic be used */
+   GCG*                  gcg;                            /**< GCG data structure */
+   SCIP_Bool             useMaxRangeMidrangeHeuristic;   /** should the MaxRangeMidrangeHeuristic be used */
    SCIP_Bool             useMostDistinctMedianHeuristic; /** should the MostDistinctMedianHeuristic be used */
 #ifdef COMPBND_STATS
    FILE*                 statsfile;          /**< file to write statistics to */
@@ -100,10 +101,10 @@ struct GCG_BranchData
 
 
 /** define the signature of functions to choose the component bound */
-#define CHOOSE_COMPBND(x) SCIP_RETCODE x (SCIP* masterscip, SCIP_VAR** satisfyingMastervars, int satisfyingMastervarsSize, SCIP_VAR** indexSet, int indexSetSize, GCG_COMPBND* compBndSeq, int compBndSeqSize, int blocknr, SCIP_VAR** selectedOrigvar, SCIP_Real* value)
+#define CHOOSE_COMPBND(x) SCIP_RETCODE x (GCG* gcg, SCIP_VAR** satisfyingMastervars, int satisfyingMastervarsSize, SCIP_VAR** indexSet, int indexSetSize, GCG_COMPBND* compBndSeq, int compBndSeqSize, int blocknr, SCIP_VAR** selectedOrigvar, SCIP_Real* value)
 
 /** define the signature of functions that chose one component bound sequence out of many */
-#define CHOOSE_COMPBNDSEQ(x) SCIP_RETCODE x (SCIP* masterscip, GCG_COMPBND** compBndSeqList, int* compBndSeqSizeList, int compBndListSize, int blocknr, GCG_COMPBND** selectedCompBndSeq, int* selectedCompBndSeqSize)
+#define CHOOSE_COMPBNDSEQ(x) SCIP_RETCODE x (GCG* gcg, GCG_COMPBND** compBndSeqList, int* compBndSeqSizeList, int compBndListSize, int blocknr, GCG_COMPBND** selectedCompBndSeq, int* selectedCompBndSeqSize)
 
 /*
  * Local methods
@@ -304,8 +305,7 @@ SCIP_Bool isColInCompBndSeq(
    SCIP_Real*            solvals,            /**< column solution values */
    int                   nsolvars,           /**< number of column solution variables */
    GCG_COMPBND*          compBndSeq,         /**< component bound sequence to check */
-   int                   compBndSeqSize,     /**< size of compBndSeq */
-   int                   blocknr             /**< block we are branching in */
+   int                   compBndSeqSize      /**< size of compBndSeq */
    )
 {
    int i;
@@ -363,7 +363,7 @@ SCIP_Bool isMasterVarInCompBndSeq(
 /** adds a variable to a branching constraint */
 static
 SCIP_RETCODE addVarToMasterbranch(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             mastervar,          /**< the variable to add */
    GCG_BRANCHDATA*       branchdata,         /**< branching data structure where the variable should be added */
    SCIP_Bool*            added               /**< whether the variable was added */
@@ -373,8 +373,9 @@ SCIP_RETCODE addVarToMasterbranch(
    SCIP_VAR** origvars;
    SCIP_Real* origvals;
    int norigvars;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(scip != NULL);
+   assert(masterprob != NULL);
    assert(mastervar != NULL);
    assert(branchdata != NULL);
    assert(added != NULL);
@@ -385,12 +386,12 @@ SCIP_RETCODE addVarToMasterbranch(
 
    *added = FALSE;
 
-   coef = GCGextendedmasterconsGetCoeff(scip, branchdata->mastercons, origvars, origvals, norigvars, GCGvarGetBlock(mastervar));
+   coef = GCGextendedmasterconsGetCoeff(gcg, branchdata->mastercons, origvars, origvals, norigvars, GCGvarGetBlock(mastervar));
 
-   if( !SCIPisZero(scip, coef) )
+   if( !SCIPisZero(masterprob, coef) )
    {
       SCIPdebugMessage("Adding variable %s to branching constraint: %s %d\n", SCIPvarGetName(mastervar), branchdata->branchtype == GCG_BRANCH_DOWN ? "<=" : ">=", branchdata->constant);
-      SCIP_CALL( GCGextendedmasterconsAddMasterVar(scip, branchdata->mastercons, mastervar, coef) );
+      SCIP_CALL( GCGextendedmasterconsAddMasterVar(gcg, branchdata->mastercons, mastervar, coef) );
       *added = TRUE;
    }
 
@@ -401,10 +402,13 @@ SCIP_RETCODE addVarToMasterbranch(
 static
 GCG_DECL_EXTENDEDMASTERCONSGETCOEFF(extendedmasterconsGetCoeffCompBnd)
 {
+   SCIP* masterprob;
    GCG_BRANCHDATA* branchdata;
 
-   assert(scip != NULL);
-   assert(GCGisMaster(scip));
+   masterprob = GCGgetMasterprob(gcg);
+
+   assert(masterprob != NULL);
+   assert(GCGisMaster(masterprob));
 
    branchdata = (GCG_BRANCHDATA*) GCGextendedmasterconsGetData(extendedmasterconsdata);
 
@@ -416,7 +420,7 @@ GCG_DECL_EXTENDEDMASTERCONSGETCOEFF(extendedmasterconsGetCoeffCompBnd)
    if( probnr == -1 || probnr != branchdata->blocknr )
       return SCIP_OKAY;
 
-   if( !isColInCompBndSeq(scip, solvars, solvals, nsolvars, branchdata->compBndSeq, branchdata->compBndSeqSize, branchdata->blocknr) )
+   if( !isColInCompBndSeq(masterprob, solvars, solvals, nsolvars, branchdata->compBndSeq, branchdata->compBndSeqSize) )
       return SCIP_OKAY;
 
    *coef = 1.0;
@@ -427,15 +431,15 @@ GCG_DECL_EXTENDEDMASTERCONSGETCOEFF(extendedmasterconsGetCoeffCompBnd)
 /** creates the constraint for branching directly on a master variable */
 static
 SCIP_RETCODE createBranchingCons(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_NODE*            node,               /**< node to add constraint */
    GCG_BRANCHDATA*       branchdata          /**< branching data structure */
 )
 {
    SCIP_Longint uuid;
 
-   SCIP* origscip;
    SCIP* pricingscip;
+   SCIP* masterprob;
 
    SCIP_VAR** mastervars;
    int nmastervars;
@@ -453,16 +457,18 @@ SCIP_RETCODE createBranchingCons(
 
    char name[SCIP_MAXSTRLEN];
 
-   assert(scip != NULL);
-   assert(GCGisMaster(scip));
+   masterprob = GCGgetMasterprob(gcg);
+
+   assert(masterprob != NULL);
+   assert(GCGisMaster(masterprob));
    assert(node != NULL);
    assert(branchdata != NULL);
    assert(branchdata->mastercons == NULL);
 
    uuid = SCIPnodeGetNumber(node);
 
-   mastervars = SCIPgetVars(scip);
-   nmastervars = SCIPgetNVars(scip);
+   mastervars = SCIPgetVars(masterprob);
+   nmastervars = SCIPgetNVars(masterprob);
    assert(nmastervars >= 0);
    assert(nmastervars == 0 || mastervars != NULL);
 
@@ -470,21 +476,19 @@ SCIP_RETCODE createBranchingCons(
    if (branchdata->branchtype == GCG_BRANCH_DOWN)
    {
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "compbnd_%d_child(%d_LE_%d)", uuid, branchdata->compBndSeqSize, branchdata->constant);
-      SCIP_CALL( SCIPcreateConsLinear(scip, &branchcons, name, 0, NULL, NULL,
-         -SCIPinfinity(scip), (SCIP_Real) branchdata->constant, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
+      SCIP_CALL( SCIPcreateConsLinear(masterprob, &branchcons, name, 0, NULL, NULL,
+         -SCIPinfinity(masterprob), (SCIP_Real) branchdata->constant, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
    }
    else
    {
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "compbnd_%d_child(%d_GE_%d)", uuid, branchdata->compBndSeqSize, branchdata->constant);
-      SCIP_CALL( SCIPcreateConsLinear(scip, &branchcons, name, 0, NULL, NULL,
-         (SCIP_Real) branchdata->constant, SCIPinfinity(scip), TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
+      SCIP_CALL( SCIPcreateConsLinear(masterprob, &branchcons, name, 0, NULL, NULL,
+         (SCIP_Real) branchdata->constant, SCIPinfinity(masterprob), TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE) );
    }
 
-   SCIP_CALL( SCIPaddConsNode(scip, node, branchcons, NULL) );
+   SCIP_CALL( SCIPaddConsNode(masterprob, node, branchcons, NULL) );
 
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
-   pricingscip = GCGgetPricingprob(origscip, branchdata->blocknr);
+   pricingscip = GCGgetPricingprob(gcg, branchdata->blocknr);
    assert(pricingscip != NULL);
 
    assert(branchdata->mastercons == NULL);
@@ -615,10 +619,10 @@ SCIP_RETCODE createBranchingCons(
    }
 
    // create the pricing modification
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &pricingmods, 1) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &pricingmods, 1) );
    assert(pricingmods != NULL);
    SCIP_CALL( GCGpricingmodificationCreate(
-      scip,
+      gcg,
       &(pricingmods[0]),
       branchdata->blocknr,
       coefvar,
@@ -629,13 +633,13 @@ SCIP_RETCODE createBranchingCons(
    ) );
 
    // create the master constraint
-   SCIP_CALL( GCGextendedmasterconsCreateFromCons(scip, &branchdata->mastercons, branchcons, pricingmods, 1, branchdata, extendedmasterconsGetCoeffCompBnd) );
+   SCIP_CALL( GCGextendedmasterconsCreateFromCons(gcg, &branchdata->mastercons, branchcons, pricingmods, 1, branchdata, extendedmasterconsGetCoeffCompBnd) );
 
    // add the variables to the constraint
    for( i = 0; i < nmastervars; i++ )
    {
       added = FALSE;
-      SCIP_CALL( addVarToMasterbranch(scip, mastervars[i], branchdata, &added) );
+      SCIP_CALL( addVarToMasterbranch(gcg, mastervars[i], branchdata, &added) );
    }
 
    return SCIP_OKAY;
@@ -644,15 +648,15 @@ SCIP_RETCODE createBranchingCons(
 /** for given component bound sequence create the 2 child nodes */
 static
 SCIP_RETCODE createChildNodesCompBndSeq(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
    GCG_COMPBND*          compBndSeq,         /**< Component Bound Sequence defining the nodes */
    int                   compBndSeqSize,     /**< size of compBndSeq */
-   int                   blocknr,            /**< number of the block */
-   SCIP_RESULT*          result              /**< pointer to store the result of the branching call */
+   int                   blocknr             /**< number of the block */
    )
 {
-   SCIP*  masterscip;
+   SCIP* origprob;
+   SCIP* masterprob;
    int i;
    SCIP_Real constantSum;
    int nmastervars;
@@ -666,16 +670,17 @@ SCIP_RETCODE createChildNodesCompBndSeq(
    SCIP_NODE* upChild;
    SCIP_CONS* upChildcons;
 
-   assert(scip != NULL);
+   assert(origprob != NULL);
    assert(compBndSeqSize > 0);
    assert(compBndSeq != NULL);
 
-   SCIPdebugMessage("Component bound branching rule Node creation for blocknr %d with %d identical blocks \n", blocknr, GCGgetNIdenticalBlocks(scip, blocknr));
+   origprob = GCGgetOrigprob(gcg);
+   masterprob = GCGgetMasterprob(gcg);
+
+   SCIPdebugMessage("Component bound branching rule Node creation for blocknr %d with %d identical blocks \n", blocknr, GCGgetNIdenticalBlocks(gcg, blocknr));
 
    /*  get variable data of the master problem */
-   masterscip = GCGgetMasterprob(scip);
-   assert(masterscip != NULL);
-   SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
    assert(nmastervars >= 0);
    /* determine the constant value of the master constraint, i.e. the rhs for the down branch, and lhs for the up branch */
    constantSum = 0.0;
@@ -684,22 +689,22 @@ SCIP_RETCODE createChildNodesCompBndSeq(
       if(
          GCGisMasterVarInBlock(
             mastervars[i],
-            GCGgetBlockRepresentative(scip, blocknr)
+            GCGgetBlockRepresentative(gcg, blocknr)
          )
-         && isMasterVarInCompBndSeq(scip, mastervars[i], compBndSeq, compBndSeqSize, blocknr)
+         && isMasterVarInCompBndSeq(origprob, mastervars[i], compBndSeq, compBndSeqSize, blocknr)
       )
       {
-         constantSum += SCIPgetSolVal(masterscip, NULL, mastervars[i]);
+         constantSum += SCIPgetSolVal(masterprob, NULL, mastervars[i]);
       }
    }
    // sanity check: the sum must be fractional, otherwise something went wrong during separation, i.e. compBndSeq is incorrect
-   assert(!SCIPisFeasIntegral(scip, constantSum));
+   assert(!SCIPisFeasIntegral(origprob, constantSum));
 
    /* create two nodes */
    SCIPdebugMessage("Component bound branching rule: creating 2 nodes\n");
-   SCIP_CALL( initNodeBranchdata(masterscip, &downBranchData, GCG_BRANCH_DOWN, FLOOR(scip, constantSum), compBndSeq, compBndSeqSize, blocknr) );
-   SCIP_CALL( initNodeBranchdata(masterscip, &upBranchData, GCG_BRANCH_UP, CEIL(scip, constantSum), compBndSeq, compBndSeqSize, blocknr) );
-   freeComponentBoundSequence(masterscip, &compBndSeq, &compBndSeqSize);
+   SCIP_CALL( initNodeBranchdata(masterprob, &downBranchData, GCG_BRANCH_DOWN, FLOOR(origprob, constantSum), compBndSeq, compBndSeqSize, blocknr) );
+   SCIP_CALL( initNodeBranchdata(masterprob, &upBranchData, GCG_BRANCH_UP, CEIL(origprob, constantSum), compBndSeq, compBndSeqSize, blocknr) );
+   freeComponentBoundSequence(masterprob, &compBndSeq, &compBndSeqSize);
    assert(downBranchData != NULL);
    assert(upBranchData != NULL);
    assert(compBndSeq == NULL);
@@ -718,21 +723,21 @@ SCIP_RETCODE createChildNodesCompBndSeq(
       upBranchData->constant);
 
    /* add the nodes to the tree */
-   SCIP_CALL( SCIPcreateChild(masterscip, &downChild, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &downChildcons, downChildname, downChild,
-      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, downBranchData, NULL, 0, 0) );
-   SCIP_CALL( SCIPaddConsNode(masterscip, downChild, downChildcons, NULL) );
-   SCIP_CALL( createBranchingCons(masterscip, downChild, downBranchData) );
+   SCIP_CALL( SCIPcreateChild(masterprob, &downChild, 0.0, SCIPgetLocalTransEstimate(masterprob)) );
+   SCIP_CALL( GCGcreateConsMasterbranch(gcg, &downChildcons, downChildname, downChild,
+      GCGconsMasterbranchGetActiveCons(masterprob), branchrule, downBranchData, NULL, 0, 0) );
+   SCIP_CALL( SCIPaddConsNode(masterprob, downChild, downChildcons, NULL) );
+   SCIP_CALL( createBranchingCons(gcg, downChild, downBranchData) );
 
-   SCIP_CALL( SCIPcreateChild(masterscip, &upChild, 0.0, SCIPgetLocalTransEstimate(masterscip)) );
-   SCIP_CALL( GCGcreateConsMasterbranch(masterscip, &upChildcons, upChildname, upChild,
-      GCGconsMasterbranchGetActiveCons(masterscip), branchrule, upBranchData, NULL, 0, 0) );
-   SCIP_CALL( SCIPaddConsNode(masterscip, upChild, upChildcons, NULL) );
-   SCIP_CALL( createBranchingCons(masterscip, upChild, upBranchData) );
+   SCIP_CALL( SCIPcreateChild(masterprob, &upChild, 0.0, SCIPgetLocalTransEstimate(masterprob)) );
+   SCIP_CALL( GCGcreateConsMasterbranch(gcg, &upChildcons, upChildname, upChild,
+      GCGconsMasterbranchGetActiveCons(masterprob), branchrule, upBranchData, NULL, 0, 0) );
+   SCIP_CALL( SCIPaddConsNode(masterprob, upChild, upChildcons, NULL) );
+   SCIP_CALL( createBranchingCons(gcg, upChild, upBranchData) );
 
    /*  release constraints */
-   SCIP_CALL( SCIPreleaseCons(masterscip, &upChildcons) );
-   SCIP_CALL( SCIPreleaseCons(masterscip, &downChildcons) );
+   SCIP_CALL( SCIPreleaseCons(masterprob, &upChildcons) );
+   SCIP_CALL( SCIPreleaseCons(masterprob, &downChildcons) );
 
    return SCIP_OKAY;
 }
@@ -920,7 +925,7 @@ SCIP_Real getUpperBound(
 /** separation algorithm determining multiple component bound sequences one could branch on */
 static
 SCIP_RETCODE separation_helper(
-   SCIP*                 masterscip,              /**< SCIP data structure */
+   GCG*                  gcg,                     /**< GCG data structure */
    SCIP_VAR**            satisfyingMastervars,    /**< mastervariables currently satisfying the component bound sequence in the specified block */
    int                   satisfyingMastervarsSize,/**< size of mastervars */
    GCG_COMPBND*          compBndSeq,              /**< current Component Bound Sequence defining the nodes */
@@ -935,22 +940,25 @@ SCIP_RETCODE separation_helper(
 {
    SCIP_Real fractionality;
    int i;
+   SCIP* masterprob;
 
-   assert(masterscip != NULL);
-   assert(GCGisMaster(masterscip));
+   masterprob = GCGgetMasterprob(gcg);
+
+   assert(masterprob != NULL);
+   assert(GCGisMaster(masterprob));
 
    // Sanity check: All variables in satisfyingMastervars must satisfy the component bound sequence
    if( compBndSeqSize > 0 ) {
       for( i = 0; i < satisfyingMastervarsSize; ++i )
       {
-         assert(isMasterVarInCompBndSeq(masterscip, satisfyingMastervars[i], compBndSeq, compBndSeqSize, blocknr));
+         assert(isMasterVarInCompBndSeq(masterprob, satisfyingMastervars[i], compBndSeq, compBndSeqSize, blocknr));
       }
    }
 
-   fractionality = calcFractionality(masterscip, satisfyingMastervars, satisfyingMastervarsSize);
+   fractionality = calcFractionality(masterprob, satisfyingMastervars, satisfyingMastervarsSize);
    assert(fractionality >= 0.0);
 
-   if( SCIPisEQ(masterscip, fractionality, 0.0) ) // should never happen - the branching scheme is sound and complete
+   if( SCIPisEQ(masterprob, fractionality, 0.0) ) // should never happen - the branching scheme is sound and complete
    {
       // all variables are integral, nothing to do
       SCIPdebugMessage("All variables are integral, nothing to do\n");
@@ -960,7 +968,7 @@ SCIP_RETCODE separation_helper(
       return SCIP_ERROR;
    }
 
-   if( compBndSeqSize > 0 && !SCIPisFeasIntegral(masterscip, fractionality) )
+   if( compBndSeqSize > 0 && !SCIPisFeasIntegral(masterprob, fractionality) )
    {
       /* now we branch on <= floor(fractionality) and >= ceil(fractionality)
        * this is handled by the createChildNodesCompBnd method
@@ -972,13 +980,13 @@ SCIP_RETCODE separation_helper(
       // add current compBndSeq to Blist
       if( *foundCompBndSeqListSize == 0 )
       {
-         SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, foundCompBndSeqList, 1) );
-         SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, foundCompBndSeqSizeList, 1) );
+         SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, foundCompBndSeqList, 1) );
+         SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, foundCompBndSeqSizeList, 1) );
       }
       else
       {
-         SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, foundCompBndSeqList, *foundCompBndSeqListSize, *foundCompBndSeqListSize + 1) );
-         SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, foundCompBndSeqSizeList, *foundCompBndSeqListSize, *foundCompBndSeqListSize + 1) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(masterprob, foundCompBndSeqList, *foundCompBndSeqListSize, *foundCompBndSeqListSize + 1) );
+         SCIP_CALL( SCIPreallocBlockMemoryArray(masterprob, foundCompBndSeqSizeList, *foundCompBndSeqListSize, *foundCompBndSeqListSize + 1) );
       }
       (*foundCompBndSeqList)[*foundCompBndSeqListSize] = compBndSeq;
       (*foundCompBndSeqSizeList)[*foundCompBndSeqListSize] = compBndSeqSize;
@@ -990,15 +998,15 @@ SCIP_RETCODE separation_helper(
    // the fractionality is integral, we need to impose an additional bound
    SCIP_VAR** indexSet = NULL;
    int indexSetSize = 0;
-   SCIP_CALL( initIndexSet(masterscip, &indexSet, &indexSetSize, satisfyingMastervars, satisfyingMastervarsSize) );
+   SCIP_CALL( initIndexSet(masterprob, &indexSet, &indexSetSize, satisfyingMastervars, satisfyingMastervarsSize) );
 
    SCIP_VAR* selectedOrigvar = NULL;
    SCIP_Real value = 0.0;
-   SCIP_CALL( chooseCompBnd(masterscip, satisfyingMastervars, satisfyingMastervarsSize, indexSet, indexSetSize, compBndSeq, compBndSeqSize, blocknr, &selectedOrigvar, &value) );
+   SCIP_CALL( chooseCompBnd(gcg, satisfyingMastervars, satisfyingMastervarsSize, indexSet, indexSetSize, compBndSeq, compBndSeqSize, blocknr, &selectedOrigvar, &value) );
    assert(selectedOrigvar != NULL);
    assert(SCIPvarGetLbGlobal(selectedOrigvar) < value && value < SCIPvarGetUbGlobal(selectedOrigvar));
 
-   SCIPfreeBlockMemoryArray(masterscip, &indexSet, indexSetSize);
+   SCIPfreeBlockMemoryArray(masterprob, &indexSet, indexSetSize);
    indexSetSize = 0;
 
    // create two component bound options, xj <= floor(value) and xj >= floor(value)+1
@@ -1006,9 +1014,9 @@ SCIP_RETCODE separation_helper(
    GCG_COMPBND* highCompBndSeq;
    int newCompBndSeqSize = compBndSeqSize + 1;
    // allocate memory for lowCompBndSeq and highCompBndSeq
-   SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &lowCompBndSeq, newCompBndSeqSize) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &lowCompBndSeq, newCompBndSeqSize) );
 
-   SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &highCompBndSeq, newCompBndSeqSize) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &highCompBndSeq, newCompBndSeqSize) );
    // copy the old component bounds to lowCompBndSeq and highCompBndSeq
    for(i = 0; i < compBndSeqSize; ++i)
    {
@@ -1016,10 +1024,10 @@ SCIP_RETCODE separation_helper(
       highCompBndSeq[i] = compBndSeq[i];
    }
    // add the new component bounds to lowCompBndSeq and highCompBndSeq
-   lowCompBndSeq[compBndSeqSize] = (GCG_COMPBND){selectedOrigvar, GCG_COMPBND_SENSE_LE, FLOOR(masterscip, value)};
-   highCompBndSeq[compBndSeqSize] = (GCG_COMPBND){selectedOrigvar, GCG_COMPBND_SENSE_GE, FLOOR(masterscip, value) + 1};
+   lowCompBndSeq[compBndSeqSize] = (GCG_COMPBND){selectedOrigvar, GCG_COMPBND_SENSE_LE, FLOOR(masterprob, value)};
+   highCompBndSeq[compBndSeqSize] = (GCG_COMPBND){selectedOrigvar, GCG_COMPBND_SENSE_GE, FLOOR(masterprob, value) + 1};
 
-   freeComponentBoundSequence(masterscip, &compBndSeq, &compBndSeqSize);
+   freeComponentBoundSequence(masterprob, &compBndSeq, &compBndSeqSize);
    assert(compBndSeq == NULL);
 
    SCIPdebugMessage("lowCompBndSeq and highCompBndSeq after adding the new component bounds\n");
@@ -1044,13 +1052,13 @@ SCIP_RETCODE separation_helper(
       SCIP_Bool satisfiesLowCompBndSeq = FALSE;
       SCIP_Bool satisfiesHighCompBndSeq = FALSE;
 #endif
-      if( isMasterVarInCompBndSeq(masterscip, satisfyingMastervars[i], lowCompBndSeq, newCompBndSeqSize, blocknr) )
+      if( isMasterVarInCompBndSeq(masterprob, satisfyingMastervars[i], lowCompBndSeq, newCompBndSeqSize, blocknr) )
       {
          // increase the size of lowMastervars by 1, and add the current variable to lowMastervars
          if( lowMastervarsSize == 0 )
-            SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &lowMastervars, lowMastervarsSize+1) );
+            SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &lowMastervars, lowMastervarsSize+1) );
          else
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &lowMastervars, lowMastervarsSize, lowMastervarsSize+1) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(masterprob, &lowMastervars, lowMastervarsSize, lowMastervarsSize+1) );
 
          lowMastervars[lowMastervarsSize] = satisfyingMastervars[i];
          lowMastervarsSize += 1;
@@ -1058,13 +1066,13 @@ SCIP_RETCODE separation_helper(
          satisfiesLowCompBndSeq = TRUE;
 #endif
       }
-      if( isMasterVarInCompBndSeq(masterscip, satisfyingMastervars[i], highCompBndSeq, newCompBndSeqSize, blocknr) )
+      if( isMasterVarInCompBndSeq(masterprob, satisfyingMastervars[i], highCompBndSeq, newCompBndSeqSize, blocknr) )
       {
          // increase the size of highMastervars by 1, and add the current variable to highMastervars
          if( highMastervarsSize == 0 )
-            SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &highMastervars, highMastervarsSize+1) );
+            SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &highMastervars, highMastervarsSize+1) );
          else
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &highMastervars, highMastervarsSize, highMastervarsSize+1) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(masterprob, &highMastervars, highMastervarsSize, highMastervarsSize+1) );
 
          highMastervars[highMastervarsSize] = satisfyingMastervars[i];
          highMastervarsSize += 1;
@@ -1082,28 +1090,28 @@ SCIP_RETCODE separation_helper(
 
 #ifndef NDEBUG
    // determine the fractionality of lowMastervars and highMastervars
-   SCIP_Real fractionality1 = calcFractionality(masterscip, lowMastervars, lowMastervarsSize);
-   SCIP_Real fractionality2 = calcFractionality(masterscip, highMastervars, highMastervarsSize);
+   SCIP_Real fractionality1 = calcFractionality(masterprob, lowMastervars, lowMastervarsSize);
+   SCIP_Real fractionality2 = calcFractionality(masterprob, highMastervars, highMastervarsSize);
 
-   assert(SCIPisPositive(masterscip, fractionality1));
-   assert(SCIPisPositive(masterscip, fractionality2));
-   assert(SCIPisLE(masterscip, fractionality / 2, fractionality1) || SCIPisLE(masterscip, fractionality / 2, fractionality2));
+   assert(SCIPisPositive(masterprob, fractionality1));
+   assert(SCIPisPositive(masterprob, fractionality2));
+   assert(SCIPisLE(masterprob, fractionality / 2, fractionality1) || SCIPisLE(masterprob, fractionality / 2, fractionality2));
    assert(
-      (SCIPisFeasIntegral(masterscip, fractionality1) && SCIPisFeasIntegral(masterscip, fractionality2)) ||
-      (!SCIPisFeasIntegral(masterscip, fractionality1) && !SCIPisFeasIntegral(masterscip, fractionality2))
+      (SCIPisFeasIntegral(masterprob, fractionality1) && SCIPisFeasIntegral(masterprob, fractionality2)) ||
+      (!SCIPisFeasIntegral(masterprob, fractionality1) && !SCIPisFeasIntegral(masterprob, fractionality2))
    );
 #endif
 
    // recursive call
-   SCIP_CALL( separation_helper(masterscip, lowMastervars, lowMastervarsSize, lowCompBndSeq, newCompBndSeqSize, blocknr, chooseCompBnd, foundCompBndSeqList, foundCompBndSeqSizeList, foundCompBndSeqListSize, result) );
+   SCIP_CALL( separation_helper(gcg, lowMastervars, lowMastervarsSize, lowCompBndSeq, newCompBndSeqSize, blocknr, chooseCompBnd, foundCompBndSeqList, foundCompBndSeqSizeList, foundCompBndSeqListSize, result) );
 
-   SCIPfreeBlockMemoryArray(masterscip, &lowMastervars, lowMastervarsSize);
+   SCIPfreeBlockMemoryArray(masterprob, &lowMastervars, lowMastervarsSize);
    lowMastervarsSize = 0;
    assert(lowMastervars == NULL);
 
-   SCIP_CALL( separation_helper(masterscip, highMastervars, highMastervarsSize, highCompBndSeq, newCompBndSeqSize, blocknr, chooseCompBnd, foundCompBndSeqList, foundCompBndSeqSizeList, foundCompBndSeqListSize, result) );
+   SCIP_CALL( separation_helper(gcg, highMastervars, highMastervarsSize, highCompBndSeq, newCompBndSeqSize, blocknr, chooseCompBnd, foundCompBndSeqList, foundCompBndSeqSizeList, foundCompBndSeqListSize, result) );
 
-   SCIPfreeBlockMemoryArray(masterscip, &highMastervars, highMastervarsSize);
+   SCIPfreeBlockMemoryArray(masterprob, &highMastervars, highMastervarsSize);
    highMastervarsSize = 0;
    assert(highMastervars == NULL);
 
@@ -1184,34 +1192,38 @@ CHOOSE_COMPBND(chooseMaxMin)
    SCIP_Real currentDiff;
    SCIP_Real largestDiffMin;
    SCIP_Real largestDiffMax;
-   SCIP_Real largestDiff = -SCIPinfinity(masterscip);
+   SCIP_Real largestDiff;
    int i;
    int j;
    SCIP_Real generatorentry;
    SCIP_Bool found = FALSE;
+   SCIP* masterprob;
 
 #ifndef NDEBUG
    SCIP_Real givenMin;
    SCIP_Real givenMax;
 #endif
 
+   masterprob = GCGgetMasterprob(gcg);
+   largestDiff = -SCIPinfinity(masterprob);
+
    for( j=0; j<indexSetSize; ++j )
    {
       currentOrigvar = indexSet[j];
 #ifndef NDEBUG
-      givenMin = getLowerBound(masterscip, currentOrigvar, compBndSeq, compBndSeqSize);
-      givenMax = getUpperBound(masterscip, currentOrigvar, compBndSeq, compBndSeqSize);
-      assert(SCIPisFeasLE(masterscip, givenMin, givenMax));
+      givenMin = getLowerBound(masterprob, currentOrigvar, compBndSeq, compBndSeqSize);
+      givenMax = getUpperBound(masterprob, currentOrigvar, compBndSeq, compBndSeqSize);
+      assert(SCIPisFeasLE(masterprob, givenMin, givenMax));
 #endif
-      currentMin = SCIPinfinity(masterscip);
-      currentMax = -SCIPinfinity(masterscip);
+      currentMin = SCIPinfinity(masterprob);
+      currentMax = -SCIPinfinity(masterprob);
       for( i=0; i<satisfyingMastervarsSize; ++i )
       {
          currentMastervar = satisfyingMastervars[i];
 
          // Current solution value of the master variable must be fractional and > 0
-         currentSolutionValue = SCIPgetSolVal(masterscip, NULL, currentMastervar);
-         if ( !SCIPisFeasPositive(masterscip, currentSolutionValue) || SCIPisFeasIntegral(masterscip, currentSolutionValue) ) {
+         currentSolutionValue = SCIPgetSolVal(masterprob, NULL, currentMastervar);
+         if ( !SCIPisFeasPositive(masterprob, currentSolutionValue) || SCIPisFeasIntegral(masterprob, currentSolutionValue) ) {
             // skip
             continue;
          }
@@ -1219,23 +1231,23 @@ CHOOSE_COMPBND(chooseMaxMin)
          generatorentry = getGeneratorEntry(currentMastervar, currentOrigvar);
 
          // first, check if we can update the min and max values
-         if( SCIPisInfinity(masterscip, currentMin) )
+         if( SCIPisInfinity(masterprob, currentMin) )
          {
-            assert(SCIPisInfinity(masterscip, -currentMax));
+            assert(SCIPisInfinity(masterprob, -currentMax));
             currentMin = generatorentry;
             currentMax = generatorentry;
          }
-         else if( SCIPisLT(masterscip, generatorentry, currentMin) )
+         else if( SCIPisLT(masterprob, generatorentry, currentMin) )
             currentMin = generatorentry;
-         else if( SCIPisLT(masterscip, currentMax, generatorentry) )
+         else if( SCIPisLT(masterprob, currentMax, generatorentry) )
             currentMax = generatorentry;
 
          // now could be that min<max
-         if( SCIPisLT(masterscip, currentMin, currentMax) )
+         if( SCIPisLT(masterprob, currentMin, currentMax) )
          {
             found = TRUE;
             currentDiff = currentMax - currentMin;
-            if( SCIPisGT(masterscip, currentDiff, largestDiff) )
+            if( SCIPisGT(masterprob, currentDiff, largestDiff) )
             {
                largestDiffMin = currentMin;
                largestDiffMax = currentMax;
@@ -1253,8 +1265,8 @@ CHOOSE_COMPBND(chooseMaxMin)
 
    assert(largestDiffMin < largestDiffMax);
    assert(largestDiff > 0);
-   assert(SCIPisFeasLE(masterscip, SCIPvarGetLbGlobal(*selectedOrigvar), largestDiffMin));
-   assert(SCIPisFeasLE(masterscip, largestDiffMax, SCIPvarGetUbGlobal(*selectedOrigvar)));
+   assert(SCIPisFeasLE(masterprob, SCIPvarGetLbGlobal(*selectedOrigvar), largestDiffMin));
+   assert(SCIPisFeasLE(masterprob, largestDiffMax, SCIPvarGetUbGlobal(*selectedOrigvar)));
    SCIPdebugMessage("Found %d for origvar %s, j=%d, min=%f, max=%f\n", found, SCIPvarGetName(*selectedOrigvar), j, largestDiffMin, largestDiffMax);
 
    // j and origivar are still set to the correct values after execution of the loop
@@ -1267,21 +1279,20 @@ CHOOSE_COMPBND(chooseMaxMin)
 static
 CHOOSE_COMPBND(chooseMostDistinctValuesMedian)
 {
+   SCIP* masterprob;
    int selectedNumDistinctValues = 0;
-
    SCIP_VAR* currentOrigvar;
    int currentNumDistinctValues;
    SCIP_Real* distinctValues = NULL;
    int distinctValuesSize = 0;
-
    SCIP_Bool inserted;
    SCIP_Bool duplicate;
-
    int i;
    int j;
    int k;
    int l;
 
+   masterprob = GCGgetMasterprob(gcg);
    assert(*selectedOrigvar == NULL);
 
    SCIP_Real generatorentry;
@@ -1296,8 +1307,8 @@ CHOOSE_COMPBND(chooseMostDistinctValuesMedian)
          SCIP_VAR* current_mastervar = satisfyingMastervars[i];
 
          // Current solution value of the master variable must be fractional and > 0
-         SCIP_Real current_solution_value = SCIPgetSolVal(masterscip, NULL, current_mastervar);
-         if ( !SCIPisFeasPositive(masterscip, current_solution_value) || SCIPisFeasIntegral(masterscip, current_solution_value) ) {
+         SCIP_Real current_solution_value = SCIPgetSolVal(masterprob, NULL, current_mastervar);
+         if ( !SCIPisFeasPositive(masterprob, current_solution_value) || SCIPisFeasIntegral(masterprob, current_solution_value) ) {
             // skip
             continue;
          }
@@ -1309,8 +1320,8 @@ CHOOSE_COMPBND(chooseMostDistinctValuesMedian)
          {
             assert(distinctValues == NULL);
             assert(currentNumDistinctValues == 0);
-            distinctValuesSize = SCIPcalcMemGrowSize(masterscip, 1);
-            SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &distinctValues, distinctValuesSize) );
+            distinctValuesSize = SCIPcalcMemGrowSize(masterprob, 1);
+            SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &distinctValues, distinctValuesSize) );
             distinctValues[0] = generatorentry;
             currentNumDistinctValues = 1;
          }
@@ -1321,19 +1332,19 @@ CHOOSE_COMPBND(chooseMostDistinctValuesMedian)
             duplicate = FALSE;
             for( k=0; k<currentNumDistinctValues; ++k )
             {
-               if( SCIPisEQ(masterscip, generatorentry, distinctValues[k]) )
+               if( SCIPisEQ(masterprob, generatorentry, distinctValues[k]) )
                {
                   duplicate = TRUE;
                   break;
                }
 
-               if( SCIPisLT(masterscip, generatorentry, distinctValues[k]) )
+               if( SCIPisLT(masterprob, generatorentry, distinctValues[k]) )
                {
                   // insert at position k
                   if( currentNumDistinctValues == distinctValuesSize )
                   {
-                     int new_current_distinctValuesSize = SCIPcalcMemGrowSize(masterscip, currentNumDistinctValues + 1);
-                     SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &distinctValues, distinctValuesSize, new_current_distinctValuesSize) );
+                     int new_current_distinctValuesSize = SCIPcalcMemGrowSize(masterprob, currentNumDistinctValues + 1);
+                     SCIP_CALL( SCIPreallocBlockMemoryArray(masterprob, &distinctValues, distinctValuesSize, new_current_distinctValuesSize) );
                      distinctValuesSize = new_current_distinctValuesSize;
                   }
 
@@ -1355,8 +1366,8 @@ CHOOSE_COMPBND(chooseMostDistinctValuesMedian)
                // insert at the end
                if( currentNumDistinctValues == distinctValuesSize )
                {
-                  int new_current_distinctValuesSize = SCIPcalcMemGrowSize(masterscip, currentNumDistinctValues + 1);
-                  SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &distinctValues, distinctValuesSize, new_current_distinctValuesSize) );
+                  int new_current_distinctValuesSize = SCIPcalcMemGrowSize(masterprob, currentNumDistinctValues + 1);
+                  SCIP_CALL( SCIPreallocBlockMemoryArray(masterprob, &distinctValues, distinctValuesSize, new_current_distinctValuesSize) );
                   distinctValuesSize = new_current_distinctValuesSize;
                }
 
@@ -1386,7 +1397,7 @@ CHOOSE_COMPBND(chooseMostDistinctValuesMedian)
 
    assert(*selectedOrigvar != NULL);
 
-   SCIPfreeBlockMemoryArrayNull(masterscip, &distinctValues, distinctValuesSize);
+   SCIPfreeBlockMemoryArrayNull(masterprob, &distinctValues, distinctValuesSize);
 
    return SCIP_OKAY;
 }
@@ -1427,28 +1438,28 @@ SCIP_Real calcSum(
 static
 CHOOSE_COMPBNDSEQ(chooseClosestToKHalf)
 {
-   SCIP* origscip;
+   SCIP* masterprob;
    int i;
    SCIP_Real sum;
    SCIP_Real kHalf;
 
    int bestIndex = -1;
-   SCIP_Real best = SCIPinfinity(masterscip);
+   SCIP_Real best;
+   
+   masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterscip != NULL);
-   assert(GCGisMaster(masterscip));
+   assert(masterprob != NULL);
+   assert(GCGisMaster(masterprob));
    assert(compBndSeqList != NULL);
    assert(compBndSeqSizeList != NULL);
    assert(compBndListSize > 0);
 
-   origscip = GCGmasterGetOrigprob(masterscip);
-   assert(origscip != NULL);
-
-   kHalf = GCGgetNIdenticalBlocks(origscip, blocknr) * 0.5;
+   best = SCIPinfinity(masterprob);
+   kHalf = GCGgetNIdenticalBlocks(gcg, blocknr) * 0.5;
 
    for( i = 0; i < compBndListSize; ++i )
    {
-      sum = ABS(calcSum(masterscip, compBndSeqList[i], compBndSeqSizeList[i], blocknr) - kHalf);
+      sum = ABS(calcSum(masterprob, compBndSeqList[i], compBndSeqSizeList[i], blocknr) - kHalf);
 
       if( sum < best )
       {
@@ -1472,20 +1483,22 @@ CHOOSE_COMPBNDSEQ(chooseMostFractional)
    int i;
    SCIP_Real sum;
    SCIP_Real fractionality;
+   SCIP* masterprob;
 
    int bestIndex = -1;
    SCIP_Real best = 0.0;
 
-   assert(masterscip != NULL);
-   assert(GCGisMaster(masterscip));
+   masterprob = GCGgetMasterprob(gcg);
+   assert(masterprob != NULL);
+   assert(GCGisMaster(masterprob));
    assert(compBndSeqList != NULL);
    assert(compBndSeqSizeList != NULL);
    assert(compBndListSize > 0);
 
    for( i = 0; i < compBndListSize; ++i )
    {
-      sum = calcSum(masterscip, compBndSeqList[i], compBndSeqSizeList[i], blocknr);
-      fractionality = SCIPfrac(masterscip, sum);
+      sum = calcSum(masterprob, compBndSeqList[i], compBndSeqSizeList[i], blocknr);
+      fractionality = SCIPfrac(masterprob, sum);
 
       fractionality = MIN(fractionality, 1.0 - fractionality);
 
@@ -1510,13 +1523,15 @@ CHOOSE_COMPBNDSEQ(chooseSmallestSize)
 {
    int i;
    int smallestSize = INT_MAX;
+   SCIP* masterprob;
 
    GCG_COMPBND** newCompBndSeqList = NULL;
    int* newCompBndSeqSizeList = NULL;
    int newCompBndSeqListSize = 0;
 
-   assert(masterscip != NULL);
-   assert(GCGisMaster(masterscip));
+   masterprob = GCGgetMasterprob(gcg);
+   assert(masterprob != NULL);
+   assert(GCGisMaster(masterprob));
    assert(compBndSeqList != NULL);
    assert(compBndSeqSizeList != NULL);
    assert(compBndListSize > 0);
@@ -1538,13 +1553,13 @@ CHOOSE_COMPBNDSEQ(chooseSmallestSize)
       {
          if( newCompBndSeqListSize == 0 )
          {
-            SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &newCompBndSeqList, 1) );
-            SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &newCompBndSeqSizeList, 1) );
+            SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &newCompBndSeqList, 1) );
+            SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &newCompBndSeqSizeList, 1) );
          }
          else
          {
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &newCompBndSeqList, newCompBndSeqListSize, newCompBndSeqListSize + 1) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(masterscip, &newCompBndSeqSizeList, newCompBndSeqListSize, newCompBndSeqListSize + 1) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(masterprob, &newCompBndSeqList, newCompBndSeqListSize, newCompBndSeqListSize + 1) );
+            SCIP_CALL( SCIPreallocBlockMemoryArray(masterprob, &newCompBndSeqSizeList, newCompBndSeqListSize, newCompBndSeqListSize + 1) );
          }
 
          newCompBndSeqList[newCompBndSeqListSize] = compBndSeqList[i];
@@ -1557,11 +1572,11 @@ CHOOSE_COMPBNDSEQ(chooseSmallestSize)
 
    // step 3: refine the selection
    //SCIP_CALL( chooseClosestToKHalf(masterscip, newCompBndSeqList, newCompBndSeqSizeList, newCompBndSeqListSize, blocknr, selectedCompBndSeq, selectedCompBndSeqSize) );
-   SCIP_CALL( chooseMostFractional(masterscip, newCompBndSeqList, newCompBndSeqSizeList, newCompBndSeqListSize, blocknr, selectedCompBndSeq, selectedCompBndSeqSize) );
+   SCIP_CALL( chooseMostFractional(gcg, newCompBndSeqList, newCompBndSeqSizeList, newCompBndSeqListSize, blocknr, selectedCompBndSeq, selectedCompBndSeqSize) );
 
    // step 4: free memory
-   SCIPfreeBlockMemoryArray(masterscip, &newCompBndSeqList, newCompBndSeqListSize);
-   SCIPfreeBlockMemoryArray(masterscip, &newCompBndSeqSizeList, newCompBndSeqListSize);
+   SCIPfreeBlockMemoryArray(masterprob, &newCompBndSeqList, newCompBndSeqListSize);
+   SCIPfreeBlockMemoryArray(masterprob, &newCompBndSeqSizeList, newCompBndSeqListSize);
 
    return SCIP_OKAY;
 }
@@ -1569,7 +1584,7 @@ CHOOSE_COMPBNDSEQ(chooseSmallestSize)
 /** separation algorithm determining a component bound sequence to branch on */
 static
 SCIP_RETCODE separation(
-   SCIP*                 masterscip,              /**< SCIP data structure */
+   GCG*                  gcg,                     /**< GCG data structure */
    SCIP_BRANCHRULE*      branchrule,              /**< branching rule */
    GCG_COMPBND**         compBndSeq,              /**< Component Bound Sequence defining the nodes */
    int*                  compBndSeqSize,                   /**< size of compBndSeq */
@@ -1581,14 +1596,10 @@ SCIP_RETCODE separation(
    GCG_COMPBND** compBndSeqList;
    int* compBndSeqSizeList;
    int compBndSeqListSize;
-
+   SCIP* masterprob;
    SCIP_BRANCHRULEDATA* branchruledata;
-   branchruledata = SCIPbranchruleGetData(branchrule);
-   assert(branchruledata != NULL);
-
    SCIP_VAR** satisfyingMastervars;
    int satisfyingMastervarsSize;
-
    int i;
 
    compBndSeqList = NULL;
@@ -1598,7 +1609,12 @@ SCIP_RETCODE separation(
    satisfyingMastervars = NULL;
    satisfyingMastervarsSize = 0;
 
-   findSatisfyingMastervars(masterscip, &satisfyingMastervars, &satisfyingMastervarsSize, blocknr, NULL, 0);
+   branchruledata = SCIPbranchruleGetData(branchrule);
+   assert(branchruledata != NULL);
+
+   masterprob = GCGgetMasterprob(gcg);
+
+   findSatisfyingMastervars(masterprob, &satisfyingMastervars, &satisfyingMastervarsSize, blocknr, NULL, 0);
 #ifndef NDEBUG
    int satisfyingMastervarsSizeCopy = satisfyingMastervarsSize;
    int BlistsizeCopy = compBndSeqListSize;
@@ -1609,7 +1625,7 @@ SCIP_RETCODE separation(
 
    if( branchruledata->useMaxRangeMidrangeHeuristic )
    {
-      SCIP_CALL( separation_helper(masterscip, satisfyingMastervars, satisfyingMastervarsSize, NULL, 0, blocknr, chooseMaxMin, &compBndSeqList, &compBndSeqSizeList, &compBndSeqListSize, result) );
+      SCIP_CALL( separation_helper(gcg, satisfyingMastervars, satisfyingMastervarsSize, NULL, 0, blocknr, chooseMaxMin, &compBndSeqList, &compBndSeqSizeList, &compBndSeqListSize, result) );
 #ifndef NDEBUG
       assert(satisfyingMastervarsSize == satisfyingMastervarsSizeCopy);
       assert(compBndSeqListSize > BlistsizeCopy);
@@ -1619,7 +1635,7 @@ SCIP_RETCODE separation(
 
    if( branchruledata->useMostDistinctMedianHeuristic )
    {
-      SCIP_CALL( separation_helper(masterscip, satisfyingMastervars, satisfyingMastervarsSize, NULL, 0, blocknr, chooseMostDistinctValuesMedian, &compBndSeqList, &compBndSeqSizeList, &compBndSeqListSize, result) );
+      SCIP_CALL( separation_helper(gcg, satisfyingMastervars, satisfyingMastervarsSize, NULL, 0, blocknr, chooseMostDistinctValuesMedian, &compBndSeqList, &compBndSeqSizeList, &compBndSeqListSize, result) );
 #ifndef NDEBUG
       assert(satisfyingMastervarsSize == satisfyingMastervarsSizeCopy);
       assert(compBndSeqListSize > BlistsizeCopy);
@@ -1627,7 +1643,7 @@ SCIP_RETCODE separation(
 #endif
    }
 
-   SCIPfreeBlockMemoryArray(masterscip, &satisfyingMastervars, satisfyingMastervarsSize);
+   SCIPfreeBlockMemoryArray(masterprob, &satisfyingMastervars, satisfyingMastervarsSize);
    satisfyingMastervarsSize = 0;
    assert(satisfyingMastervars == NULL);
 
@@ -1635,7 +1651,7 @@ SCIP_RETCODE separation(
    assert(compBndSeqList != NULL);
    assert(compBndSeqSizeList != NULL);
 
-   SCIP_CALL( chooseSmallestSize(masterscip, compBndSeqList, compBndSeqSizeList, compBndSeqListSize, blocknr, compBndSeq, compBndSeqSize) );
+   SCIP_CALL( chooseSmallestSize(gcg, compBndSeqList, compBndSeqSizeList, compBndSeqListSize, blocknr, compBndSeq, compBndSeqSize) );
 
    assert(*compBndSeqSize > 0);
    assert(*compBndSeq != NULL);
@@ -1645,27 +1661,28 @@ SCIP_RETCODE separation(
    {
       if( compBndSeqList[i] != *compBndSeq )
       {
-         freeComponentBoundSequence(masterscip, &compBndSeqList[i], &compBndSeqSizeList[i]);
+         freeComponentBoundSequence(masterprob, &compBndSeqList[i], &compBndSeqSizeList[i]);
       }
    }
 
-   SCIPfreeBlockMemoryArray(masterscip, &compBndSeqList, compBndSeqListSize);
-   SCIPfreeBlockMemoryArray(masterscip, &compBndSeqSizeList, compBndSeqListSize);
+   SCIPfreeBlockMemoryArray(masterprob, &compBndSeqList, compBndSeqListSize);
+   SCIPfreeBlockMemoryArray(masterprob, &compBndSeqSizeList, compBndSeqListSize);
 
    return SCIP_OKAY;
 }
 
 /** prepares information for using the generic branching scheme */
-SCIP_RETCODE GCGbranchCompBndInitbranch(
-   SCIP*                 masterscip,              /**< SCIP data structure */
+static
+SCIP_RETCODE initBranch(
+   GCG*                  gcg,                     /**< GCG data structure */
    SCIP_BRANCHRULE*      branchrule,              /**< branching rule */
    SCIP_RESULT*          result                   /**< pointer to store the result of the branching call */
    )
 {
-   SCIP* origscip;
 #ifdef COMPBND_STATS
    SCIP_BRANCHRULEDATA* branchruledata;
 #endif
+   SCIP* masterprob;
    SCIP_VAR** branchcands;
    int nbranchcands;
    GCG_COMPBND* compBndSeq;
@@ -1680,14 +1697,13 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
    compBndSeq = NULL;
    compBndSeqSize = 0;
 
-   assert(masterscip != NULL);
+   masterprob = GCGgetMasterprob(gcg);
+
+   assert(masterprob != NULL);
 
    SCIPdebugMessage("get information for component bound branching\n");
 
-   origscip = GCGmasterGetOrigprob(masterscip);
-
-   assert(origscip != NULL);
-   SCIP_CALL( SCIPgetLPBranchCands(masterscip, &branchcands, NULL, NULL, &nbranchcands, NULL, NULL) );
+   SCIP_CALL( SCIPgetLPBranchCands(masterprob, &branchcands, NULL, NULL, &nbranchcands, NULL, NULL) );
 
 #ifdef COMPBND_STATS
    branchruledata = SCIPbranchruleGetData(branchrule);
@@ -1703,29 +1719,29 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
    /* 1. Determine in what block we are branching. We select the first available block,
     *     i.e. the first block that contains a branching candidate, starting from the master block.
     */
-   for( blocknr = 0; blocknr < GCGgetNPricingprobs(origscip); blocknr++ )
+   for( blocknr = 0; blocknr < GCGgetNPricingprobs(gcg); blocknr++ )
    {
-      if( !GCGisPricingprobRelevant(origscip, blocknr) )
+      if( !GCGisPricingprobRelevant(gcg, blocknr) )
          continue;
 
       SCIPdebugMessage("\nTrying to branch in block %d:\n", blocknr);
 
       /* 2. Check whether the fractionality of all master variables in this block is not 0. */
-      findSatisfyingMastervars(masterscip, &satisfyingMastervars, &satisfyingMastervarsSize, blocknr, NULL, 0);
+      findSatisfyingMastervars(masterprob, &satisfyingMastervars, &satisfyingMastervarsSize, blocknr, NULL, 0);
       assert((satisfyingMastervarsSize > 0) == (satisfyingMastervars != NULL));
-      fractionality = calcFractionality(masterscip, satisfyingMastervars, satisfyingMastervarsSize);
-      assert(SCIPisFeasIntegral(masterscip, fractionality));
-      SCIPfreeBlockMemoryArray(masterscip, &satisfyingMastervars, satisfyingMastervarsSize);
+      fractionality = calcFractionality(masterprob, satisfyingMastervars, satisfyingMastervarsSize);
+      assert(SCIPisFeasIntegral(masterprob, fractionality));
+      SCIPfreeBlockMemoryArray(masterprob, &satisfyingMastervars, satisfyingMastervarsSize);
       satisfyingMastervarsSize = 0;
       assert(satisfyingMastervars == NULL);
-      if( SCIPisZero(masterscip, fractionality) )
+      if( SCIPisZero(masterprob, fractionality) )
       {
          SCIPdebugMessage("No fractional integer variables in block %d\n", blocknr);
          continue;
       }
 
       /* 3. Call to separation algorithm to find a suitable compBndSeq to branch on in the current block. */
-      SCIP_CALL( separation(masterscip, branchrule, &compBndSeq, &compBndSeqSize, blocknr, result) );
+      SCIP_CALL( separation(gcg, branchrule, &compBndSeq, &compBndSeqSize, blocknr, result) );
 
       if( *result == SCIP_BRANCHED )
       {
@@ -1739,7 +1755,7 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
       {
          if( compBndSeqSize > 0 )
          {
-            freeComponentBoundSequence(masterscip, &compBndSeq, &compBndSeqSize);
+            freeComponentBoundSequence(masterprob, &compBndSeq, &compBndSeqSize);
             compBndSeqSize = 0;
          }
       }
@@ -1764,19 +1780,19 @@ SCIP_RETCODE GCGbranchCompBndInitbranch(
    }
 
    /* 4. Remove component bounds that are strengthened by others */
-   SCIP_CALL( simplifyComponentBoundSequence(masterscip, &compBndSeq, &compBndSeqSize) );
+   SCIP_CALL( simplifyComponentBoundSequence(masterprob, &compBndSeq, &compBndSeqSize) );
    assert(compBndSeqSize > 0);
    assert(compBndSeq != NULL);
 
 #ifdef COMPBND_STATS
-   int depth = SCIPgetDepth(masterscip);
-   SCIP_Real sum = calcSum(masterscip, compBndSeq, compBndSeqSize, blocknr);
-   int K = GCGgetNIdenticalBlocks(origscip, blocknr);
+   int depth = SCIPgetDepth(masterprob);
+   SCIP_Real sum = calcSum(masterprob, compBndSeq, compBndSeqSize, blocknr);
+   int K = GCGgetNIdenticalBlocks(origprob, blocknr);
    fprintf(branchruledata->statsfile, "%d,%d,%f,%d\n", depth, compBndSeqSize, sum, K);
 #endif
 
    /* 5. Create the child nodes. */
-   SCIP_CALL( createChildNodesCompBndSeq(origscip, branchrule, compBndSeq, compBndSeqSize, blocknr, result) );
+   SCIP_CALL( createChildNodesCompBndSeq(gcg, branchrule, compBndSeq, compBndSeqSize, blocknr) );
 
    return SCIP_OKAY;
 }
@@ -1824,16 +1840,20 @@ SCIP_DECL_BRANCHFREE(branchFreeCompBnd)
 static
 SCIP_DECL_BRANCHEXECLP(branchExeclpCompBnd)
 {  /*lint --e{715}*/
-   SCIP* origscip;
+   SCIP* origprob;
    SCIP_Bool discretization;
-
+   SCIP_BRANCHRULEDATA* branchruledata;
+   
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
    assert(scip != NULL);
    assert(result != NULL);
 
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
+   branchruledata = SCIPbranchruleGetData(branchrule);
+   assert(branchruledata != NULL);
+
+   origprob = GCGgetOrigprob(branchruledata->gcg);
+   assert(origprob != NULL);
 
    SCIPdebugMessage("Execlp method of component bound branching\n");
 
@@ -1842,22 +1862,22 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpCompBnd)
    /* the branching scheme only works for the discretization approach
     * actually, this branching scheme _enforces_ a discretization concept
     */
-   SCIP_CALL( SCIPgetBoolParam(origscip, "relaxing/gcg/discretization", &discretization) );
+   SCIP_CALL( SCIPgetBoolParam(origprob, "relaxing/gcg/discretization", &discretization) );
    if( !discretization )
    {
       SCIPdebugMessage("Component bound branching only for discretization approach\n");
       return SCIP_OKAY;
    }
 
-   if( GCGisMasterSetCovering(origscip) || GCGisMasterSetPartitioning(origscip) )
+   if( GCGisMasterSetCovering(branchruledata->gcg) || GCGisMasterSetPartitioning(branchruledata->gcg) )
    {
       SCIPdebugMessage("Component bound branching executed on a set covering or set partitioning problem\n");
    }
 
-   if( GCGrelaxIsOrigSolFeasible(origscip) )
+   if( GCGrelaxIsOrigSolFeasible(branchruledata->gcg) )
    {
       SCIPdebugMessage("node cut off, since origsol was feasible, solval = %f\n",
-         SCIPgetSolOrigObj(origscip, GCGrelaxGetCurrentOrigSol(origscip)));
+         SCIPgetSolOrigObj(origprob, GCGrelaxGetCurrentOrigSol(branchruledata->gcg)));
 
       *result = SCIP_DIDNOTFIND;
       return SCIP_OKAY;
@@ -1865,7 +1885,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpCompBnd)
 
    *result = SCIP_BRANCHED;
 
-   SCIP_CALL( GCGbranchCompBndInitbranch(scip, branchrule, result) );
+   SCIP_CALL( initBranch(branchruledata->gcg, branchrule, result) );
 
    return SCIP_OKAY;
 }
@@ -1890,6 +1910,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextCompBnd)
 static
 SCIP_DECL_BRANCHEXECPS(branchExecpsCompBnd)
 {  /*lint --e{715}*/
+
    assert(branchrule != NULL);
    assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
    assert(scip != NULL);
@@ -1925,8 +1946,8 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsCompBnd)
 static
 GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterCompBnd)
 {
-   assert(scip != NULL);
-   assert(GCGisMaster(scip));
+   assert(gcg != NULL);
+
    assert(branchdata != NULL);
    assert(branchdata->mastercons != NULL);
 
@@ -1942,8 +1963,8 @@ GCG_DECL_BRANCHACTIVEMASTER(branchActiveMasterCompBnd)
 static
 GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterCompBnd)
 {
-   assert(scip != NULL);
-   assert(GCGisMaster(scip));
+   assert(gcg != NULL);
+
    assert(branchdata != NULL);
    assert(branchdata->mastercons != NULL);
 
@@ -1958,7 +1979,7 @@ GCG_DECL_BRANCHDEACTIVEMASTER(branchDeactiveMasterCompBnd)
 static
 GCG_DECL_BRANCHPROPMASTER(branchPropMasterCompBnd)
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(branchdata != NULL);
    assert(branchdata->mastercons != NULL);
    assert(branchdata->compBndSeq != NULL);
@@ -1978,14 +1999,13 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteCompBnd)
 {
    SCIP* masterscip;
 
-   assert(scip != NULL);
-   assert(GCGisOriginal(scip));
+   assert(gcg != NULL);
    assert(branchdata != NULL);
 
    if( origbranch && !force )
       return SCIP_OKAY;
 
-   masterscip = GCGgetMasterprob(scip);
+   masterscip = GCGgetMasterprob(gcg);
    assert(masterscip != NULL);
 
    SCIPdebugMessage("branchDataDeleteCompBnd: Block %d, Ssize %d\n", (*branchdata)->blocknr, (*branchdata)->compBndSeqSize);
@@ -1994,7 +2014,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteCompBnd)
 
    /* release constraint that enforces the branching decision */
    assert((*branchdata)->mastercons != NULL);
-   SCIP_CALL( GCGextendedmasterconsFree(masterscip, &(*branchdata)->mastercons) );
+   SCIP_CALL( GCGextendedmasterconsFree(gcg, &(*branchdata)->mastercons) );
    assert((*branchdata)->mastercons == NULL);
 
    assert((*branchdata)->compBndSeq != NULL && (*branchdata)->compBndSeqSize > 0);
@@ -2012,15 +2032,15 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteCompBnd)
 static
 GCG_DECL_BRANCHNEWCOL(branchNewColCompBnd)
 {
-   assert(scip != NULL);
-   assert(GCGisMaster(scip));
+   assert(gcg != NULL);
+
    assert(mastervar != NULL);
    assert(GCGvarIsMaster(mastervar));
    assert(branchdata != NULL);
    assert(branchdata->mastercons != NULL);
 
    SCIP_Bool added = FALSE;
-   SCIP_CALL( addVarToMasterbranch(scip, mastervar, branchdata, &added) );
+   SCIP_CALL( addVarToMasterbranch(gcg, mastervar, branchdata, &added) );
 
    return SCIP_OKAY;
 }
@@ -2028,7 +2048,8 @@ GCG_DECL_BRANCHNEWCOL(branchNewColCompBnd)
 static
 GCG_DECL_BRANCHGETEXTENDEDMASTERCONS(branchGetExtendedmasterconsCompBnd)
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
+
    assert(branchdata != NULL);
    assert(branchdata->mastercons != NULL);
 
@@ -2042,25 +2063,25 @@ GCG_DECL_BRANCHGETEXTENDEDMASTERCONS(branchGetExtendedmasterconsCompBnd)
 static
 SCIP_DECL_BRANCHINIT(branchInitCompBnd)
 {
-   SCIP* origscip;
+   SCIP_BRANCHRULEDATA* branchruledata;
 #ifdef COMPBND_STATS
    SCIP_BRANCHRULEDATA* branchruledata;
    SCIP_Bool stabilization_tree;
 #endif
 
-   origscip = GCGmasterGetOrigprob(scip);
    assert(branchrule != NULL);
-   assert(origscip != NULL);
+   branchruledata = SCIPbranchruleGetData(branchrule);
+   assert(branchruledata != NULL);
 
 #ifdef COMPBND_STATS
    branchruledata = SCIPbranchruleGetData(branchrule);
    assert(branchruledata != NULL);
-   SCIP_CALL( SCIPgetBoolParam(origscip, "pricing/masterpricer/stabilizationtree", &stabilization_tree) );
+   SCIP_CALL( SCIPgetBoolParam(origprob, "pricing/masterpricer/stabilizationtree", &stabilization_tree) );
 #endif
 
    SCIPdebugMessage("Init method of component bound branching\n");
 
-   SCIP_CALL( GCGrelaxIncludeBranchrule(origscip, branchrule, branchActiveMasterCompBnd,
+   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, branchrule, branchActiveMasterCompBnd,
          branchDeactiveMasterCompBnd, branchPropMasterCompBnd, branchMasterSolvedCompBnd, branchDataDeleteCompBnd,
          branchNewColCompBnd, branchGetExtendedmasterconsCompBnd) );
 
@@ -2099,39 +2120,44 @@ SCIP_DECL_BRANCHINIT(branchInitCompBnd)
 
 /** creates the compbnd branching rule and includes it in SCIP */
 SCIP_RETCODE GCGincludeBranchruleCompBnd(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
 )
 {
-   SCIP* origscip;
+   SCIP* masterprob;
+   SCIP* origprob;
    SCIP_BRANCHRULEDATA* branchruledata;
    SCIP_BRANCHRULE* branchrule;
 
-   /* get original problem */
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
+   SCIP_UNUSED(chooseClosestToKHalf);
+
+   masterprob = GCGgetMasterprob(gcg);
+   assert(masterprob != NULL);
+   origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    /* create compbnd branching rule data */
-   SCIP_CALL( SCIPallocBlockMemory(scip, &branchruledata) );
+   SCIP_CALL( SCIPallocBlockMemory(masterprob, &branchruledata) );
+   branchruledata->gcg = gcg;
 
    SCIPdebugMessage("Include method of component bound branching\n");
 
    /* include branching rule */
-   SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY, BRANCHRULE_MAXDEPTH,
+   SCIP_CALL( SCIPincludeBranchrule(masterprob, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY, BRANCHRULE_MAXDEPTH,
          BRANCHRULE_MAXBOUNDDIST,
          branchCopyCompBnd, branchFreeCompBnd, branchInitCompBnd, branchExitCompBnd, branchInitsolCompBnd, branchExitsolCompBnd,
          branchExeclpCompBnd, branchExecextCompBnd, branchExecpsCompBnd,
          branchruledata) );
 
    /* add compbnd branching rule parameters */
-   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/compbnd/useMRMH",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "branching/compbnd/useMRMH",
       "should the max range midrange heuristic be used?", &branchruledata->useMaxRangeMidrangeHeuristic, FALSE, TRUE, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(origscip, "branching/compbnd/useMDMH",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "branching/compbnd/useMDMH",
       "should the most distinct median heuristic be used?", &branchruledata->useMostDistinctMedianHeuristic, FALSE, TRUE, NULL, NULL) );
 
-   branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
+   branchrule = SCIPfindBranchrule(masterprob, BRANCHRULE_NAME);
    assert(branchrule != NULL);
 
-   SCIP_CALL( GCGconsIntegralorigAddBranchrule(scip, branchrule) );
+   SCIP_CALL( GCGconsIntegralorigAddBranchrule(gcg, branchrule) );
 
    return SCIP_OKAY;
 }

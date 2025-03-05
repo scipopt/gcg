@@ -33,7 +33,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include "gcg/gcg_general.h"
-
+#include "pub_gcg.h"
 #include "gcg/gcggithash.h"
 
 #include "scip/pub_message.h"
@@ -98,11 +98,13 @@ int GCGsubversion(
 /** prints out GCG version
  */
 void GCGprintVersion(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    FILE*                 file                /**< output file (or NULL for standard output) */
    )
 {
-   assert(scip != NULL);
+   SCIP* scip;
+   assert(gcg != NULL);
+   scip = GCGgetOrigprob(gcg);
 
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "GCG version %d.%d.%d",
       GCGmajorVersion(), GCGminorVersion(), GCGtechVersion());

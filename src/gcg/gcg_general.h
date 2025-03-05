@@ -36,11 +36,10 @@
 #define GCG_GENERAL_H__
 
 
-#include "gcg/def.h"
+
 #include "scip/def.h"
 #include "scip/type_scip.h"
-
-#include "gcg/def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -95,7 +94,7 @@ int GCGsubversion(
  */
 GCG_EXPORT
 void GCGprintVersion(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< SCIP data structure */
    FILE*                 file                /**< output file (or NULL for standard output) */
    );
 

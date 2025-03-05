@@ -363,6 +363,7 @@ LIBOBJ = \
 			gcg/extendedmasterconsdata.o \
 			gcg/masterplugins.o \
 			gcg/bendersplugins.o \
+			gcg/gcg.o \
 			gcg/gcgvarhistory.o \
 			gcg/misc.o \
 			gcg/miscvisualization.o \

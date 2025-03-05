@@ -37,8 +37,9 @@
 #define __GCG_PUB_CLSVAR_H__
 
 
-#include "gcg/def.h"
+
 #include "gcg/type_varclassifier.h"
+#include "gcg/def.h"
 
 #ifdef __cplusplus
 extern "C" {

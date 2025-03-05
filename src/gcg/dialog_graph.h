@@ -47,7 +47,7 @@ class DialogGraph: public ObjDialog
 {
 public:
    DialogGraph(
-      SCIP*              scip                /**< SCIP data structure */
+      GCG*               gcg                 /**< GCG data structure */
    );
    virtual ~DialogGraph() {}
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);
@@ -57,7 +57,7 @@ class DialogWriteGraph: public ObjDialog
 {
 public:
    DialogWriteGraph(
-      SCIP*              scip                /**< SCIP data structure */
+      GCG*               gcgstruct           /**< GCG data structure */
    );
    virtual ~DialogWriteGraph() {}
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);
@@ -67,7 +67,7 @@ class DialogReadPartition: public ObjDialog
 {
 public:
    DialogReadPartition(
-      SCIP*              scip                /**< SCIP data structure */
+      GCG*               gcg                 /**< GCG data structure */
    );
    virtual ~DialogReadPartition() {}
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);
@@ -80,7 +80,7 @@ private:
    typedef G<T> GRAPH_TYPE;
 public:
    DialogReadGraphs(
-      SCIP*              scip                /**< SCIP data structure */
+      GCG*               gcgstruct           /**< GCG data structure */
    );
    virtual ~DialogReadGraphs() {}
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);
@@ -93,7 +93,7 @@ private:
    typedef G<T> GRAPH_TYPE;
 public:
    DialogWriteGraphs(
-      SCIP*              scip                /**< SCIP data structure */
+      GCG*               gcgstruct           /**< GCG data structure */
    );
    virtual ~DialogWriteGraphs() {}
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);

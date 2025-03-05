@@ -365,6 +365,12 @@
 #define DISP_POSI_OCUTS         3550
 #define DISP_STRI_OCUTS         TRUE
 
+struct SCIP_DispData
+{
+   GCG*           gcg;                 /**< GCG data structure */
+   SCIP_SOL*      lastsol;             /**< last solution found */
+};
+
 /*
  * Callback methods
  */
@@ -386,12 +392,14 @@ SCIP_DECL_DISPCOPY(dispCopyGcg)
 static
 SCIP_DECL_DISPINITSOL(SCIPdispInitsolSolFound)
 {  /*lint --e{715}*/
-
+   SCIP_DISPDATA* dispdata;
    assert(disp != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_SOLFOUND) == 0);
    assert(scip != NULL);
 
-   SCIPdispSetData(disp, (SCIP_DISPDATA*)SCIPgetBestSol(scip));
+   dispdata = SCIPdispGetData(disp);
+   assert(dispdata != NULL);
+   dispdata->lastsol = SCIPgetBestSol(scip);
 
    return SCIP_OKAY;
 }
@@ -409,21 +417,23 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputSolFound)
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_SOLFOUND) == 0);
    assert(scip != NULL);
 
+   dispdata = SCIPdispGetData(disp);
+   assert(dispdata != NULL);
+
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(dispdata->gcg);
    assert(masterprob != NULL);
 
    origsol = SCIPgetBestSol(scip);
    if( origsol == NULL )
-      SCIPdispSetData(disp, NULL);
+      dispdata->lastsol = NULL;
 
    if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING )
       mastersol = SCIPgetBestSol(masterprob);
    else
       mastersol = NULL;
 
-   dispdata = SCIPdispGetData(disp);
-   if( origsol != (SCIP_SOL*)dispdata )
+   if( origsol != dispdata->lastsol )
    {
       SCIPinfoMessage(scip, file, "%c", (SCIPgetSolHeur(scip, origsol) == NULL ? '*'
             : SCIPheurGetDispchar(SCIPgetSolHeur(scip, origsol))));
@@ -438,7 +448,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputSolFound)
       {
          SCIPinfoMessage(scip, file, " ");
       }
-      SCIPdispSetData(disp, (SCIP_DISPDATA*)origsol);
+      dispdata->lastsol = origsol;
    }
    else
       SCIPinfoMessage(scip, file, "  ");
@@ -465,15 +475,18 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNNodes)
 {  /*lint --e{715}*/
    SCIP* masterprob;
 
+   SCIP_DISPDATA* dispdata;
    assert(disp != NULL);
+   dispdata = SCIPdispGetData(disp);
+   assert(dispdata != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_NNODES) == 0);
    assert(scip != NULL);
 
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(dispdata->gcg);
    assert(masterprob != NULL);
 
-   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGgetDecompositionMode(scip) != GCG_DECMODE_DANTZIGWOLFE )
+   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGgetDecompositionMode(dispdata->gcg) != GCG_DECMODE_DANTZIGWOLFE )
       SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNNodes(masterprob), DISP_WIDT_NNODES);
    else
       SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNNodes(scip), DISP_WIDT_NNODES);
@@ -487,15 +500,18 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNNodesLeft)
 {  /*lint --e{715}*/
    SCIP* masterprob;
 
+   SCIP_DISPDATA* dispdata;
    assert(disp != NULL);
+   dispdata = SCIPdispGetData(disp);
+   assert(dispdata != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_NODESLEFT) == 0);
    assert(scip != NULL);
 
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(dispdata->gcg);
    assert(masterprob != NULL);
 
-   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGgetDecompositionMode(scip) != GCG_DECMODE_DANTZIGWOLFE )
+   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGgetDecompositionMode(dispdata->gcg) != GCG_DECMODE_DANTZIGWOLFE )
       SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNNodesLeft(masterprob), DISP_WIDT_NODESLEFT);
    else
       SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNNodesLeft(scip), DISP_WIDT_NODESLEFT);
@@ -522,8 +538,9 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNLPAvgIters)
 {  /*lint --e{715}*/
    SCIP* masterprob;
    SCIP_Longint nnodes;
-
+   SCIP_DISPDATA* dispdata;
    assert(disp != NULL);
+   dispdata = SCIPdispGetData(disp);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_LPAVGITERS) == 0);
    assert(scip != NULL);
 
@@ -534,11 +551,11 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNLPAvgIters)
     */
 
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(dispdata->gcg);
    assert(masterprob != NULL);
 
-   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGgetDecompositionMode(scip) != GCG_DECMODE_DANTZIGWOLFE )
-      nnodes = SCIPgetNNodes(GCGgetMasterprob(scip));
+   if( SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING && GCGgetDecompositionMode(dispdata->gcg) != GCG_DECMODE_DANTZIGWOLFE )
+      nnodes = SCIPgetNNodes(GCGgetMasterprob(dispdata->gcg));
    else
       nnodes = SCIPgetNNodes(scip);
 
@@ -546,8 +563,8 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNLPAvgIters)
       SCIPinfoMessage(scip, file, "     - ");
    else
       SCIPinfoMessage(scip, file, "%6.1f ",
-         (SCIPgetNLPIterations(GCGgetMasterprob(scip)) - SCIPgetNRootLPIterations(GCGgetMasterprob(scip)))
-         / (SCIP_Real)(SCIPgetNNodes(GCGgetMasterprob(scip)) - 1) );
+         (SCIPgetNLPIterations(GCGgetMasterprob(dispdata->gcg)) - SCIPgetNRootLPIterations(GCGgetMasterprob(dispdata->gcg)))
+         / (SCIP_Real)(SCIPgetNNodes(GCGgetMasterprob(dispdata->gcg)) - 1) );
 
    return SCIP_OKAY;
 }
@@ -599,16 +616,17 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMemUsed)
 {  /*lint --e{715}*/
    SCIP_Longint memused;
    int i;
-
+   SCIP_DISPDATA* dispdata;
    assert(disp != NULL);
+   dispdata = SCIPdispGetData(disp);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MEMUSED) == 0);
    assert(scip != NULL);
 
    memused = SCIPgetMemUsed(scip);
-   memused += SCIPgetMemUsed(GCGgetMasterprob(scip));
-   for( i = 0; i < GCGgetNPricingprobs(scip); i++ )
+   memused += SCIPgetMemUsed(GCGgetMasterprob(dispdata->gcg));
+   for( i = 0; i < GCGgetNPricingprobs(dispdata->gcg); i++ )
    {
-      memused += SCIPgetMemUsed(GCGgetPricingprob(scip, i));
+      memused += SCIPgetMemUsed(GCGgetPricingprob(dispdata->gcg, i));
    }
 
    SCIPdispLongint(SCIPgetMessagehdlr(scip), file, memused, DISP_WIDT_MEMUSED);
@@ -753,13 +771,16 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNAppliedCuts)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputNSepaRounds)
 {  /*lint --e{715}*/
+   SCIP_DISPDATA* dispdata;
    assert(disp != NULL);
+   dispdata = SCIPdispGetData(disp);
+   assert(dispdata != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_SEPAROUNDS) == 0);
    assert(scip != NULL);
 
-   if( SCIPgetStage(GCGgetMasterprob(scip)) == SCIP_STAGE_SOLVING )
+   if( SCIPgetStage(GCGgetMasterprob(dispdata->gcg)) == SCIP_STAGE_SOLVING )
    {
-      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNSepaRounds(GCGgetMasterprob(scip)), DISP_WIDT_SEPAROUNDS);
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNSepaRounds(GCGgetMasterprob(dispdata->gcg)), DISP_WIDT_SEPAROUNDS);
    }
    else
    {
@@ -773,13 +794,16 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNSepaRounds)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputCutPoolSize)
 {  /*lint --e{715}*/
+   SCIP_DISPDATA* dispdata;
    assert(disp != NULL);
+   dispdata = SCIPdispGetData(disp);
+   assert(dispdata != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_POOLSIZE) == 0);
    assert(scip != NULL);
 
-   if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   if( SCIPgetStage(GCGgetMasterprob(dispdata->gcg)) >= SCIP_STAGE_SOLVING )
    {
-      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNPoolCuts(GCGgetMasterprob(scip)), DISP_WIDT_POOLSIZE);
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNPoolCuts(GCGgetMasterprob(dispdata->gcg)), DISP_WIDT_POOLSIZE);
    }
    else
    {
@@ -842,17 +866,20 @@ static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputLPObjval)
 {  /*lint --e{715}*/
 
+   SCIP_DISPDATA* dispdata;
    assert(disp != NULL);
+   dispdata = SCIPdispGetData(disp);
+   assert(dispdata != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_LPOBJ) == 0);
    assert(scip != NULL);
 
-   if( SCIPgetStage(GCGgetMasterprob(scip)) != SCIP_STAGE_SOLVING || SCIPgetLPSolstat(GCGgetMasterprob(scip)) == SCIP_LPSOLSTAT_NOTSOLVED )
+   if( SCIPgetStage(GCGgetMasterprob(dispdata->gcg)) != SCIP_STAGE_SOLVING || SCIPgetLPSolstat(GCGgetMasterprob(dispdata->gcg)) == SCIP_LPSOLSTAT_NOTSOLVED )
    {
       SCIPinfoMessage(scip, file, "      --      ");
    }
    else
    {
-      SCIP_Real lpobj = SCIPgetLPObjval(GCGgetMasterprob(scip));
+      SCIP_Real lpobj = SCIPgetLPObjval(GCGgetMasterprob(dispdata->gcg));
       if( SCIPisInfinity(scip, -lpobj) )
          SCIPinfoMessage(scip, file, "      --      ");
       else if( SCIPisInfinity(scip, lpobj) )
@@ -930,12 +957,14 @@ static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputDualbound)
 {  /*lint --e{715}*/
    SCIP_Real dualbound;
+   SCIP_DISPDATA* dispdata;
 
    assert(disp != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_DUALBOUND) == 0);
    assert(scip != NULL);
+   dispdata = SCIPdispGetData(disp);
 
-   dualbound = GCGgetDualbound(scip);
+   dualbound = GCGgetDualbound(dispdata->gcg);
 
    if( SCIPisInfinity(scip, (SCIP_Real) SCIPgetObjsense(scip) * dualbound ) )
       SCIPinfoMessage(scip, file, "    cutoff    ");
@@ -952,12 +981,14 @@ static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputPrimalbound)
 {  /*lint --e{715}*/
    SCIP_Real primalbound;
+   SCIP_DISPDATA* dispdata;
 
    assert(disp != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_PRIMALBOUND) == 0);
    assert(scip != NULL);
 
-   primalbound = GCGgetPrimalbound(scip);
+   dispdata = SCIPdispGetData(disp);
+   primalbound = GCGgetPrimalbound(dispdata->gcg);
 
    if( SCIPisInfinity(scip, REALABS(primalbound)) )
       SCIPinfoMessage(scip, file, "      --      ");
@@ -991,12 +1022,14 @@ static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputGap)
 {  /*lint --e{715}*/
    SCIP_Real gap;
+   SCIP_DISPDATA* dispdata;
 
    assert(disp != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_GAP) == 0);
    assert(scip != NULL);
+   dispdata = SCIPdispGetData(disp);
 
-   gap = GCGgetGap(scip);
+   gap = GCGgetGap(dispdata->gcg);
 
    if( SCIPisInfinity(scip, gap) )
       SCIPinfoMessage(scip, file, "    Inf ");
@@ -1015,15 +1048,18 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputSlpiterations)
 
    SCIP* masterprob;
 
+   SCIP_DISPDATA* dispdata;
    assert(disp != NULL);
+   dispdata = SCIPdispGetData(disp);
+   assert(dispdata != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_SLPITERATIONS) == 0);
    assert(scip != NULL);
 
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(dispdata->gcg);
 
    if( masterprob != NULL && SCIPgetStage(masterprob) >= SCIP_STAGE_SOLVING )
    {
-      SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNLPIterations(masterprob) + GCGmasterGetPricingSimplexIters(masterprob), DISP_WIDT_SLPITERATIONS);
+      SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNLPIterations(masterprob) + GCGmasterGetPricingSimplexIters(dispdata->gcg), DISP_WIDT_SLPITERATIONS);
    }
    else
    {
@@ -1039,12 +1075,15 @@ static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputDegeneracy)
 {  /*lint --e{715}*/
    SCIP_Real degeneracy;
+   SCIP_DISPDATA* dispdata;
 
    assert(disp != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_DEGENERACY) == 0);
    assert(scip != NULL);
+   dispdata = SCIPdispGetData(disp);
+   assert(dispdata != NULL);
 
-   degeneracy = GCGgetDegeneracy(scip);
+   degeneracy = GCGgetDegeneracy(dispdata->gcg);
 
    if( SCIPisInfinity(scip, degeneracy) )
       SCIPinfoMessage(scip, file, "   --   ");
@@ -1100,13 +1139,16 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNSols)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputMlpiterations)
 {  /*lint --e{715}*/
+   SCIP_DISPDATA* dispdata;
    assert(disp != NULL);
+   dispdata = SCIPdispGetData(disp);
+   assert(dispdata != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MLPITERATIONS) == 0);
    assert(scip != NULL);
 
-   if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   if( SCIPgetStage(GCGgetMasterprob(dispdata->gcg)) >= SCIP_STAGE_SOLVING )
    {
-      SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNLPIterations(GCGgetMasterprob(scip)), DISP_WIDT_MLPITERATIONS);
+      SCIPdispLongint(SCIPgetMessagehdlr(scip), file, SCIPgetNLPIterations(GCGgetMasterprob(dispdata->gcg)), DISP_WIDT_MLPITERATIONS);
    }
    else
    {
@@ -1120,13 +1162,16 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMlpiterations)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputMvars)
 {  /*lint --e{715}*/
+   SCIP_DISPDATA* dispdata;
    assert(disp != NULL);
+   dispdata = SCIPdispGetData(disp);
+   assert(dispdata != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MVARS) == 0);
    assert(scip != NULL);
 
-   if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   if( SCIPgetStage(GCGgetMasterprob(dispdata->gcg)) >= SCIP_STAGE_SOLVING )
    {
-      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNVars(GCGgetMasterprob(scip)), DISP_WIDT_MVARS);
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNVars(GCGgetMasterprob(dispdata->gcg)), DISP_WIDT_MVARS);
    }
    else
    {
@@ -1140,13 +1185,16 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMvars)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputMconss)
 {  /*lint --e{715}*/
+   SCIP_DISPDATA* dispdata;
    assert(disp != NULL);
+   dispdata = SCIPdispGetData(disp);
+   assert(dispdata != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MCONSS) == 0);
    assert(scip != NULL);
 
-   if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   if( SCIPgetStage(GCGgetMasterprob(dispdata->gcg)) >= SCIP_STAGE_SOLVING )
    {
-      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNConss(GCGgetMasterprob(scip)), DISP_WIDT_MCONSS);
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNConss(GCGgetMasterprob(dispdata->gcg)), DISP_WIDT_MCONSS);
    }
    else
    {
@@ -1160,13 +1208,16 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMconss)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputOcuts)
 {  /*lint --e{715}*/
+   SCIP_DISPDATA* dispdata;
    assert(disp != NULL);
+   dispdata = SCIPdispGetData(disp);
+   assert(dispdata != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_OCUTS) == 0);
    assert(scip != NULL);
 
-   if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_SOLVING )
+   if( SCIPgetStage(GCGgetMasterprob(dispdata->gcg)) >= SCIP_STAGE_SOLVING )
    {
-      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNCutsApplied(GCGgetMasterprob(scip)), DISP_WIDT_OCUTS);
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNCutsApplied(GCGgetMasterprob(dispdata->gcg)), DISP_WIDT_OCUTS);
    }
    else
    {
@@ -1178,363 +1229,268 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputOcuts)
    return SCIP_OKAY;
 }
 
+/** destructor method of display plugin */
+static
+SCIP_DECL_DISPFREE(SCIPdispFreeGcg)
+{  /*lint --e{715}*/
+   SCIP_DISPDATA* dispdata;
+   assert(disp != NULL);
+   assert(strcmp(SCIPdispGetName(disp), DISP_NAME_SOLFOUND) == 0);
+   dispdata = SCIPdispGetData(disp);
+   assert(dispdata != NULL);
+
+   SCIPfreeBlockMemory(scip, &dispdata);
+
+   return SCIP_OKAY;
+}
+
 /*
  * default display columns specific interface methods
  */
 
 /** includes the default display columns in SCIP */
 SCIP_RETCODE GCGincludeDispGcg(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_DISP* tmpdisp;
+   SCIP_DISPDATA* dispdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_SOLFOUND);
+   tmpdisp = SCIPfindDisp(origprob, DISP_NAME_SOLFOUND);
    if( tmpdisp == NULL )
    {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_SOLFOUND, DISP_DESC_SOLFOUND, DISP_HEAD_SOLFOUND,
+      /* dispdata is freed by first display plugin (solfound) */
+      SCIP_CALL( SCIPallocBlockMemory(origprob, &dispdata) );
+      dispdata->gcg = gcg;
+      dispdata->lastsol = NULL;
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_SOLFOUND, DISP_DESC_SOLFOUND, DISP_HEAD_SOLFOUND,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, SCIPdispInitsolSolFound, NULL, SCIPdispOutputSolFound, NULL,
+            SCIPdispFreeGcg, NULL, NULL, SCIPdispInitsolSolFound, NULL, SCIPdispOutputSolFound, dispdata,
             DISP_WIDT_SOLFOUND, DISP_PRIO_SOLFOUND, DISP_POSI_SOLFOUND, DISP_STRI_SOLFOUND) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_TIME);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_TIME, DISP_DESC_TIME, DISP_HEAD_TIME,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_TIME, DISP_DESC_TIME, DISP_HEAD_TIME,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputSolvingTime, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputSolvingTime, dispdata,
             DISP_WIDT_TIME, DISP_PRIO_TIME, DISP_POSI_TIME, DISP_STRI_TIME) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_NNODES);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_NNODES, DISP_DESC_NNODES, DISP_HEAD_NNODES,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_NNODES, DISP_DESC_NNODES, DISP_HEAD_NNODES,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNNodes, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNNodes, dispdata,
             DISP_WIDT_NNODES, DISP_PRIO_NNODES, DISP_POSI_NNODES, DISP_STRI_NNODES) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_NODESLEFT);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_NODESLEFT, DISP_DESC_NODESLEFT, DISP_HEAD_NODESLEFT,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_NODESLEFT, DISP_DESC_NODESLEFT, DISP_HEAD_NODESLEFT,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNNodesLeft, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNNodesLeft, dispdata,
             DISP_WIDT_NODESLEFT, DISP_PRIO_NODESLEFT, DISP_POSI_NODESLEFT, DISP_STRI_NODESLEFT) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_LPITERATIONS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_LPITERATIONS, DISP_DESC_LPITERATIONS, DISP_HEAD_LPITERATIONS,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_LPITERATIONS, DISP_DESC_LPITERATIONS, DISP_HEAD_LPITERATIONS,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNLPIterations, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNLPIterations, dispdata,
             DISP_WIDT_LPITERATIONS, DISP_PRIO_LPITERATIONS, DISP_POSI_LPITERATIONS, DISP_STRI_LPITERATIONS) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_LPAVGITERS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_LPAVGITERS, DISP_DESC_LPAVGITERS, DISP_HEAD_LPAVGITERS,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_LPAVGITERS, DISP_DESC_LPAVGITERS, DISP_HEAD_LPAVGITERS,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNLPAvgIters, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNLPAvgIters, dispdata,
             DISP_WIDT_LPAVGITERS, DISP_PRIO_LPAVGITERS, DISP_POSI_LPAVGITERS, DISP_STRI_LPAVGITERS) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_LPCOND);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_LPCOND, DISP_DESC_LPCOND, DISP_HEAD_LPCOND,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_LPCOND, DISP_DESC_LPCOND, DISP_HEAD_LPCOND,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputLPCondition, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputLPCondition, dispdata,
             DISP_WIDT_LPCOND, DISP_PRIO_LPCOND, DISP_POSI_LPCOND, DISP_STRI_LPCOND) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_MEMUSED);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_MEMUSED, DISP_DESC_MEMUSED, DISP_HEAD_MEMUSED,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_MEMUSED, DISP_DESC_MEMUSED, DISP_HEAD_MEMUSED,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMemUsed, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMemUsed, dispdata,
             DISP_WIDT_MEMUSED, DISP_PRIO_MEMUSED, DISP_POSI_MEMUSED, DISP_STRI_MEMUSED) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_DEPTH);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_DEPTH, DISP_DESC_DEPTH, DISP_HEAD_DEPTH,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_DEPTH, DISP_DESC_DEPTH, DISP_HEAD_DEPTH,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputDepth, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputDepth, dispdata,
             DISP_WIDT_DEPTH, DISP_PRIO_DEPTH, DISP_POSI_DEPTH, DISP_STRI_DEPTH) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_MAXDEPTH);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_MAXDEPTH, DISP_DESC_MAXDEPTH, DISP_HEAD_MAXDEPTH,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_MAXDEPTH, DISP_DESC_MAXDEPTH, DISP_HEAD_MAXDEPTH,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMaxDepth, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMaxDepth, dispdata,
             DISP_WIDT_MAXDEPTH, DISP_PRIO_MAXDEPTH, DISP_POSI_MAXDEPTH, DISP_STRI_MAXDEPTH) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_PLUNGEDEPTH);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_PLUNGEDEPTH, DISP_DESC_PLUNGEDEPTH, DISP_HEAD_PLUNGEDEPTH,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_PLUNGEDEPTH, DISP_DESC_PLUNGEDEPTH, DISP_HEAD_PLUNGEDEPTH,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputPlungeDepth, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputPlungeDepth, dispdata,
             DISP_WIDT_PLUNGEDEPTH, DISP_PRIO_PLUNGEDEPTH, DISP_POSI_PLUNGEDEPTH, DISP_STRI_PLUNGEDEPTH) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_NFRAC);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_NFRAC, DISP_DESC_NFRAC, DISP_HEAD_NFRAC,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_NFRAC, DISP_DESC_NFRAC, DISP_HEAD_NFRAC,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNFrac, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNFrac, dispdata,
             DISP_WIDT_NFRAC, DISP_PRIO_NFRAC, DISP_POSI_NFRAC, DISP_STRI_NFRAC) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_NEXTERNCANDS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_NEXTERNCANDS, DISP_DESC_NEXTERNCANDS, DISP_HEAD_NEXTERNCANDS,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_NEXTERNCANDS, DISP_DESC_NEXTERNCANDS, DISP_HEAD_NEXTERNCANDS,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNExternCands, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNExternCands, dispdata,
             DISP_WIDT_NEXTERNCANDS, DISP_PRIO_NEXTERNCANDS, DISP_POSI_NEXTERNCANDS, DISP_STRI_NEXTERNCANDS) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_VARS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_VARS, DISP_DESC_VARS, DISP_HEAD_VARS,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_VARS, DISP_DESC_VARS, DISP_HEAD_VARS,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNVars, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNVars, dispdata,
             DISP_WIDT_VARS, DISP_PRIO_VARS, DISP_POSI_VARS, DISP_STRI_VARS) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_CONSS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_CONSS, DISP_DESC_CONSS, DISP_HEAD_CONSS,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_CONSS, DISP_DESC_CONSS, DISP_HEAD_CONSS,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNConss, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNConss, dispdata,
             DISP_WIDT_CONSS, DISP_PRIO_CONSS, DISP_POSI_CONSS, DISP_STRI_CONSS) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_CURCONSS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_CURCONSS, DISP_DESC_CURCONSS, DISP_HEAD_CURCONSS,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_CURCONSS, DISP_DESC_CURCONSS, DISP_HEAD_CURCONSS,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNCurConss, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNCurConss, dispdata,
             DISP_WIDT_CURCONSS, DISP_PRIO_CURCONSS, DISP_POSI_CURCONSS, DISP_STRI_CURCONSS) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_CURCOLS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_CURCOLS, DISP_DESC_CURCOLS, DISP_HEAD_CURCOLS,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_CURCOLS, DISP_DESC_CURCOLS, DISP_HEAD_CURCOLS,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNCurCols, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNCurCols, dispdata,
             DISP_WIDT_CURCOLS, DISP_PRIO_CURCOLS, DISP_POSI_CURCOLS, DISP_STRI_CURCOLS) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_CURROWS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_CURROWS, DISP_DESC_CURROWS, DISP_HEAD_CURROWS,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_CURROWS, DISP_DESC_CURROWS, DISP_HEAD_CURROWS,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNCurRows, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNCurRows, dispdata,
             DISP_WIDT_CURROWS, DISP_PRIO_CURROWS, DISP_POSI_CURROWS, DISP_STRI_CURROWS) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_CUTS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_CUTS, DISP_DESC_CUTS, DISP_HEAD_CUTS,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_CUTS, DISP_DESC_CUTS, DISP_HEAD_CUTS,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNAppliedCuts, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNAppliedCuts, dispdata,
             DISP_WIDT_CUTS, DISP_PRIO_CUTS, DISP_POSI_CUTS, DISP_STRI_CUTS) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_SEPAROUNDS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_SEPAROUNDS, DISP_DESC_SEPAROUNDS, DISP_HEAD_SEPAROUNDS,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_SEPAROUNDS, DISP_DESC_SEPAROUNDS, DISP_HEAD_SEPAROUNDS,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNSepaRounds, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNSepaRounds, dispdata,
             DISP_WIDT_SEPAROUNDS, DISP_PRIO_SEPAROUNDS, DISP_POSI_SEPAROUNDS, DISP_STRI_SEPAROUNDS) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_POOLSIZE);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_POOLSIZE, DISP_DESC_POOLSIZE, DISP_HEAD_POOLSIZE,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_POOLSIZE, DISP_DESC_POOLSIZE, DISP_HEAD_POOLSIZE,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputCutPoolSize, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputCutPoolSize, dispdata,
             DISP_WIDT_POOLSIZE, DISP_PRIO_POOLSIZE, DISP_POSI_POOLSIZE, DISP_STRI_POOLSIZE) );
-   }
-   tmpdisp = SCIPfindDisp(scip,DISP_NAME_CONFLICTS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_CONFLICTS, DISP_DESC_CONFLICTS, DISP_HEAD_CONFLICTS,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_CONFLICTS, DISP_DESC_CONFLICTS, DISP_HEAD_CONFLICTS,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNConflicts, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNConflicts, dispdata,
             DISP_WIDT_CONFLICTS, DISP_PRIO_CONFLICTS, DISP_POSI_CONFLICTS, DISP_STRI_CONFLICTS) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_STRONGBRANCHS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_STRONGBRANCHS, DISP_DESC_STRONGBRANCHS, DISP_HEAD_STRONGBRANCHS,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_STRONGBRANCHS, DISP_DESC_STRONGBRANCHS, DISP_HEAD_STRONGBRANCHS,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNStrongbranchs, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNStrongbranchs, dispdata,
             DISP_WIDT_STRONGBRANCHS, DISP_PRIO_STRONGBRANCHS, DISP_POSI_STRONGBRANCHS, DISP_STRI_STRONGBRANCHS) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_PSEUDOOBJ);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_PSEUDOOBJ, DISP_DESC_PSEUDOOBJ, DISP_HEAD_PSEUDOOBJ,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_PSEUDOOBJ, DISP_DESC_PSEUDOOBJ, DISP_HEAD_PSEUDOOBJ,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputPseudoObjval, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputPseudoObjval, dispdata,
             DISP_WIDT_PSEUDOOBJ, DISP_PRIO_PSEUDOOBJ, DISP_POSI_PSEUDOOBJ, DISP_STRI_PSEUDOOBJ) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_LPOBJ);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_LPOBJ, DISP_DESC_LPOBJ, DISP_HEAD_LPOBJ,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_LPOBJ, DISP_DESC_LPOBJ, DISP_HEAD_LPOBJ,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputLPObjval, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputLPObjval, dispdata,
             DISP_WIDT_LPOBJ, DISP_PRIO_LPOBJ, DISP_POSI_LPOBJ, DISP_STRI_LPOBJ) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_CURDUALBOUND);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_CURDUALBOUND, DISP_DESC_CURDUALBOUND, DISP_HEAD_CURDUALBOUND,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_CURDUALBOUND, DISP_DESC_CURDUALBOUND, DISP_HEAD_CURDUALBOUND,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputCurDualbound, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputCurDualbound, dispdata,
             DISP_WIDT_CURDUALBOUND, DISP_PRIO_CURDUALBOUND, DISP_POSI_CURDUALBOUND, DISP_STRI_CURDUALBOUND) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_ESTIMATE);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_ESTIMATE, DISP_DESC_ESTIMATE, DISP_HEAD_ESTIMATE,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_ESTIMATE, DISP_DESC_ESTIMATE, DISP_HEAD_ESTIMATE,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputLocalOrigEstimate, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputLocalOrigEstimate, dispdata,
             DISP_WIDT_ESTIMATE, DISP_PRIO_ESTIMATE, DISP_POSI_ESTIMATE, DISP_STRI_ESTIMATE) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_AVGDUALBOUND);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_AVGDUALBOUND, DISP_DESC_AVGDUALBOUND, DISP_HEAD_AVGDUALBOUND,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_AVGDUALBOUND, DISP_DESC_AVGDUALBOUND, DISP_HEAD_AVGDUALBOUND,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputAvgDualbound, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputAvgDualbound, dispdata,
             DISP_WIDT_AVGDUALBOUND, DISP_PRIO_AVGDUALBOUND, DISP_POSI_AVGDUALBOUND, DISP_STRI_AVGDUALBOUND) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_DUALBOUND);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_DUALBOUND, DISP_DESC_DUALBOUND, DISP_HEAD_DUALBOUND,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_DUALBOUND, DISP_DESC_DUALBOUND, DISP_HEAD_DUALBOUND,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputDualbound, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputDualbound, dispdata,
             DISP_WIDT_DUALBOUND, DISP_PRIO_DUALBOUND, DISP_POSI_DUALBOUND, DISP_STRI_DUALBOUND) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_PRIMALBOUND);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_PRIMALBOUND, DISP_DESC_PRIMALBOUND, DISP_HEAD_PRIMALBOUND,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_PRIMALBOUND, DISP_DESC_PRIMALBOUND, DISP_HEAD_PRIMALBOUND,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputPrimalbound, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputPrimalbound, dispdata,
             DISP_WIDT_PRIMALBOUND, DISP_PRIO_PRIMALBOUND, DISP_POSI_PRIMALBOUND, DISP_STRI_PRIMALBOUND) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_CUTOFFBOUND);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_CUTOFFBOUND, DISP_DESC_CUTOFFBOUND, DISP_HEAD_CUTOFFBOUND,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_CUTOFFBOUND, DISP_DESC_CUTOFFBOUND, DISP_HEAD_CUTOFFBOUND,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputCutoffbound, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputCutoffbound, dispdata,
             DISP_WIDT_CUTOFFBOUND, DISP_PRIO_CUTOFFBOUND, DISP_POSI_CUTOFFBOUND, DISP_STRI_CUTOFFBOUND) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_GAP);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_GAP, DISP_DESC_GAP, DISP_HEAD_GAP,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_GAP, DISP_DESC_GAP, DISP_HEAD_GAP,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputGap, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputGap, dispdata,
             DISP_WIDT_GAP, DISP_PRIO_GAP, DISP_POSI_GAP, DISP_STRI_GAP) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_PRIMALGAP);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_PRIMALGAP, DISP_DESC_PRIMALGAP, DISP_HEAD_PRIMALGAP,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_PRIMALGAP, DISP_DESC_PRIMALGAP, DISP_HEAD_PRIMALGAP,
             SCIP_DISPSTATUS_OFF,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputPrimalgap, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputPrimalgap, dispdata,
             DISP_WIDT_PRIMALGAP, DISP_PRIO_PRIMALGAP, DISP_POSI_PRIMALGAP, DISP_STRI_PRIMALGAP) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_NSOLS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_NSOLS, DISP_DESC_NSOLS, DISP_HEAD_NSOLS,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_NSOLS, DISP_DESC_NSOLS, DISP_HEAD_NSOLS,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNSols, NULL,
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNSols, dispdata,
             DISP_WIDT_NSOLS, DISP_PRIO_NSOLS, DISP_POSI_NSOLS, DISP_STRI_NSOLS) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_MLPITERATIONS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_MLPITERATIONS, DISP_DESC_MLPITERATIONS, DISP_HEAD_MLPITERATIONS,
-            SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMlpiterations, NULL,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_MLPITERATIONS, DISP_DESC_MLPITERATIONS, DISP_HEAD_MLPITERATIONS,
+            SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMlpiterations, dispdata,
             DISP_WIDT_MLPITERATIONS, DISP_PRIO_MLPITERATIONS, DISP_POSI_MLPITERATIONS, DISP_STRI_MLPITERATIONS) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_MVARS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_MVARS, DISP_DESC_MVARS, DISP_HEAD_MVARS,
-            SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMvars, NULL,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_MVARS, DISP_DESC_MVARS, DISP_HEAD_MVARS,
+            SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMvars, dispdata,
             DISP_WIDT_MVARS, DISP_PRIO_MVARS, DISP_POSI_MVARS, DISP_STRI_MVARS) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_MCONSS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_MCONSS, DISP_DESC_MCONSS, DISP_HEAD_MCONSS,
-            SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMconss, NULL,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_MCONSS, DISP_DESC_MCONSS, DISP_HEAD_MCONSS,
+            SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMconss, dispdata,
             DISP_WIDT_MCONSS, DISP_PRIO_MCONSS, DISP_POSI_MCONSS, DISP_STRI_MCONSS) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_OCUTS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_OCUTS, DISP_DESC_OCUTS, DISP_HEAD_OCUTS,
-            SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputOcuts, NULL,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_OCUTS, DISP_DESC_OCUTS, DISP_HEAD_OCUTS,
+            SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputOcuts, dispdata,
             DISP_WIDT_OCUTS, DISP_PRIO_OCUTS, DISP_POSI_OCUTS, DISP_STRI_OCUTS) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_DEGENERACY);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_DEGENERACY, DISP_DESC_DEGENERACY, DISP_HEAD_DEGENERACY,
-            SCIP_DISPSTATUS_AUTO, NULL, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputDegeneracy, NULL,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_DEGENERACY, DISP_DESC_DEGENERACY, DISP_HEAD_DEGENERACY,
+            SCIP_DISPSTATUS_AUTO, NULL, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputDegeneracy, dispdata,
             DISP_WIDT_DEGENERACY, DISP_PRIO_DEGENERACY, DISP_POSI_DEGENERACY, DISP_STRI_DEGENERACY) );
-   }
-   tmpdisp = SCIPfindDisp(scip, DISP_NAME_SLPITERATIONS);
-   if( tmpdisp == NULL )
-   {
-      SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_SLPITERATIONS, DISP_DESC_SLPITERATIONS, DISP_HEAD_SLPITERATIONS,
-            SCIP_DISPSTATUS_AUTO, NULL, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputSlpiterations, NULL,
+
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_SLPITERATIONS, DISP_DESC_SLPITERATIONS, DISP_HEAD_SLPITERATIONS,
+            SCIP_DISPSTATUS_AUTO, NULL, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputSlpiterations, dispdata,
             DISP_WIDT_SLPITERATIONS, DISP_PRIO_SLPITERATIONS, DISP_POSI_SLPITERATIONS, DISP_STRI_SLPITERATIONS) );
    }
 

@@ -148,7 +148,7 @@ SCIP_Bool GCGisRootNode(
 
 GCG_EXPORT
 SCIP_RETCODE GCGincludeDialogsGraph(
-   SCIP* scip
+   GCG*                 gcg
    );
 
 /**@} */

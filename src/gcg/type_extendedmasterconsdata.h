@@ -58,7 +58,7 @@ typedef struct GCG_ExtendedMasterConsData GCG_EXTENDEDMASTERCONSDATA;
 /** determine the coefficient of a column solution in the extended master cons
  *
  *  input:
- *    scip            : SCIP main data structure of the original problem
+ *    gcg             : GCG data structure
  *    extendedmasterconsdata   : the extended master cons data
  *    solvars         : array of column solution variables
  *    solvals         : array of column solution values
@@ -66,7 +66,7 @@ typedef struct GCG_ExtendedMasterConsData GCG_EXTENDEDMASTERCONSDATA;
  *    probnr          : the pricing problem that the column belongs to
  *    coef            : the calculated coefficient
  */
-#define GCG_DECL_EXTENDEDMASTERCONSGETCOEFF(x) SCIP_RETCODE x (SCIP* scip, GCG_EXTENDEDMASTERCONSDATA* extendedmasterconsdata, SCIP_VAR** solvars, SCIP_Real* solvals, int nsolvars, int probnr, SCIP_Real* coef)
+#define GCG_DECL_EXTENDEDMASTERCONSGETCOEFF(x) SCIP_RETCODE x (GCG* gcg, GCG_EXTENDEDMASTERCONSDATA* extendedmasterconsdata, SCIP_VAR** solvars, SCIP_Real* solvals, int nsolvars, int probnr, SCIP_Real* coef)
 
 #ifdef __cplusplus
 }

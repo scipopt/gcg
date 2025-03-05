@@ -35,7 +35,7 @@
 #ifndef GCG_PRICINGPROB_H__
 #define GCG_PRICINGPROB_H__
 
-#include "gcg/def.h"
+
 #include "gcg/struct_pricingprob.h"
 #include "gcg/type_pricingprob.h"
 

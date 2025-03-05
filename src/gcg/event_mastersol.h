@@ -37,7 +37,7 @@
 #define GCG_EVENT_MASTERSOL_H__
 
 #include "scip/scip.h"
-#include "gcg/def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +46,7 @@ extern "C" {
 /** creates event handler for mastersol event */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeEventHdlrMastersol(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** return whether event has been triggered */

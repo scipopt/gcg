@@ -36,10 +36,10 @@
 #ifndef GCG_CLASS_INDEXPARTITION_H__
 #define GCG_CLASS_INDEXPARTITION_H__
 
-#include "objscip/objscip.h"
+#include "gcg/gcg.h"
 #include <vector>
 #include <string>
-#include "gcg/def.h"
+
 
 namespace gcg
 {
@@ -52,7 +52,7 @@ class IndexPartition
 {
 
 protected:
-   SCIP*                      scip;                   /**< scip data structure */
+   GCG*                       gcg;                    /**< GCG data structure */
 
 private:
    std::string                name;                   /**< name of the partition */
@@ -68,7 +68,7 @@ protected:
 
    /** constructor */
    IndexPartition(
-      SCIP*                scip,                /**< scip data structure */
+      GCG*                 gcgstruct,           /**< GCG data structure */
       const char*          name,                /**< name of partition (will be copied) */
       int                  nClasses,            /**< initial number of classes */
       int                  nIndices             /**< number of indices to be classified */

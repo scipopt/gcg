@@ -38,8 +38,10 @@
 #define GCG_PUB_EXTENDEDMASTERCONSDATA_H_
 
 #include "gcg/type_extendedmasterconsdata.h"
-#include "gcg/def.h"
+
 #include "scip/scip.h"
+#include "gcg/def.h"
+#include "gcg/type_gcg.h"
 
 #ifdef NDEBUG
 #include "gcg/struct_extendedmasterconsdata.h"
@@ -58,7 +60,7 @@ extern "C" {
 /** create a pricing modification, taking ownership over additionalvars and additionalcons */
 GCG_EXPORT
 SCIP_RETCODE GCGpricingmodificationCreate(
-   SCIP*                         scip,                         /**< SCIP data structure */
+   GCG*                          gcg,                          /**< GCG data structure */
    GCG_PRICINGMODIFICATION**     pricingmodification,          /**< pointer to store the pricing modification */
    int                           blocknr,                      /**< block number of the extended master cons */
    SCIP_VAR*                     coefvar,                      /**< variable in the pricing problem inferred from the extended master cons
@@ -73,7 +75,7 @@ SCIP_RETCODE GCGpricingmodificationCreate(
 /** create an extended master cons, taking ownership over pricingmodifications */
 GCG_EXPORT
 SCIP_RETCODE GCGextendedmasterconsCreateFromCons(
-   SCIP*                         scip,                         /**< SCIP data structure */
+   GCG*                          gcg,                          /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA**  extendedmasterconsdata,       /**< pointer to store the extended master cons data */
    SCIP_CONS*                    cons,                         /**< constraint in the master problem that represents the extended master cons */
    GCG_PRICINGMODIFICATION**     pricingmodifications,         /**< pricing modifications for the extended master cons */
@@ -85,7 +87,7 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromCons(
 /** create an extended master cons, taking ownership over pricingmodifications */
 GCG_EXPORT
 SCIP_RETCODE GCGextendedmasterconsCreateFromRow(
-   SCIP*                         scip,                         /**< SCIP data structure */
+   GCG*                          gcg,                          /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA**  extendedmasterconsdata,       /**< pointer to store the extended master cons data */
    SCIP_ROW*                     row,                          /**< row in the master problem that represents the extended master cons */
    GCG_PRICINGMODIFICATION**     pricingmodifications,         /**< pricing modifications for the extended master cons */
@@ -97,7 +99,7 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromRow(
 /** free an extended master cons */
 GCG_EXPORT
 SCIP_RETCODE GCGextendedmasterconsFree(
-   SCIP*                         scip,                         /**< SCIP data structure */
+   GCG*                          gcg,                          /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA**  extendedmasterconsdata        /**< pointer to the extended master cons data */
    );
 
@@ -110,7 +112,7 @@ SCIP_Bool GCGextendedmasterconsIsActive(
 /** add a new variable along with its coefficient to the extended master cons */
 GCG_EXPORT
 SCIP_RETCODE GCGextendedmasterconsAddMasterVar(
-   SCIP*                         masterscip,                   /**< master scip */
+   GCG*                          gcg,                          /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata,       /**< extended master cons data */
    SCIP_VAR*                     var,                          /**< variable to add */
    SCIP_Real                     coef                          /**< coefficient of the variable */
@@ -189,7 +191,7 @@ int GCGpricingmodificationGetNAdditionalConss(
 /** get the pricing modification for a block, if exists, else NULL */
 GCG_EXPORT
 GCG_PRICINGMODIFICATION* GCGextendedmasterconsGetPricingModification(
-   SCIP*                         masterscip,                   /**< master scip */
+   GCG*                          gcg,                          /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata,       /**< extended master cons data */
    int                           blocknr                       /**< block number */
    );
@@ -237,42 +239,42 @@ const char* GCGextendedmasterconsGetName(
 /** get the lhs of the extended master cons */
 GCG_EXPORT
 SCIP_Real GCGextendedmasterconsGetLhs(
-   SCIP*                         scip,                         /**< SCIP data structure */
+   GCG*                          gcg,                          /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata        /**< extended master cons data */
    );
 
 /** get the rhs of the extended master cons */
 GCG_EXPORT
 SCIP_Real GCGextendedmasterconsGetRhs(
-   SCIP*                  scip,                                /**< SCIP data structure */
+   GCG*                            gcg,                        /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata      /**< extended master cons data */
    );
 
 /** get the constant of the extended master cons (always returns 0 if extended master cons is a constraint, returns constant of row otherwise) */
 GCG_EXPORT
 SCIP_Real GCGextendedmasterconsGetConstant(
-   SCIP*                            scip,                      /**< SCIP data structure */
+   GCG*                             gcg,                       /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata     /**< extended master cons data */
    );
 
 /** get number of nonzero entries in the extended master cons */
 GCG_EXPORT
 int GCGextendedmasterconsGetNNonz(
-   SCIP*                  scip,               /**< SCIP data structure */
+   GCG*                            gcg,                         /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata       /**< extended master cons data */
    );
 
 /** get array of columns with nonzero entries */
 GCG_EXPORT
 SCIP_COL** GCGextendedmasterconsGetCols(
-   SCIP*                            scip,                         /**< SCIP data structure */
+   GCG*                             gcg,                          /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    );
 
 /** get array of coefficients with nonzero entries */
 GCG_EXPORT
 SCIP_Real* GCGextendedmasterconsGetVals(
-   SCIP*                            scip,                         /**< SCIP data structure */
+   GCG*                             gcg,                          /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    );
 
@@ -289,7 +291,7 @@ void* GCGextendedmasterconsGetData(
 /** calculate the coefficient of a column solution in the extended master cons */
 GCG_EXPORT
 SCIP_Real GCGextendedmasterconsGetCoeff(
-   SCIP*                            scip,                         /**< SCIP data structure */
+   GCG*                             gcg,                          /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata,       /**< extended master cons data */
    SCIP_VAR**                       solvars,                      /**< array of column solution variables */
    SCIP_Real*                       solvals,                      /**< array of column solution values */

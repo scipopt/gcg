@@ -37,7 +37,7 @@
 
 
 #include "scip/scip.h"
-#include "gcg/def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +46,7 @@ extern "C" {
 /** includes default SCIP plugins into SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeGcgPlugins(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                 gcg               /**< GCG data structure */
    );
 
 #ifdef __cplusplus

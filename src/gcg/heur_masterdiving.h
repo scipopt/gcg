@@ -37,9 +37,9 @@
 #define GCG_HEUR_MASTERDIVING_H__
 
 
-#include "gcg/def.h"
+
 #include "scip/scip.h"
-#include "gcg/type_masterdiving.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +47,7 @@ extern "C" {
 
 /** gets diving rule specific data of a diving heuristic */
 GCG_EXPORT
-GCG_DIVINGDATA* GCGheurGetDivingDataMaster(
+GCG_MASTER_DIVINGDATA* GCGheurGetDivingDataMaster(
    SCIP_HEUR*               heur                    /**< primal heuristic */
    );
 
@@ -55,13 +55,13 @@ GCG_DIVINGDATA* GCGheurGetDivingDataMaster(
 GCG_EXPORT
 void GCGheurSetDivingDataMaster(
    SCIP_HEUR*               heur,                   /**< primal heuristic */
-   GCG_DIVINGDATA*          divingdata              /**< diving rule specific data */
+   GCG_MASTER_DIVINGDATA*   divingdata              /**< diving rule specific data */
    );
 
 /** creates a master diving heuristic and includes it in GCG */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeDivingHeurMaster(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_HEUR**           heur,               /**< pointer to diving heuristic */
    const char*           name,               /**< name of primal heuristic */
    const char*           desc,               /**< description of primal heuristic */
@@ -70,21 +70,21 @@ SCIP_RETCODE GCGincludeDivingHeurMaster(
    int                   freq,               /**< frequency for calling primal heuristic */
    int                   freqofs,            /**< frequency offset for calling primal heuristic */
    int                   maxdepth,           /**< maximal depth level to call heuristic at (-1: no limit) */
-   GCG_DECL_DIVINGFREE   ((*divingfree)),    /**< destructor of diving heuristic */
-   GCG_DECL_DIVINGINIT   ((*divinginit)),    /**< initialize diving heuristic */
-   GCG_DECL_DIVINGEXIT   ((*divingexit)),    /**< deinitialize diving heuristic */
-   GCG_DECL_DIVINGINITSOL ((*divinginitsol)), /**< solving process initialization method of diving heuristic */
-   GCG_DECL_DIVINGEXITSOL ((*divingexitsol)), /**< solving process deinitialization method of diving heuristic */
-   GCG_DECL_DIVINGINITEXEC ((*divinginitexec)), /**< execution initialization method of diving heuristic */
-   GCG_DECL_DIVINGEXITEXEC ((*divingexitexec)), /**< execution deinitialization method of diving heuristic */
-   GCG_DECL_DIVINGSELECTVAR ((*divingselectvar)), /**< variable selection method of diving heuristic */
-   GCG_DIVINGDATA*       divingdata          /**< diving rule specific data (or NULL) */
+   GCG_DECL_MASTER_DIVINGFREE   ((*divingfree)),         /**< destructor of diving heuristic */
+   GCG_DECL_MASTER_DIVINGINIT   ((*divinginit)),         /**< initialize diving heuristic */
+   GCG_DECL_MASTER_DIVINGEXIT   ((*divingexit)),         /**< deinitialize diving heuristic */
+   GCG_DECL_MASTER_DIVINGINITSOL ((*divinginitsol)),     /**< solving process initialization method of diving heuristic */
+   GCG_DECL_MASTER_DIVINGEXITSOL ((*divingexitsol)),     /**< solving process deinitialization method of diving heuristic */
+   GCG_DECL_MASTER_DIVINGINITEXEC ((*divinginitexec)),   /**< execution initialization method of diving heuristic */
+   GCG_DECL_MASTER_DIVINGEXITEXEC ((*divingexitexec)),   /**< execution deinitialization method of diving heuristic */
+   GCG_DECL_MASTER_DIVINGSELECTVAR ((*divingselectvar)), /**< variable selection method of diving heuristic */
+   GCG_MASTER_DIVINGDATA*       divingdata          /**< diving rule specific data (or NULL) */
    );
 
 /** creates event handler for masterdiving event */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeEventHdlrMasterdiving(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

@@ -74,9 +74,9 @@ GCG_DECL_SCORECALC(scoreCalcSpfwh)
 {
    SCIP_Real maxforeseeingwhitescore = 0;
 
-   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
+   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(gcg, partialdecid);
 
-   maxforeseeingwhitescore = partialdec->getScore(GCGconshdlrDecompFindScore(scip, "max foreseeing white"));
+   maxforeseeingwhitescore = partialdec->getScore(GCGconshdlrDecompFindScore(gcg, "max foreseeing white"));
 
    if( partialdec->hasSetppccardMaster() && !partialdec->isTrivial() && partialdec->getNBlocks() > 1 )
    {
@@ -99,13 +99,13 @@ GCG_DECL_SCORECALC(scoreCalcSpfwh)
 
 /** creates the setpartitioning maximum foreseeing white area score and includes it in SCIP */
 SCIP_RETCODE GCGincludeScoreSpfwh(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_SCOREDATA* scoredata = NULL;
 
    SCIP_CALL(
-      GCGincludeScore(scip, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata,
+      GCGincludeScore(gcg, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata,
          scoreFreeSpfwh, scoreCalcSpfwh) );
 
    return SCIP_OKAY;

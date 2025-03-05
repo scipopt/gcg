@@ -38,7 +38,7 @@
 
 
 #include "scip/scip.h"
-#include "gcg/def.h"
+#include "gcg/gcg.h"
 #include "gcg/type_consclassifier.h"
 
 #ifdef __cplusplus
@@ -55,7 +55,7 @@ SCIP_RETCODE GCGconsClassifierGamssymbolAddEntry(
 /** creates the gamssymbol classifier and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeConsClassifierGamssymbol(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

@@ -1169,13 +1169,13 @@ GCG_DECL_SOLVERSOLVE(solverSolveCplex)
 
 /** creates the CPLEX pricing solver and includes it in GCG */
 SCIP_RETCODE GCGincludeSolverCplex(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_SOLVERDATA* solverdata;
 
    SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
-   solverdata->origprob = GCGmasterGetOrigprob(scip);
+   solverdata->origprob = GCGgetOrigprob(scip);
    solverdata->masterprob = scip;
 
    SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,

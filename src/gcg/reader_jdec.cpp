@@ -39,7 +39,6 @@
 #include "gcg/class_partialdecomp.h"
 #include "gcg/class_detprobdata.h"
 #include "gcg/cons_decomp.hpp"
-#include "scip/scip_mem.h"
 
 #include <algorithm>
 #include <cassert>
@@ -69,6 +68,7 @@ static constexpr bool checkJson(int returnvalue)
 /** data for dec reader */
 struct SCIP_ReaderData
 {
+   GCG*                 gcg;                 /** GCG data structure */
 };
 
 struct JDecDecompositionData;
@@ -125,7 +125,7 @@ struct JDecDecompositionData
 
    /** creates a block structure object */
    BLOCK_STRUCTURE* createBlockStructure(
-      SCIP* scip,                            /**< scip object */
+      GCG* gcg,                              /**< GCG object */
       DETPROBDATA* detprobdata               /**< detprobdata used to create the block structure object */
       );
 
@@ -164,13 +164,13 @@ class JDecFileHandler
 public:
    /** constructor creating an object ready to read a jdec file */
    JDecFileHandler(
-      SCIP* scip,                            /**< scip data structure */
+      GCG* gcg,                              /**< GCG data structure */
       const char* filename                   /**< path of the jdec file to be read */
       );
 
    /** constructor creating an object ready to write a jdec file */
    JDecFileHandler(
-      SCIP* scip,                            /**< scip data structure */
+      GCG* gcg,                              /**< GCG data structure */
       FILE* wfile                            /**< file pointer used to write the jdec file */
       );
 
@@ -266,7 +266,8 @@ private:
    FILE* wfile_;                             /**< file pointer to write to */
    json_t* json_;                            /**< root json object */
    json_error_t error_;                      /**< will contain error information of JANSSON if decoding fails */
-   SCIP* scip_;                              /**< SCIP data structure */
+   GCG* gcg;                                 /**< GCG data structure */
+   SCIP* scip;                               /**< SCIP data structure (origprob) */
 };
 
 /** abstract element parser class used to process data read by the jdec file handler */
@@ -275,9 +276,9 @@ class AbstractJDecElementParser
 public:
    /** constructor */
    explicit AbstractJDecElementParser(
-      SCIP* scip,                            /**< scip data structure */
+      GCG* gcgstruct,                        /**< GCG data structure */
       JDecFileHandler& filehandler           /**< jdec file handler that uses this parser*/
-      ) : filehandler_(filehandler), scip_(scip), error_(false) {}
+      ) : filehandler_(filehandler), gcg(gcgstruct), scip(GCGgetOrigprob(gcg)), error_(false) {}
 
    /** destructor */
    virtual ~AbstractJDecElementParser() = default;
@@ -301,7 +302,8 @@ public:
 
 protected:
    JDecFileHandler& filehandler_;            /**< the file handler that uses this parser */
-   SCIP* scip_;                              /**< scip data structure */
+   GCG* gcg;                                 /**< GCG data structure */
+   SCIP* scip;                               /**< SCIP data structure (origprob) */
    bool error_;                              /**< should be set to true if an error ocurred */
 };
 
@@ -311,9 +313,9 @@ class AbstractJDecDecompositionElementParser : public AbstractJDecElementParser
 public:
    /** constructor */
    AbstractJDecDecompositionElementParser(
-      SCIP* scip,                            /**< scip data structure */
+      GCG* gcgstruct,                        /**< GCG data structure */
       JDecFileHandler& filehandler           /**< jdec file handler using this parser */
-      ) : AbstractJDecElementParser(scip, filehandler) {}
+      ) : AbstractJDecElementParser(gcgstruct, filehandler) {}
 
    /** destructor */
    ~AbstractJDecDecompositionElementParser() override = default;
@@ -331,11 +333,11 @@ class JDecBlockElementParser : public AbstractJDecDecompositionElementParser
 public:
    /** constructor */
    JDecBlockElementParser(
-      SCIP* scip,                            /**< scip data structure */
+      GCG* gcgstruct,                        /**< GCG data structure */
       JDecFileHandler& filehandler,          /**< file handler using this parser */
       JDecBlockData& blockdata               /**< block data structure the data is stored in */
       )
-      : AbstractJDecDecompositionElementParser(scip, filehandler),
+      : AbstractJDecDecompositionElementParser(gcgstruct, filehandler),
         blockdata_(blockdata),
         parsingconstraints(false)
       {}
@@ -365,11 +367,11 @@ class JDecDecompositionElementParser : public AbstractJDecDecompositionElementPa
 public:
    /** constructor */
    JDecDecompositionElementParser(
-      SCIP* scip,                            /**< scip data structure */
+      GCG* gcgstruct,                        /**< GCG data structure */
       JDecFileHandler& filehandler,          /**< file handler using this parser */
       JDecDecompositionData& decdata         /**< decomposition data structure the data is stored in */
       )
-      : AbstractJDecDecompositionElementParser(scip, filehandler),
+      : AbstractJDecDecompositionElementParser(gcgstruct, filehandler),
         decdata_(decdata),
         parsingmasterconstraints(false),
         parsingblocks(false),
@@ -403,10 +405,10 @@ class JDecRootElementParser : public AbstractJDecDecompositionElementParser
 public:
    /** constructor */
    JDecRootElementParser(
-      SCIP* scip,                            /**< scip data structure */
+      GCG* gcgstruct,                        /**< GCG data structure */
       JDecFileHandler& filehandler,          /**< file handler using this parser */
       JDecData& data                         /**< jdec data structure the data is stored in */
-      ) : AbstractJDecDecompositionElementParser(scip, filehandler), data_(data) {}
+      ) : AbstractJDecDecompositionElementParser(gcgstruct, filehandler), data_(data) {}
 
    /** destructor */
    ~JDecRootElementParser() override = default;
@@ -469,11 +471,12 @@ JDecData::~JDecData()
 }
 
 BLOCK_STRUCTURE* JDecDecompositionData::createBlockStructure(
-   SCIP* scip,
+   GCG* gcg,
    DETPROBDATA* detprobdata
    )
 {
    BLOCK_STRUCTURE* blockstructure = new BLOCK_STRUCTURE();
+   SCIP* scip = GCGgetOrigprob(gcg);
    int idx;
 
    if( presolved )
@@ -500,7 +503,7 @@ BLOCK_STRUCTURE* JDecDecompositionData::createBlockStructure(
             blockstructure->blockconss.back().push_back(idx);
       }
       if( blockdata.decomposition )
-         blockstructure->blockstructures.push_back(blockdata.decomposition->createBlockStructure(scip, detprobdata));
+         blockstructure->blockstructures.push_back(blockdata.decomposition->createBlockStructure(gcg, detprobdata));
       else
          blockstructure->blockstructures.emplace_back();
    }
@@ -554,27 +557,29 @@ BLOCK_STRUCTURE* JDecDecompositionData::createBlockStructure(
 }
 
 JDecFileHandler::JDecFileHandler(
-   SCIP* scip,
+   GCG* gcgstruct,
    const char* filename
    )
    : wfile_(NULL),
      json_(NULL),
      error_(),
-     scip_(scip)
+     gcg(gcgstruct),
+     scip(GCGgetOrigprob(gcgstruct))
 {
    rfile_ = SCIPfopen(filename, "r");
    initialize();
 }
 
 JDecFileHandler::JDecFileHandler(
-   SCIP* scip,
+   GCG* gcgstruct,
    FILE* file
    )
    : rfile_(NULL),
      wfile_(file),
      json_(NULL),
      error_(),
-     scip_(scip)
+     gcg(gcgstruct),
+     scip(GCGgetOrigprob(gcg))
 {
    initialize();
 }
@@ -629,7 +634,7 @@ bool JDecFileHandler::parseElement(
    }
    else
    {
-      SCIPwarningMessage(scip_, "Unexpected JSON type: %d\n", json_typeof(element));
+      SCIPwarningMessage(scip, "Unexpected JSON type: %d\n", json_typeof(element));
       error = true;
    }
 
@@ -645,29 +650,29 @@ bool JDecFileHandler::readJDec(
 
    if( rfile_ == NULL )
    {
-      SCIPwarningMessage(scip_, "JSON parser is not initialized.");
+      SCIPwarningMessage(scip, "JSON parser is not initialized.");
       error = true;
    }
    else if( json_ == NULL )
    {
-      SCIPwarningMessage(scip_, "Could not parse JSON, line %d: %s\n", error_.line, error_.text);
+      SCIPwarningMessage(scip, "Could not parse JSON, line %d: %s\n", error_.line, error_.text);
       error = true;
    }
    else if( !json_is_object(json_) )
    {
-      SCIPwarningMessage(scip_, "Decomposition is invalid (root has to be an object).\n");
+      SCIPwarningMessage(scip, "Decomposition is invalid (root has to be an object).\n");
       error = true;
    }
    else
    {
-      JDecRootElementParser rootparser(scip_, *this, data);
+      JDecRootElementParser rootparser(gcg, *this, data);
       error = !parseElement(rootparser, json_);
    }
 
    if( !error && !checkVersion(data.version) )
    {
       error = true;
-      SCIPwarningMessage(scip_, "Invalid version.\n");
+      SCIPwarningMessage(scip, "Invalid version.\n");
    }
 
    return !error;
@@ -681,7 +686,7 @@ bool JDecFileHandler::writeJDec(
    if( success )
    {
       success &= setObjectValue("version", json_integer(JDEC_VERSION));
-      success &= setObjectValue("problem_name", json_string(SCIPgetProbName(scip_)));
+      success &= setObjectValue("problem_name", json_string(SCIPgetProbName(scip)));
       success &= setObjectValue("decomposition_id", json_integer(decomp->getID()));
 
       json_t* jsondecomp = json_object();
@@ -690,7 +695,7 @@ bool JDecFileHandler::writeJDec(
    }
    else
    {
-      SCIPwarningMessage(scip_, "JSON parser is not initialized.");
+      SCIPwarningMessage(scip, "JSON parser is not initialized.");
    }
 
    if( success )
@@ -878,7 +883,7 @@ bool JDecFileHandler::setObjectValue(
 
    if( !success )
    {
-      SCIPwarningMessage(scip_, "Could not set value with key '%s'\n", key);
+      SCIPwarningMessage(scip, "Could not set value with key '%s'\n", key);
    }
    return success;
 }
@@ -902,7 +907,7 @@ bool JDecFileHandler::appendArrayValue(
 
    if( !success )
    {
-      SCIPwarningMessage(scip_, "Could not append value.\n");
+      SCIPwarningMessage(scip, "Could not append value.\n");
    }
    return success;
 }
@@ -930,10 +935,10 @@ int JDecFileHandler::jsonDumpCallback(
    // not sure if SCIPinfoMessage is the best function to call but SCIP's readers use it too
    while( (buflen - pos) > (SCIP_MAXSTRLEN - 1) )
    {
-      SCIPinfoMessage(filehandler->scip_, filehandler->wfile_, "%.*s", (SCIP_MAXSTRLEN - 1), &buffer[pos]);
+      SCIPinfoMessage(filehandler->scip, filehandler->wfile_, "%.*s", (SCIP_MAXSTRLEN - 1), &buffer[pos]);
       pos += (SCIP_MAXSTRLEN - 1);
    }
-   SCIPinfoMessage(filehandler->scip_, filehandler->wfile_, "%.*s", (int)(buflen - pos), &buffer[pos]);
+   SCIPinfoMessage(filehandler->scip, filehandler->wfile_, "%.*s", (int)(buflen - pos), &buffer[pos]);
 
    // size_t size_written = SCIPfwrite(buffer, 1, buflen, filehandler->wfile_);
    // return (size_written == 0) ? 1 : 0;
@@ -945,7 +950,7 @@ JDecDecompositionData* AbstractJDecDecompositionElementParser::parseDecompositio
    )
 {
    JDecDecompositionData* decompdata = new JDecDecompositionData();
-   JDecDecompositionElementParser decompositionparser(scip_, filehandler_, *decompdata);
+   JDecDecompositionElementParser decompositionparser(gcg, filehandler_, *decompdata);
    if( !filehandler_.parseElement(decompositionparser, value) )
       error_ = true;
    return decompdata;
@@ -963,13 +968,13 @@ void JDecRootElementParser::handleKeyValuePair(
          data_.version = (int) json_integer_value(value);
          if( !checkVersion(data_.version))
          {
-            SCIPwarningMessage(scip_, "Invalid version.\n");
+            SCIPwarningMessage(scip, "Invalid version.\n");
             error_ = true;
          }
       }
       else
       {
-         SCIPwarningMessage(scip_, "Version must be an integer.");
+         SCIPwarningMessage(scip, "Version must be an integer.");
          error_ = true;
       }
    }
@@ -981,7 +986,7 @@ void JDecRootElementParser::handleKeyValuePair(
       }
       else
       {
-         SCIPwarningMessage(scip_, "Decomposition name must be a string.");
+         SCIPwarningMessage(scip, "Decomposition name must be a string.");
          error_ = true;
       }
    }
@@ -1000,7 +1005,7 @@ void JDecRootElementParser::handleKeyValuePair(
       }
       else
       {
-         SCIPwarningMessage(scip_, "Decomposition must be an object.\n");
+         SCIPwarningMessage(scip, "Decomposition must be an object.\n");
          error_ = true;
       }
    }
@@ -1029,7 +1034,7 @@ void JDecDecompositionElementParser::handleKeyValuePair(
       }
       else
       {
-         SCIPwarningMessage(scip_, "Symmetry information must consist of strings.");
+         SCIPwarningMessage(scip, "Symmetry information must consist of strings.");
          error_ = true;
       }
    }
@@ -1046,7 +1051,7 @@ void JDecDecompositionElementParser::handleKeyValuePair(
          }
          else
          {
-            SCIPwarningMessage(scip_, "Constraints must be given as an array of strings.\n");
+            SCIPwarningMessage(scip, "Constraints must be given as an array of strings.\n");
             error_ = true;
          }
       }
@@ -1066,7 +1071,7 @@ void JDecDecompositionElementParser::handleKeyValuePair(
                if( b != block.blocknumber )
                {
                   error_ = true;
-                  SCIPwarningMessage(scip_, "Block indices are not consistent.\n");
+                  SCIPwarningMessage(scip, "Block indices are not consistent.\n");
                   break;
                }
                if( block.symmetricalblock < 0 )
@@ -1076,7 +1081,7 @@ void JDecDecompositionElementParser::handleKeyValuePair(
          }
          else
          {
-            SCIPwarningMessage(scip_, "Blocks must be given as an array of objects.\n");
+            SCIPwarningMessage(scip, "Blocks must be given as an array of objects.\n");
             error_ = true;
          }
       }
@@ -1091,7 +1096,7 @@ void JDecDecompositionElementParser::handleKeyValuePair(
          }
          else
          {
-            SCIPwarningMessage(scip_, "Symmetry information must be a mapping of strings.\n");
+            SCIPwarningMessage(scip, "Symmetry information must be a mapping of strings.\n");
             error_ = true;
          }
       }
@@ -1111,7 +1116,7 @@ void JDecDecompositionElementParser::handleKeyValuePair(
          }
          else
          {
-            SCIPwarningMessage(scip_, "Could not parse value of 'presolved'.");
+            SCIPwarningMessage(scip, "Could not parse value of 'presolved'.");
             error_ = true;
          }
       }
@@ -1131,7 +1136,7 @@ void JDecDecompositionElementParser::handleValue(
       if( json_is_object(value) )
       {
          decdata_.blocks.emplace_back(decdata_.blocks.size());
-         JDecBlockElementParser blockparser(scip_, filehandler_, decdata_.blocks.back());
+         JDecBlockElementParser blockparser(gcg, filehandler_, decdata_.blocks.back());
          if( !filehandler_.parseElement(blockparser, value) )
          {
             error_ = true;
@@ -1139,7 +1144,7 @@ void JDecDecompositionElementParser::handleValue(
       }
       else
       {
-         SCIPwarningMessage(scip_, "Block must be an object.\n");
+         SCIPwarningMessage(scip, "Block must be an object.\n");
          error_ = true;
       }
    }
@@ -1151,7 +1156,7 @@ void JDecDecompositionElementParser::handleValue(
       }
       else
       {
-         SCIPwarningMessage(scip_, "Constraints must be given as an array of strings.\n");
+         SCIPwarningMessage(scip, "Constraints must be given as an array of strings.\n");
          error_ = true;
       }
    }
@@ -1171,7 +1176,7 @@ void JDecBlockElementParser::handleKeyValuePair(
       }
       else
       {
-         SCIPwarningMessage(scip_, "Could not parse block index.\n");
+         SCIPwarningMessage(scip, "Could not parse block index.\n");
          error_ = true;
       }
    }
@@ -1183,7 +1188,7 @@ void JDecBlockElementParser::handleKeyValuePair(
       }
       else
       {
-         SCIPwarningMessage(scip_, "Could not parse block number of representative block (symmetry).\n");
+         SCIPwarningMessage(scip, "Could not parse block number of representative block (symmetry).\n");
          error_ = true;
       }
    }
@@ -1195,7 +1200,7 @@ void JDecBlockElementParser::handleKeyValuePair(
       }
       else
       {
-         SCIPwarningMessage(scip_, "Decomposition must be an object.\n");
+         SCIPwarningMessage(scip, "Decomposition must be an object.\n");
          error_ = true;
       }
    }
@@ -1209,7 +1214,7 @@ void JDecBlockElementParser::handleKeyValuePair(
       }
       else
       {
-         SCIPwarningMessage(scip_, "Constraints must be given as an array of strings.\n");
+         SCIPwarningMessage(scip, "Constraints must be given as an array of strings.\n");
          error_ = true;
       }
    }
@@ -1231,7 +1236,7 @@ void JDecBlockElementParser::handleValue(
       }
       else
       {
-         SCIPwarningMessage(scip_, "Constraints must be given as an array of strings.\n");
+         SCIPwarningMessage(scip, "Constraints must be given as an array of strings.\n");
          error_ = true;
       }
    }
@@ -1240,13 +1245,14 @@ void JDecBlockElementParser::handleValue(
 /* reads jdec file */
 static
 SCIP_RETCODE readJDec(
-   SCIP*                 scip,               /**< scip data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    const char*           filename,           /**< path of file */
    SCIP_RESULT*          result              /**< pointer to scip result */
    )
 {
    JDecData data;
-   JDecFileHandler filehandler(scip, filename);
+   SCIP* scip = GCGgetOrigprob(gcg);
+   JDecFileHandler filehandler(gcg, filename);
 
    if( filehandler.readJDec(data) )
    {
@@ -1261,7 +1267,7 @@ SCIP_RETCODE readJDec(
             SCIPpresolve(scip);
          }
 
-         PARTIALDECOMP* partialdec = new PARTIALDECOMP(scip, !data.rootdecomposition->presolved);
+         PARTIALDECOMP* partialdec = new PARTIALDECOMP(gcg, !data.rootdecomposition->presolved);
          DETPROBDATA* detprobdata = partialdec->getDetprobdata();
          for( auto& cons : data.rootdecomposition->masterconstraints )
          {
@@ -1280,7 +1286,7 @@ SCIP_RETCODE readJDec(
             }
             if( blockdata.decomposition )
             {
-               BLOCK_STRUCTURE* nestedstructure = blockdata.decomposition->createBlockStructure(scip, detprobdata);
+               BLOCK_STRUCTURE* nestedstructure = blockdata.decomposition->createBlockStructure(gcg, detprobdata);
                partialdec->setBlockStructure(block, nestedstructure);
             }
             else
@@ -1288,7 +1294,7 @@ SCIP_RETCODE readJDec(
                partialdec->setBlockStructure(block, NULL);
             }
          }
-         GCGconshdlrDecompAddPreexisitingPartialDec(scip, partialdec);
+         GCGconshdlrDecompAddPreexisitingPartialDec(gcg, partialdec);
 
          if( !data.rootdecomposition->symmetryvardata.empty() )
          {
@@ -1366,13 +1372,13 @@ SCIP_RETCODE readJDec(
 /* writes a jdec file for a given decomposition */
 static
 SCIP_RETCODE writePartialdec(
-   SCIP*                 scip,               /**< scip data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    FILE*                 file,               /**< file pointer */
    gcg::PARTIALDECOMP*   partialdec,         /**< partialdec to be written */
    SCIP_RESULT*          result              /**< pointer to scip result */
    )
 {
-   JDecFileHandler filehandler(scip, file);
+   JDecFileHandler filehandler(gcg, file);
 
    if( filehandler.writeJDec(partialdec) )
    {
@@ -1408,6 +1414,10 @@ SCIP_DECL_READERFREE(readerFreeJDec)
 static
 SCIP_DECL_READERREAD(readerReadJDec)
 {  /*lint --e{715}*/
+   SCIP_READERDATA* readerdata;
+
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
 
    if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
    {
@@ -1416,7 +1426,7 @@ SCIP_DECL_READERREAD(readerReadJDec)
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( readJDec(scip, filename, result) );
+   SCIP_CALL( readJDec(readerdata->gcg, filename, result) );
 
    return SCIP_OKAY;
 }
@@ -1425,33 +1435,40 @@ SCIP_DECL_READERREAD(readerReadJDec)
 static
 SCIP_DECL_READERWRITE(readerWriteJDec)
 {  /*lint --e{715}*/
+   SCIP_READERDATA* readerdata;
+
    assert(scip != NULL);
    assert(reader != NULL);
 
-   gcg::PARTIALDECOMP* partialdec = GCGgetPartialdecToWrite(scip, transformed);
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
+
+   gcg::PARTIALDECOMP* partialdec = GCGgetPartialdecToWrite(readerdata->gcg, transformed);
 
    if(partialdec == NULL) {
       SCIPwarningMessage(scip, "There is no writable partialdec!\n");
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( writePartialdec(scip, file, partialdec, result) );
+   SCIP_CALL( writePartialdec(readerdata->gcg, file, partialdec, result) );
 
    return SCIP_OKAY;
 }
 
-extern
 SCIP_RETCODE GCGincludeReaderJDec(
-   SCIP*                 scip
+   GCG*                 gcg
    )
 {
    SCIP_READERDATA* readerdata = NULL;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    /* create dec reader data */
-   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &readerdata) );
+   readerdata->gcg = gcg;
 
    /* include jdec reader */
-   SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL, readerFreeJDec,
+   SCIP_CALL(SCIPincludeReader(origprob, READER_NAME, READER_DESC, READER_EXTENSION, NULL, readerFreeJDec,
       readerReadJDec, readerWriteJDec, readerdata));
 
    return SCIP_OKAY;

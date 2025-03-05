@@ -110,13 +110,15 @@ void removeDigits(
 static
 GCG_DECL_CONSCLASSIFY(classifierClassify) {
    gcg::DETPROBDATA* detprobdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+
    if( transformed )
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(gcg);
    }
    else
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
    }
 
    std::vector < std::string > consnamesToCompare( detprobdata->getNConss(), "" );
@@ -161,7 +163,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
    }
 
    /* secondly, use these information to create a ConsPartition */
-   classifier = new gcg::ConsPartition(scip, "consnames", (int) nameClasses.size(), detprobdata->getNConss());
+   classifier = new gcg::ConsPartition(gcg, "consnames", (int) nameClasses.size(), detprobdata->getNConss());
 
    /* set all class names and descriptions */
    for( int c = 0; c < classifier->getNClasses(); ++ c )
@@ -178,7 +180,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
       classifier->assignConsToClass(i, classForCons[i]);
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d different constraint classes \n", classifier->getName(), classifier->getNClasses());
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d different constraint classes \n", classifier->getName(), classifier->getNClasses());
 
    detprobdata->addConsPartition(classifier);
    return SCIP_OKAY;
@@ -189,12 +191,12 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
  */
 
 SCIP_RETCODE GCGincludeConsClassifierForConsnamesDigitFreeIdentical(
-   SCIP *scip                /**< SCIP data structure */
+   GCG*                 gcg                /**< GCG data structure */
 ) {
    GCG_CLASSIFIERDATA* classifierdata = NULL;
 
    SCIP_CALL(
-      GCGincludeConsClassifier(scip, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
+      GCGincludeConsClassifier(gcg, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
                                classifierFree, classifierClassify));
 
    return SCIP_OKAY;

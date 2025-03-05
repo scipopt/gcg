@@ -113,6 +113,7 @@ typedef struct BlkInput BLKINPUT;
 /** data for blk reader */
 struct SCIP_ReaderData
 {
+   GCG*                  gcg;                /**< GCG data structure */
    int*                  varstoblock;        /**< index=varid; value= -1 or blockID or -2 for multipleblocks */
    int*                  nblockvars;         /**< number of variable per block that are not linkingvars */
    int**                 linkingvarsblocks;  /**< array with blocks assigned to one linking var */
@@ -904,7 +905,7 @@ SCIP_RETCODE fillDecompStruct(
 
    SCIPinfoMessage(scip, NULL, "just read blk file:\n");
 
-   retcode = GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, nblocks, FALSE);
+   retcode = GCGfilloutDecompFromConstoblock(readerdata->gcg, decomp, constoblock, nblocks, FALSE);
    SCIPfreeMemoryArray(scip, &consvars);
 
    return retcode;
@@ -1001,7 +1002,7 @@ SCIP_RETCODE readBLKFile(
       case BLK_NBLOCKS:
          if( blkinput->haspresolvesection )
          {
-            newpartialdec = new gcg::PARTIALDECOMP(scip, !blkinput->presolved);
+            newpartialdec = new gcg::PARTIALDECOMP(readerdata->gcg, !blkinput->presolved);
             newpartialdec->setUsergiven(gcg::USERGIVEN::COMPLETED_CONSTOMASTER);
          }
          SCIP_CALL( readNBlocks(scip, newpartialdec, blkinput) );
@@ -1014,7 +1015,7 @@ SCIP_RETCODE readBLKFile(
          {
             SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. It is assumed to belong to the unpresolved problem but the behaviour is undefined. See the FAQ for further information.\n");
             blkinput->presolved = FALSE;
-            newpartialdec = new gcg::PARTIALDECOMP(scip, !blkinput->presolved);
+            newpartialdec = new gcg::PARTIALDECOMP(readerdata->gcg, !blkinput->presolved);
             newpartialdec->setUsergiven(gcg::USERGIVEN::COMPLETED_CONSTOMASTER);
          }
 
@@ -1049,14 +1050,14 @@ SCIP_RETCODE readBLKFile(
       }
    }
 
-   SCIP_CALL( GCGdecompCreate(scip, &decdecomp) );
+   SCIP_CALL( GCGdecompCreate(readerdata->gcg, &decdecomp) );
 
    /* fill decomp */
    retcode = fillDecompStruct(scip, blkinput, decdecomp, newpartialdec, readerdata);
 
-   GCGconshdlrDecompAddPreexisitingPartialDec(scip, newpartialdec);
+   GCGconshdlrDecompAddPreexisitingPartialDec(readerdata->gcg, newpartialdec);
 
-   SCIP_CALL( GCGdecompFree(scip, &decdecomp) );
+   SCIP_CALL( GCGdecompFree(readerdata->gcg, &decdecomp) );
 
    for( i = 0; i < nvars; ++i )
    {
@@ -1140,16 +1141,19 @@ SCIP_DECL_READERWRITE(readerWriteBlk)
 
 /** includes the blk file reader in SCIP */
 SCIP_RETCODE GCGincludeReaderBlk(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_READERDATA* readerdata = NULL;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    /* create blk reader data */
-   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &readerdata) );
+   readerdata->gcg = gcg;
 
    /* include blk reader */
-   SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
+   SCIP_CALL( SCIPincludeReader(origprob, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
          readerFreeBlk, readerReadBlk, readerWriteBlk, readerdata) );
 
    return SCIP_OKAY;

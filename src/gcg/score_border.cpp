@@ -74,7 +74,7 @@ GCG_DECL_SCORECALC(scoreCalcBorder)
    unsigned long matrixarea;
    unsigned long borderarea;
 
-   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
+   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(gcg, partialdecid);
 
    matrixarea = (unsigned long) partialdec->getNVars() * (unsigned long)partialdec->getNConss();
    borderarea = 0;
@@ -96,13 +96,13 @@ GCG_DECL_SCORECALC(scoreCalcBorder)
 
 /** creates the border score and includes it in SCIP */
 SCIP_RETCODE GCGincludeScoreBorder(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_SCOREDATA* scoredata = NULL;
 
    SCIP_CALL( 
-      GCGincludeScore(scip, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata, 
+      GCGincludeScore(gcg, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata, 
          scoreFreeBorder, scoreCalcBorder) );
 
    return SCIP_OKAY;

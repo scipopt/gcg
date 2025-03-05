@@ -101,11 +101,11 @@ struct GCG_DetectorData
 static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetcover)
 {
    *result = SCIP_DIDNOTFIND;
-
+   SCIP* origprob = GCGgetOrigprob(gcg);
    char decinfo[SCIP_MAXSTRLEN];
    SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+   SCIP_CALL_ABORT(SCIPcreateClock(origprob, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
 
    SCIP_CONS* cons;
    SCIP_VAR** vars;
@@ -122,27 +122,27 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetcover)
       cons = partialdecdetectiondata->detprobdata->getCons(*itr);
 
       /* set open setcovering and logicor constraints to master */
-      if( GCGconsGetType(scip, cons) == setcovering || GCGconsGetType(scip, cons) == logicor )
+      if( GCGconsGetType(origprob, cons) == setcovering || GCGconsGetType(origprob, cons) == logicor )
       {
          itr = partialdec->fixConsToMaster(itr);
          found = true;
       }
       /* set constraints with infinity rhs and nonnegative lhs to master */
-      else if(GCGconsGetType(scip, cons) != logicor && GCGconsGetType(scip, cons) != setpacking && GCGconsGetType(scip, cons) != setpartitioning )
+      else if(GCGconsGetType(origprob, cons) != logicor && GCGconsGetType(origprob, cons) != setpacking && GCGconsGetType(origprob, cons) != setpartitioning )
       {
-         nvars = GCGconsGetNVars(scip, cons);
+         nvars = GCGconsGetNVars(origprob, cons);
          vars = NULL;
          vals = NULL;
-         if( !SCIPisInfinity(scip, GCGconsGetRhs(scip, cons)) )
+         if( !SCIPisInfinity(origprob, GCGconsGetRhs(origprob, cons)) )
             relevant = false;
-         if( SCIPisNegative(scip, GCGconsGetLhs(scip, cons)) )
+         if( SCIPisNegative(origprob, GCGconsGetLhs(origprob, cons)) )
             relevant = false;
          if( nvars > 0 )
          {
-            SCIP_CALL( SCIPallocMemoryArray(scip, &vars, nvars) );
-            SCIP_CALL( SCIPallocMemoryArray(scip, &vals, nvars) );
-            SCIP_CALL( GCGconsGetVars(scip, cons, vars, nvars) );
-            SCIP_CALL( GCGconsGetVals(scip, cons, vals, nvars) );
+            SCIP_CALL( SCIPallocMemoryArray(origprob, &vars, nvars) );
+            SCIP_CALL( SCIPallocMemoryArray(origprob, &vals, nvars) );
+            SCIP_CALL( GCGconsGetVars(origprob, cons, vars, nvars) );
+            SCIP_CALL( GCGconsGetVals(origprob, cons, vals, nvars) );
          }
          for( int j = 0; j < nvars && relevant; ++j )
          {
@@ -154,14 +154,14 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetcover)
                SCIPdebugPrintf("(%s is not integral) ", SCIPvarGetName(vars[j]) );
                relevant = FALSE;
             }
-            if( !SCIPisEQ(scip, vals[j], 1.0) )
+            if( !SCIPisEQ(origprob, vals[j], 1.0) )
             {
                SCIPdebugPrintf("(coeff for var %s is %.2f != 1.0) ", SCIPvarGetName(vars[j]), vals[j] );
                relevant = FALSE;
             }
          }
-         SCIPfreeMemoryArrayNull(scip, &vals);
-         SCIPfreeMemoryArrayNull(scip, &vars);
+         SCIPfreeMemoryArrayNull(origprob, &vals);
+         SCIPfreeMemoryArrayNull(origprob, &vars);
 
          if(relevant)
          {
@@ -176,18 +176,18 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecGeneralmastersetcover)
    }
 
    partialdec->sort();
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock) );
 
-   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 1) );
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(origprob, temporaryClock);
+   SCIP_CALL( SCIPallocMemoryArray(origprob, &(partialdecdetectiondata->newpartialdecs), 1) );
    partialdecdetectiondata->newpartialdecs[0] = partialdec;
    partialdecdetectiondata->nnewpartialdecs = 1;
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "genmastersetcover");
    partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(decinfo);
-   partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
+   partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(origprob, temporaryClock));
    // we used the provided partialdec -> prevent deletion
    partialdecdetectiondata->workonpartialdec = NULL;
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT(SCIPfreeClock(origprob, &temporaryClock) );
 
    *result = SCIP_SUCCESS;
 
@@ -203,24 +203,25 @@ GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveGeneralmastersetcover)
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
    int newval;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, TRUE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE ) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxcallround", name);
-   SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
+   SCIP_CALL( SCIPgetIntParam(origprob, setstr, &newval) );
    ++newval;
-   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
-   SCIPinfoMessage(scip, NULL, "After Setting %s = %d\n", setstr, newval);
+   SCIP_CALL( SCIPsetIntParam(origprob, setstr, newval ) );
+   SCIPinfoMessage(origprob, NULL, "After Setting %s = %d\n", setstr, newval);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/origmaxcallround", name);
-   SCIP_CALL( SCIPgetIntParam(scip, setstr, &newval) );
+   SCIP_CALL( SCIPgetIntParam(origprob, setstr, &newval) );
    ++newval;
-   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
-   SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
+   SCIP_CALL( SCIPsetIntParam(origprob, setstr, newval ) );
+   SCIPinfoMessage(origprob, NULL, "%s = %d\n", setstr, newval);
 
    return SCIP_OKAY;
 }
@@ -230,14 +231,14 @@ static
 GCG_DECL_SETPARAMDEFAULT(setParamDefaultGeneralmastersetcover)
 {
    char setstr[SCIP_MAXSTRLEN];
-
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLED) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLEDFINISHING ) );
 
    return SCIP_OKAY;
 }
@@ -246,14 +247,14 @@ static
 GCG_DECL_SETPARAMFAST(setParamFastGeneralmastersetcover)
 {
    char setstr[SCIP_MAXSTRLEN];
-
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE ) );
 
    return SCIP_OKAY;
 }
@@ -266,7 +267,7 @@ GCG_DECL_SETPARAMFAST(setParamFastGeneralmastersetcover)
 
 /** creates the handler for generalmastersetcover detector and includes it in SCIP */
 SCIP_RETCODE GCGincludeDetectorGeneralmastersetcover(
-   SCIP*                scip                 /**< SCIP data structure */
+   GCG*                 gcg                  /**< GCG data structure */
    )
 {
    GCG_DETECTORDATA* detectordata;
@@ -275,7 +276,7 @@ SCIP_RETCODE GCGincludeDetectorGeneralmastersetcover(
    detectordata = NULL;
 
    SCIP_CALL(
-      GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND,
+      GCGincludeDetector(gcg, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND,
                          DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY,
                          DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
                          detectordata, freeGeneralmastersetcover, initGeneralmastersetcover, exitGeneralmastersetcover, propagatePartialdecGeneralmastersetcover, finishPartialdecGeneralmastersetcover, detectorPostprocessPartialdecGeneralmastersetcover, setParamAggressiveGeneralmastersetcover, setParamDefaultGeneralmastersetcover, setParamFastGeneralmastersetcover));

@@ -107,8 +107,9 @@ typedef struct DecInput DECINPUT;
 /** data for dec reader */
 struct SCIP_ReaderData
 {
-
+   GCG* gcg;                                 /**< GCG data structure */
 };
+
 static const int NOVALUE = -1;
 static const int LINKINGVALUE = -2;
 static const char delimchars[] = " \f\n\r\t\v";
@@ -1012,7 +1013,7 @@ SCIP_RETCODE readDECFile(
       assert(decinput->haspresolvesection);
    }
 
-   decinput->partialdec = new gcg::PARTIALDECOMP(scip, !decinput->presolved);
+   decinput->partialdec = new gcg::PARTIALDECOMP(readerdata->gcg, !decinput->presolved);
 
    while( decinput->section != DEC_END && !hasError(decinput) )
    {
@@ -1084,7 +1085,7 @@ SCIP_RETCODE readDECFile(
       if( !decinput->incomplete )
          decinput->partialdec->setUsergiven(gcg::USERGIVEN::COMPLETED_CONSTOMASTER);
       SCIPinfoMessage(scip, NULL, "just read dec file:\n");
-      GCGconshdlrDecompAddPreexisitingPartialDec(scip, decinput->partialdec, TRUE);
+      GCGconshdlrDecompAddPreexisitingPartialDec(readerdata->gcg, decinput->partialdec, TRUE);
    }
 
    /* close file */
@@ -1306,10 +1307,13 @@ SCIP_DECL_READERREAD(readerReadDec)
 static
 SCIP_DECL_READERWRITE(readerWriteDec)
 {  /*lint --e{715}*/
+   SCIP_READERDATA* readerdata;
    assert(scip != NULL);
    assert(reader != NULL);
 
-   gcg::PARTIALDECOMP* partialdec = GCGgetPartialdecToWrite(scip, transformed);
+   readerdata = SCIPreaderGetData(reader);
+
+   gcg::PARTIALDECOMP* partialdec = GCGgetPartialdecToWrite(readerdata->gcg, transformed);
 
    if(partialdec == NULL) {
       SCIPwarningMessage(scip, "There is no writable partialdec!\n");
@@ -1327,16 +1331,19 @@ SCIP_DECL_READERWRITE(readerWriteDec)
 
 /** includes the dec file reader in SCIP */
 SCIP_RETCODE GCGincludeReaderDec(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_READERDATA* readerdata = NULL;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    /* create dec reader data */
-   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &readerdata) );
+   readerdata->gcg = gcg;
 
    /* include dec reader */
-   SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
+   SCIP_CALL(SCIPincludeReader(origprob, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
            readerFreeDec, readerReadDec, readerWriteDec, readerdata));
 
    return SCIP_OKAY;

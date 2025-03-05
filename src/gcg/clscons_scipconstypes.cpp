@@ -80,13 +80,14 @@ struct GCG_ClassifierData
 static
 GCG_DECL_CONSCLASSIFY(classifierClassify) {
    gcg::DETPROBDATA *detprobdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
    if( transformed )
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(gcg);
    }
    else
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
    }
 
    std::vector<consType> foundConstypes(0);
@@ -99,7 +100,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
       SCIP_CONS *cons;
       bool found = false;
       cons = detprobdata->getCons(i);
-      consType cT = GCGconsGetType(scip, cons);
+      consType cT = GCGconsGetType(origprob, cons);
       size_t constype;
 
       /* check whether the constraint's constype is new */
@@ -111,14 +112,14 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
       }
       /* if it is new, create a new classindex */
       if (!found) {
-         foundConstypes.push_back(GCGconsGetType(scip, cons));
+         foundConstypes.push_back(GCGconsGetType(origprob, cons));
          classForCons[i] = (int) foundConstypes.size() - 1;
       } else
          classForCons[i] = (int) constype;
    }
 
    /* secondly, use these information to create a ConsPartition */
-   classifier = new gcg::ConsPartition(scip, "constypes", (int) foundConstypes.size(), detprobdata->getNConss());
+   classifier = new gcg::ConsPartition(gcg, "constypes", (int) foundConstypes.size(), detprobdata->getNConss());
 
    /* set class names and descriptions of every class */
    for (int c = 0; c < classifier->getNClasses(); ++c) {
@@ -172,7 +173,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
       classifier->assignConsToClass(i, classForCons[i]);
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL,
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_HIGH, NULL,
                    " Consclassifier \"%s\" yields a classification with %d different constraint classes \n",
                    classifier->getName(), (int) foundConstypes.size());
 
@@ -186,13 +187,13 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
 
 /** creates the handler for XYZ classifier and includes it in SCIP */
 SCIP_RETCODE GCGincludeConsClassifierScipConstypes(
-   SCIP *scip                /**< SCIP data structure */
+   GCG*                 gcg                /**< GCG data structure */
    )
 {
    GCG_CLASSIFIERDATA* classifierdata = NULL;
 
    SCIP_CALL(
-      GCGincludeConsClassifier(scip, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
+      GCGincludeConsClassifier(gcg, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
                                classifierFree, classifierClassify));
 
    return SCIP_OKAY;

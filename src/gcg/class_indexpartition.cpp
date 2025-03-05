@@ -51,12 +51,12 @@ struct sort_pred {
 
 /** constructor */
 IndexPartition::IndexPartition(
-   SCIP*          _scip,
+   GCG*           gcgstruct,
    const char*    givenName,
    int            givenNClasses,
    int            givenNIndices
 ) :
-   scip(_scip),  name(std::string(givenName)), nClasses(givenNClasses), nIndices(givenNIndices), indicesToClasses(givenNIndices, -1),
+   gcg(gcgstruct),  name(std::string(givenName)), nClasses(givenNClasses), nIndices(givenNIndices), indicesToClasses(givenNIndices, -1),
    classNames(givenNClasses, ""),
    classDescriptions(givenNClasses, ""),
    classDecompInfo( nClasses, 0 )
@@ -67,7 +67,7 @@ IndexPartition::IndexPartition(
 IndexPartition::IndexPartition(const IndexPartition* toCopy)
 {
    assert( toCopy != NULL );
-   scip = toCopy->scip;
+   gcg = toCopy->gcg;
    name = toCopy->name;
    nClasses = toCopy->nClasses;
    nIndices = toCopy->nIndices;

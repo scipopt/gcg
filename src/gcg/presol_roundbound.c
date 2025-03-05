@@ -161,16 +161,12 @@ SCIP_RETCODE GCGincludePresolRoundbound(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   SCIP_PRESOLDATA* presoldata;
+   SCIP_PRESOLDATA* presoldata = NULL;
    SCIP_PRESOL* presolptr;
-
-   /* create roundbound presolver data */
-   presoldata = NULL;
 
    /* include presolver */
    SCIP_CALL( SCIPincludePresolBasic(scip, &presolptr, PRESOL_NAME, PRESOL_DESC, PRESOL_PRIORITY, PRESOL_MAXROUNDS, PRESOL_TIMING,
-         presolExecRoundbound,
-         presoldata) );
+         presolExecRoundbound, presoldata) );
 
    assert(presolptr != NULL);
 

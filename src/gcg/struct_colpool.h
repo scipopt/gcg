@@ -49,6 +49,7 @@ extern "C" {
 /** storage for pooled cols */
 struct GCG_Colpool
 {
+   GCG*                  gcg;                /**< GCG data structure */
    SCIP*                 scip;               /**< SCIP data structure */
    SCIP_Longint          nodenr;             /**< node at which columns in colpool respect branching decisions */
    SCIP_Bool             infarkas;           /**< in Farkas pricing? */

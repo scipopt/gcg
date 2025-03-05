@@ -38,7 +38,7 @@
 #define __SCIP_DEC_STAIRCASE_LSP_H__
 
 #include "scip/scip.h"
-#include "gcg/def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +47,7 @@ extern "C" {
 /** creates the handler for staircase constraints and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeDetectorStaircaseLsp(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

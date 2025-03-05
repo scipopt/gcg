@@ -39,7 +39,7 @@
 
 
 #include "scip/scip.h"
-#include "gcg/def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,12 +48,12 @@ extern "C" {
 /** creates the reliable pseudo cost braching rule and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeBranchruleRelpsprob(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** execution reliability pseudo cost probing branching with the given branching candidates */
 SCIP_RETCODE GCGgetRelpsprobBranchVar(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR**            branchcands,        /**< brancing candidates */
    SCIP_Real*            branchcandssol,     /**< solution value for the branching candidates */
    int                   nbranchcands,       /**< number of branching candidates */

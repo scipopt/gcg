@@ -63,6 +63,7 @@
 /** primal heuristic data */
 struct SCIP_HeurData
 {
+   GCG*                  gcg;                /**< GCG data structure */
    /* parameters */
    int                   mincolumns;         /**< minimum number of columns to regard in the master problem */
    SCIP_Bool             useobj;             /**< use objective coefficients as tie breakers                */
@@ -141,7 +142,7 @@ int getViolationChange(
 /** get the index of the "best" master variable w.r.t. pseudo costs */
 static
 SCIP_RETCODE getBestMastervar(
-   SCIP*                 scip,
+   GCG*                  gcg,
    SCIP_SOL*             mastersol,
    SCIP_Real*            activities,
    int*                  blocknr,
@@ -151,7 +152,6 @@ SCIP_RETCODE getBestMastervar(
    int*                  violchange
    )
 {
-   SCIP* origprob;
    SCIP_VAR** mastervars;
    int nmastervars;
 
@@ -159,18 +159,15 @@ SCIP_RETCODE getBestMastervar(
    int tmpviolchange;
    SCIP_Real tmpobj;
    SCIP_Real curobj;
-
-   /* get original problem */
-   origprob = GCGmasterGetOrigprob(scip);
-   assert(origprob != NULL);
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
    /* get variable data of the master problem */
-   SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
    assert(nmastervars >= 0);
 
    *index = -1;
    *violchange = INT_MAX;
-   curobj = SCIPinfinity(scip);
+   curobj = SCIPinfinity(masterprob);
 
    for( i = nmastervars - 1; i >= 0; i-- )
    {
@@ -192,15 +189,15 @@ SCIP_RETCODE getBestMastervar(
       /* ignore the master variable if the corresponding block is already full
        * or which are fixed
        */
-      if( blocknr[block] < GCGgetNIdenticalBlocks(origprob, block )
+      if( blocknr[block] < GCGgetNIdenticalBlocks(gcg, block )
             && !ignored[i]
-            && !SCIPisEQ(scip, SCIPvarGetLbLocal(mastervar), SCIPvarGetUbLocal(mastervar))
-            && SCIPisFeasGE(scip, SCIPgetSolVal(scip, mastersol, mastervar), SCIPvarGetUbLocal(mastervar)) )
+            && !SCIPisEQ(masterprob, SCIPvarGetLbLocal(mastervar), SCIPvarGetUbLocal(mastervar))
+            && SCIPisFeasGE(masterprob, SCIPgetSolVal(masterprob, mastersol, mastervar), SCIPvarGetUbLocal(mastervar)) )
       {
-         tmpviolchange = getViolationChange(scip, activities, mastervar);
+         tmpviolchange = getViolationChange(masterprob, activities, mastervar);
          tmpobj = SCIPvarGetObj(mastervar);
          if( tmpviolchange < *violchange ||
-               (tmpviolchange == *violchange && SCIPisLE(scip, tmpobj, curobj) && useobj) )
+               (tmpviolchange == *violchange && SCIPisLE(masterprob, tmpobj, curobj) && useobj) )
          {
             *index = i;
             *violchange = tmpviolchange;
@@ -365,7 +362,6 @@ SCIP_DECL_HEURFREE(heurFreeGreedycolsel)
 static
 SCIP_DECL_HEURINIT(heurInitGreedycolsel)
 {  /*lint --e{715}*/
-   SCIP* origprob;
    SCIP_HEURDATA* heurdata;
    int nblocks;
 
@@ -374,16 +370,12 @@ SCIP_DECL_HEURINIT(heurInitGreedycolsel)
    assert(heur != NULL);
    assert(scip != NULL);
 
-   /* get original problem */
-   origprob = GCGmasterGetOrigprob(scip);
-   assert(origprob != NULL);
-
    /* get heuristic's data */
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
 
    /* get number of blocks */
-   nblocks = GCGgetNPricingprobs(origprob);
+   nblocks = GCGgetNPricingprobs(heurdata->gcg);
 
    heurdata->lastncols = 0;
 
@@ -461,13 +453,13 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    assert(scip != NULL);
    assert(result != NULL);
 
-   /* get original problem */
-   origprob = GCGmasterGetOrigprob(scip);
-   assert(origprob != NULL);
-
    /* get heuristic's data */
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
+
+   /* get original problem */
+   origprob = GCGgetOrigprob(heurdata->gcg);
+   assert(origprob != NULL);
 
    *result = SCIP_DELAYED;
 
@@ -488,7 +480,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
    SCIPdebugMessage("Executing Greedy Column Selection heuristic (nmastervars = %d) ...\n", nmastervars);
 
    /* get number of pricing problems */
-   nblocks = GCGgetNPricingprobs(origprob);
+   nblocks = GCGgetNPricingprobs(heurdata->gcg);
    assert(nblocks >= 0);
 
    /* get master LP rows data */
@@ -541,7 +533,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       int norigvars;
       int block;
 
-      SCIP_CALL( getBestMastervar(scip, mastersol, activities, blocknr, ignored, heurdata->useobj, &index, &violchange) );
+      SCIP_CALL( getBestMastervar(heurdata->gcg, mastersol, activities, blocknr, ignored, heurdata->useobj, &index, &violchange) );
       assert(index >= -1 && index < nmastervars);
 
       /* if no master variable could be selected, abort */
@@ -720,7 +712,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
       {
          int nidentblocks;
 
-         nidentblocks = GCGgetNIdenticalBlocks(origprob, i);
+         nidentblocks = GCGgetNIdenticalBlocks(heurdata->gcg, i);
 
          /* in case the solution is feasible but the block is not full,
           * we need a zero solution for this block in order to generate
@@ -799,29 +791,31 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
 
 /** creates the greedy column selection primal heuristic and includes it in SCIP */
 SCIP_RETCODE GCGincludeHeurGreedycolsel(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_HEURDATA* heurdata;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
    /* create greedy column selection primal heuristic data */
-   SCIP_CALL( SCIPallocBlockMemory(scip, &heurdata) );
+   SCIP_CALL( SCIPallocBlockMemory(masterprob, &heurdata) );
+   heurdata->gcg = gcg;
 
    heurdata->zerovars = NULL;
    heurdata->maxzerovars = 0;
 
    /* include primal heuristic */
-   SCIP_CALL( SCIPincludeHeur(scip, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
+   SCIP_CALL( SCIPincludeHeur(masterprob, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, HEUR_TIMING, HEUR_USESSUBSCIP,
          heurCopyGreedycolsel, heurFreeGreedycolsel, heurInitGreedycolsel, heurExitGreedycolsel,
          heurInitsolGreedycolsel, heurExitsolGreedycolsel, heurExecGreedycolsel,
          heurdata) );
 
    /* add greedy column selection primal heuristic parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/mincolumns",
+   SCIP_CALL( SCIPaddIntParam(masterprob, "heuristics/"HEUR_NAME"/mincolumns",
          "minimum number of columns to regard in the master problem",
          &heurdata->mincolumns, FALSE, DEFAULT_MINCOLUMNS, 1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/useobj",
+   SCIP_CALL( SCIPaddBoolParam(masterprob, "heuristics/"HEUR_NAME"/useobj",
          "use objective coefficients as tie breakers",
          &heurdata->useobj, TRUE, DEFAULT_USEOBJ, NULL, NULL) );
 

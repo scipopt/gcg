@@ -52,7 +52,13 @@
 /** node selector data */
 struct SCIP_NodeselData
 {
-   SCIP_Longint lastorignodenumber;
+   GCG*                 gcg;                /**< GCG data structure */
+   SCIP_Longint         lastorignodenumber;
+};
+
+struct SCIP_EventhdlrData
+{
+   GCG*                  gcg;                /**< GCG data structure */
 };
 
 /*
@@ -127,7 +133,7 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
    nodeseldata = SCIPnodeselGetData(nodesel);
    assert(nodeseldata != NULL);
 
-   origscip = GCGmasterGetOrigprob(scip);
+   origscip = GCGgetOrigprob(nodeseldata->gcg);
 
    *selnode = NULL;
 
@@ -152,7 +158,7 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
 
             *selnode = SCIPgetRootNode(scip);
             SCIPdebugMessage("selected root node in the master program\n");
-            SCIP_CALL( GCGrestoreLimitSettings(origscip, scip) );
+            SCIP_CALL( GCGrestoreLimitSettings(nodeseldata->gcg) );
          }
          else
          {
@@ -265,6 +271,24 @@ SCIP_DECL_EVENTEXIT(eventExitFocusnode)
    return SCIP_OKAY;
 }
 
+/** destructor of event handler */
+static
+SCIP_DECL_EVENTFREE(eventFreeFocusnode)
+{  /*lint --e{715}*/
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+
+   assert(scip != NULL);
+   assert(eventhdlr != NULL);
+   assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
+
+   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
+   assert(eventhdlrdata != NULL);
+
+   SCIPfreeMemory(scip, &eventhdlrdata);
+
+   return SCIP_OKAY;
+}
+
 
 /** execution method of event handler */
 static
@@ -272,11 +296,16 @@ SCIP_DECL_EVENTEXEC(eventExecFocusnode)
 {  /*lint --e{715}*/
    SCIP* origscip;
    SCIP_NODE* focusnode;
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+
    assert(scip != NULL);
    assert(eventhdlr != NULL);
    assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
 
-   origscip = GCGgetOriginalprob(scip);
+   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
+   assert(eventhdlrdata != NULL);
+
+   origscip = GCGgetOrigprob(eventhdlrdata->gcg);
    assert(origscip != NULL);
    focusnode = SCIPeventGetNode(event);
    assert(focusnode != NULL);
@@ -298,15 +327,17 @@ SCIP_DECL_EVENTEXEC(eventExecFocusnode)
 
 /** creates the node selector for depth first search and includes it in SCIP */
 SCIP_RETCODE GCGincludeNodeselMaster(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< SCIP data structure */
 )
 {
    SCIP_NODESELDATA* nodeseldata;
    SCIP_EVENTHDLR* eventhdlr;
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+   SCIP* scip = GCGgetMasterprob(gcg);
 
    /* create master node selector data */
    SCIP_CALL( SCIPallocMemory(scip, &nodeseldata) );
-
+   nodeseldata->gcg =  gcg;
    nodeseldata->lastorignodenumber = -1LL;
 
    /* include node selector */
@@ -316,12 +347,15 @@ SCIP_RETCODE GCGincludeNodeselMaster(
       nodeseldata) );
 
    /* include event handler into SCIP */
-   SCIP_CALL( SCIPincludeEventhdlrBasic(scip, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC, eventExecFocusnode, NULL) );
+   SCIP_CALL( SCIPallocMemory(scip, &eventhdlrdata) );
+   eventhdlrdata->gcg =  gcg;
+   SCIP_CALL( SCIPincludeEventhdlrBasic(scip, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC, eventExecFocusnode, eventhdlrdata) );
    assert(eventhdlr != NULL);
 
    /* set non fundamental callbacks via setter functions */
    SCIP_CALL( SCIPsetEventhdlrInit(scip, eventhdlr, eventInitFocusnode) );
    SCIP_CALL( SCIPsetEventhdlrExit(scip, eventhdlr, eventExitFocusnode) );
+   SCIP_CALL( SCIPsetEventhdlrFree(scip, eventhdlr, eventFreeFocusnode) );
 
    return SCIP_OKAY;
 }

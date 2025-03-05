@@ -37,7 +37,7 @@
 #define DEC_CONSTYPE_H_
 
 #include "scip/scip.h"
-#include "gcg/def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +46,7 @@ extern "C" {
 /** creates the handler for constype detector and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeDetectorConstype(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

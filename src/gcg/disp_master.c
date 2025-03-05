@@ -50,6 +50,11 @@
 #define DISP_POSI_ORIGINAL         3550
 #define DISP_STRI_ORIGINAL         TRUE
 
+struct SCIP_DispData
+{
+   GCG*                    gcg;                /**< GCG data structure */
+};
+
 /*
  * Callback methods
  */
@@ -71,15 +76,30 @@ SCIP_DECL_DISPCOPY(dispCopyMaster)
 static
 SCIP_DECL_DISPOUTPUT(SCIPdispOutputOriginal)
 {  /*lint --e{715}*/
+   SCIP_DISPDATA* dispdata;
    assert(disp != NULL);
    assert(strcmp(SCIPdispGetName(disp), DISP_NAME_ORIGINAL) == 0);
    assert(scip != NULL);
+   dispdata = SCIPdispGetData(disp);
+   assert(dispdata != NULL);
 
-   SCIP_CALL( SCIPprintDisplayLine(GCGgetOriginalprob(scip), file, SCIP_VERBLEVEL_HIGH, FALSE) );
+   SCIP_CALL( SCIPprintDisplayLine(GCGgetOrigprob(dispdata->gcg), file, SCIP_VERBLEVEL_HIGH, FALSE) );
 
    return SCIP_OKAY;
 }
 
+/** destructor method of display plugin */
+static
+SCIP_DECL_DISPFREE(SCIPdispFreeMaster)
+{  /*lint --e{715}*/
+   SCIP_DISPDATA* dispdata;
+   dispdata = SCIPdispGetData(disp);
+   assert(dispdata != NULL);
+
+   SCIPfreeBlockMemory(scip, &dispdata);
+
+   return SCIP_OKAY;
+}
 
 /*
  * default display columns specific interface methods
@@ -87,11 +107,17 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputOriginal)
 
 /** includes the default display columns in SCIP */
 SCIP_RETCODE GCGincludeDispMaster(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
+   SCIP*                 masterprob          /**< SCIP data structure */
    )
 {
-   SCIP_CALL( SCIPincludeDisp(scip, DISP_NAME_ORIGINAL, DISP_DESC_ORIGINAL, DISP_HEAD_ORIGINAL,
-         SCIP_DISPSTATUS_AUTO, dispCopyMaster, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputOriginal, NULL,
+   SCIP_DISPDATA* dispdata;
+
+   SCIP_CALL( SCIPallocBlockMemory(masterprob, &dispdata) );
+   dispdata->gcg = gcg;
+
+   SCIP_CALL( SCIPincludeDisp(masterprob, DISP_NAME_ORIGINAL, DISP_DESC_ORIGINAL, DISP_HEAD_ORIGINAL,
+         SCIP_DISPSTATUS_AUTO, dispCopyMaster, SCIPdispFreeMaster, NULL, NULL, NULL, NULL, SCIPdispOutputOriginal, dispdata,
          DISP_WIDT_ORIGINAL, DISP_PRIO_ORIGINAL, DISP_POSI_ORIGINAL, DISP_STRI_ORIGINAL) );
 
    return SCIP_OKAY;

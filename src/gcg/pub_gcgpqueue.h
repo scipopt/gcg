@@ -36,13 +36,14 @@
 #ifndef GCG_PUB_GCGPQUEUE_H__
 #define GCG_PUB_GCGPQUEUE_H__
 
-#include "gcg/def.h"
+
 #include "scip/type_scip.h"
 #include "scip/type_retcode.h"
 #include "scip/type_var.h"
 #include "scip/type_cons.h"
 #include "scip/type_misc.h"
 #include "gcg/type_locks.h"
+#include "gcg/def.h"
 
 #ifdef __cplusplus
 extern "C" {

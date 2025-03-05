@@ -46,7 +46,7 @@ extern "C" {
 /** creates the classic score and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeScoreClassic(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

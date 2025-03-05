@@ -71,119 +71,123 @@ SCIP_RETCODE GCGcreateRootMasterDialog(
 
 /** includes or updates the master dialog menus in GCG */
 SCIP_RETCODE GCGincludeDialogMaster(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
+   SCIP* masterprob;
    SCIP_DIALOG* root;
    SCIP_DIALOG* dialog;
 
+   masterprob = GCGgetMasterprob(gcg);
+   assert(masterprob != NULL);
+
    /* root menu */
-   root = SCIPgetRootDialog(scip);
+   root = SCIPgetRootDialog(masterprob);
    if( root == NULL )
    {
-      SCIP_CALL( GCGcreateRootMasterDialog(scip, &root) );
+      SCIP_CALL( GCGcreateRootMasterDialog(masterprob, &root) );
    }
    
    /* change */
    if( !SCIPdialogHasEntry(root, "change") )
    {
-      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+      SCIP_CALL( SCIPincludeDialog(masterprob, &dialog,
          NULL,
          GCGmasterDialogExecNotAvailable, NULL, NULL,
          "change", "(not available in master problem)", FALSE, NULL) );
-      SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
-      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+      SCIP_CALL( SCIPaddDialogEntry(masterprob, root, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(masterprob, &dialog) );
    }
 
    /* free */
    if( !SCIPdialogHasEntry(root, "free") )
    {
-      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+      SCIP_CALL( SCIPincludeDialog(masterprob, &dialog,
          NULL,
          GCGmasterDialogExecNotAvailable, NULL, NULL,
          "free", "(not available in master problem)", FALSE, NULL) );
-      SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
-      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+      SCIP_CALL( SCIPaddDialogEntry(masterprob, root, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(masterprob, &dialog) );
    }
 
    /* newstart */
    if( !SCIPdialogHasEntry(root, "newstart") )
    {
-      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+      SCIP_CALL( SCIPincludeDialog(masterprob, &dialog,
          NULL,
          GCGmasterDialogExecNotAvailable, NULL, NULL,
          "newstart", "(not available in master problem)", FALSE, NULL) );
-      SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
-      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+      SCIP_CALL( SCIPaddDialogEntry(masterprob, root, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(masterprob, &dialog) );
    }
 
    /* optimize */
    if( !SCIPdialogHasEntry(root, "optimize") )
    {
-      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+      SCIP_CALL( SCIPincludeDialog(masterprob, &dialog,
          NULL,
          GCGmasterDialogExecNotAvailable, NULL, NULL,
          "optimize", "(not available in master problem)", FALSE, NULL) );
-      SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
-      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+      SCIP_CALL( SCIPaddDialogEntry(masterprob, root, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(masterprob, &dialog) );
    }
 
    /* presolve */
    if( !SCIPdialogHasEntry(root, "presolve") )
    {
-      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+      SCIP_CALL( SCIPincludeDialog(masterprob, &dialog,
          NULL,
          GCGmasterDialogExecNotAvailable, NULL, NULL,
          "presolve", "(not available in master problem)", FALSE, NULL) );
-      SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
-      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+      SCIP_CALL( SCIPaddDialogEntry(masterprob, root, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(masterprob, &dialog) );
    }
 
    /* read */
    if( !SCIPdialogHasEntry(root, "read") )
    {
-      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+      SCIP_CALL( SCIPincludeDialog(masterprob, &dialog,
          NULL,
          GCGmasterDialogExecNotAvailable, NULL, NULL,
          "read", "(not available in master problem)", FALSE, NULL) );
-      SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
-      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+      SCIP_CALL( SCIPaddDialogEntry(masterprob, root, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(masterprob, &dialog) );
    }
 
    /* quit */
    if( !SCIPdialogHasEntry(root, "quit") )
    {
-      SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+      SCIP_CALL( SCIPincludeDialog(masterprob, &dialog,
          NULL,
          SCIPdialogExecQuit, NULL, NULL,
          "quit", "switch back to the original problem's dialog", FALSE, NULL) );
-      SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
-      SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+      SCIP_CALL( SCIPaddDialogEntry(masterprob, root, dialog) );
+      SCIP_CALL( SCIPreleaseDialog(masterprob, &dialog) );
    }
 
     /* validatesolve */
     if( !SCIPdialogHasEntry(root, "validatesolve") )
     {
-        SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+        SCIP_CALL( SCIPincludeDialog(masterprob, &dialog,
            NULL,
            GCGmasterDialogExecNotAvailable, NULL, NULL,
            "validatesolve", "(not available in master problem)", FALSE, NULL) );
-        SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
-        SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+        SCIP_CALL( SCIPaddDialogEntry(masterprob, root, dialog) );
+        SCIP_CALL( SCIPreleaseDialog(masterprob, &dialog) );
     }
 
     /* concurrentopt */
     if( !SCIPdialogHasEntry(root, "concurrentopt") )
     {
-        SCIP_CALL( SCIPincludeDialog(scip, &dialog,
+        SCIP_CALL( SCIPincludeDialog(masterprob, &dialog,
            NULL,
            GCGmasterDialogExecNotAvailable, NULL, NULL,
            "concurrentopt", "(not available in master problem)", FALSE, NULL) );
-        SCIP_CALL( SCIPaddDialogEntry(scip, root, dialog) );
-        SCIP_CALL( SCIPreleaseDialog(scip, &dialog) );
+        SCIP_CALL( SCIPaddDialogEntry(masterprob, root, dialog) );
+        SCIP_CALL( SCIPreleaseDialog(masterprob, &dialog) );
     }
 
-   SCIP_CALL( SCIPincludeDialogDefaultBasic(scip) );
+   SCIP_CALL( SCIPincludeDialogDefaultBasic(masterprob) );
 
    return SCIP_OKAY;
 }

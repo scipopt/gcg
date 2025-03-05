@@ -55,7 +55,7 @@ class Hypergraph : public GraphInterface {
 public:
    std::string name;
 protected:
-   SCIP* scip_;
+   GCG* gcg;
    Graph<T>* graph;
    std::vector<int> nodes;
    std::vector<int> hedges;
@@ -66,14 +66,14 @@ protected:
 public:
    /** Constructor */
    Hypergraph(
-      SCIP*                 scip
+      GCG*                  gcgstruct
    );
 
    void swap(Hypergraph & other) // the swap member function (should never fail!)
    {
       // swap all the members (and base subobject, if applicable) with other
       std::swap(partition, other.partition);
-      std::swap(scip_ , other.scip_);
+      std::swap(gcg , other.gcg);
       std::swap(graph , other.graph);
       std::swap(hedges , other.hedges);
       std::swap(nodes , other.nodes);

@@ -75,6 +75,7 @@
 /** primal heuristic data */
 struct SCIP_HeurData
 {
+   GCG*                  gcg;                /**< GCG data structure */
    SCIP_Longint          maxnodes;           /**< maximum number of nodes to regard in the subproblem                 */
    SCIP_Longint          minnodes;           /**< minimum number of nodes to regard in the subproblem                 */
    SCIP_Longint          nodesofs;           /**< number of nodes added to the contingent of the total nodes          */
@@ -365,13 +366,13 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
    assert(result != NULL);
    assert(SCIPhasCurrentNodeLP(scip));
 
-   /* get original problem */
-   origprob = GCGmasterGetOrigprob(scip);
-   assert(origprob != NULL);
-
    /* get heuristic's data */
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
+
+   /* get original problem */
+   origprob = GCGgetOrigprob(heurdata->gcg);
+   assert(origprob != NULL);
 
    *result = SCIP_DIDNOTRUN;
 
@@ -635,55 +636,56 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
 
 /** creates the Restricted Master primal heuristic and includes it in SCIP */
 SCIP_RETCODE GCGincludeHeurRestmaster(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_HEURDATA* heurdata;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
    /* create Restricted Master primal heuristic data */
-   SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
+   SCIP_CALL( SCIPallocMemory(masterprob, &heurdata) );
+   heurdata->gcg = gcg;
 
    /* include primal heuristic */
-   SCIP_CALL( SCIPincludeHeur(scip, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
+   SCIP_CALL( SCIPincludeHeur(masterprob, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, HEUR_TIMING, HEUR_USESSUBSCIP,
          heurCopyRestmaster, heurFreeRestmaster, heurInitRestmaster, heurExitRestmaster,
-         heurInitsolRestmaster, heurExitsolRestmaster, heurExecRestmaster,
-         heurdata) );
+         heurInitsolRestmaster, heurExitsolRestmaster, heurExecRestmaster, heurdata) );
 
    /* add Restricted Master primal heuristic parameters */
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/minfixingrate",
+   SCIP_CALL( SCIPaddRealParam(masterprob, "heuristics/"HEUR_NAME"/minfixingrate",
          "minimum percentage of integer variables that have to be fixable ",
          &heurdata->minfixingrate, FALSE, DEFAULT_MINFIXINGRATE, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/"HEUR_NAME"/maxnodes",
+   SCIP_CALL( SCIPaddLongintParam(masterprob, "heuristics/"HEUR_NAME"/maxnodes",
          "maximum number of nodes to regard in the subproblem",
          &heurdata->maxnodes,  TRUE,DEFAULT_MAXNODES, 0LL, SCIP_LONGINT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/"HEUR_NAME"/nodesofs",
+   SCIP_CALL( SCIPaddLongintParam(masterprob, "heuristics/"HEUR_NAME"/nodesofs",
          "number of nodes added to the contingent of the total nodes",
          &heurdata->nodesofs, FALSE, DEFAULT_NODESOFS, 0LL, SCIP_LONGINT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/"HEUR_NAME"/minnodes",
+   SCIP_CALL( SCIPaddLongintParam(masterprob, "heuristics/"HEUR_NAME"/minnodes",
          "minimum number of nodes required to start the subproblem",
          &heurdata->minnodes, TRUE, DEFAULT_MINNODES, 0LL, SCIP_LONGINT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/nodesquot",
+   SCIP_CALL( SCIPaddRealParam(masterprob, "heuristics/"HEUR_NAME"/nodesquot",
          "contingent of sub problem nodes in relation to the number of nodes of the original problem",
          &heurdata->nodesquot, FALSE, DEFAULT_NODESQUOT, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/minimprove",
+   SCIP_CALL( SCIPaddRealParam(masterprob, "heuristics/"HEUR_NAME"/minimprove",
          "factor by which restricted master should at least improve the incumbent  ",
          &heurdata->minimprove, TRUE, DEFAULT_MINIMPROVE, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/uselprows",
+   SCIP_CALL( SCIPaddBoolParam(masterprob, "heuristics/"HEUR_NAME"/uselprows",
          "should subproblem be created out of the rows in the LP rows?",
          &heurdata->uselprows, TRUE, DEFAULT_USELPROWS, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/copycuts",
+   SCIP_CALL( SCIPaddBoolParam(masterprob, "heuristics/"HEUR_NAME"/copycuts",
          "if uselprows == FALSE, should all active cuts from cutpool be copied to constraints in subproblem?",
          &heurdata->copycuts, TRUE, DEFAULT_COPYCUTS, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/pbheur",
+   SCIP_CALL( SCIPaddBoolParam(masterprob, "heuristics/"HEUR_NAME"/pbheur",
          "should the restricted master heuristic be used as price-and-branch heuristic?",
          &heurdata->pbheur, FALSE, DEFAULT_PBHEUR, NULL, NULL) );
 

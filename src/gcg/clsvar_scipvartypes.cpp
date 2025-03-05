@@ -80,13 +80,15 @@ static
 GCG_DECL_VARCLASSIFY(classifierClassify)
 {
    gcg::DETPROBDATA* detprobdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
    if( transformed )
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(gcg);
    }
    else
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
    }
 
    // CLASSIFICATION
@@ -97,8 +99,8 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
    SCIP_Bool onlycontsub;
    SCIP_Bool onlybinmaster;
 
-   SCIPgetBoolParam(scip, "detection/benders/onlycontsubpr", &onlycontsub);
-   SCIPgetBoolParam(scip, "detection/benders/onlybinmaster", &onlybinmaster);
+   SCIPgetBoolParam(origprob, "detection/benders/onlycontsubpr", &onlycontsub);
+   SCIPgetBoolParam(origprob, "detection/benders/onlybinmaster", &onlybinmaster);
 
    /* firstly, assign all variables to classindices */
    for( int i = 0; i < detprobdata->getNVars(); ++ i )
@@ -137,7 +139,7 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
    }
 
    /* secondly, use these information to create a VarPartition */
-   classifier = new gcg::VarPartition(scip, "vartypes", (int) foundVartypes.size(), detprobdata->getNVars() );
+   classifier = new gcg::VarPartition(gcg, "vartypes", (int) foundVartypes.size(), detprobdata->getNVars() );
 
    /* set class names and descriptions of every class */
    for( int c = 0; c < classifier->getNClasses(); ++ c )
@@ -185,7 +187,7 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
       classifier->assignVarToClass( i, classForVars[i] );
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes\n", classifier->getName(), classifier->getNClasses() ) ;
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes\n", classifier->getName(), classifier->getNClasses() ) ;
 
    detprobdata->addVarPartition(classifier);
    return SCIP_OKAY;
@@ -196,12 +198,12 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
  */
 
 SCIP_RETCODE GCGincludeVarClassifierScipVartypes(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_CLASSIFIERDATA* classifierdata = NULL;
 
-   SCIP_CALL( GCGincludeVarClassifier(scip, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( GCGincludeVarClassifier(gcg, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

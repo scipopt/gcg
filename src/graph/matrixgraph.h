@@ -55,7 +55,7 @@ class MatrixGraph {
 public:
    std::string name;
 protected:
-   SCIP* scip_;
+   GCG* gcg;
    int nconss;
    int nvars;
    int dummynodes;
@@ -66,7 +66,7 @@ protected:
 public:
    /** Constructor */
    MatrixGraph(
-      SCIP*                 scip,              /**< SCIP data structure */
+      GCG*                  gcgstruct,         /**< GCG data structure */
       Weights               w                  /**< weights for the given graph */
       );
 

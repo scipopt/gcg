@@ -1182,13 +1182,13 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCliquer)
 
 /** creates the cliquer solver for pricing problems and includes it in GCG */
 SCIP_RETCODE GCGincludeSolverCliquer(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP* origprob;
    GCG_SOLVERDATA* solverdata;
 
-   origprob = GCGmasterGetOrigprob(scip);
+   origprob = GCGgetOrigprob(scip);
    assert(origprob != NULL);
 
    SCIP_CALL( SCIPallocMemory(scip, &solverdata) );

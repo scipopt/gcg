@@ -122,7 +122,7 @@ SCIP_RETCODE GCGincludeScoreXyz(
    /**@todo create xyz score data here*/
    scoredata = NULL;
 
-   SCIP_CALL( GCGincludeScore(scip, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata, scoreFreeXyz, scoreCalcXyz) );
+   SCIP_CALL( GCGincludeScore(gcg, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata, scoreFreeXyz, scoreCalcXyz) );
 
    return SCIP_OKAY;
 }

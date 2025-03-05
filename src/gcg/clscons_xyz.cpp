@@ -119,7 +119,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify)
 
 /** creates the handler for XYZ classifier and includes it in SCIP */
 SCIP_RETCODE GCGincludeConsClassifierXyz(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_CLASSIFIERDATA* classifierdata;
@@ -128,7 +128,7 @@ SCIP_RETCODE GCGincludeConsClassifierXyz(
    classifierdata = NULL;
 
    SCIP_CALL(
-      GCGincludeConsClassifier(scip, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
+      GCGincludeConsClassifier(gcg, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
          classifierFree, classifierClassify));
 
    return SCIP_OKAY;

@@ -82,12 +82,12 @@
 namespace gcg {
 
 Pricingcontroller::Pricingcontroller(
-   SCIP*                  scip,
-   SCIP*                  origproblem
+   GCG*                   gcgstruct
    )
 {
-   scip_ = scip;
-   origprob = origproblem;
+   gcg = gcgstruct;
+   scip_ = GCGgetMasterprob(gcg);
+   origprob = GCGgetOrigprob(gcg);
    pricingprobs = NULL;
    npricingprobs = 0;
    pricingjobs = NULL;
@@ -109,7 +109,7 @@ Pricingcontroller::Pricingcontroller(
    nsolvedprobs = 0;
 
 #ifdef _OPENMP
-   locks = GCGgetLocks(origprob);
+   locks = GCGgetLocks(gcg);
 #endif
 }
 
@@ -277,33 +277,33 @@ SCIP_Bool Pricingcontroller::pricingprobNeedsNextBranchingcons(
 
 SCIP_RETCODE Pricingcontroller::initSol()
 {
-   int nblocks = GCGgetNPricingprobs(origprob);
-   GCG_SOLVER** solvers = GCGpricerGetSolvers(scip_);
-   int nsolvers = GCGpricerGetNSolvers(scip_);
-   int actchunksize = MIN(chunksize, GCGgetNRelPricingprobs(origprob));
+   int nblocks = GCGgetNPricingprobs(gcg);
+   GCG_SOLVER** solvers = GCGpricerGetSolvers(gcg);
+   int nsolvers = GCGpricerGetNSolvers(gcg);
+   int actchunksize = MIN(chunksize, GCGgetNRelPricingprobs(gcg));
 
    npricingprobs = 0;
    npricingjobs = 0;
-   nchunks = (int) SCIPceil(scip_, (SCIP_Real) GCGgetNRelPricingprobs(origprob) / actchunksize);
+   nchunks = (int) SCIPceil(scip_, (SCIP_Real) GCGgetNRelPricingprobs(gcg) / actchunksize);
    curchunk = nchunks - 1;
    eagerage = 0;
 
    /* create pricing problem and pricing job data structures */
-   maxpricingprobs = SCIPcalcMemGrowSize(scip_, GCGgetNRelPricingprobs(origprob));
-   maxpricingjobs = SCIPcalcMemGrowSize(scip_, GCGgetNRelPricingprobs(origprob) * nsolvers);
+   maxpricingprobs = SCIPcalcMemGrowSize(scip_, GCGgetNRelPricingprobs(gcg));
+   maxpricingjobs = SCIPcalcMemGrowSize(scip_, GCGgetNRelPricingprobs(gcg) * nsolvers);
    SCIP_CALL_EXC( SCIPallocBlockMemoryArray(scip_, &pricingprobs, maxpricingprobs) );
    SCIP_CALL_EXC( SCIPallocBlockMemoryArray(scip_, &pricingjobs, maxpricingjobs) );
    for( int i = 0; i < nblocks; ++i )
    {
-      if( GCGisPricingprobRelevant(origprob, i) )
+      if( GCGisPricingprobRelevant(gcg, i) )
       {
-         SCIP_CALL_EXC( GCGpricingprobCreate(scip_, &pricingprobs[npricingprobs], GCGgetPricingprob(origprob, i), i, nroundscol) );
+         SCIP_CALL_EXC( GCGpricingprobCreate(scip_, &pricingprobs[npricingprobs], GCGgetPricingprob(gcg, i), i, nroundscol) );
 
          for( int j = 0; j < nsolvers; ++j )
          {
             if( GCGsolverIsHeurEnabled(solvers[j]) || GCGsolverIsExactEnabled(solvers[j]) )
             {
-               SCIP_CALL_EXC( GCGpricingjobCreate(scip_, &pricingjobs[npricingjobs], pricingprobs[npricingprobs], solvers[j], npricingprobs / actchunksize) );
+               SCIP_CALL_EXC( GCGpricingjobCreate(gcg, &pricingjobs[npricingjobs], pricingprobs[npricingprobs], solvers[j], npricingprobs / actchunksize) );
                ++npricingjobs;
                break;
             }
@@ -331,7 +331,7 @@ SCIP_RETCODE Pricingcontroller::exitSol()
    }
    for( int i = 0; i < npricingjobs; ++i )
    {
-      GCGpricingjobFree(scip_, &pricingjobs[i]);
+      GCGpricingjobFree(gcg, &pricingjobs[i]);
    }
    SCIPfreeBlockMemoryArray(scip_, &pricingprobs, maxpricingprobs);
    SCIPfreeBlockMemoryArray(scip_, &pricingjobs, maxpricingjobs);
@@ -360,7 +360,7 @@ SCIP_RETCODE Pricingcontroller::initPricing(
    /* calculate maximal possible number of pricing iterations per mis-pricing iteration */
    tmpmaxniters = 0;
    for( int i = 0; i < npricingprobs; ++i )
-      tmpmaxniters += GCGpricerGetNSolvers(scip_) * ((SCIP_Longint) heurpricingiters + 1) * (GCGpricingprobGetNGenericBranchconss(pricingprobs[i]) + 1);
+      tmpmaxniters += GCGpricerGetNSolvers(gcg) * ((SCIP_Longint) heurpricingiters + 1) * (GCGpricingprobGetNGenericBranchconss(pricingprobs[i]) + 1);
    maxniters = (int) MIN(tmpmaxniters, 16383);
 
    SCIPdebugMessage("initialize pricing, chunk = %d/%d\n", curchunk+1, nchunks);
@@ -394,10 +394,10 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
    {
       int probnr = GCGpricingprobGetProbnr(GCGpricingjobGetPricingprob(pricingjobs[i]));
 
-      SCIP_CALL_EXC( GCGpricingjobSetup(scip_, pricingjobs[i],
+      SCIP_CALL_EXC( GCGpricingjobSetup(gcg, pricingjobs[i],
          (heurpricingiters > 0
             && (maxheurdepth == -1 || SCIPnodeGetDepth(SCIPgetCurrentNode(scip_)) <= maxheurdepth)),
-         sorting, nroundscol, dualsolconv[probnr], GCGpricerGetNPointsProb(scip_, probnr), GCGpricerGetNRaysProb(scip_, probnr)) );
+         sorting, nroundscol, dualsolconv[probnr], GCGpricerGetNPointsProb(gcg, probnr), GCGpricerGetNRaysProb(gcg, probnr)) );
 
       if( GCGpricingjobGetChunk(pricingjobs[i]) == curchunk )
       {
@@ -542,7 +542,7 @@ void Pricingcontroller::evaluatePricingjob(
          return;
       }
 
-      GCGpricingjobNextSolver(scip_, pricingjob);
+      GCGpricingjobNextSolver(gcg, pricingjob);
       if( heurpricingiters > 0 )
          GCGpricingjobResetHeuristic(pricingjob);
       if( GCGpricingjobGetSolver(pricingjob) != NULL )
@@ -572,7 +572,7 @@ void Pricingcontroller::collectResults(
    SCIP_Bool*            bestredcostvalid    /**< pointer to store whether best reduced cost is valid */
    )
 {
-   int nblocks = GCGgetNPricingprobs(origprob);
+   int nblocks = GCGgetNPricingprobs(gcg);
    SCIP_Bool foundcols = FALSE;
 
    /* initializations */
@@ -586,7 +586,7 @@ void Pricingcontroller::collectResults(
    for( int i = 0; i < npricingprobs; ++i )
    {
       int probnr = GCGpricingprobGetProbnr(pricingprobs[i]);
-      int nidentblocks = GCGgetNIdenticalBlocks(origprob, probnr);
+      int nidentblocks = GCGgetNIdenticalBlocks(gcg, probnr);
       SCIP_Real lowerbound = GCGpricingprobGetLowerbound(pricingprobs[i]);
 
       /* check infeasibility */
@@ -638,7 +638,7 @@ SCIP_Bool Pricingcontroller::canPricingloopBeAborted(
    int                   nsuccessfulprobs    /**< number of pricing problems solved successfully so far */
    ) const
 {
-   int nrelpricingprobs = GCGgetNRelPricingprobs(origprob);
+   int nrelpricingprobs = GCGgetNRelPricingprobs(gcg);
    int _nsolvedprobs;
 
    if( eagerage == eagerfreq )

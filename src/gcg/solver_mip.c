@@ -197,7 +197,7 @@ SCIP_Bool solutionHasInfiniteValue(
 /** solves the given pricing problem as a sub-SCIP */
 static
 SCIP_RETCODE solveProblem(
-   SCIP*                 scip,               /**< master problem SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
    int                   probnr,             /**< problem number */
    GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
@@ -211,7 +211,7 @@ SCIP_RETCODE solveProblem(
    SCIP_Longint oldnnodes;
 #endif
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(pricingprob != NULL);
    assert(probnr >= 0);
    assert(solverdata != NULL);
@@ -264,7 +264,7 @@ SCIP_RETCODE solveProblem(
 
       SCIPdebugMessage("  -> unbounded, creating column from ray\n");
       SCIP_CALL( createColumnFromRay(pricingprob, NULL, NULL, probnr, &col) );
-      SCIP_CALL( GCGpricerAddCol(scip, col) );
+      SCIP_CALL( GCGpricerAddCol(gcg, col) );
 
       break;
 
@@ -278,7 +278,7 @@ SCIP_RETCODE solveProblem(
           && SCIPgetStatus(pricingprob) != SCIP_STATUS_SOLLIMIT));
 
       /* Transform at most maxcols many solutions from the pricing problem into columns */
-      SCIP_CALL( getColumnsFromPricingprob(scip, pricingprob, NULL, NULL, probnr, solverdata->checksols) );
+      SCIP_CALL( getColumnsFromPricingprob(gcg, pricingprob, NULL, NULL, probnr, solverdata->checksols) );
 
       *lowerbound = SCIPgetDualbound(pricingprob);
 
@@ -303,14 +303,16 @@ static
 GCG_DECL_SOLVERFREE(solverFreeMip)
 {
    GCG_SOLVERDATA* solverdata;
+   SCIP* scip;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
 
+   scip = GCGgetMasterprob(gcg);
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
-   SCIPfreeMemory(scip, &solverdata);
+   SCIPfreeBlockMemory(scip, &solverdata);
 
    GCGsolverSetData(solver, NULL);
 
@@ -330,19 +332,22 @@ GCG_DECL_SOLVERINITSOL(solverInitsolMip)
    GCG_SOLVERDATA* solverdata;
    int npricingprobs;
    int i;
+   SCIP* masterprob;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
+
+   masterprob = GCGgetMasterprob(gcg);
 
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
-   npricingprobs = GCGgetNPricingprobs(GCGmasterGetOrigprob(scip));
+   npricingprobs = GCGgetNPricingprobs(gcg);
 
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &solverdata->curnodelimit, npricingprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &solverdata->curstallnodelimit, npricingprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &solverdata->curgaplimit, npricingprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &solverdata->cursollimit, npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &solverdata->curnodelimit, npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &solverdata->curstallnodelimit, npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &solverdata->curgaplimit, npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &solverdata->cursollimit, npricingprobs) );
 
    for( i = 0; i < npricingprobs; ++i )
    {
@@ -361,19 +366,22 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolMip)
 {
    GCG_SOLVERDATA* solverdata;
    int npricingprobs;
+   SCIP* masterprob;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
+
+   masterprob = GCGgetMasterprob(gcg);
 
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
-   npricingprobs = GCGgetNPricingprobs(GCGmasterGetOrigprob(scip));
+   npricingprobs = GCGgetNPricingprobs(gcg);
 
-   SCIPfreeBlockMemoryArray(scip, &solverdata->cursollimit, npricingprobs);
-   SCIPfreeBlockMemoryArray(scip, &solverdata->curgaplimit, npricingprobs);
-   SCIPfreeBlockMemoryArray(scip, &solverdata->curstallnodelimit, npricingprobs);
-   SCIPfreeBlockMemoryArray(scip, &solverdata->curnodelimit, npricingprobs);
+   SCIPfreeBlockMemoryArray(masterprob, &solverdata->cursollimit, npricingprobs);
+   SCIPfreeBlockMemoryArray(masterprob, &solverdata->curgaplimit, npricingprobs);
+   SCIPfreeBlockMemoryArray(masterprob, &solverdata->curstallnodelimit, npricingprobs);
+   SCIPfreeBlockMemoryArray(masterprob, &solverdata->curnodelimit, npricingprobs);
 
    return SCIP_OKAY;
 }
@@ -407,7 +415,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    *lowerbound = -SCIPinfinity(pricingprob);
 
    SCIPdebugMessage("Solving pricing %d (pointer: %p)\n", probnr, (void*)pricingprob);
-   SCIP_CALL( solveProblem(scip, pricingprob, probnr, solverdata, lowerbound, status) );
+   SCIP_CALL( solveProblem(gcg, pricingprob, probnr, solverdata, lowerbound, status) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_NONE) );
@@ -483,7 +491,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
 
    /* solve the pricing problem */
    SCIPdebugMessage("Solving pricing %d heuristically (pointer: %p)\n", probnr, (void*)pricingprob);
-   SCIP_CALL( solveProblem(scip, pricingprob, probnr, solverdata, lowerbound, status) );
+   SCIP_CALL( solveProblem(gcg, pricingprob, probnr, solverdata, lowerbound, status) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_NONE) );
@@ -625,7 +633,7 @@ GCG_PRICINGSTATUS getPricingstatus(
 }
 
 SCIP_RETCODE getColumnsFromPricingprob(
-   SCIP*                 scip,               /**< master problem SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
    SCIP*                 subproblem,         /**< SCIP data structure that contains the actual solution (if NULL pricingprob will be used) */
    SCIP_HASHMAP*         varmap,             /**< mapping of pricingprob vars to subproblem vars (can be NULL if subproblem is NULL) */
@@ -676,7 +684,7 @@ SCIP_RETCODE getColumnsFromPricingprob(
       if( !solutionHasInfiniteValue(solprob, probsols[s]) )
       {
          SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, subproblem, varmap, &col, probnr, probsols[s], FALSE, SCIPinfinity(solprob)) );
-         SCIP_CALL( GCGpricerAddCol(scip, col) );
+         SCIP_CALL( GCGpricerAddCol(gcg, col) );
       }
       /* If the best solution has infinite values, try to repair it */
       else if( s == 0 )
@@ -694,7 +702,7 @@ SCIP_RETCODE getColumnsFromPricingprob(
          assert(newsol != NULL);
 
          SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, subproblem, varmap, &col, probnr, newsol, FALSE, SCIPinfinity(solprob)) );
-         SCIP_CALL( GCGpricerAddCol(scip, col) );
+         SCIP_CALL( GCGpricerAddCol(gcg, col) );
       }
    }
 
@@ -703,18 +711,20 @@ SCIP_RETCODE getColumnsFromPricingprob(
 
 /** creates the mip solver for pricing problems and includes it in GCG */
 SCIP_RETCODE GCGincludeSolverMip(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP* origprob;
+   SCIP* masterprob;
    GCG_SOLVERDATA* solverdata;
 
-   origprob = GCGmasterGetOrigprob(scip);
+   origprob = GCGgetOrigprob(gcg);
+   masterprob = GCGgetMasterprob(gcg);
 
-   SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
+   SCIP_CALL( SCIPallocBlockMemory(masterprob, &solverdata) );
    solverdata->settingsfile = NULL;
 
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
+   SCIP_CALL( GCGpricerIncludeSolver(gcg, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
          SOLVER_HEURENABLED, SOLVER_EXACTENABLED,
          solverUpdateMip, solverSolveMip, solverSolveHeurMip, solverFreeMip, solverInitMip, solverExitMip,
          solverInitsolMip, solverExitsolMip, solverdata) );

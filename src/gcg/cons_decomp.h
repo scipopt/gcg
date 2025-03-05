@@ -43,11 +43,9 @@
 #define GCG_CONS_DECOMP_H__
 
 #include "scip/scip.h"
-#include "gcg/def.h"
-#include "gcg/type_detector.h"
-#include "gcg/type_varclassifier.h"
-#include "gcg/type_consclassifier.h"
-#include "gcg/type_score.h"
+#include "scip/type_retcode.h"
+
+#include "gcg/gcg.h"
 
 
 #ifdef __cplusplus
@@ -88,7 +86,7 @@ const char* GCGdetectorGetName(
  * @returns SCIP return code */
 GCG_EXPORT
 SCIP_RETCODE GCGdetectStructure(
-   SCIP*                 scip,              /**< SCIP data structure */
+   GCG*                  gcg,               /**< GCG data structure */
    SCIP_RESULT*          result             /**< Result pointer to indicate whether some structure was found */
    );
 
@@ -98,7 +96,7 @@ SCIP_RETCODE GCGdetectStructure(
  */
 GCG_EXPORT
 GCG_CONSCLASSIFIER* GCGfindConsClassifier(
-   SCIP* scip,          /**< SCIP data structure  */
+   GCG* gcg,            /**< GCG data structure  */
    const char* name     /**< the name of the searched consclassifier */
    );
 
@@ -108,7 +106,7 @@ GCG_CONSCLASSIFIER* GCGfindConsClassifier(
  */
 GCG_EXPORT
 GCG_VARCLASSIFIER* GCGfindVarClassifier(
-   SCIP* scip,          /**< SCIP data structure  */
+   GCG* gcg,            /**< GCG data structure  */
    const char* name     /**< the name of the searched varclassifier */
    );
 
@@ -119,8 +117,18 @@ GCG_VARCLASSIFIER* GCGfindVarClassifier(
  */
 GCG_EXPORT
 GCG_DETECTOR* GCGfindDetector(
-   SCIP* scip,          /**< SCIP data structure  */
+   GCG* gcg,            /**< GCG data structure  */
    const char* name     /**< the name of the searched detector */
+   );
+
+/** @brief method to adapt score for orig decomps
+ * @todo: change score for some parameter settings
+ *
+ * @returns new score */
+GCG_EXPORT
+SCIP_Real GCGconshdlrDecompAdaptScore(
+   GCG*              gcg,     /**< GCG data structure */
+   SCIP_Real         oldscore /**< current score (to be updated) */
    );
 
 /**
@@ -128,7 +136,7 @@ GCG_DETECTOR* GCGfindDetector(
  * @returns score pointer or NULL if score with given name is not found
  */
 GCG_SCORE* GCGconshdlrDecompFindScore(
-   SCIP*                 scip,
+   GCG*                  gcg,
    const char*           name
    );
 
@@ -137,7 +145,7 @@ GCG_SCORE* GCGconshdlrDecompFindScore(
  * @returns score pointer or NULL if score with given shortname is not found
  */
 GCG_SCORE* GCGconshdlrDecompFindScoreByShortname(
-   SCIP*                 scip,
+   GCG*                  gcg,
    const char*           shortname
    );
 
@@ -147,7 +155,7 @@ GCG_SCORE* GCGconshdlrDecompFindScoreByShortname(
  * @returns the decomposition if available and NULL otherwise */
 GCG_EXPORT
 GCG_DECOMP* GCGgetBestDecomp(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_Bool             printwarnings       /**< should warnings pre printed */
    );
 
@@ -157,7 +165,7 @@ GCG_DECOMP* GCGgetBestDecomp(
  */
 GCG_EXPORT
 SCIP_Real GCGgetRemainingTime(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                 gcg                 /**< GCG data structure */
    );
 
 /**
@@ -166,7 +174,7 @@ SCIP_Real GCGgetRemainingTime(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeConsClassifier(
-   SCIP*                 scip,            /**< scip data structure */
+   GCG*                  gcg,             /**< GCG data structure */
    const char*           name,            /**< name of the classifier */
    const char*           description,     /**< describing main idea of this classifier */
    int                   priority,        /**< priority of the classifier */
@@ -182,7 +190,7 @@ SCIP_RETCODE GCGincludeConsClassifier(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeDetector(
-   SCIP*                 scip,                    /**< scip data structure */
+   GCG*                  gcg,                     /**< GCG data structure */
    const char*           name,                    /**< name of the detector */
    const char            decchar,                 /**< char that is used in detector chain history for this detector */
    const char*           description,             /**< describing main idea of this detector */
@@ -216,7 +224,7 @@ SCIP_RETCODE GCGincludeDetector(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeVarClassifier(
-   SCIP*                 scip,          /**< scip data structure */
+   GCG*                  gcg,           /**< GCG data structure */
    const char*           name,          /**< name of the classifier */
    const char*           description,   /**< description of the classifier */
    int                   priority,      /**< priority how early classifier is invoked */
@@ -231,7 +239,7 @@ SCIP_RETCODE GCGincludeVarClassifier(
  * @returns scip return code
  */
 SCIP_RETCODE GCGconshdlrDecompIncludeScore(
-   SCIP*                 scip,               /**< scip data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    const char*           name,               /**< name of the score */
    const char*           shortname,          /**< shortname of the score */
    const char*           description,        /**< description of the score */
@@ -243,14 +251,14 @@ SCIP_RETCODE GCGconshdlrDecompIncludeScore(
 /** @brief writes out a list of all detectors */
 GCG_EXPORT
 void GCGprintListOfDetectors(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** @brief write out all known decompositions
  * @returns SCIP return code */
 GCG_EXPORT
 SCIP_RETCODE GCGwriteAllDecomps(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    char*                 directory,          /**< directory for decompositions */
    char*                 extension,          /**< the file extension for the export */
    SCIP_Bool             original,           /**< should decomps for original problem be written */
@@ -262,7 +270,7 @@ SCIP_RETCODE GCGwriteAllDecomps(
 */
 GCG_EXPORT
 SCIP_RETCODE GCGwriteSelectedDecomps(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    char*                 directory,          /**< directory for decompositions */
    char*                 extension           /**< extension for decompositions */
    );
@@ -270,7 +278,7 @@ SCIP_RETCODE GCGwriteSelectedDecomps(
 /** @brief adds a candidate for block number and counts how often a candidate is added */
 GCG_EXPORT
 void GCGconshdlrDecompAddCandidatesNBlocks(
-   SCIP* scip,                   /**< SCIP data structure */
+   GCG* gcg,                    /**< GCG data structure */
    SCIP_Bool origprob,           /**< which DETPROBDATA that should be modified */
    int candidate                 /**< proposed amount of blocks */
 );
@@ -282,7 +290,7 @@ void GCGconshdlrDecompAddCandidatesNBlocks(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompAddBasicPartialdec(
-   SCIP* scip,                      /**< SCIP data structure */
+   GCG* gcg,                        /**< GCG data structure */
    SCIP_Bool presolved,             /**< create basic partialdecomp for presolved if true, otherwise for original */
    PARTIALDECOMP_C** partialdecomp  /**< pointer to the C pointer of the created partialdecomp */
    );
@@ -295,7 +303,7 @@ SCIP_RETCODE GCGconshdlrDecompAddBasicPartialdec(
  */
 GCG_EXPORT
 int GCGconshdlrDecompAddMatrixPartialdec(
-   SCIP* scip,          /**< SCIP data structure */
+   GCG* gcg,            /**< GCG data structure */
    SCIP_Bool presolved  /**< create matrix for presolved if true, otherwise for original */
    );
 
@@ -306,14 +314,14 @@ int GCGconshdlrDecompAddMatrixPartialdec(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompAddPreexistingDecomp(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp              /**< decomposition data structure */
    );
 
 /** @brief adds a candidate for block size given by the user */
 GCG_EXPORT
 void GCGconshdlrDecompAddUserCandidatesNBlocks(
-   SCIP* scip,                   /**< SCIP data structure */
+   GCG* gcg,                    /**< GCG data structure */
    int candidate                 /**< candidate for block size */
    );
 
@@ -323,7 +331,7 @@ void GCGconshdlrDecompAddUserCandidatesNBlocks(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompArePricingprobsIdenticalForPartialdec(
-   SCIP*                   scip,                /**< scip data structure */
+   GCG*                    gcg,                 /**< GCG data structure */
    PARTIALDECOMP_C*        partialdecomp,       /**< partial decompostion for which the pricing problems are checked for identity */
    int                     probnr1,             /**< index of first block to check */
    int                     probnr2,             /**< index of second block to check */
@@ -335,7 +343,7 @@ SCIP_RETCODE GCGconshdlrDecompArePricingprobsIdenticalForPartialdec(
  */
 GCG_EXPORT
 void GCGconshdlrDecompCalcCandidatesNBlocks(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    SCIP_Bool transformed   /**< whether to find the candidates for the transformed problem, otherwise the original */
 );
 
@@ -350,7 +358,7 @@ void GCGconshdlrDecompCalcCandidatesNBlocks(
  *  @returns true if partialdec information is consistent */
  GCG_EXPORT
 SCIP_Bool GCGconshdlrDecompCheckConsistency(
-   SCIP* scip  /**< SCIP data structure **/
+   GCG* gcg   /**< GCG data structure **/
    );
 
 /**
@@ -360,7 +368,7 @@ SCIP_Bool GCGconshdlrDecompCheckConsistency(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompClassify(
-   SCIP*                scip,          /**< SCIP data structure */
+   GCG*                 gcg,           /**< GCG data structure */
    SCIP_Bool            transformed    /**< whether to classify the transformed problem, otherwise the original */
 );
 
@@ -378,7 +386,7 @@ SCIP_RETCODE GCGconshdlrDecompClassify(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompCreateVarmapForPartialdec(
-   SCIP*                   scip,
+   GCG*                    gcg,
    SCIP_HASHMAP**          hashorig2pricingvar,
    PARTIALDECOMP_C*        partialdecomp,
    int                     probnr1,
@@ -394,7 +402,7 @@ SCIP_RETCODE GCGconshdlrDecompCreateVarmapForPartialdec(
  */
 GCG_EXPORT
 int GCGconshdlrDecompDecreaseNCallsCreateDecomp(
-   SCIP*                 scip                /**< SCIP data structure **/
+   GCG*                 gcg                 /**< GCG data structure **/
    );
 
 /** @brief deregisters partialdecs in the conshdlr
@@ -403,7 +411,7 @@ int GCGconshdlrDecompDecreaseNCallsCreateDecomp(
  */
 GCG_EXPORT
 void GCGconshdlrDecompDeregisterPartialdecs(
-   SCIP* scip,  /**< SCIP data structure */
+   GCG* gcg,   /**< GCG data structure */
    SCIP_Bool original  /**< iff TRUE the status with respect to the original problem is returned */
    );
 
@@ -412,7 +420,7 @@ void GCGconshdlrDecompDeregisterPartialdecs(
  * @note Does not free Detprobdata of the original problem if GCGconshdlrDecompFreeOrigOnExit is set to false.
  */
 void GCGconshdlrDecompFreeDetprobdata(
-   SCIP* scip  /**< SCIP data structure */
+   GCG* gcg   /**< GCG data structure */
    );
 
 /**
@@ -424,7 +432,7 @@ void GCGconshdlrDecompFreeDetprobdata(
  */
 GCG_EXPORT
 void GCGconshdlrDecompFreeOrigOnExit(
-   SCIP* scip,    /**< SCIP data structure */
+   GCG* gcg,     /**< GCG data structure */
    SCIP_Bool free /**< whether to free orig data */
    );
 
@@ -436,7 +444,7 @@ void GCGconshdlrDecompFreeOrigOnExit(
  */
 GCG_EXPORT
  int GCGconshdlrDecompGetBlockNumberCandidate(
-    SCIP*                 scip,
+    GCG*                  gcg,
     int                   index
      );
 
@@ -447,7 +455,7 @@ GCG_EXPORT
  */
 GCG_EXPORT
 SCIP_Real GCGconshdlrDecompGetCompleteDetectionTime(
-    SCIP*                 scip
+    GCG*                  gcg
     );
 
 /** @brief returns an array containing all decompositions
@@ -459,7 +467,7 @@ SCIP_Real GCGconshdlrDecompGetCompleteDetectionTime(
  *   */
 GCG_EXPORT
 GCG_DECOMP** GCGconshdlrDecompGetDecomps(
-   SCIP* scip  /**< SCIP data structure */
+   GCG* gcg   /**< GCG data structure */
    );
 
 /** @brief Gets an array of all detectors
@@ -467,14 +475,14 @@ GCG_DECOMP** GCGconshdlrDecompGetDecomps(
  * @returns array of detectors */
 GCG_EXPORT
 GCG_DETECTOR** GCGconshdlrDecompGetDetectors(
-   SCIP* scip  /**< SCIP data structure */
+   GCG* gcg   /**< GCG data structure */
    );
 
 /** @brief Gets an array of all scores
  *
  * @returns array of scores */
 GCG_SCORE** GCGconshdlrDecompGetScores(
-   SCIP* scip
+   GCG* gcg
    );
 
 /**
@@ -483,7 +491,7 @@ GCG_SCORE** GCGconshdlrDecompGetScores(
  */
 GCG_EXPORT
 char* GCGgetCurrentScoreShortname(
-   SCIP*                 scip
+   GCG*                 gcg
    );
 
 /**
@@ -492,7 +500,7 @@ char* GCGgetCurrentScoreShortname(
  */
 GCG_EXPORT
 GCG_SCORE* GCGgetCurrentScore(
-   SCIP*                 scip
+   GCG*                 gcg
    );
 
 /** @brief gets an array of all constraint classifier
@@ -500,7 +508,7 @@ GCG_SCORE* GCGgetCurrentScore(
  * @returns array of constraint classifier */
 GCG_EXPORT
 GCG_CONSCLASSIFIER** GCGconshdlrDecompGetConsClassifiers(
-   SCIP* scip  /**< SCIP data structure */
+   GCG* gcg   /**< GCG data structure */
    );
 
 /** @brief gets an array of all variable classifier
@@ -508,7 +516,7 @@ GCG_CONSCLASSIFIER** GCGconshdlrDecompGetConsClassifiers(
  * @returns array of variable classifier */
 GCG_EXPORT
 GCG_VARCLASSIFIER** GCGconshdlrDecompGetVarClassifiers(
-   SCIP* scip
+   GCG* gcg
    );
 
 /** @brief Gets a list of ids of the current partialdecs that are finished
@@ -518,7 +526,7 @@ GCG_VARCLASSIFIER** GCGconshdlrDecompGetVarClassifiers(
  *  @returns scip return code */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompGetFinishedPartialdecsList(
-   SCIP*          scip,       /**< SCIP data structure */
+   GCG*           gcg,        /**< GCG data structure */
    int**          idlist,     /**< id list to output to */
    int*           listlength  /**< length of output list */
    );
@@ -530,7 +538,7 @@ SCIP_RETCODE GCGconshdlrDecompGetFinishedPartialdecsList(
  *  @returns scip return code */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompGetPartialdecsList(
-   SCIP*          scip,       /**< SCIP data structure */
+   GCG*           gcg,        /**< GCG data structure */
    int**          idlist,     /**< id list to output to */
    int*           listlength  /**< length of output list */
 );
@@ -541,7 +549,7 @@ SCIP_RETCODE GCGconshdlrDecompGetPartialdecsList(
  */
 GCG_EXPORT
  int GCGconshdlrDecompGetNBlockNumberCandidates(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                 gcg                 /**< GCG data structure */
     );
 
 /** @brief gets block number of partialdec
@@ -557,41 +565,41 @@ int GCGconshdlrDecompPartialdecGetNBlocks(
  * @returns number of decompositions */
 GCG_EXPORT
 int GCGconshdlrDecompGetNDecomps(
-   SCIP* scip  /**< SCIP data structure */
+   GCG* gcg   /**< GCG data structure */
    );
 
 /** @brief Gets the number of all detectors
  * @returns number of detectors */
 GCG_EXPORT
 int GCGconshdlrDecompGetNDetectors(
-   SCIP* scip  /**< SCIP data structure */
+   GCG* gcg   /**< GCG data structure */
    );
 
 /** @brief Gets the number of all scores
  * @returns number of scores */
 int GCGconshdlrDecompGetNScores(
-   SCIP* scip  /**< SCIP data structure */
+   GCG* gcg   /**< GCG data structure */
    );
 
 /** @brief Gets the number of all constraint classifiers
  * @returns number of constraint classifiers */
 GCG_EXPORT
 int GCGconshdlrDecompGetNConsClassifiers(
-   SCIP* scip  /**< SCIP data structure */
+   GCG* gcg   /**< GCG data structure */
    );
 
 /** @brief Gets the number of all variable classifiers
  * @returns number of variable classifiers */
 GCG_EXPORT
 int GCGconshdlrDecompGetNVarClassifiers(
-   SCIP* scip
+   GCG* gcg
    );
 
 /** @brief Gets the next partialdec id managed by cons_decomp
  * @returns the next partialdec id managed by cons_decomp */
 GCG_EXPORT
 int GCGconshdlrDecompGetNextPartialdecID(
-   SCIP*   scip   /**< SCIP data structure **/
+   GCG*   gcg    /**< GCG data structure **/
    );
 
 /** @brief gets number of active constraints during the detection of the decomp with given id
@@ -606,7 +614,7 @@ int GCGconshdlrDecompGetNextPartialdecID(
  */
 GCG_EXPORT
 int GCGconshdlrDecompGetNFormerDetectionConssForID(
-   SCIP* scip,    /**< SCIP data structure */
+   GCG* gcg,     /**< GCG data structure */
    int id         /**< id of the partialdec the information is asked for */
    );
 
@@ -734,49 +742,49 @@ int GCGconshdlrDecompPartialdecGetNVarsForBlock(
  * @returns number of partialdecs */
 GCG_EXPORT
 unsigned int GCGconshdlrDecompGetNFinishedPartialdecsOrig(
-   SCIP*       scip  /**< SCIP data structure */
+   GCG*       gcg   /**< GCG data structure */
    );
 
 /** @brief Gets the number of finished partialdecs available for the transformed problem
  * @returns number of partialdecs */
 GCG_EXPORT
 unsigned int GCGconshdlrDecompGetNFinishedPartialdecsTransformed(
-   SCIP*       scip  /**< SCIP data structure */
+   GCG*       gcg   /**< GCG data structure */
    );
 
 /** @brief Gets the number of open partialdecs available for the original problem
  * @returns number of partialdecs */
 GCG_EXPORT
 unsigned int GCGconshdlrDecompGetNOpenPartialdecsOrig(
-   SCIP*       scip  /**< SCIP data structure */
+   GCG*       gcg   /**< GCG data structure */
 );
 
 /** @brief Gets the number of open partialdecs available for the transformed problem
  * @returns number of partialdecs */
 GCG_EXPORT
 unsigned int GCGconshdlrDecompGetNOpenPartialdecsTransformed(
-   SCIP*       scip  /**< SCIP data structure */
+   GCG*       gcg   /**< GCG data structure */
 );
 
 /** @brief Gets the number of all partialdecs
  * @returns number of Partialdecs */
 GCG_EXPORT
 unsigned int GCGconshdlrDecompGetNPartialdecs(
-   SCIP*       scip  /**< SCIP data structure */
+   GCG*       gcg   /**< GCG data structure */
    );
 
 /** @brief Gets the number of partialdecs available for the original problem
  * @returns number of partialdecs */
 GCG_EXPORT
 unsigned int GCGconshdlrDecompGetNPartialdecsOrig(
-   SCIP*       scip  /**< SCIP data structure */
+   GCG*       gcg   /**< GCG data structure */
    );
 
 /** @brief Gets the number of partialdecs available for the transformed problem
  * @returns number of partialdecs */
 GCG_EXPORT
 unsigned int GCGconshdlrDecompGetNPartialdecsTransformed(
-   SCIP*       scip  /**< SCIP data structure */
+   GCG*       gcg   /**< GCG data structure */
    );
 
 /** @brief gets number of stairlinking variables of partialdec
@@ -792,7 +800,7 @@ int GCGconshdlrDecompPartialdecGetNStairlinkingVars(
  * @returns SCIP return code */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompGetPartialdecFromID(
-   SCIP*                scip,             /**< SCIP data structure */
+   GCG*                gcg,              /**< GCG data structure */
    int                  partialdecid,     /**< id of PARTIALDECOMP */
    PARTIALDECOMP_C**    partialdecomp     /**< pointer to C wrapper pointer for PARTIALDECOMP */
    );
@@ -810,7 +818,7 @@ SCIP_Real GCGconshdlrDecompGetPartialdecScore(
  */
 GCG_EXPORT
 SCIP_CLOCK* GCGconshdlrDecompGetScoreClock(
-   SCIP* scip     /**< SCIP data structure */
+   GCG* gcg      /**< GCG data structure */
    );
 
 /** @brief gets total score computation time
@@ -818,14 +826,14 @@ SCIP_CLOCK* GCGconshdlrDecompGetScoreClock(
  */
 GCG_EXPORT
 SCIP_Real GCGconshdlrDecompGetScoreTotalTime(
-   SCIP* scip     /**< SCIP data structure */
+   GCG* gcg      /**< GCG data structure */
    );
 
 /** @brief Gets a list of ids of all currently selected partialdecs
  *  @returns list of partialdecs */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompGetSelectedPartialdecs(
-   SCIP*          scip,       /**< SCIP data structure */
+   GCG*          gcg,        /**< GCG data structure */
    int**          idlist,     /**< id list to output to */
    int*           listlength  /**< length of output list */
    );
@@ -836,7 +844,7 @@ SCIP_RETCODE GCGconshdlrDecompGetSelectedPartialdecs(
  */
 GCG_EXPORT
 int GCGconshdlrDecompIncreaseNCallsCreateDecomp(
-  SCIP*                 scip                /**< SCIP data structure **/
+  GCG*                 gcg                 /**< GCG data structure **/
    );
 
 /** @brief gets whether partialdec is presolved
@@ -861,7 +869,7 @@ SCIP_Bool GCGconshdlrDecompPartialdecIsSelected(
  */
 GCG_EXPORT
 SCIP_Bool GCGconshdlrDecompOrigDetprobdataExists(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                 gcg                 /**< GCG data structure */
    );
 
 /**
@@ -870,7 +878,7 @@ SCIP_Bool GCGconshdlrDecompOrigDetprobdataExists(
  */
 GCG_EXPORT
 SCIP_Bool GCGconshdlrDecompOrigPartialdecExists(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                 gcg                 /**< GCG data structure */
    );
 
 /**
@@ -879,14 +887,14 @@ SCIP_Bool GCGconshdlrDecompOrigPartialdecExists(
  */
 GCG_EXPORT
 SCIP_Bool GCGconshdlrDecompPresolvedDetprobdataExists(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                 gcg                 /**< GCG data structure */
    );
 
 /** @brief display statistics about detectors
  * @returns SCIP return code */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompPrintDetectorStatistics(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    FILE*                 file                /**< output file or NULL for standard output */
    );
 
@@ -894,7 +902,7 @@ SCIP_RETCODE GCGconshdlrDecompPrintDetectorStatistics(
  * @returns SCIP return code */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompPrintScoreStatistics(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    FILE*                 file                /**< output file or NULL for standard output */
    );
 
@@ -922,7 +930,7 @@ SCIP_RETCODE GCGconshdlrDecompSelectPartialdec(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompSetDetection(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    SCIP_PARAMSETTING     paramsetting,       /**< parameter settings */
    SCIP_Bool             quiet               /**< should the parameter be set quiet (no output) */
    );
@@ -937,7 +945,7 @@ SCIP_RETCODE GCGconshdlrDecompSetDetection(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompTranslateNBestOrigPartialdecs(
-   SCIP*                 scip,
+   GCG*                  gcg,
    int                   n,
    SCIP_Bool             completeGreedily,
    SCIP_Bool             translateSymmetry
@@ -945,19 +953,19 @@ SCIP_RETCODE GCGconshdlrDecompTranslateNBestOrigPartialdecs(
 
 /**
  * @brief translates unpresolved partialdec to a complete presolved one
- * @param scip SCIP data structure
+ * @param gcg GCG data structure
  * @returns SCIP return code
  */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompTranslateOrigPartialdecs(
-   SCIP*                 scip
+   GCG*                  gcg
    );
 
 /** Gets whether the detection already took place
  * @returns true if detection took place, false otherwise */
 GCG_EXPORT
 SCIP_Bool GCGdetectionTookPlace(
-   SCIP*  scip, /**< SCIP data structure */
+   GCG*  gcg, /**< GCG data structure */
    SCIP_Bool original /**< iff TRUE the status with respect to the original problem is returned */
    );
 
@@ -967,7 +975,7 @@ SCIP_Bool GCGdetectionTookPlace(
  */
 GCG_EXPORT
 SCIP_RETCODE SCIPconshdlrDecompRepairConsNames(
-   SCIP*                scip  /**< SCIP data structure */
+   GCG*                gcg   /**< GCG data structure */
    );
 
 /**
@@ -976,7 +984,7 @@ SCIP_RETCODE SCIPconshdlrDecompRepairConsNames(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeConshdlrDecomp(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 #ifdef __cplusplus

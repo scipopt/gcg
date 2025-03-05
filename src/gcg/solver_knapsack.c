@@ -64,7 +64,7 @@
 static
 SCIP_RETCODE solveKnapsack(
    SCIP_Bool             exactly,            /**< should the pricing problem be solved to optimality or heuristically? */
-   SCIP*                 scip,               /**< master problem SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
    GCG_SOLVER*           solver,             /**< solver data structure */
    int                   probnr,             /**< problem number */
@@ -91,7 +91,7 @@ SCIP_RETCODE solveKnapsack(
          *lowerbound = exactly ? solval : -SCIPinfinity(pricingprob);
 
          SCIP_CALL( GCGcreateGcgCol(pricingprob, &col, probnr, solvars, solvals, nsolvars, FALSE, SCIPinfinity(pricingprob)) );
-         SCIP_CALL( GCGpricerAddCol(scip, col) );
+         SCIP_CALL( GCGpricerAddCol(gcg, col) );
       }
 
       SCIPfreeBufferArray(pricingprob, &solvals);
@@ -521,7 +521,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveKnapsack)
 {  /*lint --e{715}*/
 
    /* solve the knapsack problem exactly */
-   SCIP_CALL( solveKnapsack(TRUE, scip, pricingprob, solver, probnr, lowerbound, status) );
+   SCIP_CALL( solveKnapsack(TRUE, gcg, pricingprob, solver, probnr, lowerbound, status) );
 
    return SCIP_OKAY;
 }
@@ -533,7 +533,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
 {  /*lint --e{715}*/
 
    /* solve the knapsack problem approximately */
-   SCIP_CALL( solveKnapsack(FALSE, scip, pricingprob, solver, probnr, lowerbound, status) );
+   SCIP_CALL( solveKnapsack(FALSE, gcg, pricingprob, solver, probnr, lowerbound, status) );
 
    return SCIP_OKAY;
 }
@@ -541,10 +541,10 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurKnapsack)
 
 /** creates the knapsack solver for pricing problems and includes it in GCG */
 SCIP_RETCODE GCGincludeSolverKnapsack(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
+   SCIP_CALL( GCGpricerIncludeSolver(gcg, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
          SOLVER_HEURENABLED, SOLVER_EXACTENABLED,
          solverUpdateKnapsack, solverSolveKnapsack, solverSolveHeurKnapsack,
          solverFreeKnapsack, solverInitKnapsack, solverExitKnapsack,

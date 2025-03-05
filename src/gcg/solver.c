@@ -61,7 +61,7 @@ SCIP_DECL_SORTPTRCOMP(GCGsolverComp)
 
 /** creates a GCG pricing solver */
 SCIP_RETCODE GCGsolverCreate(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER**          solver,             /**< pointer to pricing solver data structure */
    const char*           name,               /**< name of solver */
    const char*           desc,               /**< description of solver */
@@ -81,17 +81,20 @@ SCIP_RETCODE GCGsolverCreate(
 {
    char paramname[SCIP_MAXSTRLEN];
    char paramdesc[SCIP_MAXSTRLEN];
+   SCIP* masterprob;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
+
+   masterprob = GCGgetMasterprob(gcg);
 
    if( solveheur == NULL && solversolve == NULL )
    {
-      SCIPwarningMessage(scip, "Solver <%s> has neither heuristic nor exact solving method and will not be included.\n", name);
+      SCIPwarningMessage(masterprob, "Solver <%s> has neither heuristic nor exact solving method and will not be included.\n", name);
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( SCIPallocMemory(scip, solver) ); /*lint !e866*/
+   SCIP_CALL( SCIPallocMemory(masterprob, solver) ); /*lint !e866*/
 
    SCIP_ALLOC( BMSduplicateMemoryArray(&(*solver)->name, name, strlen(name)+1) );
    SCIP_ALLOC( BMSduplicateMemoryArray(&(*solver)->desc, desc, strlen(desc)+1) );
@@ -106,10 +109,10 @@ SCIP_RETCODE GCGsolverCreate(
    (*solver)->solverexitsol = solverexitsol;
    (*solver)->solverdata = solverdata;
 
-   SCIP_CALL( SCIPcreateCPUClock(scip, &((*solver)->optfarkasclock)) );
-   SCIP_CALL( SCIPcreateCPUClock(scip, &((*solver)->optredcostclock)) );
-   SCIP_CALL( SCIPcreateCPUClock(scip, &((*solver)->heurfarkasclock)) );
-   SCIP_CALL( SCIPcreateCPUClock(scip, &((*solver)->heurredcostclock)) );
+   SCIP_CALL( SCIPcreateCPUClock(masterprob, &((*solver)->optfarkasclock)) );
+   SCIP_CALL( SCIPcreateCPUClock(masterprob, &((*solver)->optredcostclock)) );
+   SCIP_CALL( SCIPcreateCPUClock(masterprob, &((*solver)->heurfarkasclock)) );
+   SCIP_CALL( SCIPcreateCPUClock(masterprob, &((*solver)->heurredcostclock)) );
 
    (*solver)->optfarkascalls = 0;
    (*solver)->optredcostcalls = 0;
@@ -120,7 +123,7 @@ SCIP_RETCODE GCGsolverCreate(
    {
       (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "pricingsolver/%s/heurenabled", name);
       (void) SCIPsnprintf(paramdesc, SCIP_MAXSTRLEN, "flag to indicate whether heuristic solving method of solver <%s> is enabled", name);
-      SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), paramname, paramdesc,
+      SCIP_CALL( SCIPaddBoolParam(GCGgetOrigprob(gcg), paramname, paramdesc,
                      &((*solver)->heurenabled), FALSE, heurenabled, NULL, NULL));
    }
    else
@@ -130,7 +133,7 @@ SCIP_RETCODE GCGsolverCreate(
    {
       (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "pricingsolver/%s/exactenabled", name);
       (void) SCIPsnprintf(paramdesc, SCIP_MAXSTRLEN, "flag to indicate whether exact solving method of solver <%s> is enabled", name);
-      SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), paramname, paramdesc,
+      SCIP_CALL( SCIPaddBoolParam(GCGgetOrigprob(gcg), paramname, paramdesc,
                      &((*solver)->exactenabled), FALSE, exactenabled, NULL, NULL));
    }
    else
@@ -138,7 +141,7 @@ SCIP_RETCODE GCGsolverCreate(
 
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "pricingsolver/%s/priority", name);
    (void) SCIPsnprintf(paramdesc, SCIP_MAXSTRLEN, "priority of solver <%s>", name);
-   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), paramname, paramdesc,
+   SCIP_CALL( SCIPaddIntParam(GCGgetOrigprob(gcg), paramname, paramdesc,
                   &((*solver)->priority), FALSE, priority, INT_MIN/4, INT_MAX/4, NULL, NULL));
 
    return SCIP_OKAY;
@@ -146,51 +149,55 @@ SCIP_RETCODE GCGsolverCreate(
 
 /** calls destructor and frees memory of GCG pricing solver */
 SCIP_RETCODE GCGsolverFree(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER**          solver              /**< pointer to pricing solver data structure */
    )
 {
-   assert(scip != NULL);
+   SCIP* masterprob;
+   assert(gcg != NULL);
    assert(solver != NULL);
    assert(*solver != NULL);
 
+   masterprob = GCGgetMasterprob(gcg);
+
    if( (*solver)->solverfree != NULL )
    {
-      SCIP_CALL( (*solver)->solverfree(scip, *solver) );
+      SCIP_CALL( (*solver)->solverfree(gcg, *solver) );
    }
 
    BMSfreeMemoryArray(&(*solver)->name);
    BMSfreeMemoryArray(&(*solver)->desc);
 
-   SCIP_CALL( SCIPfreeClock(scip, &((*solver)->optfarkasclock)) );
-   SCIP_CALL( SCIPfreeClock(scip, &((*solver)->optredcostclock)) );
-   SCIP_CALL( SCIPfreeClock(scip, &((*solver)->heurfarkasclock)) );
-   SCIP_CALL( SCIPfreeClock(scip, &((*solver)->heurredcostclock)) );
+   SCIP_CALL( SCIPfreeClock(masterprob, &((*solver)->optfarkasclock)) );
+   SCIP_CALL( SCIPfreeClock(masterprob, &((*solver)->optredcostclock)) );
+   SCIP_CALL( SCIPfreeClock(masterprob, &((*solver)->heurfarkasclock)) );
+   SCIP_CALL( SCIPfreeClock(masterprob, &((*solver)->heurredcostclock)) );
 
-   SCIPfreeMemory(scip, solver);
+   SCIPfreeMemory(masterprob, solver);
 
    return SCIP_OKAY;
 }
 
 /** initializes GCG pricing solver */
 SCIP_RETCODE GCGsolverInit(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER*           solver              /**< pricing solver */
    )
 {
    SCIP_Bool resetstat;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
 
-   SCIP_CALL( SCIPgetBoolParam(scip, "misc/resetstat", &resetstat) );
+   SCIP_CALL( SCIPgetBoolParam(masterprob, "misc/resetstat", &resetstat) );
 
    if( resetstat )
    {
-      SCIP_CALL( SCIPresetClock(scip, solver->optfarkasclock) );
-      SCIP_CALL( SCIPresetClock(scip, solver->optredcostclock) );
-      SCIP_CALL( SCIPresetClock(scip, solver->heurfarkasclock) );
-      SCIP_CALL( SCIPresetClock(scip, solver->heurredcostclock) );
+      SCIP_CALL( SCIPresetClock(masterprob, solver->optfarkasclock) );
+      SCIP_CALL( SCIPresetClock(masterprob, solver->optredcostclock) );
+      SCIP_CALL( SCIPresetClock(masterprob, solver->heurfarkasclock) );
+      SCIP_CALL( SCIPresetClock(masterprob, solver->heurredcostclock) );
 
       solver->optfarkascalls = 0;
       solver->optredcostcalls = 0;
@@ -200,7 +207,7 @@ SCIP_RETCODE GCGsolverInit(
 
    if( solver->solverinit != NULL )
    {
-      SCIP_CALL( solver->solverinit(scip, solver) );
+      SCIP_CALL( solver->solverinit(gcg, solver) );
    }
 
    return SCIP_OKAY;
@@ -208,16 +215,16 @@ SCIP_RETCODE GCGsolverInit(
 
 /** calls exit method of GCG pricing solver */
 SCIP_RETCODE GCGsolverExit(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER*           solver              /**< pricing solver */
    )
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
 
    if( solver->solverexit != NULL )
    {
-      SCIP_CALL( solver->solverexit(scip, solver) );
+      SCIP_CALL( solver->solverexit(gcg, solver) );
    }
 
    return SCIP_OKAY;
@@ -225,16 +232,16 @@ SCIP_RETCODE GCGsolverExit(
 
 /** calls solving process initialization method of GCG pricing solver */
 SCIP_RETCODE GCGsolverInitsol(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER*           solver              /**< pricing solver */
    )
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
 
    if( solver->solverinitsol != NULL )
    {
-      SCIP_CALL( solver->solverinitsol(scip, solver) );
+      SCIP_CALL( solver->solverinitsol(gcg, solver) );
    }
 
    return SCIP_OKAY;
@@ -242,16 +249,16 @@ SCIP_RETCODE GCGsolverInitsol(
 
 /** calls solving process deinitialization method of GCG pricing solver */
 SCIP_RETCODE GCGsolverExitsol(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER*           solver              /**< pricing solver */
    )
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
 
    if( solver->solverexitsol != NULL )
    {
-      SCIP_CALL( solver->solverexitsol(scip, solver) );
+      SCIP_CALL( solver->solverexitsol(gcg, solver) );
    }
 
    return SCIP_OKAY;
@@ -259,6 +266,7 @@ SCIP_RETCODE GCGsolverExitsol(
 
 /** calls update method of GCG pricing solver */
 SCIP_RETCODE GCGsolverUpdate(
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP*                 pricingprob,        /**< the pricing problem that should be solved */
    GCG_SOLVER*           solver,             /**< pricing solver */
    int                   probnr,             /**< number of the pricing problem */
@@ -272,7 +280,7 @@ SCIP_RETCODE GCGsolverUpdate(
 
    if( solver->solverupdate != NULL && (varobjschanged || varbndschanged || consschanged) )
    {
-      SCIP_CALL( solver->solverupdate(pricingprob, solver, probnr, varobjschanged, varbndschanged, consschanged) );
+      SCIP_CALL( solver->solverupdate(gcg, pricingprob, solver, probnr, varobjschanged, varbndschanged, consschanged) );
    }
 
    return SCIP_OKAY;
@@ -282,7 +290,7 @@ SCIP_RETCODE GCGsolverUpdate(
  * @note This method has to be threadsafe!
  */
 SCIP_RETCODE GCGsolverSolve(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP*                 pricingprob,        /**< the pricing problem that should be solved */
    GCG_SOLVER*           solver,             /**< pricing solver */
    SCIP_Bool             redcost,            /**< is reduced cost (TRUE) or Farkas (FALSE) pricing performed? */
@@ -295,12 +303,15 @@ SCIP_RETCODE GCGsolverSolve(
    )
 {
    SCIP_CLOCK* clock;
+   SCIP* masterprob;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(pricingprob != NULL);
    assert(solver != NULL);
    assert(lowerbound != NULL);
    assert(status != NULL);
+
+   masterprob = GCGgetMasterprob(gcg);
 
    *solved = FALSE;
 
@@ -317,19 +328,19 @@ SCIP_RETCODE GCGsolverSolve(
 
 #ifdef _OPENMP
          if( omp_get_num_threads() == 1 )
-            SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
+            SCIP_CALL_ABORT( SCIPstartClock(masterprob, clock) );
 #else
-         SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
+         SCIP_CALL_ABORT( SCIPstartClock(masterprob, clock) );
 #endif
 
-         SCIP_CALL( solver->solversolveheur(scip, pricingprob, solver, probnr, dualsolconv, lowerbound, status) );
+         SCIP_CALL( solver->solversolveheur(gcg, pricingprob, solver, probnr, dualsolconv, lowerbound, status) );
          *solved = TRUE;
 
 #ifdef _OPENMP
          if( omp_get_num_threads() == 1 )
-            SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
+            SCIP_CALL_ABORT( SCIPstopClock(masterprob, clock) );
 #else
-         SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
+         SCIP_CALL_ABORT( SCIPstopClock(masterprob, clock) );
 #endif
       }
    }
@@ -346,19 +357,19 @@ SCIP_RETCODE GCGsolverSolve(
 
 #ifdef _OPENMP
          if( omp_get_num_threads() == 1 )
-            SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
+            SCIP_CALL_ABORT( SCIPstartClock(masterprob, clock) );
 #else
-         SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
+         SCIP_CALL_ABORT( SCIPstartClock(masterprob, clock) );
 #endif
 
-         SCIP_CALL( solver->solversolve(scip, pricingprob, solver, probnr, dualsolconv, lowerbound, status) );
+         SCIP_CALL( solver->solversolve(gcg, pricingprob, solver, probnr, dualsolconv, lowerbound, status) );
          *solved = TRUE;
 
 #ifdef _OPENMP
          if( omp_get_num_threads() == 1 )
-            SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
+            SCIP_CALL_ABORT( SCIPstopClock(masterprob, clock) );
 #else
-          SCIP_CALL_ABORT( SCIPstopClock(scip, clock) );
+          SCIP_CALL_ABORT( SCIPstopClock(masterprob, clock) );
 #endif
       }
    }
@@ -497,48 +508,48 @@ int GCGsolverGetHeurRedcostCalls(
 
 /** gets exact Farkas pricing time of pricing solver */
 SCIP_Real GCGsolverGetOptFarkasTime(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER*           solver              /**< pricing solver */
    )
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
 
-   return SCIPgetClockTime(scip, solver->optfarkasclock);
+   return SCIPgetClockTime(GCGgetMasterprob(gcg), solver->optfarkasclock);
 }
 
 /** gets exact reduced cost pricing time of pricing solver */
 SCIP_Real GCGsolverGetOptRedcostTime(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER*           solver              /**< pricing solver */
    )
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
 
-   return SCIPgetClockTime(scip, solver->optredcostclock);
+   return SCIPgetClockTime(GCGgetMasterprob(gcg), solver->optredcostclock);
 }
 
 /** gets heuristic Farkas pricing time of pricing solver */
 SCIP_Real GCGsolverGetHeurFarkasTime(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER*           solver              /**< pricing solver */
    )
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
 
-   return SCIPgetClockTime(scip, solver->heurfarkasclock);
+   return SCIPgetClockTime(GCGgetMasterprob(gcg), solver->heurfarkasclock);
 }
 
 /** gets heuristic reduced cost pricing time of pricing solver */
 SCIP_Real GCGsolverGetHeurRedcostTime(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER*           solver              /**< pricing solver */
    )
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
 
-   return SCIPgetClockTime(scip, solver->heurredcostclock);
+   return SCIPgetClockTime(GCGgetMasterprob(gcg), solver->heurredcostclock);
 }

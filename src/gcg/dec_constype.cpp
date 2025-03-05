@@ -115,10 +115,11 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
 {
    *result = SCIP_DIDNOTFIND;
    char decinfo[SCIP_MAXSTRLEN];
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+   SCIP_CALL_ABORT( SCIPcreateClock(origprob, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
 
    SCIP_CONS* cons;
 
@@ -134,7 +135,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
    for( int i = 0; i < partialdecOrig->getNOpenconss(); ++i)
    {
       cons = partialdecdetectiondata->detprobdata->getCons(partialdecOrig->getOpenconss()[i]);
-      consType cT = GCGconsGetType(scip, cons);
+      consType cT = GCGconsGetType(origprob, cons);
 
       /* find constype or not */
       std::vector<consType>::const_iterator constypeIter = foundConstypes.begin();
@@ -146,7 +147,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
 
       if( constypeIter  == foundConstypes.end()  )
       {
-         foundConstypes.push_back(GCGconsGetType(scip, cons) );
+         foundConstypes.push_back(GCGconsGetType(origprob, cons) );
       }
    }
 
@@ -157,7 +158,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
 
    std::vector< std::vector<int> > subsetsOfConstypes = getSubsets(constypesIndices);
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), subsetsOfConstypes.size() - 1) );
+   SCIP_CALL( SCIPallocMemoryArray(origprob, &(partialdecdetectiondata->newpartialdecs), subsetsOfConstypes.size() - 1) );
    partialdecdetectiondata->nnewpartialdecs = (int) subsetsOfConstypes.size() - 1;
 
    for(size_t subset = 0; subset < subsetsOfConstypes.size(); ++subset)
@@ -174,7 +175,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
          bool found = false;
          for(size_t constypeId = 0; constypeId < subsetsOfConstypes[subset].size(); ++constypeId )
          {
-            if( GCGconsGetType(scip, cons) == foundConstypes[subsetsOfConstypes[subset][constypeId]] )
+            if( GCGconsGetType(origprob, cons) == foundConstypes[subsetsOfConstypes[subset][constypeId]] )
             {
                itr = partialdec->fixConsToMaster(itr);
                found = true;
@@ -193,13 +194,13 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
       partialdecCounter++;
    }
 
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
-   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
+   SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock) );
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(origprob, temporaryClock);
    for( int s = 0; s < partialdecdetectiondata->nnewpartialdecs; ++s )
    {
       partialdecdetectiondata->newpartialdecs[s]->addClockTime(partialdecdetectiondata->detectiontime / partialdecdetectiondata->nnewpartialdecs);
    }
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT(SCIPfreeClock(origprob, &temporaryClock) );
 
    *result = SCIP_SUCCESS;
 
@@ -213,12 +214,13 @@ GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConstype)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE ) );
 
    return SCIP_OKAY;
 }
@@ -229,12 +231,13 @@ GCG_DECL_SETPARAMDEFAULT(setParamDefaultConstype)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLED) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLEDFINISHING ) );
 
    return SCIP_OKAY;
 }
@@ -243,14 +246,14 @@ static
 GCG_DECL_SETPARAMFAST(setParamFastConstype)
 {
    char setstr[SCIP_MAXSTRLEN];
-
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE ) );
 
 
    return SCIP_OKAY;
@@ -263,7 +266,8 @@ GCG_DECL_SETPARAMFAST(setParamFastConstype)
  */
 
 /** creates the handler for constype detector and includes it in SCIP */
-SCIP_RETCODE GCGincludeDetectorConstype(SCIP* scip /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorConstype(
+   GCG*                 gcg                  /**< SCIP data structure */
 )
 {
    GCG_DETECTORDATA* detectordata;
@@ -272,7 +276,7 @@ SCIP_RETCODE GCGincludeDetectorConstype(SCIP* scip /**< SCIP data structure */
    detectordata = NULL;
 
    SCIP_CALL(
-      GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
+      GCGincludeDetector(gcg, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
                          DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata,
                          freeConstype, initConstype, exitConstype, propagatePartialdecConstype, finishPartialdecConstype, detectorPostprocessPartialdecConstype, setParamAggressiveConstype, setParamDefaultConstype, setParamFastConstype));
 

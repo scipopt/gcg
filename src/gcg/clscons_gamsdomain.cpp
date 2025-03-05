@@ -81,15 +81,13 @@ GCG_DECL_FREECONSCLASSIFIER(classifierFree)
 {
    GCG_CLASSIFIERDATA* classifierdata;
 
-   assert(scip != NULL);
-
    classifierdata = GCGconsClassifierGetData(classifier);
    assert(classifierdata != NULL);
    assert(strcmp(GCGconsClassifierGetName(classifier), CLSCONS_NAME) == 0);
 
    delete classifierdata->constodomain;
 
-   SCIPfreeMemory(scip, &classifierdata);
+   SCIPfreeMemory(GCGgetOrigprob(gcg), &classifierdata);
 
    return SCIP_OKAY;
 }
@@ -97,13 +95,14 @@ GCG_DECL_FREECONSCLASSIFIER(classifierFree)
 static
 GCG_DECL_CONSCLASSIFY(classifierClassify) {
    gcg::DETPROBDATA* detprobdata;
+
    if( transformed )
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(gcg);
    }
    else
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
    }
 
    int ncons = detprobdata->getNConss();
@@ -112,7 +111,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
    std::vector<int> classForCons( ncons, - 1 );     // [i] holds class index for constraint i -> indexing over detection internal constraint array!
    int counterClasses = 0;
 
-   GCG_CONSCLASSIFIER* classifier = GCGfindConsClassifier(scip, CLSCONS_NAME);
+   GCG_CONSCLASSIFIER* classifier = GCGfindConsClassifier(gcg, CLSCONS_NAME);
    assert(classifier != NULL);
 
    GCG_CLASSIFIERDATA* classdata = GCGconsClassifierGetData(classifier);
@@ -163,7 +162,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
    assert( counterClasses == (int) domainForClass.size() );
 
    /* secondly, use these information to create a ConsPartition */
-   gcg::ConsPartition* partition = new gcg::ConsPartition(scip, "gamsdomain", counterClasses, detprobdata->getNConss() );
+   gcg::ConsPartition* partition = new gcg::ConsPartition(gcg, "gamsdomain", counterClasses, detprobdata->getNConss() );
 
    /* set class names and descriptions of every class */
    for( int c = 0; c < partition->getNClasses(); ++ c )
@@ -188,7 +187,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
    {
       partition->assignConsToClass( i, classForCons[i] );
    }
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d  different constraint classes \n", partition->getName(), partition->getNClasses() );
+   SCIPverbMessage(GCGgetOrigprob(gcg), SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d  different constraint classes \n", partition->getName(), partition->getNClasses() );
 
    detprobdata->addConsPartition(partition);
 
@@ -224,16 +223,16 @@ SCIP_RETCODE GCGconsClassifierGamsdomainAddEntry(
 
 /** creates the handler for gamsdomain classifier and includes it in SCIP */
 SCIP_RETCODE GCGincludeConsClassifierGamsdomain(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_CLASSIFIERDATA* classifierdata = NULL;
 
-   SCIP_CALL( SCIPallocMemory(scip, &classifierdata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &classifierdata) );
    assert(classifierdata != NULL);
    classifierdata->constodomain = new std::map<std::string, std::set<int>>();
 
-   SCIP_CALL( GCGincludeConsClassifier(scip, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( GCGincludeConsClassifier(gcg, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

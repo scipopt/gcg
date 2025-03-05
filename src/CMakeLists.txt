@@ -80,6 +80,7 @@ set(gcgsources
     gcg/event_mastersol.c
     gcg/event_relaxsol.c
     gcg/event_solvingstats.c
+    gcg/gcg.c
     gcg/gcg_general.c
     gcg/gcgcol.c
     gcg/gcggithash.c
@@ -89,6 +90,7 @@ set(gcgsources
     gcg/gcgsepa.c
     gcg/gcgsort.c
     gcg/gcgvar.c
+    gcg/gcgvarhistory.c
     gcg/heur_gcgcoefdiving.c
     gcg/heur_gcgdins.c
     gcg/heur_gcgfeaspump.c
@@ -117,7 +119,6 @@ set(gcgsources
     gcg/heur_xprins.c
     gcg/extendedmasterconsdata.c
     gcg/masterplugins.c
-    gcg/gcgvarhistory.c
     gcg/misc.c
     gcg/miscvisualization.cpp
     gcg/nodesel_master.c
@@ -267,6 +268,7 @@ set(gcgheaders
     gcg/pub_clsvar.h
     gcg/pub_colpool.h
     gcg/pub_decomp.h
+    gcg/pub_gcg.h
     gcg/pub_gcgcol.h
     gcg/pub_gcgheur.h
     gcg/pub_gcgsepa.h
@@ -308,6 +310,7 @@ set(gcgheaders
     gcg/struct_colpool.h
     gcg/struct_decomp.h
     gcg/struct_detector.h
+    gcg/struct_gcg.h
     gcg/struct_gcgcol.h
     gcg/struct_gcgpqueue.h
     gcg/struct_extendedmasterconsdata.h
@@ -324,6 +327,7 @@ set(gcgheaders
     gcg/type_consclassifier.h
     gcg/type_decomp.h
     gcg/type_detector.h
+    gcg/type_gcg.h
     gcg/type_gcgcol.h
     gcg/type_gcgpqueue.h
     gcg/type_locks.h

@@ -43,11 +43,11 @@ namespace gcg {
 
 template <class T>
 Hypergraph<T>::Hypergraph(
-   SCIP*                 scip               /**< SCIP data structure */
-) : name("hypergraph"),scip_(scip),graph(NULL),lastnode(0),dummynodes(0)
+   GCG*                  gcgstruct                /**< GCG data structure */
+) : name("hypergraph"),gcg(gcgstruct),graph(NULL),lastnode(0),dummynodes(0)
 {
    SCIPdebugMessage("Creating graph\n");
-   graph = new Graph<T>(scip);
+   graph = new Graph<T>(gcg);
 }
 
 template <class T>
@@ -187,12 +187,13 @@ SCIP_RETCODE Hypergraph<T>::writeToFile(
       SCIP_Bool writeweights
     )
 {
+   SCIP* scip = GCGgetOrigprob(this->gcg);
    FILE* file;
    file = fdopen(fd, "w");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 
-   SCIPinfoMessage(scip_, file, "%ld %ld\n", nodes.size()+dummynodes, hedges.size());
+   SCIPinfoMessage(scip, file, "%ld %ld\n", nodes.size()+dummynodes, hedges.size());
 
    for( size_t i = 0; i < hedges.size(); ++i )
    {
@@ -201,13 +202,13 @@ SCIP_RETCODE Hypergraph<T>::writeToFile(
 
       if( writeweights )
       {
-         SCIPinfoMessage(scip_, file, "%d ", graph->getWeight((int)i));
+         SCIPinfoMessage(scip, file, "%d ", graph->getWeight((int)i));
       }
       for( int j = 0; j < nneighbors; ++j )
       {
-         SCIPinfoMessage(scip_, file, "%d ", computeNodeId(neighbors[j])+1);
+         SCIPinfoMessage(scip, file, "%d ", computeNodeId(neighbors[j])+1);
       }
-      SCIPinfoMessage(scip_, file, "\n");
+      SCIPinfoMessage(scip, file, "\n");
    }
 
    return SCIP_OKAY;

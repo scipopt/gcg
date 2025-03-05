@@ -49,13 +49,13 @@ extern "C" {
 /** creates the handler for masterbranch constraints and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeConshdlrMasterbranch(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** creates and captures a masterbranch constraint */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateConsMasterbranch(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
    const char*           name,               /**< name of the constraint */
    SCIP_NODE*            node,               /**< node at which the constraint should be created */

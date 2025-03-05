@@ -38,7 +38,8 @@
 
 
 #include "scip/scip.h"
-#include "gcg/def.h"
+#include "gcg/gcg.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +48,7 @@ extern "C" {
 /** creates the original separator and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeSepaOriginal(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** returns the array of original cuts in the original problem saved in the separator data */

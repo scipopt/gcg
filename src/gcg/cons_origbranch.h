@@ -47,7 +47,7 @@ extern "C" {
 /** creates the handler for origbranch constraints and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeConshdlrOrigbranch(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** creates and captures a origbranch constraint */

@@ -54,7 +54,7 @@ using std::tr1::unordered_map;
 #include <utility>
 #include "gcg/gcg.h"
 
-#include "gcg/def.h"
+
 #include "gcg/class_partialdecomp.h"
 #include "gcg/class_conspartition.h"
 #include "gcg/class_varpartition.h"
@@ -109,6 +109,7 @@ class DETPROBDATA
 { /*lint -esym(1712,DETPROBDATA)*/
 
 private:
+   GCG* gcg;                                             /**< GCG data structure */
    SCIP* scip;                                           /**< SCIP data structure */
    std::vector<PARTIALDECOMP*> openpartialdecs;          /**< vector of open partialdecs */
    std::vector<PARTIALDECOMP*> finishedpartialdecs;      /**< vector of finished partialdecs */
@@ -189,7 +190,7 @@ public:
     */
    GCG_EXPORT
    DETPROBDATA(
-      SCIP* scip,
+      GCG* gcgstruct,
       SCIP_Bool _originalProblem
       );
 
@@ -345,6 +346,13 @@ public:
    std::vector<int>& getConssForVar(
       int varIndex /**< index of the variable to be considered */
       );
+
+   /**
+    * @brief returns the corresponding gcg data structure
+    * @return the corresponding gcg data structure
+    */
+   GCG_EXPORT
+   GCG* getGcg();
 
    /**
     * @brief determines all partialdecs from current (open) partialdec data structure

@@ -61,6 +61,7 @@
 /** primal heuristic data */
 struct SCIP_HeurData
 {
+   GCG*                  gcg;                /**< GCG data structure */
    /* parameters */
    int                   mincolumns;         /**< minimum number of columns to regard in the master problem */
 
@@ -84,7 +85,7 @@ struct SCIP_HeurData
  */
 static
 SCIP_RETCODE initializeStartsol(
-   SCIP*                 scip,
+   GCG*                  gcg,
    SCIP_SOL*             mastersol,
    SCIP_SOL*             origsol,
    int*                  blocknr,
@@ -94,6 +95,7 @@ SCIP_RETCODE initializeStartsol(
    SCIP_Bool*            success
    )
 {
+   SCIP* masterprob;
    SCIP* origprob;
    SCIP_VAR** mastervars;
    SCIP_Real* mastervals;
@@ -104,21 +106,23 @@ SCIP_RETCODE initializeStartsol(
    int j;
    int k;
 
+   masterprob = GCGgetMasterprob(gcg);
+
    /* get original problem */
-   origprob = GCGmasterGetOrigprob(scip);
+   origprob = GCGgetOrigprob(gcg);
    assert(origprob != NULL);
 
    /* get variable data of the master problem */
-   SCIP_CALL( SCIPgetVarsData(scip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
    assert(nmastervars >= 0);
 
    /* get number of blocks */
-   nblocks = GCGgetNPricingprobs(origprob);
+   nblocks = GCGgetNPricingprobs(gcg);
    assert( nblocks >= 0 );
 
    /* get master LP solution values */
-   SCIP_CALL( SCIPallocBufferArray(scip, &mastervals, nmastervars) );
-   SCIP_CALL( SCIPgetSolVals(scip, NULL, nmastervars, mastervars, mastervals) );
+   SCIP_CALL( SCIPallocBufferArray(masterprob, &mastervals, nmastervars) );
+   SCIP_CALL( SCIPgetSolVals(masterprob, NULL, nmastervars, mastervars, mastervals) );
 
    *nmastercands = 0;
    *success = TRUE;
@@ -143,8 +147,8 @@ SCIP_RETCODE initializeStartsol(
 
       /* get solution value, its integer part and its fractionality */
       solval = mastervals[i];
-      roundval = SCIPfeasFloor(scip, solval);
-      frac = SCIPfeasFrac(scip, solval);
+      roundval = SCIPfeasFloor(masterprob, solval);
+      frac = SCIPfeasFrac(masterprob, solval);
 
       /* get blocknr and corresponding original variables */
       block = GCGvarGetBlock(mastervar);
@@ -162,13 +166,13 @@ SCIP_RETCODE initializeStartsol(
       {
          assert(block >= 0);
 
-         if( SCIPisFeasPositive(scip, roundval) )
+         if( SCIPisFeasPositive(masterprob, roundval) )
          {
             SCIPdebugMessage("  -> (block %d) select ray master variable %s (%d times)\n",
                block, SCIPvarGetName(mastervar), (int) roundval);
 
             /* set master solution value to rounded down solution */
-            SCIP_CALL( SCIPsetSolVal(scip, mastersol, mastervar, roundval) );
+            SCIP_CALL( SCIPsetSolVal(masterprob, mastersol, mastervar, roundval) );
 
             /* loop over all original variables contained in the current master variable */
             for( j = 0; j < norigvars; ++j )
@@ -181,21 +185,21 @@ SCIP_RETCODE initializeStartsol(
                origval = origvals[j];
                assert(GCGvarIsOriginal(origvar));
 
-               if( SCIPisZero(scip, origval) )
+               if( SCIPisZero(masterprob, origval) )
                   continue;
 
-               assert(!SCIPisZero(scip, origval));
+               assert(!SCIPisZero(masterprob, origval));
 
                /* the original variable is a linking variable: just transfer the solution value of the direct copy (this is done later) */
                if( GCGoriginalVarIsLinking(origvar) )
                   continue;
 
                /* increase the corresponding value */
-               SCIP_CALL( SCIPincSolVal(scip, origsol, origvar, origval * roundval) );
+               SCIP_CALL( SCIPincSolVal(masterprob, origsol, origvar, origval * roundval) );
             }
 
             /* if the master variable is fractional, add it as a candidate */
-            if( !SCIPisFeasFracIntegral(scip, frac) )
+            if( !SCIPisFeasFracIntegral(masterprob, frac) )
             {
                mastercands[*nmastercands] = i;
                candfracs[*nmastercands] = frac;
@@ -230,9 +234,9 @@ SCIP_RETCODE initializeStartsol(
          /* if the variable should be integral but is not, add rounded down value;
           * otherwise, add (possibly fractional) value */
          if( (vartype == SCIP_VARTYPE_BINARY || vartype == SCIP_VARTYPE_INTEGER )
-               && !SCIPisFeasFracIntegral(scip, frac) )
+               && !SCIPisFeasFracIntegral(masterprob, frac) )
          {
-            SCIP_CALL( SCIPsetSolVal(scip, mastersol, mastervar, roundval) );
+            SCIP_CALL( SCIPsetSolVal(masterprob, mastersol, mastervar, roundval) );
             SCIP_CALL( SCIPsetSolVal(origprob, origsol, origvar, roundval) );
             mastercands[*nmastercands] = i;
             candfracs[*nmastercands] = frac;
@@ -240,7 +244,7 @@ SCIP_RETCODE initializeStartsol(
          }
          else
          {
-            SCIP_CALL( SCIPsetSolVal(scip, mastersol, mastervar, solval) );
+            SCIP_CALL( SCIPsetSolVal(masterprob, mastersol, mastervar, solval) );
             SCIP_CALL( SCIPsetSolVal(origprob, origsol, origvar, solval) );
          }
       }
@@ -248,10 +252,10 @@ SCIP_RETCODE initializeStartsol(
       /* then, treat master variables representing extreme points and rays */
       else
       {
-         if( !SCIPisFeasZero(scip, roundval) )
+         if( !SCIPisFeasZero(masterprob, roundval) )
          {
             /* set master solution value to rounded down solution */
-            SCIP_CALL( SCIPsetSolVal(scip, mastersol, mastervar, roundval) );
+            SCIP_CALL( SCIPsetSolVal(masterprob, mastersol, mastervar, roundval) );
 
             SCIPdebugMessage("  -> (block %d) select master variable %s (%d times)\n",
                   block, SCIPvarGetName(mastervar), (int) roundval);
@@ -267,7 +271,7 @@ SCIP_RETCODE initializeStartsol(
                assert(GCGvarIsOriginal(origvar));
 
                /* if the variable is zero, nothing happens */
-               if( SCIPisZero(scip, origval) )
+               if( SCIPisZero(masterprob, origval) )
                   continue;
 
                /* linking variables are treated differently; if the variable already has been assigned a value,
@@ -298,7 +302,7 @@ SCIP_RETCODE initializeStartsol(
                      linkingmastervar = GCGoriginalVarGetMastervars(origvar)[0];
                      assert(linkingmastervar != NULL);
                      SCIP_CALL( SCIPsetSolVal(origprob, origsol, origvar, origval) );
-                     SCIP_CALL( SCIPsetSolVal(scip, mastersol, linkingmastervar, origval) );
+                     SCIP_CALL( SCIPsetSolVal(masterprob, mastersol, linkingmastervar, origval) );
                   }
                   /* otherwise, exclude the current master variable, if the point has a different value for it */
                   else
@@ -353,7 +357,7 @@ SCIP_RETCODE initializeStartsol(
          }
 
          /* if the master variable is fractional, add it as a candidate */
-         if( !SCIPisFeasFracIntegral(scip, frac) )
+         if( !SCIPisFeasFracIntegral(masterprob, frac) )
          {
             mastercands[*nmastercands] = i;
             candfracs[*nmastercands] = frac;
@@ -362,7 +366,7 @@ SCIP_RETCODE initializeStartsol(
       }
    }
 
-   SCIPfreeBufferArray(scip, &mastervals);
+   SCIPfreeBufferArray(masterprob, &mastervals);
 
    return SCIP_OKAY;
 }
@@ -474,7 +478,6 @@ SCIP_DECL_HEURFREE(heurFreeRelaxcolsel)
 static
 SCIP_DECL_HEURINIT(heurInitRelaxcolsel)
 {  /*lint --e{715}*/
-   SCIP* origprob;
    SCIP_HEURDATA* heurdata;
    int nblocks;
 
@@ -483,16 +486,12 @@ SCIP_DECL_HEURINIT(heurInitRelaxcolsel)
    assert(heur != NULL);
    assert(scip != NULL);
 
-   /* get original problem */
-   origprob = GCGmasterGetOrigprob(scip);
-   assert(origprob != NULL);
-
    /* get heuristic's data */
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
 
    /* get number of blocks */
-   nblocks = GCGgetNPricingprobs(origprob);
+   nblocks = GCGgetNPricingprobs(heurdata->gcg);
 
    heurdata->lastncols = 0;
 
@@ -566,13 +565,13 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
    assert(scip != NULL);
    assert(result != NULL);
 
-   /* get original problem */
-   origprob = GCGmasterGetOrigprob(scip);
-   assert(origprob != NULL);
-
    /* get heuristic's data */
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
+
+   /* get original problem */
+   origprob = GCGgetOrigprob(heurdata->gcg);
+   assert(origprob != NULL);
 
    *result = SCIP_DELAYED;
 
@@ -600,7 +599,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
    SCIPdebugMessage("Executing Relaxation Based Column Selection heuristic (nmastervars = %d) ...\n", nmastervars);
 
    /* get number of blocks */
-   nblocks = GCGgetNPricingprobs(origprob);
+   nblocks = GCGgetNPricingprobs(heurdata->gcg);
    assert(nblocks >= 0);
 
    /* allocate memory and create working solutions */
@@ -622,7 +621,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
    /* initialize working original solution as transformation of rounded down master LP solution
     * and get the candidate master variables for rounding up */
    SCIPdebugMessage("initializing starting solution...\n");
-   SCIP_CALL( initializeStartsol(scip, mastersol, origsol, blocknr,
+   SCIP_CALL( initializeStartsol(heurdata->gcg, mastersol, origsol, blocknr,
          mastercands, candfracs, &nmastercands, &success) );
 
    if( !success )
@@ -671,7 +670,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
 
             /* consider only variables whose block is not already full
              * or copied master variables */
-            if( block == -1 || blocknr[block] < GCGgetNIdenticalBlocks(origprob, block) )
+            if( block == -1 || blocknr[block] < GCGgetNIdenticalBlocks(heurdata->gcg, block) )
             {
                mastervar = tmpvar;
                candidx = i;
@@ -893,7 +892,7 @@ SCIP_DECL_HEUREXEC(heurExecRelaxcolsel)
       {
          int nidentblocks;
 
-         nidentblocks = GCGgetNIdenticalBlocks(origprob, i);
+         nidentblocks = GCGgetNIdenticalBlocks(heurdata->gcg, i);
 
          /* in case the solution is feasible but the block is not full,
           * we need a zero solution for this block in order to generate
@@ -968,25 +967,27 @@ TERMINATE:
 
 /** creates the relaxation based column selection primal heuristic and includes it in SCIP */
 SCIP_RETCODE GCGincludeHeurRelaxcolsel(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_HEURDATA* heurdata;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
    /* create relaxation based column selection primal heuristic data */
-   SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
+   SCIP_CALL( SCIPallocMemory(masterprob, &heurdata) );
    heurdata->zerovars = NULL;
    heurdata->maxzerovars = 0;
+   heurdata->gcg = gcg;
 
    /* include primal heuristic */
-   SCIP_CALL( SCIPincludeHeur(scip, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
+   SCIP_CALL( SCIPincludeHeur(masterprob, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, HEUR_TIMING, HEUR_USESSUBSCIP,
          heurCopyRelaxcolsel, heurFreeRelaxcolsel, heurInitRelaxcolsel, heurExitRelaxcolsel,
          heurInitsolRelaxcolsel, heurExitsolRelaxcolsel, heurExecRelaxcolsel,
          heurdata) );
 
    /* add relaxation based column selection primal heuristic parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/relaxcolsel/mincolumns",
+   SCIP_CALL( SCIPaddIntParam(masterprob, "heuristics/relaxcolsel/mincolumns",
          "minimum number of columns to regard in the master problem",
          &heurdata->mincolumns, FALSE, DEFAULT_MINCOLUMNS, 1, INT_MAX, NULL, NULL) );
 

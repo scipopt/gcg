@@ -48,7 +48,7 @@ private:
 
 public:
    ColumnGraph(
-      SCIP*                 scip,              /**< SCIP data structure */
+      GCG*                  gcg,               /**< GCG data structure */
       Weights               w                  /**< weights for the given graph */
       );
    virtual ~ColumnGraph();

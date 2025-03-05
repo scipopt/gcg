@@ -112,7 +112,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDensemasterconss)
    char decinfo[SCIP_MAXSTRLEN];
 
    SCIP_CLOCK* temporaryClock;
-
+   SCIP* origprob = GCGgetOrigprob(gcg);
    gcg::DETPROBDATA* detprobdata;
    gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec;
    std::stringstream decdesc;
@@ -124,8 +124,8 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDensemasterconss)
 
    detprobdata = partialdecdetectiondata->detprobdata;
 
-   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+   SCIP_CALL_ABORT( SCIPcreateClock(origprob, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
 
    lastindex =  maxratio * detprobdata->getNConss();
    /* fix open conss that have a) type of the current subset or b) decomp info ONLY_MASTER as master conss */
@@ -157,20 +157,20 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDensemasterconss)
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, decdesc.str().c_str());
    partialdec->addDetectorChainInfo(decinfo);
 
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+   SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock ) );
 
-   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 1) );
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(origprob, temporaryClock);
+   SCIP_CALL( SCIPallocMemoryArray(origprob, &(partialdecdetectiondata->newpartialdecs), 1) );
    partialdecdetectiondata->nnewpartialdecs  = 1;
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, "dec_densemasterconss found %d new partialdec \n", partialdecdetectiondata->nnewpartialdecs  );
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_HIGH, NULL, "dec_densemasterconss found %d new partialdec \n", partialdecdetectiondata->nnewpartialdecs  );
 
    partialdecdetectiondata->newpartialdecs[0] = partialdec;
-   partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
+   partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(origprob, temporaryClock));
    // we used the provided partialdec -> prevent deletion
    partialdecdetectiondata->workonpartialdec = NULL;
 
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT(SCIPfreeClock(origprob, &temporaryClock) );
 
    *result = SCIP_SUCCESS;
 
@@ -184,12 +184,13 @@ GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveDensemasterconss)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, TRUE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE ) );
 
    return SCIP_OKAY;
 }
@@ -200,12 +201,13 @@ GCG_DECL_SETPARAMDEFAULT(setParamDefaultDensemasterconss)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLED) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLEDFINISHING ) );
 
    return SCIP_OKAY;
 }
@@ -215,12 +217,13 @@ GCG_DECL_SETPARAMFAST(setParamFastDensemasterconss)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE ) );
 
 
    return SCIP_OKAY;
@@ -233,7 +236,7 @@ GCG_DECL_SETPARAMFAST(setParamFastDensemasterconss)
 
 /** creates the handler for densemasterconss detector and includes it in SCIP */
 SCIP_RETCODE GCGincludeDetectorDensemasterconss(
-   SCIP*                scip                 /**< SCIP data structure */
+   GCG*                 gcg                  /**< GCG data structure */
    )
 {
    GCG_DETECTORDATA* detectordata;
@@ -242,7 +245,7 @@ SCIP_RETCODE GCGincludeDetectorDensemasterconss(
    detectordata = NULL;
 
    SCIP_CALL(
-      GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
+      GCGincludeDetector(gcg, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
                          DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata,
                          freeDensemasterconss, initDensemasterconss, exitDensemasterconss, propagatePartialdecDensemasterconss, finishPartialdecDensemasterconss, detectorPostprocessPartialdecDensemasterconss, setParamAggressiveDensemasterconss, setParamDefaultDensemasterconss, setParamFastDensemasterconss));
 

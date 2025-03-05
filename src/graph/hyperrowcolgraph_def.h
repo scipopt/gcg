@@ -46,9 +46,9 @@
 namespace gcg {
 template <class T>
 HyperrowcolGraph<T>::HyperrowcolGraph(
-   SCIP*                 scip,              /**< SCIP data structure */
+   GCG*                  gcgstruct,         /**< GCG data structure */
    Weights               w                  /**< weights for the given graph */
-): MatrixGraph<T>(scip, w),graph(scip)
+): MatrixGraph<T>(gcgstruct, w),graph(gcgstruct)
 {
    this->graphiface = &graph;
    this->name = std::string("hyperrowcol");
@@ -81,6 +81,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromMatrix(
    int i;
    int j;
    SCIP_Bool success;
+   SCIP* scip = GCGgetOrigprob(this->gcg);
 
    assert(conss != NULL);
    assert(vars != NULL);
@@ -117,7 +118,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromMatrix(
       SCIP_VAR **curvars = NULL;
 
       int ncurvars;
-      SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars, &success) );
+      SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &ncurvars, &success) );
       assert(success);
       if( ncurvars == 0 )
          continue;
@@ -126,8 +127,8 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromMatrix(
        * may work as is, as we are copying the constraint later regardless
        * if there are variables in it or not
        */
-      SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars, ncurvars) );
-      SCIP_CALL( SCIPgetConsVars(this->scip_, conss[i], curvars, ncurvars, &success) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+      SCIP_CALL( SCIPgetConsVars(scip, conss[i], curvars, ncurvars, &success) );
       assert(success);
 
       /** @todo skip all variables that have a zero coeffient or where all coefficients add to zero */
@@ -138,7 +139,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromMatrix(
          SCIP_VAR* var;
          int varIndex;
 
-         if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+         if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
             var = SCIPvarGetProbvar(curvars[j]);
          else
             var = curvars[j];
@@ -159,7 +160,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createFromMatrix(
 
          this->nnonzeroes++;
       }
-      SCIPfreeBufferArray(this->scip_, &curvars);
+      SCIPfreeBufferArray(scip, &curvars);
    }
 
    SCIP_CALL( this->graph.flush() );
@@ -281,11 +282,12 @@ SCIP_RETCODE HyperrowcolGraph<T>::writeToFile(
    )
 {
    FILE* file;
+   SCIP* scip = GCGgetOrigprob(this->gcg);
    file = fdopen(fd, "wx");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 
-   SCIPinfoMessage(this->scip_, file, "%d %d %d\n", this->nvars+this->nconss, this->nnonzeroes+this->dummynodes, edgeweights ? 1 :0);
+   SCIPinfoMessage(scip, file, "%d %d %d\n", this->nvars+this->nconss, this->nnonzeroes+this->dummynodes, edgeweights ? 1 :0);
 
    for( int i = 0; i < this->nvars+this->nconss; ++i )
    {
@@ -293,13 +295,13 @@ SCIP_RETCODE HyperrowcolGraph<T>::writeToFile(
       int nneighbors = graph.getNNeighbors(i);
       if( edgeweights )
       {
-         SCIPinfoMessage(this->scip_, file, "%d ", graph.getWeight(i));
+         SCIPinfoMessage(scip, file, "%d ", graph.getWeight(i));
       }
       for( int j = 0; j < nneighbors; ++j )
       {
-         SCIPinfoMessage(this->scip_, file, "%d ",neighbors[j]+1-this->nvars-this->nconss);
+         SCIPinfoMessage(scip, file, "%d ",neighbors[j]+1-this->nvars-this->nconss);
       }
-      SCIPinfoMessage(this->scip_, file, "\n");
+      SCIPinfoMessage(scip, file, "\n");
    }
 
    if( !fclose(file) )
@@ -388,19 +390,19 @@ SCIP_RETCODE HyperrowcolGraph<T>::createDecompFromPartition(
 {
    int nblocks;
    SCIP_HASHMAP* constoblock = NULL;
-
+   SCIP* scip = GCGgetOrigprob(this->gcg);
    int* nsubscipconss = NULL;
    int i;
    SCIP_CONS** conss = NULL;
    SCIP_Bool emptyblocks = FALSE;
    std::vector<int> partition = graph.getPartition();
-   conss = SCIPgetConss(this->scip_);
+   conss = SCIPgetConss(scip);
 
    nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
-   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
 
-   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), this->nconss) );
 
    /* assign constraints to partition */
    for( i = 0; i < this->nconss; i++ )
@@ -435,15 +437,15 @@ SCIP_RETCODE HyperrowcolGraph<T>::createDecompFromPartition(
 
    if( !emptyblocks )
    {
-      SCIP_CALL( GCGdecompCreate(this->scip_, decomp) );
-      SCIP_CALL( GCGfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
+      SCIP_CALL( GCGdecompCreate(this->gcg, decomp) );
+      SCIP_CALL( GCGfilloutDecompFromConstoblock(this->gcg, *decomp, constoblock, nblocks, FALSE) );
    }
    else {
       SCIPhashmapFree(&constoblock);
       *decomp = NULL;
    }
 
-   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   SCIPfreeBufferArray(scip, &nsubscipconss);
    return SCIP_OKAY;
 }
 
@@ -456,7 +458,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createPartialdecFromPartition(
 {
    int nblocks;
    SCIP_HASHMAP* constoblock = NULL;
-
+   SCIP* scip = GCGgetOrigprob(this->gcg);
    int *nsubscipconss = NULL;
    int i;
    SCIP_CONS **conss = NULL;
@@ -467,13 +469,13 @@ SCIP_RETCODE HyperrowcolGraph<T>::createPartialdecFromPartition(
       return SCIP_INVALIDDATA;
 
    partition = graph.getPartition();
-   conss = SCIPgetConss(this->scip_);
+   conss = SCIPgetConss(scip);
 
    nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
-   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
 
-   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), this->nconss) );
 
    /* assign constraints to partition */
    for( i = 0; i < this->nconss; i++ )
@@ -511,12 +513,12 @@ SCIP_RETCODE HyperrowcolGraph<T>::createPartialdecFromPartition(
       bool original = detprobdata->isAssignedToOrigProb();
       if( firstpartialdec != NULL )
       {
-         (*firstpartialdec) = new PARTIALDECOMP(this->scip_, original);
+         (*firstpartialdec) = new PARTIALDECOMP(this->gcg, original);
          SCIP_CALL((*firstpartialdec)->filloutPartialdecFromConstoblock(constoblock, nblocks));
       }
       if( secondpartialdec != NULL )
       {
-         (*secondpartialdec) = new PARTIALDECOMP(this->scip_, original);
+         (*secondpartialdec) = new PARTIALDECOMP(this->gcg, original);
          SCIP_CALL((*secondpartialdec)->filloutBorderFromConstoblock(constoblock, nblocks));
          for( int col = 0; col < (*firstpartialdec)->getNLinkingvars(); ++col )
          {
@@ -538,7 +540,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createPartialdecFromPartition(
       }
    }
 
-   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   SCIPfreeBufferArray(scip, &nsubscipconss);
    return SCIP_OKAY;
 }
 
@@ -552,7 +554,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createPartialdecFromPartition(
 {
    int nblocks;
    SCIP_HASHMAP* constoblock = NULL;
-
+   SCIP* scip = GCGgetOrigprob(this->gcg);
    int* nsubscipconss = NULL;
    int i;
    SCIP_Bool emptyblocks = FALSE;
@@ -574,10 +576,10 @@ SCIP_RETCODE HyperrowcolGraph<T>::createPartialdecFromPartition(
    std::vector<int> partition = graph.getPartition();
 
    nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
-   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
 
-   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), this->nconss) );
 
    //fillout conssForGraph
    vector<int> conssForGraph; /** stores the conss included by the graph */
@@ -663,7 +665,7 @@ SCIP_RETCODE HyperrowcolGraph<T>::createPartialdecFromPartition(
          (*secondpartialdec) = NULL;
    }
 
-   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   SCIPfreeBufferArray(scip, &nsubscipconss);
    return SCIP_OKAY;
 }
 

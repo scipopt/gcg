@@ -39,7 +39,7 @@
 
 #include "gcg/type_decomp.h"
 #include "scip/scip.h"
-#include "gcg/def.h"
+
 #include "gcg/struct_vardata.h"
 
 #ifdef __cplusplus
@@ -245,7 +245,7 @@ SCIP_RETCODE GCGoriginalVarAddCoef(
 /** adds variable to a new block, making a linkingvariable out of it, if necessary */
 GCG_EXPORT
 SCIP_RETCODE GCGoriginalVarAddBlock(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             var,                /**< var that is added to a block */
    int                   newblock,           /**< the new block the variable will be in */
    int                   nblocks,            /**< total number of pricing problems */
@@ -546,7 +546,7 @@ SCIP_RETCODE GCGcreateMasterVar(
 /** creates initial master variables and the vardata */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateInitialMasterVar(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             var,                /**< original variable */
    SCIP_VAR**            newvar              /**< pointer to store new variable */
    );

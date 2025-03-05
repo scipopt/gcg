@@ -39,7 +39,7 @@
 
 
 #include "scip/scip.h"
-#include "gcg/def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,7 +59,7 @@ SCIP_RETCODE GCGcreateRootMasterDialog(
 /** includes or updates the master dialog menus in GCG */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeDialogMaster(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

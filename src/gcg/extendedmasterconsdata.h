@@ -36,7 +36,7 @@
 #ifndef GCG_EXTENDEDMASTERCONSDATA_H_
 #define GCG_EXTENDEDMASTERCONSDATA_H_
 
-#include "gcg/def.h"
+
 
 #include "gcg/pricer_gcg.h"
 #include "gcg/type_extendedmasterconsdata.h"
@@ -52,7 +52,7 @@ extern "C" {
 
 /** update the extended master cons with the new dual value */
 SCIP_RETCODE GCGextendedmasterconsUpdateDualValue(
-   SCIP*                         masterscip,             /**< master scip */
+   GCG*                          gcg,                    /**< master scip */
    GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata, /**< extended master cons data */
    SCIP_Real                     dualvalue               /**< dual value */
    );
@@ -65,7 +65,7 @@ SCIP_RETCODE GCGpricingmodificationApply(
 
 /** apply all pricing modifications */
 SCIP_RETCODE GCGextendedmasterconsApplyPricingModifications(
-   SCIP*                         masterscip,             /**< master scip */
+   GCG*                          gcg,                    /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata  /**< extended master cons data */
    );
 
@@ -77,7 +77,7 @@ SCIP_RETCODE GCGpricingmodificationUndo(
 
 /** undo all pricing modifications */
 SCIP_RETCODE GCGextendedmasterconsUndoPricingModifications(
-   SCIP*                         masterscip,             /**< master scip */
+   GCG*                          gcg,                    /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata  /**< extended master cons data */
    );
 

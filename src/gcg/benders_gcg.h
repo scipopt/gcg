@@ -37,7 +37,7 @@
 #define __SCIP_BENDERS_GCG_H__
 
 
-#include "gcg/def.h"
+#include "gcg/gcg.h"
 #include "scip/scip.h"
 #include "scip/bendersdefcuts.h"
 
@@ -51,8 +51,7 @@ extern "C" {
  */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeBendersGcg(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP*                 origprob            /**< the SCIP instance of the original problem */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /**@addtogroup BENDERS-GCG
@@ -62,14 +61,14 @@ SCIP_RETCODE GCGincludeBendersGcg(
 
 /** returns the last relaxation solution */
 GCG_EXPORT
-SCIP_SOL* SCIPbendersGetRelaxSol(
+SCIP_SOL* GCGbendersGetRelaxSol(
    SCIP_BENDERS*         benders             /**< the Benders' decomposition structure */
    );
 
-/** returns the original problem for the given master problem */
+/** returns the GCG data structure */
 GCG_EXPORT
-SCIP* GCGbendersGetOrigprob(
-   SCIP*                 masterprob          /**< the master problem SCIP instance */
+GCG* GCGbendersGetGcg(
+   SCIP_BENDERS*         benders             /**< the Benders' decomposition structure */
    );
 
 /** @} */

@@ -99,6 +99,11 @@ struct RefInput
 };
 typedef struct RefInput REFINPUT;
 
+struct SCIP_ReaderData
+{
+   GCG*                  gcg;                /**< GCG data structure */
+};
+
 static const char delimchars[] = " \f\n\r\t\v";
 static const char tokenchars[] = "-+:<>=";
 static const char commentchars[] = "\\";
@@ -564,12 +569,13 @@ SCIP_RETCODE readREFFile(
    const char*           filename            /**< name of the input file */
    )
 {
-
+   SCIP_READERDATA* readerdata;
    assert(scip != NULL);
    assert(reader != NULL);
    assert(refinput != NULL);
    assert(filename != NULL);
 
+   readerdata = SCIPreaderGetData(reader);
    if( SCIPgetStage(scip) < SCIP_STAGE_TRANSFORMED )
       SCIP_CALL( SCIPtransformProb(scip) );
 
@@ -622,7 +628,7 @@ SCIP_RETCODE readREFFile(
    SCIPfclose(refinput->file);
 
    /* copy information to decomp */
-   SCIP_CALL_QUIET( GCGfilloutDecompFromHashmaps(scip, decomp, refinput->vartoblock, refinput->constoblock, refinput->nblocks, FALSE) );
+   SCIP_CALL_QUIET( GCGfilloutDecompFromHashmaps(readerdata->gcg, decomp, refinput->vartoblock, refinput->constoblock, refinput->nblocks, FALSE) );
 
    GCGdecompSetPresolved(decomp, FALSE);
    GCGdecompSetDetector(decomp, NULL);
@@ -641,7 +647,7 @@ SCIP_RETCODE writeREFFile(
 {
    SCIP_HASHMAP *cons2origindex;
    GCG_DECOMP* decomp;
-
+   SCIP_READERDATA* readerdata;
    SCIP_CONS** conss;
    int nconss;
    SCIP_CONS*** subscipconss;
@@ -653,11 +659,13 @@ SCIP_RETCODE writeREFFile(
    assert(reader != NULL);
    assert(file != NULL);
 
-   decomp = GCGgetBestDecomp(scip, TRUE);
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
+   decomp = GCGgetBestDecomp(readerdata->gcg, TRUE);
 
    if( decomp == NULL )
    {
-      decomp = GCGgetStructDecomp(scip);
+      decomp = GCGgetStructDecomp(readerdata->gcg);
    }
 
    if( decomp == NULL )
@@ -717,7 +725,7 @@ SCIP_RETCODE writeREFFile(
    }
    SCIPhashmapFree(&cons2origindex);
 
-   GCGdecompFree(scip, &decomp);
+   GCGdecompFree(readerdata->gcg, &decomp);
 
    return SCIP_OKAY;
 }
@@ -728,7 +736,17 @@ SCIP_RETCODE writeREFFile(
  */
 
 /** destructor of reader to free user data (called when SCIP is exiting) */
-#define readerFreeRef NULL
+static
+SCIP_DECL_READERFREE(readerFreeRef)
+{
+   SCIP_READERDATA* readerdata;
+   
+   assert(scip != NULL);
+   assert(reader != NULL);
+   readerdata = SCIPreaderGetData(reader);
+   SCIPfreeMemory(scip, &readerdata);
+   return SCIP_OKAY;
+}
 
 /** problem reading method of reader */
 static
@@ -762,13 +780,19 @@ SCIP_DECL_READERWRITE(readerWriteRef)
 
 /** includes the ref file reader in SCIP */
 SCIP_RETCODE GCGincludeReaderRef(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
-   assert(scip != NULL);
-   /* include lp reader */
-   SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
-         NULL, readerFreeRef, readerReadRef, readerWriteRef, NULL) );
+   SCIP_READERDATA* readerdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
+   
+   SCIP_CALL( SCIPallocMemory(origprob, &readerdata) );
+   readerdata->gcg = gcg;
+   
+   /* include reader */
+   SCIP_CALL( SCIPincludeReader(origprob, READER_NAME, READER_DESC, READER_EXTENSION,
+         NULL, readerFreeRef, readerReadRef, readerWriteRef, readerdata) );
 
    return SCIP_OKAY;
 }
@@ -786,10 +810,14 @@ SCIP_RETCODE SCIPreadRef(
    REFINPUT refinput;
    GCG_DECOMP* decomp;
    int i;
+   SCIP_READERDATA* readerdata;
 #ifdef SCIP_DEBUG
    SCIP_VAR** vars;
    int nvars;
 #endif
+
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
 
    /* initialize REF input data */
    refinput.file = NULL;
@@ -819,13 +847,13 @@ SCIP_RETCODE SCIPreadRef(
    SCIP_CALL( SCIPhashmapCreate(&refinput.constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
    /* read the file */
-   SCIP_CALL( GCGdecompCreate(scip, &decomp) );
+   SCIP_CALL( GCGdecompCreate(readerdata->gcg, &decomp) );
 
    retcode = readREFFile(scip, reader, &refinput, decomp, filename);
 
    if( retcode == SCIP_OKAY )
    {
-      SCIP_CALL( GCGconshdlrDecompAddPreexistingDecomp(scip, decomp) );
+      SCIP_CALL( GCGconshdlrDecompAddPreexistingDecomp(readerdata->gcg, decomp) );
       SCIPdebugMessage("Read %d/%d conss in ref-file\n", refinput.totalreadconss, refinput.totalconss);
       SCIPdebugMessage("Assigned %d variables to %d blocks.\n", refinput.nassignedvars, refinput.nblocks);
 #ifdef SCIP_DEBUG
@@ -841,7 +869,7 @@ SCIP_RETCODE SCIPreadRef(
 #endif
    }
 
-   SCIP_CALL( GCGdecompFree(scip, &decomp) );
+   SCIP_CALL( GCGdecompFree(readerdata->gcg, &decomp) );
 
    /* free dynamically allocated memory */
    SCIPfreeMemoryArray(scip, &refinput.token);

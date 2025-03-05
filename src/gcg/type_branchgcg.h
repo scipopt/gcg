@@ -62,25 +62,25 @@ typedef enum GCG_BoundType GCG_BOUNDTYPE;
  *  should perform changes to the current node's problem due to the branchdata
  *
  *  input:
- *  - scip            : SCIP main data structure of the master problem
+ *  - gcg             : GCG main data structure
  *  - branchdata      : the branching data
  */
-#define GCG_DECL_BRANCHACTIVEMASTER(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata)
+#define GCG_DECL_BRANCHACTIVEMASTER(x) SCIP_RETCODE x (GCG* gcg, GCG_BRANCHDATA* branchdata)
 
 /** deactivation method for branchrule, called when a node in the master problem is deactivated,
  *  should undo changes to the current node's problem due to the branchdata
  *
  *  input:
- *  - scip            : SCIP main data structure of the master problem
+ *  - gcg             : GCG main data structure
  *  - branchdata      : the branching data
  */
-#define GCG_DECL_BRANCHDEACTIVEMASTER(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata)
+#define GCG_DECL_BRANCHDEACTIVEMASTER(x) SCIP_RETCODE x (GCG* gcg, GCG_BRANCHDATA* branchdata)
 
 /** propagation method for branchrule, called when a node in the master problem is propagated,
  *  should perform propagation at the current node due to the branchdata
  *
  *  input:
- *  - scip            : SCIP main data structure of the master problem
+ *  - gcg             : GCG main data structure
  *  - branchdata      : the branching data
  *  - node            : the activated node
  *  - result          : pointer to store the result of the propagation call
@@ -93,45 +93,45 @@ typedef enum GCG_BoundType GCG_BOUNDTYPE;
  *  - SCIP_DELAYED    : the propagator was skipped, but should be called again
 
  */
-#define GCG_DECL_BRANCHPROPMASTER(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, SCIP_RESULT* result)
+#define GCG_DECL_BRANCHPROPMASTER(x) SCIP_RETCODE x (GCG* gcg, GCG_BRANCHDATA* branchdata, SCIP_RESULT* result)
 
 /** method for branchrule, called when the master LP is solved at one node,
  *  can store pseudocosts for the branching decisions
  *
  *  input:
- *  - scip            : SCIP main data structure of the original problem
+ *  - gcg             : GCG main data structure
  *  - branchdata      : the branching data
  *  - newlowerbound   : the new local lower bound
  *
  */
-#define GCG_DECL_BRANCHMASTERSOLVED(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, SCIP_Real newlowerbound)
+#define GCG_DECL_BRANCHMASTERSOLVED(x) SCIP_RETCODE x (GCG* gcg, GCG_BRANCHDATA* branchdata, SCIP_Real newlowerbound)
 
 /** frees branching data of an origbranch constraint (called when the origbranch constraint is deleted)
  *
  *  input:
- *    scip            : SCIP main data structure of the original problem
+ *    gcg             : GCG main data structure
  *    branchdata      : pointer to the branching data to free
  *    origbranch      : true iff an origbranch triggered this call
  *    force           : branch data must be deleted if true
  */
-#define GCG_DECL_BRANCHDATADELETE(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA** branchdata, SCIP_Bool origbranch, SCIP_Bool force)
+#define GCG_DECL_BRANCHDATADELETE(x) SCIP_RETCODE x (GCG* gcg, GCG_BRANCHDATA** branchdata, SCIP_Bool origbranch, SCIP_Bool force)
 
 /** notify the branching rule that a new mastervariable was created while this node was active
  *
  *  input:
- *    scip            : SCIP main data structure of the original problem
+ *    gcg             : GCG main data structure
  *    branchdata      : the branching data
  *    mastervar       : pointer to the new master variable
  */
-#define GCG_DECL_BRANCHNEWCOL(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, SCIP_VAR* mastervar)
+#define GCG_DECL_BRANCHNEWCOL(x) SCIP_RETCODE x (GCG* gcg, GCG_BRANCHDATA* branchdata, SCIP_VAR* mastervar)
 
 /** get the extendedmasterconsdata created by this branching rule, if any
  *
  *  input:
- *    scip            : SCIP main data structure of the original problem
+ *    gcg             : GCG main data structure
  *    branchdata      : the branching data
  */
-#define GCG_DECL_BRANCHGETEXTENDEDMASTERCONS(x) SCIP_RETCODE x (SCIP* scip, GCG_BRANCHDATA* branchdata, GCG_EXTENDEDMASTERCONSDATA** extendedmasterconsdata)
+#define GCG_DECL_BRANCHGETEXTENDEDMASTERCONS(x) SCIP_RETCODE x (GCG* gcg, GCG_BRANCHDATA* branchdata, GCG_EXTENDEDMASTERCONSDATA** extendedmasterconsdata)
 
 #ifdef __cplusplus
 }

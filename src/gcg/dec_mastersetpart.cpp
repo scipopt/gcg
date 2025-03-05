@@ -95,10 +95,10 @@ struct GCG_DetectorData
 static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetpart)
 {
    *result = SCIP_DIDNOTFIND;
-
+   SCIP* origprob = GCGgetOrigprob(gcg);
    SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+   SCIP_CALL_ABORT( SCIPcreateClock(origprob, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
 
    SCIP_CONS* cons;
 
@@ -109,7 +109,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetpart)
    for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
    {
       cons = partialdecdetectiondata->detprobdata->getCons(*itr);
-      if( GCGconsGetType(scip, cons) == setpartitioning )
+      if( GCGconsGetType(origprob, cons) == setpartitioning )
       {
           itr = partialdec->fixConsToMaster(itr);
       }
@@ -120,17 +120,17 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetpart)
    }
 
    partialdec->sort();
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+   SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock ) );
 
-   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 1) );
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(origprob, temporaryClock);
+   SCIP_CALL( SCIPallocMemoryArray(origprob, &(partialdecdetectiondata->newpartialdecs), 1) );
    partialdecdetectiondata->newpartialdecs[0] = partialdec;
    partialdecdetectiondata->nnewpartialdecs = 1;
-   partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
+   partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(origprob, temporaryClock));
    partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(DEC_NAME);
    // we used the provided partialdec -> prevent deletion
    partialdecdetectiondata->workonpartialdec = NULL;
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT(SCIPfreeClock(origprob, &temporaryClock) );
 
    *result = SCIP_SUCCESS;
 
@@ -152,7 +152,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetpart)
 
 /** creates the handler for mastersetpart detector and includes it in SCIP */
 SCIP_RETCODE GCGincludeDetectorMastersetpart(
-   SCIP*                   scip                    /**< SCIP data structure */
+   GCG*                    gcg                     /**< GCG data structure */
    )
 {
    GCG_DETECTORDATA* detectordata;
@@ -161,7 +161,7 @@ SCIP_RETCODE GCGincludeDetectorMastersetpart(
    detectordata = NULL;
 
    SCIP_CALL(
-      GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeMastersetpart, initMastersetpart, exitMastersetpart, propagatePartialdecMastersetpart, finishPartialdecMastersetpart, detectorPostprocessPartialdecMastersetpart, setParamAggressiveMastersetpart, setParamDefaultMastersetpart, setParamFastMastersetpart));
+      GCGincludeDetector(gcg, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeMastersetpart, initMastersetpart, exitMastersetpart, propagatePartialdecMastersetpart, finishPartialdecMastersetpart, detectorPostprocessPartialdecMastersetpart, setParamAggressiveMastersetpart, setParamDefaultMastersetpart, setParamFastMastersetpart));
 
    /**@todo add mastersetpart detector parameters */
 

@@ -40,8 +40,7 @@
 #define GCG_READER_GP_H__
 
 #include "scip/scip.h"
-#include "gcg/def.h"
-#include "gcg/type_decomp.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,13 +60,13 @@ typedef enum GPOutputFormat GP_OUTPUT_FORMAT;
  * @returns SCIP status */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeReaderGp(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /* Writes a visualization for the given partialdec */
 GCG_EXPORT
 SCIP_RETCODE GCGwriteGpVisualizationFormat(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    char* filename,         /**< filename (including path) to write to */
    char* outputname,       /**< filename for compiled output file */
    int partialdecid,       /**< id of partialdec to visualize */
@@ -78,7 +77,7 @@ SCIP_RETCODE GCGwriteGpVisualizationFormat(
  * @returns SCIP status */
 GCG_EXPORT
 SCIP_RETCODE GCGwriteGpVisualization(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    char* filename,         /**< filename (including path), location of the output*/
    char* outputname,       /**< outputname is the name of the file for the compiled gnuplot output file */
    int partialdecid             /**< id of partialdec to visualize */
@@ -89,7 +88,7 @@ SCIP_RETCODE GCGwriteGpVisualization(
  * */
 GCG_EXPORT
 SCIP_RETCODE GCGWriteGpDecompMatrix(
-   SCIP*                 scip,               /**< scip data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    const char*           filename,           /**< filename the output should be written to (including directory) */
    const char*           workfolder,         /**< directory in which should be worked */
    SCIP_Bool             originalmatrix      /**< should the original (or transformed) matrix be written */

@@ -45,12 +45,12 @@ namespace gcg {
 
 /** constructor */
 VarPartition::VarPartition(
-   SCIP*          _scip,
+   GCG*           gcgstruct,
    const char*    givenName,
    int            givenNClasses,
    int            givenNVars
 ) :
-   IndexPartition(_scip, givenName, givenNClasses, givenNVars)
+   IndexPartition(gcgstruct, givenName, givenNClasses, givenNVars)
 {
 
 }
@@ -183,7 +183,7 @@ VarPartition* VarPartition::reduceClasses(int givenMaxNumber)
 
    /* create new VarPartition */
    newName << getName() << "-red-to-" << givenMaxNumber;
-   newPartition = new VarPartition(scip, newName.str().c_str(), givenMaxNumber, getNVars());
+   newPartition = new VarPartition(gcg, newName.str().c_str(), givenMaxNumber, getNVars());
 
    /* reassign vars */
    for( int i = 0; i < newPartition->getNVars(); ++i)

@@ -73,10 +73,10 @@ GCG_DECL_SCORECALC(scoreCalcMaxwhite)
 {
    SCIP_Real borderareascore;
 
-   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
+   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(gcg, partialdecid);
 
    SCIP_Real blockareascore = partialdec->calcBlockAreaScore();
-   borderareascore = partialdec->getScore(GCGconshdlrDecompFindScore(scip, "border area"));
+   borderareascore = partialdec->getScore(GCGconshdlrDecompFindScore(gcg, "border area"));
 
    SCIP_Real maxwhitescore = blockareascore + borderareascore - 1.;
 
@@ -97,13 +97,13 @@ GCG_DECL_SCORECALC(scoreCalcMaxwhite)
 
 /** creates the max white score and includes it in SCIP */
 SCIP_RETCODE GCGincludeScoreMaxwhite(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_SCOREDATA* scoredata = NULL;
 
    SCIP_CALL( 
-      GCGincludeScore(scip, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata, 
+      GCGincludeScore(gcg, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata, 
          scoreFreeMaxwhite, scoreCalcMaxwhite) );
 
    return SCIP_OKAY;
