@@ -55,7 +55,7 @@ typedef enum Blockingtype BLOCKINGTYPE;
 
 /** creates the stairheur detector and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorStairheur(
+SCIP_RETCODE GCGincludeDetectorStairheur(
       SCIP*              scip                /**< SCIP data structure */
    );
 

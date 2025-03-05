@@ -118,7 +118,7 @@ static DEC_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecXyz)
  */
 
 /** creates the handler for xyz detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorXyz(
+SCIP_RETCODE GCGincludeDetectorXyz(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

@@ -45,7 +45,7 @@ extern "C" {
 
 /** creates the xyz detector and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorXyz(
+SCIP_RETCODE GCGincludeDetectorXyz(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates the Restricted Master primal heuristic and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeHeurRestmaster(
+SCIP_RETCODE GCGincludeHeurRestmaster(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

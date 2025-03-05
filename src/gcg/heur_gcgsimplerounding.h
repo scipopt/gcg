@@ -47,7 +47,7 @@ extern "C" {
 
 /** creates the GCG simple rounding heuristic and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeHeurGcgsimplerounding(
+SCIP_RETCODE GCGincludeHeurGcgsimplerounding(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

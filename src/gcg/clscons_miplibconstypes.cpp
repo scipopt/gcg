@@ -515,7 +515,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify)
  * classifier specific interface methods
  */
 
-SCIP_RETCODE SCIPincludeConsClassifierMiplibConstypes(
+SCIP_RETCODE GCGincludeConsClassifierMiplibConstypes(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

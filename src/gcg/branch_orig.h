@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates the branching on original variable branching rule and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeBranchruleOrig(
+SCIP_RETCODE GCGincludeBranchruleOrig(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

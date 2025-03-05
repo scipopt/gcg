@@ -1601,7 +1601,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
  */
 
 /** creates the basis separator and includes it in SCIP */
-SCIP_RETCODE SCIPincludeSepaBasis(
+SCIP_RETCODE GCGincludeSepaBasis(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

@@ -45,7 +45,7 @@ extern "C" {
 
 /** creates the handler for constype detector and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorConstype(
+SCIP_RETCODE GCGincludeDetectorConstype(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

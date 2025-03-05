@@ -4774,7 +4774,7 @@ SCIP_RETCODE SCIPconshdlrDecompRepairConsNames(
 }
 
 
-SCIP_RETCODE SCIPincludeConshdlrDecomp(
+SCIP_RETCODE GCGincludeConshdlrDecomp(
    SCIP*                 scip
    )
 {

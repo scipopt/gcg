@@ -591,7 +591,7 @@ SCIP_RETCODE branchExtern(
       }
       else if( branchruledata->usepsstrong )
       {
-         SCIP_CALL( SCIPgetRelpsprobBranchVar(masterscip, branchcands, branchcandssol, npriobranchcands,
+         SCIP_CALL( GCGgetRelpsprobBranchVar(masterscip, branchcands, branchcandssol, npriobranchcands,
                npriobranchcands, result, &branchvar) );
          assert(branchvar != NULL || *result == SCIP_CUTOFF);
          assert(*result == SCIP_DIDNOTRUN || *result == SCIP_CUTOFF);
@@ -992,7 +992,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
  */
 
 /** creates the branching on original variable branching rule and includes it in SCIP */
-SCIP_RETCODE SCIPincludeBranchruleOrig(
+SCIP_RETCODE GCGincludeBranchruleOrig(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

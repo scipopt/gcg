@@ -316,7 +316,7 @@ GCG_DECL_SETPARAMFAST(setParamFastPostprocess)
  */
 
 /** creates the handler for postprocess detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorPostprocess(
+SCIP_RETCODE GCGincludeDetectorPostprocess(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

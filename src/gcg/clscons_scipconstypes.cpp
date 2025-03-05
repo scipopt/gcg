@@ -185,7 +185,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
  */
 
 /** creates the handler for XYZ classifier and includes it in SCIP */
-SCIP_RETCODE SCIPincludeConsClassifierScipConstypes(
+SCIP_RETCODE GCGincludeConsClassifierScipConstypes(
    SCIP *scip                /**< SCIP data structure */
    )
 {

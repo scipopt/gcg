@@ -83,7 +83,7 @@ SCIP_RETCODE GCGincludeDivingHeurMaster(
 
 /** creates event handler for masterdiving event */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeEventHdlrMasterdiving(
+SCIP_RETCODE GCGincludeEventHdlrMasterdiving(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

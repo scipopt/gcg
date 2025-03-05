@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates the empty LP branching rule and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeBranchruleEmpty(
+SCIP_RETCODE GCGincludeBranchruleEmpty(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

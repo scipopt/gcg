@@ -54,7 +54,7 @@ SCIP_RETCODE GCGconsClassifierGamssymbolAddEntry(
 
 /** creates the gamssymbol classifier and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeConsClassifierGamssymbol(
+SCIP_RETCODE GCGincludeConsClassifierGamssymbol(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

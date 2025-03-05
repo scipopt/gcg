@@ -2302,7 +2302,7 @@ SCIP_DECL_EVENTEXEC(eventExecOrigvarbound)
 
 
 /** creates the handler for masterbranch constraints and includes it in SCIP */
-SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
+SCIP_RETCODE GCGincludeConshdlrMasterbranch(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

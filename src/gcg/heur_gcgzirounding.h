@@ -48,7 +48,7 @@ extern "C" {
 
 /** creates the GCG zirounding primal heuristic and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeHeurGcgzirounding(
+SCIP_RETCODE GCGincludeHeurGcgzirounding(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

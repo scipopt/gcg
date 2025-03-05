@@ -45,7 +45,7 @@ extern "C" {
 #endif
 
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeVarClassifierObjValues(
+SCIP_RETCODE GCGincludeVarClassifierObjValues(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

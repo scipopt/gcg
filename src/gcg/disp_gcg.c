@@ -1183,7 +1183,7 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputOcuts)
  */
 
 /** includes the default display columns in SCIP */
-SCIP_RETCODE SCIPincludeDispGcg(
+SCIP_RETCODE GCGincludeDispGcg(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

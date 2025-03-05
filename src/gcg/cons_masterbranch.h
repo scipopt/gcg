@@ -48,7 +48,7 @@ extern "C" {
 
 /** creates the handler for masterbranch constraints and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeConshdlrMasterbranch(
+SCIP_RETCODE GCGincludeConshdlrMasterbranch(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

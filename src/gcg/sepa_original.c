@@ -362,7 +362,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
  */
 
 /** creates the original separator and includes it in SCIP */
-SCIP_RETCODE SCIPincludeSepaOriginal(
+SCIP_RETCODE GCGincludeSepaOriginal(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates RINS primal heuristic and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeHeurGcgrins(
+SCIP_RETCODE GCGincludeHeurGcgrins(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

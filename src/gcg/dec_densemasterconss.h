@@ -45,7 +45,7 @@ extern "C" {
 
 /** creates the handler for densemasterconss detector and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorDensemasterconss(
+SCIP_RETCODE GCGincludeDetectorDensemasterconss(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

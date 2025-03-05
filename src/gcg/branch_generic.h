@@ -72,7 +72,7 @@ typedef struct GCG_Strip GCG_STRIP;
 
 /** creates the generic branching rule and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeBranchruleGeneric(
+SCIP_RETCODE GCGincludeBranchruleGeneric(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

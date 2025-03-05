@@ -49,7 +49,7 @@ extern "C"
 
 /** creates the xyz branching rule and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeBranchruleBPStrong(
+SCIP_RETCODE GCGincludeBranchruleBPStrong(
     SCIP *scip /**< SCIP data structure */
 );
 

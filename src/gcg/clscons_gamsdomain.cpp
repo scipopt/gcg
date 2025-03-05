@@ -223,7 +223,7 @@ SCIP_RETCODE GCGconsClassifierGamsdomainAddEntry(
 }
 
 /** creates the handler for gamsdomain classifier and includes it in SCIP */
-SCIP_RETCODE SCIPincludeConsClassifierGamsdomain(
+SCIP_RETCODE GCGincludeConsClassifierGamsdomain(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

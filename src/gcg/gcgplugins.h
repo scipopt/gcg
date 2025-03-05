@@ -45,7 +45,7 @@ extern "C" {
 
 /** includes default SCIP plugins into SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeGcgPlugins(
+SCIP_RETCODE GCGincludeGcgPlugins(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

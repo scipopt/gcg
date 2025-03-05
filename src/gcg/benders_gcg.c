@@ -728,7 +728,7 @@ SCIP_DECL_BENDERSCREATESUB(bendersCreatesubGcg)
  */
 
 /** creates the gcg Benders' decomposition and includes it in SCIP */
-SCIP_RETCODE SCIPincludeBendersGcg(
+SCIP_RETCODE GCGincludeBendersGcg(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP*                 origprob            /**< the SCIP instance of the original problem */
    )

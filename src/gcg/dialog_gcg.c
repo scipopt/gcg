@@ -1271,7 +1271,7 @@ SCIP_RETCODE createEmphasisSubmenu(
 
 /** includes or updates the GCG dialog menus in SCIP
  * @returns SCIP return code */
-SCIP_RETCODE SCIPincludeDialogGcg(
+SCIP_RETCODE GCGincludeDialogGcg(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

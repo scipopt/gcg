@@ -205,7 +205,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   SCIP_CALL( SCIPincludeDialogMaster(scip) );
+   SCIP_CALL( GCGincludeDialogMaster(scip) );
    SCIP_CALL( SCIPincludeConshdlrLinear(scip) ); /* linear must be first due to constraint upgrading */
    SCIP_CALL( SCIPincludeConshdlrAnd(scip) );
    SCIP_CALL( SCIPincludeConshdlrBounddisjunction(scip) );
@@ -225,7 +225,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludePresolBoundshift(scip) );
    SCIP_CALL( SCIPincludePresolImplics(scip) );
    SCIP_CALL( SCIPincludePresolInttobinary(scip) );
-   SCIP_CALL( SCIPincludePresolRoundbound(scip) );
+   SCIP_CALL( GCGincludePresolRoundbound(scip) );
 
 #if USEPROP
    SCIP_CALL( SCIPincludePropDualfix(scip) );
@@ -237,14 +237,14 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludePropVbounds(scip) );
 #endif
 
-   SCIP_CALL( SCIPincludeNodeselMaster(scip) );
-   SCIP_CALL( SCIPincludeConshdlrIntegralOrig(scip) );
-   SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );
-   SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
-   SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) );
-   SCIP_CALL( SCIPincludeBranchruleGeneric(scip) );
-   SCIP_CALL( SCIPincludeBranchruleBPStrong(scip) );
-   SCIP_CALL( SCIPincludeBranchruleCompBnd(scip) );
+   SCIP_CALL( GCGincludeNodeselMaster(scip) );
+   SCIP_CALL( GCGincludeConshdlrIntegralOrig(scip) );
+   SCIP_CALL( GCGincludeBranchruleRyanfoster(scip) );
+   SCIP_CALL( GCGincludeBranchruleOrig(scip) );
+   SCIP_CALL( GCGincludeBranchruleRelpsprob(scip) );
+   SCIP_CALL( GCGincludeBranchruleGeneric(scip) );
+   SCIP_CALL( GCGincludeBranchruleBPStrong(scip) );
+   SCIP_CALL( GCGincludeBranchruleCompBnd(scip) );
 
 #if USEHEURS
    SCIP_CALL( SCIPincludeHeurActconsdiving(scip) );
@@ -310,15 +310,15 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeHeurSimplerounding(scip) );
 
    /* Christian's heuristics */
-   SCIP_CALL( SCIPincludeHeurGreedycolsel(scip) );
-   SCIP_CALL( SCIPincludeEventHdlrMasterdiving(scip) );
+   SCIP_CALL( GCGincludeHeurGreedycolsel(scip) );
+   SCIP_CALL( GCGincludeEventHdlrMasterdiving(scip) );
    SCIP_CALL( GCGincludeHeurMastercoefdiving(scip) );
    SCIP_CALL( GCGincludeHeurMasterfracdiving(scip) );
    SCIP_CALL( GCGincludeHeurMasterlinesdiving(scip) );
    SCIP_CALL( GCGincludeHeurMastervecldiving(scip) );
-   SCIP_CALL( SCIPincludeHeurRelaxcolsel(scip) );
-   SCIP_CALL( SCIPincludeHeurRestmaster(scip) );
-   SCIP_CALL( SCIPincludeHeurSetcover(scip) );
+   SCIP_CALL( GCGincludeHeurRelaxcolsel(scip) );
+   SCIP_CALL( GCGincludeHeurRestmaster(scip) );
+   SCIP_CALL( GCGincludeHeurSetcover(scip) );
 #endif
 
 #if USESEPA
@@ -333,14 +333,14 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeSepaRedcost(scip) );
    SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
 #endif
-   SCIP_CALL( SCIPincludeSepaOriginal(scip) );
+   SCIP_CALL( GCGincludeSepaOriginal(scip) );
    SCIP_CALL( SCIPincludeCutselHybrid(scip) );
-   SCIP_CALL( SCIPincludeDispMaster(scip) );
+   SCIP_CALL( GCGincludeDispMaster(scip) );
    SCIP_CALL( SCIPdebugIncludeProp(scip) ); /*lint !e506 !e774*/
    SCIP_CALL( SCIPincludeTableDefault(scip) );
 
    /* Jonas' stuff */
-   SCIP_CALL( SCIPincludeSepaBasis(scip) );
+   SCIP_CALL( GCGincludeSepaBasis(scip) );
 
    SCIP_CALL( GCGincludeSolverKnapsack(scip) );
    SCIP_CALL( GCGincludeSolverMip(scip) );
@@ -359,12 +359,12 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 #endif
 
    /* include masterbranch constraint handler */
-   SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
+   SCIP_CALL( GCGincludeConshdlrMasterbranch(scip) );
 
-   SCIP_CALL( SCIPincludeEventHdlrBestsol(scip) );
-   SCIP_CALL( SCIPincludeEventHdlrRelaxsol(scip) );
-   SCIP_CALL( SCIPincludeEventHdlrSolvingstats(scip) );
-   SCIP_CALL( SCIPincludeEventHdlrDisplay(scip) );
+   SCIP_CALL( GCGincludeEventHdlrBestsol(scip) );
+   SCIP_CALL( GCGincludeEventHdlrRelaxsol(scip) );
+   SCIP_CALL( GCGincludeEventHdlrSolvingstats(scip) );
+   SCIP_CALL( GCGincludeEventHdlrDisplay(scip) );
 
    return SCIP_OKAY;
 }

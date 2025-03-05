@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates the handler for the integrality constraint and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
+SCIP_RETCODE GCGincludeConshdlrIntegralOrig(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

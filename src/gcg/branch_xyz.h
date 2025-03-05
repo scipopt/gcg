@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates the xyz branching rule and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeBranchruleXyz(
+SCIP_RETCODE GCGincludeBranchruleXyz(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

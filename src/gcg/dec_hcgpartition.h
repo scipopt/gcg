@@ -48,7 +48,7 @@ extern "C" {
 /** creates the arrowheur detector and includes it in SCIP */
 /** creates the hcgpartition presolver and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorHcgpartition(
+SCIP_RETCODE GCGincludeDetectorHcgpartition(
    SCIP* scip                 /**< SCIP data structure */
    );
 

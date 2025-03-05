@@ -2098,7 +2098,7 @@ SCIP_DECL_BRANCHINIT(branchInitCompBnd)
  */
 
 /** creates the compbnd branching rule and includes it in SCIP */
-SCIP_RETCODE SCIPincludeBranchruleCompBnd(
+SCIP_RETCODE GCGincludeBranchruleCompBnd(
    SCIP*                 scip                /**< SCIP data structure */
 )
 {

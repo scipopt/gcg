@@ -206,7 +206,7 @@ SCIP_DECL_EVENTEXEC(eventExecBestsol)
 #endif
 
 /** creates event handler for bestsol event */
-SCIP_RETCODE SCIPincludeEventHdlrBestsol(
+SCIP_RETCODE GCGincludeEventHdlrBestsol(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

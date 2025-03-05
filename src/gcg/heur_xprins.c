@@ -1655,7 +1655,7 @@ TERMINATE:
  */
 
 /** creates the Extreme Point RINS primal heuristic and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurXprins(
+SCIP_RETCODE GCGincludeHeurXprins(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

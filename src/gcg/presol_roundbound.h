@@ -50,7 +50,7 @@ extern "C" {
 
 /** creates the roundbound presolver and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludePresolRoundbound(
+SCIP_RETCODE GCGincludePresolRoundbound(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

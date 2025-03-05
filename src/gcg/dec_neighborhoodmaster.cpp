@@ -253,8 +253,9 @@ GCG_DECL_SETPARAMFAST(setParamFastNeighborhoodmaster)
  */
 
 /** creates the handler for neighborhoodmaster detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorNeighborhoodmaster(SCIP* scip /**< SCIP data structure */
-)
+SCIP_RETCODE GCGincludeDetectorNeighborhoodmaster(
+   SCIP*                      scip                    /**< SCIP data structure */
+   )
 {
    GCG_DETECTORDATA* detectordata;
 

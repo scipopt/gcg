@@ -4646,7 +4646,7 @@ SCIP_RETCODE ObjPricerGcg::createPricestore()
 
 /** creates the GCG variable pricer and includes it in SCIP */
 extern "C"
-SCIP_RETCODE SCIPincludePricerGcg(
+SCIP_RETCODE GCGincludePricerGcg(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP*                 origprob            /**< SCIP data structure of the original problem */
    )

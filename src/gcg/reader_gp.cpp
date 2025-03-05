@@ -524,7 +524,7 @@ SCIP_RETCODE GCGWriteGpDecompMatrix(
  */
 
 /* includes the gp file reader into SCIP */
-SCIP_RETCODE SCIPincludeReaderGp(
+SCIP_RETCODE GCGincludeReaderGp(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

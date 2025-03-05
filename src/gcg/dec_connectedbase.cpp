@@ -226,7 +226,7 @@ GCG_DECL_SETPARAMFAST(setParamFastConnectedbase)
  */
 
 /** creates the handler for connectedbase detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorConnectedbase(
+SCIP_RETCODE GCGincludeDetectorConnectedbase(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

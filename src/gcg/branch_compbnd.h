@@ -75,7 +75,7 @@ typedef struct ComponentBound GCG_COMPBND;
 
 /** creates the component bound branching rule and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeBranchruleCompBnd(
+SCIP_RETCODE GCGincludeBranchruleCompBnd(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

@@ -535,7 +535,7 @@ GCG_DECL_SETPARAMFAST(setParamFastDBSCAN)
  */
 
 /** creates the handler for xyz detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorDBSCAN(
+SCIP_RETCODE GCGincludeDetectorDBSCAN(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

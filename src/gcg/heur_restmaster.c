@@ -634,7 +634,7 @@ SCIP_DECL_HEUREXEC(heurExecRestmaster)
  */
 
 /** creates the Restricted Master primal heuristic and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurRestmaster(
+SCIP_RETCODE GCGincludeHeurRestmaster(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

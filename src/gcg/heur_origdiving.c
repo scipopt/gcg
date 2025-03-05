@@ -1277,7 +1277,7 @@ SCIP_RETCODE GCGincludeDivingHeurOrig(
 }
 
 /** creates event handler for origdiving event and includes it in the master problem */
-SCIP_RETCODE SCIPincludeEventHdlrOrigdiving(
+SCIP_RETCODE GCGincludeEventHdlrOrigdiving(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

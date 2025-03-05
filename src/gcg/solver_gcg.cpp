@@ -304,7 +304,7 @@ SCIP_RETCODE buildProblem(
    }
 #endif
 
-   SCIP_CALL( SCIPincludeGcgPlugins(subgcg) );
+   SCIP_CALL( GCGincludeGcgPlugins(subgcg) );
    (void)SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_subgcg", SCIPgetProbName(pricingprob) );
 
    SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(subgcg), SCIPgetNOrigVars(pricingprob)) );

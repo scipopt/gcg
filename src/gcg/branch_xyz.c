@@ -333,7 +333,7 @@ GCG_DECL_BRANCHGETEXTENDEDMASTERCONS(branchGetExtendedMasterConsXyz)
  */
 
 /** creates the xyz branching rule and includes it in SCIP */
-SCIP_RETCODE SCIPincludeBranchruleXyz(
+SCIP_RETCODE GCGincludeBranchruleXyz(
    SCIP*                 scip                /**< SCIP data structure */
 )
 {

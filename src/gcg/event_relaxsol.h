@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates event handler for relaxsol event */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeEventHdlrRelaxsol(
+SCIP_RETCODE GCGincludeEventHdlrRelaxsol(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

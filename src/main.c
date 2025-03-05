@@ -38,9 +38,9 @@
 #include "scip/scip.h"
 #include "scip/scipdefplugins.h"
 #include "scip/scipshell.h"
+
 #include "gcg/gcgplugins.h"
 #include "gcg/cons_decomp.h"
-
 #include "gcg/relax_gcg.h"
 #include "gcg/cons_decomp.h"
 #include "gcg/gcg.h"
@@ -122,7 +122,7 @@ SCIP_RETCODE fromCommandLine(
 /** evaluates command line parameters and runs GCG appropriately in the given SCIP instance
  * @returns SCIP return code */
 static
-SCIP_RETCODE SCIPprocessGCGShellArguments(
+SCIP_RETCODE GCGprocessGCGShellArguments(
    SCIP*                 scip,               /**< SCIP data structure */
    int                   argc,               /**< number of shell parameters */
    char**                argv,               /**< array with shell parameters */
@@ -341,7 +341,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
       }
 
       /**************
-       * Start SCIP *
+       * Start GCG *
        **************/
 
       if( probname != NULL )
@@ -395,7 +395,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
 /** runs the interactive shell
  * @returns SCIP return code */
 static
-SCIP_RETCODE SCIPrunGCGShell(
+SCIP_RETCODE GCGrunGCGShell(
    int                   argc,               /**< number of shell parameters */
    char**                argv,               /**< array with shell parameters */
    const char*           defaultsetname      /**< name of default settings file */
@@ -413,12 +413,12 @@ SCIP_RETCODE SCIPrunGCGShell(
 
 
    /* include coloring plugins */
-   SCIP_CALL( SCIPincludeGcgPlugins(scip) );
+   SCIP_CALL( GCGincludeGcgPlugins(scip) );
 
    /**********************************
     * Process command line arguments *
     **********************************/
-   SCIP_CALL( SCIPprocessGCGShellArguments(scip, argc, argv, defaultsetname) );
+   SCIP_CALL( GCGprocessGCGShellArguments(scip, argc, argv, defaultsetname) );
 
 
    /********************
@@ -442,7 +442,7 @@ main(
 {
   SCIP_RETCODE retcode;
 
-  retcode = SCIPrunGCGShell(argc, argv, "gcg.set");
+  retcode = GCGrunGCGShell(argc, argv, "gcg.set");
 
   if( retcode != SCIP_OKAY )
   {

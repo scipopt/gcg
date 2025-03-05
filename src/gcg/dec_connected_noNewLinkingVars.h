@@ -45,7 +45,7 @@ extern "C" {
 
 /** creates the handler for connected_noNewLinkingVars detector and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorConnected_noNewLinkingVars(
+SCIP_RETCODE GCGincludeDetectorConnected_noNewLinkingVars(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

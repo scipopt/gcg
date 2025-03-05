@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates the classifier for NNonzeros and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeConsClassifierNNonzeros(
+SCIP_RETCODE GCGincludeConsClassifierNNonzeros(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

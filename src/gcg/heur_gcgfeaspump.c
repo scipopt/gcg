@@ -1421,7 +1421,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgfeaspump) /*lint --e{715}*/
  */
 
 /** creates the gcgfeaspump primal heuristic and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurGcgfeaspump(
+SCIP_RETCODE GCGincludeHeurGcgfeaspump(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

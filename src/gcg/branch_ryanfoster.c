@@ -958,7 +958,7 @@ SCIP_DECL_BRANCHINIT(branchInitRyanfoster)
  */
 
 /** creates the Ryan-Foster LP braching rule and includes it in SCIP */
-SCIP_RETCODE SCIPincludeBranchruleRyanfoster(
+SCIP_RETCODE GCGincludeBranchruleRyanfoster(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

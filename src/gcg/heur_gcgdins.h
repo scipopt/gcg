@@ -50,7 +50,7 @@ extern "C" {
 
 /** creates the DINS primal heuristic and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeHeurGcgdins(
+SCIP_RETCODE GCGincludeHeurGcgdins(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

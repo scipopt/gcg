@@ -47,7 +47,7 @@ extern "C" {
 
 /** creates the setcover primal heuristic and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeHeurSetcover(
+SCIP_RETCODE GCGincludeHeurSetcover(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

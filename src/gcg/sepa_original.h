@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates the original separator and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeSepaOriginal(
+SCIP_RETCODE GCGincludeSepaOriginal(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

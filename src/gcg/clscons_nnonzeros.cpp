@@ -154,7 +154,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify)
  */
 
 /** creates the handler for classifier for Nnonzeros and includes it in SCIP */
-SCIP_RETCODE SCIPincludeConsClassifierNNonzeros(
+SCIP_RETCODE GCGincludeConsClassifierNNonzeros(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

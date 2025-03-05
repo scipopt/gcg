@@ -60,7 +60,7 @@ typedef enum GPOutputFormat GP_OUTPUT_FORMAT;
 /** Includes the gp file reader into SCIP
  * @returns SCIP status */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeReaderGp(
+SCIP_RETCODE GCGincludeReaderGp(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

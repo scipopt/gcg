@@ -63,7 +63,7 @@ SCIP_DECL_PRESOLCOPY(presolCopyRoundbound)
    assert(strcmp(SCIPpresolGetName(presol), PRESOL_NAME) == 0);
 
    /* call inclusion method of presolver */
-   SCIP_CALL( SCIPincludePresolRoundbound(scip) );
+   SCIP_CALL( GCGincludePresolRoundbound(scip) );
 
    return SCIP_OKAY;
 }
@@ -157,7 +157,7 @@ SCIP_DECL_PRESOLEXEC(presolExecRoundbound)
  */
 
 /** creates the roundbound presolver and includes it in SCIP */
-SCIP_RETCODE SCIPincludePresolRoundbound(
+SCIP_RETCODE GCGincludePresolRoundbound(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

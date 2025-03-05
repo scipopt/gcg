@@ -232,8 +232,9 @@ GCG_DECL_SETPARAMFAST(setParamFastDensemasterconss)
  */
 
 /** creates the handler for densemasterconss detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorDensemasterconss(SCIP* scip /**< SCIP data structure */
-)
+SCIP_RETCODE GCGincludeDetectorDensemasterconss(
+   SCIP*                scip                 /**< SCIP data structure */
+   )
 {
    GCG_DETECTORDATA* detectordata;
 

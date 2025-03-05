@@ -875,7 +875,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
  */
 
 /** creates the GCG zirounding primal heuristic and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurGcgzirounding(
+SCIP_RETCODE GCGincludeHeurGcgzirounding(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

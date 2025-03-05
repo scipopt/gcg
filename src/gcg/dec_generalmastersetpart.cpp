@@ -265,8 +265,9 @@ GCG_DECL_SETPARAMFAST(setParamFastGeneralmastersetpart)
  */
 
 /** creates the handler for generalmastersetpart detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorGeneralmastersetpart(SCIP* scip /**< SCIP data structure */
-)
+SCIP_RETCODE GCGincludeDetectorGeneralmastersetpart(
+   SCIP*                scip                 /**< SCIP data structure */
+   )
 {
    GCG_DETECTORDATA* detectordata;
 

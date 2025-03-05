@@ -157,7 +157,7 @@ SCIP_DECL_EVENTEXEC(eventExecRelaxsol)
 }
 
 /** creates event handler for relaxsol event */
-SCIP_RETCODE SCIPincludeEventHdlrRelaxsol(
+SCIP_RETCODE GCGincludeEventHdlrRelaxsol(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

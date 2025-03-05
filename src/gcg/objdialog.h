@@ -133,7 +133,7 @@ public:
  *       SCIP_CALL( SCIPcreate(&scip) );
  *       ...
  *       MyDialog* mydialog = new MyDialog(...);
- *       SCIP_CALL( SCIPincludeObjDialog(scip, &mydialog, FALSE) );
+ *       SCIP_CALL( GCGincludeObjDialog(scip, &mydialog, FALSE) );
  *       ...
  *       SCIP_CALL( SCIPfree(&scip) );
  *       delete mydialog;    // delete dialog AFTER SCIPfree() !
@@ -141,12 +141,12 @@ public:
  *   2. The object pointer is passed to SCIP and deleted by SCIP in the SCIPfree() call:
  *       SCIP_CALL( SCIPcreate(&scip) );
  *       ...
- *       SCIP_CALL( SCIPincludeObjDialog(scip, new MyDialog(...), TRUE) );
+ *       SCIP_CALL( GCGincludeObjDialog(scip, new MyDialog(...), TRUE) );
  *       ...
  *       SCIP_CALL( SCIPfree(&scip) );  // destructor of MyDialog is called here
  */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeObjDialog(
+SCIP_RETCODE GCGincludeObjDialog(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_DIALOG*          parentdialog,       /**< parent dialog */
    gcg::ObjDialog*       objdialog,          /**< dialog object */

@@ -158,7 +158,7 @@ SCIP_DECL_EVENTEXEC(eventExecMastersol)
 }
 
 /** creates event handler for mastersol event */
-SCIP_RETCODE SCIPincludeEventHdlrMastersol(
+SCIP_RETCODE GCGincludeEventHdlrMastersol(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

@@ -798,7 +798,7 @@ SCIP_DECL_HEUREXEC(heurExecGreedycolsel)
  */
 
 /** creates the greedy column selection primal heuristic and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurGreedycolsel(
+SCIP_RETCODE GCGincludeHeurGreedycolsel(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

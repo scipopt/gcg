@@ -934,7 +934,7 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
 
 
 /* Includes the tex file reader in SCIP */
-SCIP_RETCODE SCIPincludeReaderTex(
+SCIP_RETCODE GCGincludeReaderTex(
    SCIP*                 scip                /*< SCIP data structure */
    )
 {

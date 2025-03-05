@@ -46,7 +46,7 @@ extern "C" {
 
 /** includes the master display columns in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDispMaster(
+SCIP_RETCODE GCGincludeDispMaster(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

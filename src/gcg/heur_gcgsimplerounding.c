@@ -292,7 +292,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgsimplerounding) /*lint --e{715}*/
  */
 
 /** creates the GCG simple rounding heuristic and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurGcgsimplerounding(
+SCIP_RETCODE GCGincludeHeurGcgsimplerounding(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

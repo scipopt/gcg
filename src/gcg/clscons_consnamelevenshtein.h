@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates the scip consnames no numbers classifier and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeConsClassifierConsnameLevenshtein(
+SCIP_RETCODE GCGincludeConsClassifierConsnameLevenshtein(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

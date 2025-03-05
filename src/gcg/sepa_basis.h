@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates the basis separator and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeSepaBasis(
+SCIP_RETCODE GCGincludeSepaBasis(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

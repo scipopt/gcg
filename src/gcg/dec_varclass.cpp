@@ -393,8 +393,9 @@ GCG_DECL_SETPARAMFAST(setParamFastVarclass)
  */
 
 /** creates the handler for varclass detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorVarclass(SCIP* scip /**< SCIP data structure */
-)
+SCIP_RETCODE GCGincludeDetectorVarclass(
+   SCIP*                scip                 /**< SCIP data structure */
+   )
 {
    GCG_DETECTORDATA* detectordata;
    char setstr[SCIP_MAXSTRLEN];

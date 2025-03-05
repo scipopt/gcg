@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates the scip consnames no numbers classifier and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeConsClassifierForConsnamesDigitFreeIdentical(
+SCIP_RETCODE GCGincludeConsClassifierForConsnamesDigitFreeIdentical(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

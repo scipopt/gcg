@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates the handler for connectedbase detector and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorConnectedbase(
+SCIP_RETCODE GCGincludeDetectorConnectedbase(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

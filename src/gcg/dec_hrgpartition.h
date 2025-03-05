@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates the hrgpartition presolver and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorHrgpartition(
+SCIP_RETCODE GCGincludeDetectorHrgpartition(
    SCIP* scip                 /**< SCIP data structure */
    );
 

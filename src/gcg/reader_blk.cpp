@@ -1139,7 +1139,7 @@ SCIP_DECL_READERWRITE(readerWriteBlk)
  */
 
 /** includes the blk file reader in SCIP */
-SCIP_RETCODE SCIPincludeReaderBlk(
+SCIP_RETCODE GCGincludeReaderBlk(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

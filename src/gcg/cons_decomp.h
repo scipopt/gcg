@@ -975,7 +975,7 @@ SCIP_RETCODE SCIPconshdlrDecompRepairConsNames(
  * @returns scip return code
  */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeConshdlrDecomp(
+SCIP_RETCODE GCGincludeConshdlrDecomp(
    SCIP* scip  /**< SCIP data structure */
    );
 

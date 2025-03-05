@@ -3430,7 +3430,7 @@ SCIP_DECL_RELAXEXEC(relaxExecGcg)
  */
 
 /** creates the GCG relaxator and includes it in SCIP */
-SCIP_RETCODE SCIPincludeRelaxGcg(
+SCIP_RETCODE GCGincludeRelaxGcg(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -3475,7 +3475,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
     * master problem. The alternate master problem is initialized as the Benders' decomposition master problem.
     */
    SCIP_CALL( SCIPcreate(&(relaxdata->masterprob)) );
-   SCIP_CALL( SCIPincludePricerGcg(relaxdata->masterprob, scip) );
+   SCIP_CALL( GCGincludePricerGcg(relaxdata->masterprob, scip) );
    SCIP_CALL( GCGincludeMasterPlugins(relaxdata->masterprob) );
    SCIP_CALL( SCIPsetMessagehdlr(relaxdata->masterprob, SCIPgetMessagehdlr(scip)) );
 
@@ -3502,7 +3502,7 @@ SCIP_RETCODE SCIPincludeRelaxGcg(
     * master problem
     */
    SCIP_CALL( SCIPcreate(&(relaxdata->altmasterprob)) );
-   SCIP_CALL( SCIPincludeBendersGcg(relaxdata->altmasterprob, scip) );
+   SCIP_CALL( GCGincludeBendersGcg(relaxdata->altmasterprob, scip) );
    SCIP_CALL( GCGincludeBendersPlugins(relaxdata->altmasterprob) );
    SCIP_CALL( SCIPsetMessagehdlr(relaxdata->altmasterprob, SCIPgetMessagehdlr(scip)) );
 

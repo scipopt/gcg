@@ -222,7 +222,7 @@ GCG_DECL_SETPARAMFAST(setParamFastCompgreedily)
  */
 
 /** creates the handler for compgreedily detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorCompgreedily(
+SCIP_RETCODE GCGincludeDetectorCompgreedily(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

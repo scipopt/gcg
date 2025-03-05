@@ -761,7 +761,7 @@ SCIP_DECL_READERWRITE(readerWriteRef)
  */
 
 /** includes the ref file reader in SCIP */
-SCIP_RETCODE SCIPincludeReaderRef(
+SCIP_RETCODE GCGincludeReaderRef(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

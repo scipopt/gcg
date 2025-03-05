@@ -1617,7 +1617,7 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
 }
 
 /** creates the b&p strong-branching branching rule and includes it in SCIP */
-SCIP_RETCODE SCIPincludeBranchruleBPStrong(
+SCIP_RETCODE GCGincludeBranchruleBPStrong(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

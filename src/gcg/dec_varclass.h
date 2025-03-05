@@ -45,7 +45,7 @@ extern "C" {
 
 /** creates the handler for varclass detector and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorVarclass(
+SCIP_RETCODE GCGincludeDetectorVarclass(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

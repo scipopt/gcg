@@ -156,7 +156,7 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
  * classifier specific interface methods
  */
 
-SCIP_RETCODE SCIPincludeVarClassifierObjValues(
+SCIP_RETCODE GCGincludeVarClassifierObjValues(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

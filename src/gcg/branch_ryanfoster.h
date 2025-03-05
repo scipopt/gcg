@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates the Ryan-Foster LP braching rule and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeBranchruleRyanfoster(
+SCIP_RETCODE GCGincludeBranchruleRyanfoster(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

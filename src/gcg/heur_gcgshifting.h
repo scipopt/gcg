@@ -47,7 +47,7 @@ extern "C" {
 
 /** creates the GCG shifting heuristic with infeasibility recovering and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeHeurGcgshifting(
+SCIP_RETCODE GCGincludeHeurGcgshifting(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

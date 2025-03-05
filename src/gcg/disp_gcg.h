@@ -42,7 +42,7 @@
 
 /** includes the GCG display columns in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDispGcg(
+SCIP_RETCODE GCGincludeDispGcg(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

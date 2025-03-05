@@ -206,11 +206,11 @@ SCIP_RETCODE GCGincludeGraphEntries(
 
    (void) SCIPdialogFindEntry(graphdialog, "write", &subdialog);
    assert(subdialog != NULL);
-   SCIP_CALL( SCIPincludeObjDialog(scip, subdialog, new gcg::DialogWriteGraphs<T,G>(scip), true) );
+   SCIP_CALL( GCGincludeObjDialog(scip, subdialog, new gcg::DialogWriteGraphs<T,G>(scip), true) );
 
    (void) SCIPdialogFindEntry(graphdialog, "read", &subdialog);
    assert(subdialog != NULL);
-   SCIP_CALL( SCIPincludeObjDialog(scip, subdialog, new gcg::DialogReadGraphs<T,G >(scip), true) );
+   SCIP_CALL( GCGincludeObjDialog(scip, subdialog, new gcg::DialogReadGraphs<T,G >(scip), true) );
 
    return SCIP_OKAY;
 }
@@ -224,11 +224,11 @@ SCIP_RETCODE GCGincludeDialogsGraph(
    SCIP_DIALOG* dialog;
    SCIP_DIALOG* subdialog;
    dialog = SCIPgetRootDialog(scip);
-   SCIP_CALL( SCIPincludeObjDialog(scip, dialog, new gcg::DialogGraph(scip), TRUE) );
+   SCIP_CALL( GCGincludeObjDialog(scip, dialog, new gcg::DialogGraph(scip), TRUE) );
    (void) SCIPdialogFindEntry(dialog, "graph", &subdialog);
    assert(subdialog != NULL);
-   SCIP_CALL( SCIPincludeObjDialog(scip, subdialog, new gcg::DialogWriteGraph(scip), TRUE) );
-   SCIP_CALL( SCIPincludeObjDialog(scip, subdialog, new gcg::DialogReadPartition(scip), TRUE) );
+   SCIP_CALL( GCGincludeObjDialog(scip, subdialog, new gcg::DialogWriteGraph(scip), TRUE) );
+   SCIP_CALL( GCGincludeObjDialog(scip, subdialog, new gcg::DialogReadPartition(scip), TRUE) );
 
    SCIP_CALL( (GCGincludeGraphEntries<gcg::GraphTclique,gcg::RowGraph>(scip)) );
 #ifdef SCIP_DISABLED_CODE

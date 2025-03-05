@@ -45,7 +45,7 @@ extern "C" {
 
 /** creates the handler for postprocess detector and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorPostprocess(
+SCIP_RETCODE GCGincludeDetectorPostprocess(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

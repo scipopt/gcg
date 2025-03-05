@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates the greedy column selection primal heuristic and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeHeurGreedycolsel(
+SCIP_RETCODE GCGincludeHeurGreedycolsel(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

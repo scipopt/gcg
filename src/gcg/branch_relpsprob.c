@@ -1448,7 +1448,7 @@ SCIP_DECL_BRANCHEXITSOL(branchExitsolRelpsprob)
  */
 
 /** creates the reliable pseudo cost braching rule and includes it in SCIP */
-SCIP_RETCODE SCIPincludeBranchruleRelpsprob(
+SCIP_RETCODE GCGincludeBranchruleRelpsprob(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -1542,7 +1542,7 @@ SCIP_RETCODE SCIPincludeBranchruleRelpsprob(
 }
 
 /** execution reliability pseudo cost probing branching with the given branching candidates */
-SCIP_RETCODE SCIPgetRelpsprobBranchVar(
+SCIP_RETCODE GCGgetRelpsprobBranchVar(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_VAR**            branchcands,        /**< brancing candidates */
    SCIP_Real*            branchcandssol,     /**< solution value for the branching candidates */

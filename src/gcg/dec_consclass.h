@@ -45,7 +45,7 @@ extern "C" {
 
 /** creates the handler for consclass detector and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorConsclass(
+SCIP_RETCODE GCGincludeDetectorConsclass(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

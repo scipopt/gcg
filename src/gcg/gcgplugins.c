@@ -309,11 +309,11 @@
 
 
 /** includes default plugins for generic column generation into SCIP */
-SCIP_RETCODE SCIPincludeGcgPlugins(
+SCIP_RETCODE GCGincludeGcgPlugins(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   SCIP_CALL( SCIPincludeDialogGcg(scip) );
+   SCIP_CALL( GCGincludeDialogGcg(scip) );
 
    SCIP_CALL( SCIPincludeConshdlrAnd(scip) );
    SCIP_CALL( SCIPincludeConshdlrBounddisjunction(scip) );
@@ -474,72 +474,72 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludeCutselHybrid(scip) );
 
-   SCIP_CALL( SCIPincludeRelaxGcg(scip) );
-   SCIP_CALL( SCIPincludeReaderBlk(scip) );
+   SCIP_CALL( GCGincludeRelaxGcg(scip) );
+   SCIP_CALL( GCGincludeReaderBlk(scip) );
    SCIP_CALL( GCGincludeReaderDec(scip) );
-   SCIP_CALL( SCIPincludeReaderRef(scip) );
+   SCIP_CALL( GCGincludeReaderRef(scip) );
 #if WITH_JSON
-   SCIP_CALL( SCIPincludeReaderJDec(scip) );
+   SCIP_CALL( GCGincludeReaderJDec(scip) );
 #endif
-   SCIP_CALL( SCIPincludeBranchruleEmpty(scip) );
+   SCIP_CALL( GCGincludeBranchruleEmpty(scip) );
 
-   SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
-   SCIP_CALL( SCIPincludeEventHdlrBestsol(scip) );
-   SCIP_CALL( SCIPincludeEventHdlrMastersol(scip) );
+   SCIP_CALL( GCGincludeConshdlrOrigbranch(scip) );
+   SCIP_CALL( GCGincludeEventHdlrBestsol(scip) );
+   SCIP_CALL( GCGincludeEventHdlrMastersol(scip) );
 
    /* Visualizations */
-   SCIP_CALL( SCIPincludeReaderGp(scip) );
-   SCIP_CALL( SCIPincludeReaderTex(scip) );
-   SCIP_CALL( SCIPincludeReaderCls(scip) );
+   SCIP_CALL( GCGincludeReaderGp(scip) );
+   SCIP_CALL( GCGincludeReaderTex(scip) );
+   SCIP_CALL( GCGincludeReaderCls(scip) );
 
    /* Detectors and decompositions */
-   SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
-   SCIP_CALL( SCIPincludeDetectorConstype(scip) );
-   SCIP_CALL( SCIPincludeDetectorPostprocess(scip) );
-   SCIP_CALL( SCIPincludeDetectorConsclass(scip) );
-   SCIP_CALL( SCIPincludeDetectorDensemasterconss(scip) );
-   SCIP_CALL( SCIPincludeDetectorNeighborhoodmaster(scip) );
-   SCIP_CALL( SCIPincludeDetectorStairheur(scip) );
-   SCIP_CALL( SCIPincludeDetectorStaircaseLsp(scip) );
+   SCIP_CALL( GCGincludeConshdlrDecomp(scip) );
+   SCIP_CALL( GCGincludeDetectorConstype(scip) );
+   SCIP_CALL( GCGincludeDetectorPostprocess(scip) );
+   SCIP_CALL( GCGincludeDetectorConsclass(scip) );
+   SCIP_CALL( GCGincludeDetectorDensemasterconss(scip) );
+   SCIP_CALL( GCGincludeDetectorNeighborhoodmaster(scip) );
+   SCIP_CALL( GCGincludeDetectorStairheur(scip) );
+   SCIP_CALL( GCGincludeDetectorStaircaseLsp(scip) );
 #ifdef WITH_GSL
-   SCIP_CALL( SCIPincludeDetectorDBSCAN(scip) );
-   SCIP_CALL( SCIPincludeDetectorMST(scip) );
+   SCIP_CALL( GCGincludeDetectorDBSCAN(scip) );
+   SCIP_CALL( GCGincludeDetectorMST(scip) );
 #endif
-   SCIP_CALL( SCIPincludeDetectorCompgreedily(scip) );
-   SCIP_CALL( SCIPincludeDetectorMastersetcover(scip) );
-   SCIP_CALL( SCIPincludeDetectorMastersetpack(scip) );
-   SCIP_CALL( SCIPincludeDetectorMastersetpart(scip) );
+   SCIP_CALL( GCGincludeDetectorCompgreedily(scip) );
+   SCIP_CALL( GCGincludeDetectorMastersetcover(scip) );
+   SCIP_CALL( GCGincludeDetectorMastersetpack(scip) );
+   SCIP_CALL( GCGincludeDetectorMastersetpart(scip) );
 #if WITH_HMETIS
-   SCIP_CALL( SCIPincludeDetectorHcgpartition(scip) );
-   SCIP_CALL( SCIPincludeDetectorHrgpartition(scip) );
-   SCIP_CALL( SCIPincludeDetectorHrcgpartition(scip) );
+   SCIP_CALL( GCGincludeDetectorHcgpartition(scip) );
+   SCIP_CALL( GCGincludeDetectorHrgpartition(scip) );
+   SCIP_CALL( GCGincludeDetectorHrcgpartition(scip) );
 #endif
-   SCIP_CALL( SCIPincludeDetectorConnectedbase(scip) );
-   SCIP_CALL( SCIPincludeDetectorConnected_noNewLinkingVars(scip) );
-   SCIP_CALL( SCIPincludeDetectorGeneralmastersetpack(scip) );
-   SCIP_CALL( SCIPincludeDetectorGeneralmastersetpart(scip) );
-   SCIP_CALL( SCIPincludeDetectorGeneralmastersetcover(scip) );
-   SCIP_CALL( SCIPincludeDetectorVarclass(scip) );
+   SCIP_CALL( GCGincludeDetectorConnectedbase(scip) );
+   SCIP_CALL( GCGincludeDetectorConnected_noNewLinkingVars(scip) );
+   SCIP_CALL( GCGincludeDetectorGeneralmastersetpack(scip) );
+   SCIP_CALL( GCGincludeDetectorGeneralmastersetpart(scip) );
+   SCIP_CALL( GCGincludeDetectorGeneralmastersetcover(scip) );
+   SCIP_CALL( GCGincludeDetectorVarclass(scip) );
 
    #ifndef NO_AUT_LIB
-      SCIP_CALL( SCIPincludeDetectorIsomorphism(scip) );
+      SCIP_CALL( GCGincludeDetectorIsomorphism(scip) );
    #endif
 
 
    /* Classifiers */
-   SCIP_CALL( SCIPincludeConsClassifierNNonzeros(scip) );
-   SCIP_CALL( SCIPincludeConsClassifierScipConstypes(scip) );
-   SCIP_CALL( SCIPincludeConsClassifierMiplibConstypes(scip) );
-   SCIP_CALL( SCIPincludeConsClassifierConsnameLevenshtein(scip) );
-   SCIP_CALL( SCIPincludeConsClassifierForConsnamesDigitFreeIdentical(scip) );
-   SCIP_CALL( SCIPincludeConsClassifierGamsdomain(scip) );
-   SCIP_CALL( SCIPincludeConsClassifierGamssymbol(scip) );
+   SCIP_CALL( GCGincludeConsClassifierNNonzeros(scip) );
+   SCIP_CALL( GCGincludeConsClassifierScipConstypes(scip) );
+   SCIP_CALL( GCGincludeConsClassifierMiplibConstypes(scip) );
+   SCIP_CALL( GCGincludeConsClassifierConsnameLevenshtein(scip) );
+   SCIP_CALL( GCGincludeConsClassifierForConsnamesDigitFreeIdentical(scip) );
+   SCIP_CALL( GCGincludeConsClassifierGamsdomain(scip) );
+   SCIP_CALL( GCGincludeConsClassifierGamssymbol(scip) );
 
-   SCIP_CALL( SCIPincludeVarClassifierGamsdomain(scip) );
-   SCIP_CALL( SCIPincludeVarClassifierGamssymbol(scip) );
-   SCIP_CALL( SCIPincludeVarClassifierScipVartypes(scip) );
-   SCIP_CALL( SCIPincludeVarClassifierObjValues(scip) );
-   SCIP_CALL( SCIPincludeVarClassifierObjValueSigns(scip) );
+   SCIP_CALL( GCGincludeVarClassifierGamsdomain(scip) );
+   SCIP_CALL( GCGincludeVarClassifierGamssymbol(scip) );
+   SCIP_CALL( GCGincludeVarClassifierScipVartypes(scip) );
+   SCIP_CALL( GCGincludeVarClassifierObjValues(scip) );
+   SCIP_CALL( GCGincludeVarClassifierObjValueSigns(scip) );
 
 
    /* Scores */
@@ -555,23 +555,23 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
 
    /* Christian's heuristics */
-   SCIP_CALL( SCIPincludeEventHdlrOrigdiving(scip) );
+   SCIP_CALL( GCGincludeEventHdlrOrigdiving(scip) );
    SCIP_CALL( GCGincludeHeurGcgcoefdiving(scip) );
    SCIP_CALL( GCGincludeHeurGcgfracdiving(scip) );
    SCIP_CALL( GCGincludeHeurGcgguideddiving(scip) );
    SCIP_CALL( GCGincludeHeurGcglinesdiving(scip) );
    SCIP_CALL( GCGincludeHeurGcgpscostdiving(scip) );
    SCIP_CALL( GCGincludeHeurGcgveclendiving(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgdins(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgfeaspump(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgrins(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
-   SCIP_CALL( SCIPincludeHeurXpcrossover(scip) );
-   SCIP_CALL( SCIPincludeHeurXprins(scip) );
+   SCIP_CALL( GCGincludeHeurGcgdins(scip) );
+   SCIP_CALL( GCGincludeHeurGcgfeaspump(scip) );
+   SCIP_CALL( GCGincludeHeurGcgrens(scip) );
+   SCIP_CALL( GCGincludeHeurGcgrins(scip) );
+   SCIP_CALL( GCGincludeHeurGcgrounding(scip) );
+   SCIP_CALL( GCGincludeHeurGcgshifting(scip) );
+   SCIP_CALL( GCGincludeHeurGcgsimplerounding(scip) );
+   SCIP_CALL( GCGincludeHeurGcgzirounding(scip) );
+   SCIP_CALL( GCGincludeHeurXpcrossover(scip) );
+   SCIP_CALL( GCGincludeHeurXprins(scip) );
 
    /* Jonas' stuff */
    SCIP_CALL( SCIPsetSeparating(scip, SCIP_PARAMSETTING_OFF, TRUE) );
@@ -582,7 +582,7 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPfixParam(scip, "heuristics/clique/freq") );
    SCIP_CALL( SCIPfixParam(scip, "conflict/enable") );
 
-   SCIP_CALL( SCIPincludeDispGcg(scip) );
+   SCIP_CALL( GCGincludeDispGcg(scip) );
    SCIP_CALL( GCGincludeDialogsGraph(scip) );
    SCIP_CALL( SCIPincludeTableDefault(scip) );
 

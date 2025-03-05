@@ -1155,7 +1155,7 @@ SCIP_RETCODE GCGincludeDivingHeurMaster(
 }
 
 /** creates event handler for masterdiving event */
-SCIP_RETCODE SCIPincludeEventHdlrMasterdiving(
+SCIP_RETCODE GCGincludeEventHdlrMasterdiving(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

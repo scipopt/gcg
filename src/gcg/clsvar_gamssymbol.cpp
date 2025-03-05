@@ -212,7 +212,7 @@ SCIP_RETCODE GCGvarClassifierGamssymbolAddEntry(
 }
 
 /** creates the handler for gamssymbol classifier and includes it in SCIP */
-SCIP_RETCODE SCIPincludeVarClassifierGamssymbol(
+SCIP_RETCODE GCGincludeVarClassifierGamssymbol(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

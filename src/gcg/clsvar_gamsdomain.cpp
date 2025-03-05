@@ -226,7 +226,7 @@ SCIP_RETCODE GCGvarClassifierGamsdomainAddEntry(
 }
 
 /** creates the handler for gamsdomain classifier and includes it in SCIP */
-SCIP_RETCODE SCIPincludeVarClassifierGamsdomain(
+SCIP_RETCODE GCGincludeVarClassifierGamsdomain(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

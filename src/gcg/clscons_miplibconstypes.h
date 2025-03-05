@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates the miplibconstypes classifier and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeConsClassifierMiplibConstypes(
+SCIP_RETCODE GCGincludeConsClassifierMiplibConstypes(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

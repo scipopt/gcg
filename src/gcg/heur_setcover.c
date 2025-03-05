@@ -3160,7 +3160,7 @@ SCIP_DECL_HEUREXEC(heurExecSetcover)
  */
 
 /** creates the setcover primal heuristic and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurSetcover(
+SCIP_RETCODE GCGincludeHeurSetcover(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

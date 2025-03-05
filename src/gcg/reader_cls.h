@@ -47,7 +47,7 @@ extern "C" {
 
 /** includes the cls file reader into SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeReaderCls(
+SCIP_RETCODE GCGincludeReaderCls(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

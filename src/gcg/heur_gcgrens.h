@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates RENS primal heuristic and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeHeurGcgrens(
+SCIP_RETCODE GCGincludeHeurGcgrens(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

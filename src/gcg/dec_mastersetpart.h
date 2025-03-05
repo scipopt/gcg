@@ -45,7 +45,7 @@ extern "C" {
 
 /** creates the handler for mastersetpart detector and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorMastersetpart(
+SCIP_RETCODE GCGincludeDetectorMastersetpart(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

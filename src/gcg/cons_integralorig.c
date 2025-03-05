@@ -377,7 +377,7 @@ SCIP_DECL_CONSFREE(consFreeIntegralOrig)
  */
 
 /** creates the handler for integrality constraint and includes it in SCIP */
-SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
+SCIP_RETCODE GCGincludeConshdlrIntegralOrig(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

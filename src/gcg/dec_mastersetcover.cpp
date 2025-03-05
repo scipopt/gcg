@@ -150,8 +150,9 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetcover)
 
 
 /** creates the handler for mastersetcover detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorMastersetcover(SCIP* scip /**< SCIP data structure */
-)
+SCIP_RETCODE GCGincludeDetectorMastersetcover(
+   SCIP*                   scip                    /**< SCIP data structure */
+   )
 {
    GCG_DETECTORDATA* detectordata;
 

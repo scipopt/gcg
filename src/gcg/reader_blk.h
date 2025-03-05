@@ -60,7 +60,7 @@ extern "C" {
 
 /** includes the blk file reader into SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeReaderBlk(
+SCIP_RETCODE GCGincludeReaderBlk(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

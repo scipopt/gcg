@@ -2927,7 +2927,7 @@ SCIP_DECL_BRANCHINIT(branchInitGeneric)
 }
 
 /** creates the generic branching rule and includes it in SCIP */
-SCIP_RETCODE SCIPincludeBranchruleGeneric(
+SCIP_RETCODE GCGincludeBranchruleGeneric(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

@@ -55,7 +55,7 @@ SCIP_RETCODE GCGconsClassifierGamsdomainAddEntry(
 
 /** creates the gamsdomain classifier and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeConsClassifierGamsdomain(
+SCIP_RETCODE GCGincludeConsClassifierGamsdomain(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

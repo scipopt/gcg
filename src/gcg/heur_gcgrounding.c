@@ -764,7 +764,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
  */
 
 /** creates the GCG rounding heuristic with infeasibility recovering and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurGcgrounding(
+SCIP_RETCODE GCGincludeHeurGcgrounding(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

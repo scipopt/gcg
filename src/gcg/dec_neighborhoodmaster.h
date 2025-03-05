@@ -45,7 +45,7 @@ extern "C" {
 
 /** creates the handler for neighborhoodmasterconss detector and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorNeighborhoodmaster(
+SCIP_RETCODE GCGincludeDetectorNeighborhoodmaster(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

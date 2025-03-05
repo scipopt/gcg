@@ -1849,7 +1849,7 @@ GCG_DECL_SETPARAMFAST(setParamFastStairheur)
 /** creates the stairheur detector and includes it in SCIP */
 
 extern "C"
-SCIP_RETCODE SCIPincludeDetectorStairheur(
+SCIP_RETCODE GCGincludeDetectorStairheur(
    SCIP*                 scip              /**< SCIP data structure */
    )
 {

@@ -47,7 +47,7 @@ extern "C" {
 
 /** creates the GCG rounding heuristic with infeasibility recovering and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeHeurGcgrounding(
+SCIP_RETCODE GCGincludeHeurGcgrounding(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

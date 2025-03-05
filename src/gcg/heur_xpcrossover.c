@@ -1722,7 +1722,7 @@ TERMINATE:
  */
 
 /** creates the Extreme Point Crossover primal heuristic and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurXpcrossover(
+SCIP_RETCODE GCGincludeHeurXpcrossover(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

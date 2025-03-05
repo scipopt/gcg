@@ -263,7 +263,7 @@ GCG_DECL_SETPARAMFAST(setParamFastConstype)
  */
 
 /** creates the handler for constype detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorConstype(SCIP* scip /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorConstype(SCIP* scip /**< SCIP data structure */
 )
 {
    GCG_DETECTORDATA* detectordata;

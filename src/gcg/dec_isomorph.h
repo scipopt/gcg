@@ -45,7 +45,7 @@ extern "C" {
 
 /** creates the handler for isomorph subproblems and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorIsomorphism(
+SCIP_RETCODE GCGincludeDetectorIsomorphism(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

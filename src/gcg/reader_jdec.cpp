@@ -1441,7 +1441,7 @@ SCIP_DECL_READERWRITE(readerWriteJDec)
 }
 
 extern
-SCIP_RETCODE SCIPincludeReaderJDec(
+SCIP_RETCODE GCGincludeReaderJDec(
    SCIP*                 scip
    )
 {

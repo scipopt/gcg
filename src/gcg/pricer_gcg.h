@@ -65,7 +65,7 @@ typedef enum GCG_Pricetype GCG_PRICETYPE;
 
 /** creates the GCG variable pricer and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludePricerGcg(
+SCIP_RETCODE GCGincludePricerGcg(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP*                 origprob            /**< SCIP data structure of the original problem */
    );

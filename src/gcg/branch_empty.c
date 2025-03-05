@@ -396,7 +396,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsEmpty)
  */
 
 /** creates the empty branching rule and includes it in SCIP */
-SCIP_RETCODE SCIPincludeBranchruleEmpty(
+SCIP_RETCODE GCGincludeBranchruleEmpty(
    SCIP*                 scip                /**< SCIP data structure */
 )
 {

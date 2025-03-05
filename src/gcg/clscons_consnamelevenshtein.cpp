@@ -243,7 +243,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
  * classifier specific interface methods
  */
 
-SCIP_RETCODE SCIPincludeConsClassifierConsnameLevenshtein(
+SCIP_RETCODE GCGincludeConsClassifierConsnameLevenshtein(
    SCIP *scip                /**< SCIP data structure */
    )
 {

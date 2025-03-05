@@ -170,7 +170,7 @@ SCIP_DECL_EVENTEXEC(eventExecSolvingstats)
 }
 
 /** includes event handler for best solution found */
-SCIP_RETCODE SCIPincludeEventHdlrSolvingstats(
+SCIP_RETCODE GCGincludeEventHdlrSolvingstats(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

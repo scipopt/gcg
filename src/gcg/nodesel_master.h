@@ -47,7 +47,7 @@ extern "C" {
 
 /** creates the node selector for depth first search and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeNodeselMaster(
+SCIP_RETCODE GCGincludeNodeselMaster(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

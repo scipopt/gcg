@@ -62,7 +62,7 @@ extern "C" {
 
 /** includes the ref file reader into SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeReaderRef(
+SCIP_RETCODE GCGincludeReaderRef(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

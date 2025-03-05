@@ -54,7 +54,7 @@ extern "C" {
  *
  * @returns SCIP status */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeReaderTex(
+SCIP_RETCODE GCGincludeReaderTex(
    SCIP* scip     /**< SCIP data structure */
    );
 

@@ -56,7 +56,7 @@ extern "C" {
 
 /** creates the feaspump primal heuristic and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeHeurGcgfeaspump(
+SCIP_RETCODE GCGincludeHeurGcgfeaspump(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

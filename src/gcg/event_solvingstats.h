@@ -37,6 +37,6 @@
 
 /** includes event handler for best solution found */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeEventHdlrSolvingstats(
+SCIP_RETCODE GCGincludeEventHdlrSolvingstats(
    SCIP*                 scip                /**< SCIP data structure */
    );

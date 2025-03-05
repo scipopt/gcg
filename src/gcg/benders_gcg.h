@@ -50,7 +50,7 @@ extern "C" {
  *  @ingroup BendersIncludes
  */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeBendersGcg(
+SCIP_RETCODE GCGincludeBendersGcg(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP*                 origprob            /**< the SCIP instance of the original problem */
    );

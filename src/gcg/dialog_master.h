@@ -58,7 +58,7 @@ SCIP_RETCODE GCGcreateRootMasterDialog(
 
 /** includes or updates the master dialog menus in GCG */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDialogMaster(
+SCIP_RETCODE GCGincludeDialogMaster(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

@@ -117,7 +117,7 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
  */
 
 /** creates the handler for xyz classifier and includes it in SCIP */
-SCIP_RETCODE SCIPincludeVarClassifierXyz(
+SCIP_RETCODE GCGincludeVarClassifierXyz(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

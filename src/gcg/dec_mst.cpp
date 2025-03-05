@@ -541,7 +541,7 @@ GCG_DECL_SETPARAMFAST(setParamFastMST)
  */
 
 /** creates the handler for xyz detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorMST(
+SCIP_RETCODE GCGincludeDetectorMST(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

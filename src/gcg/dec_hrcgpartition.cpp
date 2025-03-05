@@ -806,7 +806,7 @@ GCG_DECL_SETPARAMFAST(setParamFastHrcgpartition)
 
 /** creates the hrcgpartition presolver and includes it in SCIP */
 extern "C"
-SCIP_RETCODE SCIPincludeDetectorHrcgpartition(
+SCIP_RETCODE GCGincludeDetectorHrcgpartition(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

@@ -1407,7 +1407,7 @@ GCG_DECL_SETPARAMFAST(setParamFastIsomorph)
 
 /** creates the handler for isomorph subproblems and includes it in SCIP */
 extern "C"
-SCIP_RETCODE SCIPincludeDetectorIsomorphism(
+SCIP_RETCODE GCGincludeDetectorIsomorphism(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

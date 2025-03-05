@@ -167,7 +167,7 @@ GCG_DECL_FINISHPARTIALDEC(finishPartialdecConnected_noNewLinkingVars)
  */
 
 /** creates the handler for connected_noNewLinkingVars detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorConnected_noNewLinkingVars(
+SCIP_RETCODE GCGincludeDetectorConnected_noNewLinkingVars(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

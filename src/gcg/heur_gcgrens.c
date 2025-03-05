@@ -811,7 +811,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrens)
  */
 
 /** creates GCG RENS primal heuristic and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurGcgrens(
+SCIP_RETCODE GCGincludeHeurGcgrens(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

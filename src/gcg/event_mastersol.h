@@ -45,7 +45,7 @@ extern "C" {
 
 /** creates event handler for mastersol event */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeEventHdlrMastersol(
+SCIP_RETCODE GCGincludeEventHdlrMastersol(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

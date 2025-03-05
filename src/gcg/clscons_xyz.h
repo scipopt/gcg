@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates the xyz classifier and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeConsClassifierXyz(
+SCIP_RETCODE GCGincludeConsClassifierXyz(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

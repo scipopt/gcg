@@ -387,7 +387,7 @@ GCG_DECL_SETPARAMFAST(setParamFastConsclass)
  */
 
 /** creates the handler for consclass detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorConsclass(SCIP* scip /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorConsclass(SCIP* scip /**< SCIP data structure */
 )
 {
    GCG_DETECTORDATA* detectordata;

@@ -124,7 +124,7 @@ SCIP_DECL_DIALOGEXEC(dialogExecObj)
  */
 
 /** creates the dialog for the given dialog object and includes it in SCIP */
-SCIP_RETCODE SCIPincludeObjDialog(
+SCIP_RETCODE GCGincludeObjDialog(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_DIALOG*          parentdialog,       /**< parent dialog */
    gcg::ObjDialog*       objdialog,          /**< dialog object */

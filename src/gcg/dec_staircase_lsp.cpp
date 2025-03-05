@@ -760,7 +760,7 @@ GCG_DECL_SETPARAMFAST(setParamFastStaircaseLsp)
  */
 
 /** creates the handler for staircase constraints and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorStaircaseLsp(
+SCIP_RETCODE GCGincludeDetectorStaircaseLsp(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

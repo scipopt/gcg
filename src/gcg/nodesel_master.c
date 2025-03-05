@@ -297,7 +297,7 @@ SCIP_DECL_EVENTEXEC(eventExecFocusnode)
  */
 
 /** creates the node selector for depth first search and includes it in SCIP */
-SCIP_RETCODE SCIPincludeNodeselMaster(
+SCIP_RETCODE GCGincludeNodeselMaster(
    SCIP*                 scip                /**< SCIP data structure */
 )
 {

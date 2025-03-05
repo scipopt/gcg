@@ -47,7 +47,7 @@ extern "C" {
 
 /** creates the DBSCAN presolver and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorMST(
+SCIP_RETCODE GCGincludeDetectorMST(
       SCIP*              scip                /**< SCIP data structure */
    );
 

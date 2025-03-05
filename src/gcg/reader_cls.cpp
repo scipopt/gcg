@@ -213,7 +213,7 @@ SCIP_DECL_READERWRITE(readerWriteCls)
 
 
 /** includes the cls reader into SCIP */
-SCIP_RETCODE SCIPincludeReaderCls(
+SCIP_RETCODE GCGincludeReaderCls(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {

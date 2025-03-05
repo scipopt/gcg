@@ -188,7 +188,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
  * classifier specific interface methods
  */
 
-SCIP_RETCODE SCIPincludeConsClassifierForConsnamesDigitFreeIdentical(
+SCIP_RETCODE GCGincludeConsClassifierForConsnamesDigitFreeIdentical(
    SCIP *scip                /**< SCIP data structure */
 ) {
    GCG_CLASSIFIERDATA* classifierdata = NULL;

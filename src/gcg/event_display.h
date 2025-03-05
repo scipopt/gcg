@@ -51,7 +51,7 @@ SCIP_RETCODE SCIPactivateEventHdlrDisplay(
 
 /** creates event handler for display event */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeEventHdlrDisplay(
+SCIP_RETCODE GCGincludeEventHdlrDisplay(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

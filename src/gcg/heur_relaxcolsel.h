@@ -46,7 +46,7 @@ extern "C" {
 
 /** creates the relaxation based column selection primal heuristic and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeHeurRelaxcolsel(
+SCIP_RETCODE GCGincludeHeurRelaxcolsel(
    SCIP*                 scip                /**< SCIP data structure */
    );
 
