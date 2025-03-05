@@ -37,7 +37,7 @@
 #define USESEPA 0
 #define USEPROP 1
 
-#include "masterplugins.h"
+#include "gcg/masterplugins.h"
 
 #include "scip/cons_and.h"
 #include "scip/cons_bounddisjunction.h"
@@ -118,7 +118,7 @@
 
 #include "scip/presol_implics.h"
 #include "scip/presol_inttobinary.h"
-#include "presol_roundbound.h"
+#include "gcg/presol_roundbound.h"
 #include "scip/presol_boundshift.h"
 
 #if USEPROP
@@ -144,58 +144,58 @@
 #endif
 
 /* Jonas' stuff */
-#include "sepa_basis.h"
+#include "gcg/sepa_basis.h"
 
 #include "scip/reader_cip.h"
 #include "scip/reader_lp.h"
 #include "scip/scipshell.h"
 
 /* GCG specific stuff */
-#include "pricer_gcg.h"
-#include "nodesel_master.h"
-#include "cons_masterbranch.h"
-#include "cons_integralorig.h"
-#include "sepa_original.h"
-#include "branch_ryanfoster.h"
-#include "branch_orig.h"
-#include "branch_relpsprob.h"
-#include "branch_generic.h"
-#include "branch_bpstrong.h"
-#include "branch_compbnd.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/nodesel_master.h"
+#include "gcg/cons_masterbranch.h"
+#include "gcg/cons_integralorig.h"
+#include "gcg/sepa_original.h"
+#include "gcg/branch_ryanfoster.h"
+#include "gcg/branch_orig.h"
+#include "gcg/branch_relpsprob.h"
+#include "gcg/branch_generic.h"
+#include "gcg/branch_bpstrong.h"
+#include "gcg/branch_compbnd.h"
 #include "scip/debug.h"
-#include "dialog_master.h"
-#include "disp_master.h"
-#include "solver_knapsack.h"
-#include "solver_mip.h"
-#include "event_bestsol.h"
-#include "event_relaxsol.h"
-#include "event_solvingstats.h"
-#include "event_display.h"
+#include "gcg/dialog_master.h"
+#include "gcg/disp_master.h"
+#include "gcg/solver_knapsack.h"
+#include "gcg/solver_mip.h"
+#include "gcg/event_bestsol.h"
+#include "gcg/event_relaxsol.h"
+#include "gcg/event_solvingstats.h"
+#include "gcg/event_display.h"
 
 /* Erik's GCG solver */
-#include "solver_gcg.h"
+#include "gcg/solver_gcg.h"
 
 /* Christian's heuristics */
-#include "heur_greedycolsel.h"
-#include "heur_masterdiving.h"
-#include "heur_mastercoefdiving.h"
-#include "heur_masterfracdiving.h"
-#include "heur_masterlinesdiving.h"
-#include "heur_mastervecldiving.h"
-#include "heur_relaxcolsel.h"
-#include "heur_restmaster.h"
-#include "heur_setcover.h"
+#include "gcg/heur_greedycolsel.h"
+#include "gcg/heur_masterdiving.h"
+#include "gcg/heur_mastercoefdiving.h"
+#include "gcg/heur_masterfracdiving.h"
+#include "gcg/heur_masterlinesdiving.h"
+#include "gcg/heur_mastervecldiving.h"
+#include "gcg/heur_relaxcolsel.h"
+#include "gcg/heur_restmaster.h"
+#include "gcg/heur_setcover.h"
 
 #ifdef WITH_CLIQUER
-#include "solver_cliquer.h"
+#include "gcg/solver_cliquer.h"
 #endif
 
 #ifdef WITH_CPLEXSOLVER
-#include "solver_cplex.h"
+#include "gcg/solver_cplex.h"
 #endif
 
 #ifdef WITH_HIGHS
-#include "solver_highs.h"
+#include "gcg/solver_highs.h"
 #endif
 
 #include "scip/table_default.h"

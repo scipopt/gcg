@@ -69,8 +69,8 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
-#include "type_decomp.h"
+#include "gcg/def.h"
+#include "gcg/type_decomp.h"
 
 #ifdef __cplusplus
 extern "C" {

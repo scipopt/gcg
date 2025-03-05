@@ -37,11 +37,11 @@
 #ifndef GCG_PRICER_GCG__
 #define GCG_PRICER_GCG__
 
-#include "gcgvarhistory.h"
+#include "gcg/gcgvarhistory.h"
 #include "scip/scip.h"
-#include "def.h"
-#include "type_solver.h"
-#include "type_colpool.h"
+#include "gcg/def.h"
+#include "gcg/type_solver.h"
+#include "gcg/type_colpool.h"
 
 #ifdef __cplusplus
 extern "C" {

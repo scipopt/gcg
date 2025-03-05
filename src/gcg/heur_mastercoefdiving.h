@@ -43,7 +43,7 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/def.h"
 
 #ifdef __cplusplus
 extern "C" {

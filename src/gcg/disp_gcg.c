@@ -38,12 +38,12 @@
 #include <assert.h>
 #include <string.h>
 
-#include "disp_gcg.h"
+#include "gcg/disp_gcg.h"
 #include "scip/disp_default.h"
-#include "gcg.h"
+#include "gcg/gcg.h"
 
-#include "relax_gcg.h"
-#include "pricer_gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/pricer_gcg.h"
 
 #define DISP_NAME_SOLFOUND      "solfound"
 #define DISP_DESC_SOLFOUND      "letter that indicates the heuristic, that found the solution"

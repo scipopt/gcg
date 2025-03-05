@@ -43,19 +43,19 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /* #define SCIP_DEBUG */
-#include "class_stabilization.h"
-#include "pub_extendedmasterconsdata.h"
-#include "pricer_gcg.h"
-#include "gcg.h"
-#include "pub_gcgcol.h"
-#include "pub_gcgvar.h"
-#include "sepa_original.h"
+#include "gcg/class_stabilization.h"
+#include "gcg/pub_extendedmasterconsdata.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/gcg.h"
+#include "gcg/pub_gcgcol.h"
+#include "gcg/pub_gcgvar.h"
+#include "gcg/sepa_original.h"
 #include "objscip/objscip.h"
 #include "scip/cons_linear.h"
-#include "scip_misc.h"
+#include "gcg/scip_misc.h"
 #include "scip/pub_misc.h"
 #include "scip/type_misc.h"
-#include "type_extendedmasterconsdata.h"
+#include "gcg/type_extendedmasterconsdata.h"
 #include <cstddef>
 
 namespace gcg {

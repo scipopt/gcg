@@ -40,7 +40,7 @@
 #include "scip/type_misc.h"
 #include "scip/scip.h"
 
-#include "type_gcgcol.h"
+#include "gcg/type_gcgcol.h"
 
 #ifdef __cplusplus
 extern "C" {

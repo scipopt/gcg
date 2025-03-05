@@ -35,14 +35,14 @@
 #ifndef GCG_PUB_DECOMP_H__
 #define GCG_PUB_DECOMP_H__
 
-#include "type_decomp.h"
+#include "gcg/type_decomp.h"
 #include "scip/type_scip.h"
 #include "scip/type_retcode.h"
 #include "scip/type_var.h"
 #include "scip/type_cons.h"
 #include "scip/type_misc.h"
-#include "def.h"
-#include "type_detector.h"
+#include "gcg/def.h"
+#include "gcg/type_detector.h"
 
 #ifdef __cplusplus
 extern "C" {

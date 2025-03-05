@@ -40,11 +40,11 @@
 #define GCG_RELAX_GCG_H__
 
 #include "scip/scip.h"
-#include "def.h"
-#include "type_branchgcg.h"
-#include "type_decomp.h"
-#include "type_parameter.h"
-#include "type_locks.h"
+#include "gcg/def.h"
+#include "gcg/type_branchgcg.h"
+#include "gcg/type_decomp.h"
+#include "gcg/type_parameter.h"
+#include "gcg/type_locks.h"
 
 #ifdef __cplusplus
 extern "C" {

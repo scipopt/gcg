@@ -36,12 +36,12 @@
 #include <assert.h>
 #include <string.h>
 
-#include "branch_ryanfoster.h"
-#include "branch_bpstrong.h"
-#include "gcg.h"
-#include "relax_gcg.h"
-#include "cons_masterbranch.h"
-#include "cons_origbranch.h"
+#include "gcg/branch_ryanfoster.h"
+#include "gcg/branch_bpstrong.h"
+#include "gcg/gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/cons_masterbranch.h"
+#include "gcg/cons_origbranch.h"
 #include "scip/nodesel_bfs.h"
 #include "scip/nodesel_dfs.h"
 #include "scip/nodesel_estimate.h"
@@ -55,9 +55,9 @@
 #include "scip/branch_pscost.h"
 #include "scip/branch_random.h"
 #include "scip/branch_relpscost.h"
-#include "pricer_gcg.h"
+#include "gcg/pricer_gcg.h"
 #include "scip/cons_varbound.h"
-#include "type_branchgcg.h"
+#include "gcg/type_branchgcg.h"
 
 #define BRANCHRULE_NAME          "ryanfoster"
 #define BRANCHRULE_DESC          "ryan and foster branching in generic column generation"

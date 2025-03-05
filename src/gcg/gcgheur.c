@@ -32,8 +32,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "gcg.h"
-#include "pub_gcgheur.h"
+#include "gcg/gcg.h"
+#include "gcg/pub_gcgheur.h"
 
 
 /** resets the parameters to their default value */

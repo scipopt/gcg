@@ -33,14 +33,14 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "gcg.h"
-#include "relax_gcg.h"
-#include "pricer_gcg.h"
-#include "benders_gcg.h"
-#include "pub_gcgvar.h"
-#include "cons_decomp.h"
-#include "gcgsort.h"
-#include "stat.h"
+#include "gcg/gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/benders_gcg.h"
+#include "gcg/pub_gcgvar.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/gcgsort.h"
+#include "gcg/stat.h"
 #include <string.h>
 
 #if defined(_WIN32) || defined(_WIN64)

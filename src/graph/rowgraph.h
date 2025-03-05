@@ -36,9 +36,9 @@
 #ifndef GCG_ROWGRAPH_H_
 #define GCG_ROWGRAPH_H_
 
-#include "graph.h"
-#include "bipartitegraph.h"
-#include "matrixgraph.h"
+#include "graph/graph.h"
+#include "graph/bipartitegraph.h"
+#include "graph/matrixgraph.h"
 
 namespace gcg {
 template <class T>

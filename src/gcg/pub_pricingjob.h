@@ -35,8 +35,8 @@
 #ifndef GCG_PUB_PRICINGJOB_H__
 #define GCG_PUB_PRICINGJOB_H__
 
-#include "def.h"
-#include "type_pricingjob.h"
+#include "gcg/def.h"
+#include "gcg/type_pricingjob.h"
 #include "scip/type_scip.h"
 
 #ifdef __cplusplus

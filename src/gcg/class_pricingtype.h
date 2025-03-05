@@ -36,8 +36,8 @@
 #define GCG_CLASS_PRICINGTYPE_H__
 
 #include "objscip/objscip.h"
-#include "pricer_gcg.h"
-#include "type_extendedmasterconsdata.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/type_extendedmasterconsdata.h"
 
 /**
  * @ingroup PRICING_PRIV

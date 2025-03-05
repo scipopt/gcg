@@ -36,9 +36,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_masterdiving.h"
-#include "pricer_gcg.h"
-#include "relax_gcg.h"
+#include "gcg/heur_masterdiving.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/relax_gcg.h"
 
 
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERLPPLUNGE

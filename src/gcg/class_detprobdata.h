@@ -52,12 +52,12 @@ using std::tr1::unordered_map;
 #include <functional>
 #include <string>
 #include <utility>
-#include "gcg.h"
+#include "gcg/gcg.h"
 
-#include "def.h"
-#include "class_partialdecomp.h"
-#include "class_conspartition.h"
-#include "class_varpartition.h"
+#include "gcg/def.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_conspartition.h"
+#include "gcg/class_varpartition.h"
 
 /** constraint type */
 enum SCIP_Constype_orig

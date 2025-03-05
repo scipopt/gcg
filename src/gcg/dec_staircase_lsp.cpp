@@ -43,13 +43,13 @@
 #include <iostream>
 
 
-#include "dec_staircase_lsp.h"
-#include "cons_decomp.h"
-#include "scip_misc.h"
-#include "pub_decomp.h"
+#include "gcg/dec_staircase_lsp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/scip_misc.h"
+#include "gcg/pub_decomp.h"
 #include "tclique/tclique.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include "scip/clock.h"
 
 

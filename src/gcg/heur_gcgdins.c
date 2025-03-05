@@ -36,9 +36,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_gcgdins.h"
-#include "gcg.h"
-#include "pricer_gcg.h"
+#include "gcg/heur_gcgdins.h"
+#include "gcg/gcg.h"
+#include "gcg/pricer_gcg.h"
 
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"

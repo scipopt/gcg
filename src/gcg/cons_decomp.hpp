@@ -36,8 +36,8 @@
 #ifndef GCG_CONS_DECOMP_HPP
 #define GCG_CONS_DECOMP_HPP
 
-#include "def.h"
-#include "class_partialdecomp.h"
+#include "gcg/def.h"
+#include "gcg/class_partialdecomp.h"
 
 /** @brief gets vector of all partialdecs
  * @returns finished partialdecs

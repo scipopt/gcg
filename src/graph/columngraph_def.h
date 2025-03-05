@@ -36,7 +36,7 @@
 #ifndef GCG_COLUMNGRAPH_DEF_H_
 #define GCG_COLUMNGRAPH_DEF_H_
 
-#include "columngraph.h"
+#include "graph/columngraph.h"
 #include <algorithm>
 #include <utility>
 #include <vector>

@@ -37,8 +37,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "heur_gcgrens.h"
-#include "gcg.h"
+#include "gcg/heur_gcgrens.h"
+#include "gcg/gcg.h"
 
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"

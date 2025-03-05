@@ -35,8 +35,8 @@
 #ifndef GCG_PUB_GCGCOL_H__
 #define GCG_PUB_GCGCOL_H__
 
-#include "type_gcgcol.h"
-#include "def.h"
+#include "gcg/type_gcgcol.h"
+#include "gcg/def.h"
 #include "scip/type_scip.h"
 #include "scip/type_retcode.h"
 #include "scip/type_var.h"

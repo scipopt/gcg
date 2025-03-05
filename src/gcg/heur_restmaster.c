@@ -35,9 +35,9 @@
 
 #include <assert.h>
 
-#include "heur_restmaster.h"
-#include "gcg.h"
-#include "pricer_gcg.h"
+#include "gcg/heur_restmaster.h"
+#include "gcg/gcg.h"
+#include "gcg/pricer_gcg.h"
 
 #include "scip/scipdefplugins.h"
 

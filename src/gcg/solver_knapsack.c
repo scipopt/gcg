@@ -37,13 +37,13 @@
 #include <assert.h>
 #include <string.h>
 
-#include "solver_knapsack.h"
+#include "gcg/solver_knapsack.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_knapsack.h"
-#include "pricer_gcg.h"
-#include "pub_solver.h"
-#include "relax_gcg.h"
-#include "pub_gcgcol.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/pub_solver.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/pub_gcgcol.h"
 
 #define SOLVER_NAME          "knapsack"
 #define SOLVER_DESC          "knapsack solver for pricing problems"

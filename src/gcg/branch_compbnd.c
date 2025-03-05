@@ -49,17 +49,17 @@
 // will write information about the component bound sequences to a file (slow!)
 //#define COMPBND_STATS
 
-#include "branch_compbnd.h"
-#include "cons_integralorig.h"
-#include "cons_masterbranch.h"
-#include "gcg.h"
-#include "pricer_gcg.h"
-#include "relax_gcg.h"
-#include "pub_extendedmasterconsdata.h"
-#include "extendedmasterconsdata.h"
-#include "pub_gcgvar.h"
-#include "type_extendedmasterconsdata.h"
-#include "type_branchgcg.h"
+#include "gcg/branch_compbnd.h"
+#include "gcg/cons_integralorig.h"
+#include "gcg/cons_masterbranch.h"
+#include "gcg/gcg.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/pub_extendedmasterconsdata.h"
+#include "gcg/extendedmasterconsdata.h"
+#include "gcg/pub_gcgvar.h"
+#include "gcg/type_extendedmasterconsdata.h"
+#include "gcg/type_branchgcg.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_varbound.h"
 

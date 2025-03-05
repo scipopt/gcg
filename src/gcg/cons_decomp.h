@@ -43,11 +43,11 @@
 #define GCG_CONS_DECOMP_H__
 
 #include "scip/scip.h"
-#include "def.h"
-#include "type_detector.h"
-#include "type_varclassifier.h"
-#include "type_consclassifier.h"
-#include "type_score.h"
+#include "gcg/def.h"
+#include "gcg/type_detector.h"
+#include "gcg/type_varclassifier.h"
+#include "gcg/type_consclassifier.h"
+#include "gcg/type_score.h"
 
 
 #ifdef __cplusplus

@@ -35,13 +35,13 @@
 #include <assert.h>
 #include <string.h>
 
-#include "benders_gcg.h"
+#include "gcg/benders_gcg.h"
 
-#include "gcg.h"
+#include "gcg/gcg.h"
 
-#include "relax_gcg.h"
-#include "scip_misc.h"
-#include "pub_gcgvar.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/scip_misc.h"
+#include "gcg/pub_gcgvar.h"
 
 #include "scip/cons_linear.h"
 #include "scip/pub_var.h"

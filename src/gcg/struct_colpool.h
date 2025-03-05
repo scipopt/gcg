@@ -40,8 +40,7 @@
 #include "scip/def.h"
 #include "scip/type_clock.h"
 #include "scip/type_misc.h"
-#include "scip/type_lp.h"
-#include "type_colpool.h"
+#include "gcg/type_gcgcol.h"
 
 #ifdef __cplusplus
 extern "C" {

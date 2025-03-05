@@ -44,16 +44,16 @@
 #include <vector>
 #include <iostream>
 
-#include "dec_stairheur.h"
-#include "cons_decomp.h"
-#include "struct_decomp.h"
-#include "pub_decomp.h"
-#include "scip_misc.h"
+#include "gcg/dec_stairheur.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/struct_decomp.h"
+#include "gcg/pub_decomp.h"
+#include "gcg/scip_misc.h"
 #include "scip/pub_misc.h"
 #include "scip/struct_var.h"
-#include "gcg.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/gcg.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include "scip/clock.h"
 
 #define DEC_NAME                  "stairheur"    /**< name of the detector */

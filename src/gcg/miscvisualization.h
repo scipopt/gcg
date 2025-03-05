@@ -40,7 +40,7 @@
 #include <string>
 #include <fstream>
 
-#include "class_detprobdata.h"
+#include "gcg/class_detprobdata.h"
 
 using namespace gcg;
 

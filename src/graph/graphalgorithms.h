@@ -35,9 +35,9 @@
 #ifndef GRAPHALGORITHMS_H_
 #define GRAPHALGORITHMS_H_
 
-#include "hypergraph.h"
-#include "graph.h"
-#include "graph_gcg.h"
+#include "graph/hypergraph.h"
+#include "graph/graph.h"
+#include "graph/graph_gcg.h"
 
 namespace gcg {
 

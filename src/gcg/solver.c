@@ -33,12 +33,12 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "pub_solver.h"
-#include "solver.h"
-#include "struct_solver.h"
+#include "gcg/pub_solver.h"
+#include "gcg/solver.h"
+#include "gcg/struct_solver.h"
 
-#include "gcg.h"
-#include "pricer_gcg.h"
+#include "gcg/gcg.h"
+#include "gcg/pricer_gcg.h"
 
 #include <string.h>
 

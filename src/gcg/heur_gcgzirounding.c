@@ -35,9 +35,9 @@
 
 #include <string.h>
 
-#include "heur_gcgzirounding.h"
-#include "gcg.h"
-#include "relax_gcg.h"
+#include "gcg/heur_gcgzirounding.h"
+#include "gcg/gcg.h"
+#include "gcg/relax_gcg.h"
 
 #define HEUR_NAME             "gcgzirounding"
 #define HEUR_DESC             "rounding heuristic on original variables as suggested by C. Wallace taking row slacks and bounds into account"

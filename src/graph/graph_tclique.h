@@ -36,7 +36,7 @@
 #ifndef GCG_GRAPH_TCLIQUE_H_
 #define GCG_GRAPH_TCLIQUE_H_
 
-#include "bridge.h"
+#include "graph/bridge.h"
 #include "tclique/tclique.h"
 
 namespace gcg {

@@ -45,11 +45,11 @@
 #include <assert.h>
 #include <string.h>
 
-#include "branch_relpsprob.h"
-#include "relax_gcg.h"
-#include "cons_integralorig.h"
-#include "pricer_gcg.h"
-#include "gcg.h"
+#include "gcg/branch_relpsprob.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/cons_integralorig.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/gcg.h"
 
 #include "scip/nodesel_estimate.h"
 #include "scip/nodesel_hybridestim.h"

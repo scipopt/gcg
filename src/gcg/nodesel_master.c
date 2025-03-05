@@ -36,10 +36,10 @@
 #include <assert.h>
 #include <string.h>
 
-#include "nodesel_master.h"
-#include "cons_origbranch.h"
-#include "cons_masterbranch.h"
-#include "pricer_gcg.h"
+#include "gcg/nodesel_master.h"
+#include "gcg/cons_origbranch.h"
+#include "gcg/cons_masterbranch.h"
+#include "gcg/pricer_gcg.h"
 
 #define NODESEL_NAME             "master"
 #define NODESEL_DESC             "orig master coordination"

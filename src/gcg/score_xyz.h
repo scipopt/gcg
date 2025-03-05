@@ -38,7 +38,7 @@
 
 
 #include "scip/scip.h"
-#include "gcg.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {

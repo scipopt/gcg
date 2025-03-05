@@ -37,13 +37,14 @@
 
 #include "scip/clock.h"
 
-#include "gcg.h"
-#include "pub_gcgcol.h"
-#include "colpool.h"
-#include "struct_colpool.h"
-#include "pricestore_gcg.h"
-#include "struct_pricestore_gcg.h"
-#include "pricer_gcg.h"
+#include "gcg/gcg.h"
+#include "gcg/pub_gcgcol.h"
+#include "gcg/colpool.h"
+#include "gcg/struct_colpool.h"
+#include "gcg/pricestore_gcg.h"
+#include "gcg/struct_pricestore_gcg.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/struct_gcgcol.h"
 
 #define GCG_USESMALLTABLES FALSE
 #define GCG_HASHSIZE_COLPOOLS_SMALL 100 /**< size of hash table in col pools for small problems */

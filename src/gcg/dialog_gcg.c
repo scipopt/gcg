@@ -44,19 +44,19 @@
 #include "scip/type_dialog.h"
 #include "scip/dialog_default.h"
 
-#include "gcg.h"
+#include "gcg/gcg.h"
 
-#include "dialog_gcg.h"
-#include "relax_gcg.h"
-#include "pricer_gcg.h"
-#include "cons_decomp.h"
-#include "pub_gcgheur.h"
-#include "pub_gcgsepa.h"
-#include "stat.h"
-#include "reader_tex.h"
-#include "reader_gp.h"
-#include "params_visu.h"
-#include "dialog_explore.h"
+#include "gcg/dialog_gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/pub_gcgheur.h"
+#include "gcg/pub_gcgsepa.h"
+#include "gcg/stat.h"
+#include "gcg/reader_tex.h"
+#include "gcg/reader_gp.h"
+#include "gcg/params_visu.h"
+#include "gcg/dialog_explore.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <direct.h>

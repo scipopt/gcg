@@ -36,7 +36,7 @@
 #define GCG_MATRIXGRAPH_DEF_H_
 
 #include "scip/scip.h"
-#include "matrixgraph.h"
+#include "graph/matrixgraph.h"
 
 namespace gcg {
 

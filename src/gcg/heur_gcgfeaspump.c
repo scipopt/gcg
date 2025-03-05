@@ -37,8 +37,8 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_gcgfeaspump.h"
-#include "gcg.h"
+#include "gcg/heur_gcgfeaspump.h"
+#include "gcg/gcg.h"
 
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"

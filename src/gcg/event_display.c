@@ -32,8 +32,8 @@
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "event_display.h"
-#include "gcg.h"
+#include "gcg/event_display.h"
+#include "gcg/gcg.h"
 #include <string.h>
 
 #define EVENTHDLR_NAME         "display"

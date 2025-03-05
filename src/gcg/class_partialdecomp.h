@@ -41,21 +41,21 @@
 #define GCG_CLASS_PARTIALDECOMP_H__
 
 #include "objscip/objscip.h"
-#include "struct_detector.h"
+#include "gcg/struct_detector.h"
 
 #include <vector>
 #include <string>
 #include <functional>
 #include <unordered_map>
 
-#include "def.h"
-#include "class_conspartition.h"
-#include "class_varpartition.h"
+#include "gcg/def.h"
+#include "gcg/class_conspartition.h"
+#include "gcg/class_varpartition.h"
 #include "graph/graph_gcg.h"
 #include "graph/graph.h"
-#include "type_score.h"
+#include "gcg/type_score.h"
 
-#include "reader_gp.h"
+#include "gcg/reader_gp.h"
 
 namespace gcg {
 

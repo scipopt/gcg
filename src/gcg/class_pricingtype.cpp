@@ -34,13 +34,13 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include "scip/scip.h"
-#include "class_pricingtype.h"
+#include "gcg/class_pricingtype.h"
 #include "scip/cons_linear.h"
-#include "pub_gcgvar.h"
-#include "pub_extendedmasterconsdata.h"
+#include "gcg/pub_gcgvar.h"
+#include "gcg/pub_extendedmasterconsdata.h"
 #include "scip/pub_lp.h"
 #include "scip/clock.h"
-#include "scip_misc.h"
+#include "gcg/scip_misc.h"
 
 #include <exception>
 

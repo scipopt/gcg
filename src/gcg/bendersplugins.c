@@ -32,13 +32,13 @@
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "bendersplugins.h"
+#include "gcg/bendersplugins.h"
 #include "scip/scipdefplugins.h"
 #include "scip/debug.h"
 
 /* GCG specific stuff */
-#include "dialog_master.h"
-#include "disp_master.h"
+#include "gcg/dialog_master.h"
+#include "gcg/disp_master.h"
 
 /** includes default GCG Benders' decomposition plugins */
 SCIP_RETCODE GCGincludeBendersPlugins(

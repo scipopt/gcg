@@ -30,8 +30,8 @@
  * @author  Til Mohr
  */
 
-#include "gcgvarhistory.h"
-#include "struct_gcgvarhistory.h"
+#include "gcg/gcgvarhistory.h"
+#include "gcg/struct_gcgvarhistory.h"
 
 /** free a history buffer */
 static

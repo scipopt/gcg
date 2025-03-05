@@ -56,14 +56,14 @@
 #endif
 #include <ctype.h>
 
-#include "reader_blk.h"
-#include "relax_gcg.h"
-#include "pub_gcgvar.h"
-#include "pub_decomp.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "scip_misc.h"
-#include "class_partialdecomp.h"
+#include "gcg/reader_blk.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/pub_gcgvar.h"
+#include "gcg/pub_decomp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/scip_misc.h"
+#include "gcg/class_partialdecomp.h"
 
 #define READER_NAME             "blkreader"
 #define READER_DESC             "file reader for structures in blk format"

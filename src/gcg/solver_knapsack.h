@@ -37,8 +37,8 @@
 #define GCG_SOLVER_KNAPSACK_H__
 
 #include "scip/scip.h"
-#include "def.h"
-#include "type_pricingstatus.h"
+#include "gcg/def.h"
+#include "gcg/type_pricingstatus.h"
 
 #ifdef __cplusplus
 extern "C" {

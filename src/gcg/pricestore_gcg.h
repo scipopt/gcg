@@ -49,9 +49,9 @@
 #include "scip/type_reopt.h"
 #include "scip/type_branch.h"
 
-#include "pub_colpool.h"
-#include "pub_gcgcol.h"
-#include "type_pricestore_gcg.h"
+#include "gcg/pub_colpool.h"
+#include "gcg/pub_gcgcol.h"
+#include "gcg/type_pricestore_gcg.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -38,8 +38,8 @@
 #define GCG_GCGVARHISTORY_H__
 
 #include "scip/scip.h"
-#include "def.h"
-#include "type_gcgvarhistory.h"
+#include "gcg/def.h"
+#include "gcg/type_gcgvarhistory.h"
 
 #ifdef __cplusplus
 extern "C" {

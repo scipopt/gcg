@@ -37,8 +37,8 @@
 #define __GCG_PUB_CLSCONS_H__
 
 
-#include "def.h"
-#include "type_consclassifier.h"
+#include "gcg/def.h"
+#include "gcg/type_consclassifier.h"
 
 #ifdef __cplusplus
 extern "C" {

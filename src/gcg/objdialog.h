@@ -40,7 +40,7 @@
 
 #include "scip/scip.h"
 #include "objscip/objcloneable.h"
-#include "def.h"
+#include "gcg/def.h"
 
 namespace gcg
 {

@@ -36,8 +36,8 @@
 #ifndef GCG_CLASS_VARPARTITION_H__
 #define GCG_CLASS_VARPARTITION_H__
 
-#include "def.h"
-#include "class_indexpartition.h"
+#include "gcg/def.h"
+#include "gcg/class_indexpartition.h"
 
 namespace gcg
 {

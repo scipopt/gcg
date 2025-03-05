@@ -34,9 +34,9 @@
 
 #include <assert.h>
 
-#include "heur_greedycolsel.h"
-#include "gcg.h"
-#include "pricer_gcg.h"
+#include "gcg/heur_greedycolsel.h"
+#include "gcg/gcg.h"
+#include "gcg/pricer_gcg.h"
 
 
 #define HEUR_NAME             "greedycolsel"

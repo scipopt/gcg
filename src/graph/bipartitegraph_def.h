@@ -35,7 +35,7 @@
 #ifndef GCG_BIPARTITEGRAPH_DEF_H_
 #define GCG_BIPARTITEGRAPH_DEF_H_
 
-#include "bipartitegraph.h"
+#include "graph/bipartitegraph.h"
 #include "gcg/scip_misc.h"
 
 namespace gcg {

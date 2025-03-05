@@ -44,16 +44,16 @@
 #include <sstream>
 #include <algorithm>    // std::sort
 
-#include "reader_tex.h"
-#include "scip_misc.h"
-#include "reader_gp.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "pub_decomp.h"
-#include "miscvisualization.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "params_visu.h"
+#include "gcg/reader_tex.h"
+#include "gcg/scip_misc.h"
+#include "gcg/reader_gp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/pub_decomp.h"
+#include "gcg/miscvisualization.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/params_visu.h"
 
 #define READER_NAME             "texreader"
 #define READER_DESC             "LaTeX file writer for partialdec visualization"

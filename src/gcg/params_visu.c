@@ -33,11 +33,11 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "params_visu.h"
-#include "type_decomp.h"
-#include "cons_decomp.h"
+#include "gcg/params_visu.h"
+#include "gcg/type_decomp.h"
+#include "gcg/cons_decomp.h"
 
-#include "relax_gcg.h"
+#include "gcg/relax_gcg.h"
 
 #include "scip/scip.h"
 

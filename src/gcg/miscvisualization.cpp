@@ -33,11 +33,11 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "def.h"
-#include "cons_decomp.h"
-#include "miscvisualization.h"
-#include "class_detprobdata.h"
-#include "class_partialdecomp.h"
+#include "gcg/def.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/miscvisualization.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/class_partialdecomp.h"
 
 #include "scip/scip.h"
 

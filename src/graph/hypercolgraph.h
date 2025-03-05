@@ -35,8 +35,8 @@
 #ifndef GCG_HYPERCOLGRAPH_H_
 #define GCG_HYPERCOLGRAPH_H_
 
-#include "matrixgraph.h"
-#include "hypergraph.h"
+#include "graph/matrixgraph.h"
+#include "graph/hypergraph.h"
 #include "gcg/class_partialdecomp.h"
 #include "gcg/class_detprobdata.h"
 

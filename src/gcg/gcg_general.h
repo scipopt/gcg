@@ -36,11 +36,11 @@
 #define GCG_GENERAL_H__
 
 
-#include "def.h"
+#include "gcg/def.h"
 #include "scip/def.h"
 #include "scip/type_scip.h"
 
-#include "def.h"
+#include "gcg/def.h"
 
 #ifdef __cplusplus
 extern "C" {

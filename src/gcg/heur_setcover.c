@@ -35,11 +35,11 @@
 
 #include <assert.h>
 #include <string.h>
-#include "gcg.h"
-#include "pricer_gcg.h"
+#include "gcg/gcg.h"
+#include "gcg/pricer_gcg.h"
 #include "scip/clock.h"
 #include "scip/cons_linear.h"
-#include "heur_setcover.h"
+#include "gcg/heur_setcover.h"
 
 
 #define HEUR_NAME             "setcover"

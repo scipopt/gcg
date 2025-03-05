@@ -32,25 +32,25 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "class_pricingcontroller.h"
-#include "pricer_gcg.h"
-#include "class_pricingtype.h"
-#include "gcg.h"
-#include "scip_misc.h"
-#include "branch_generic.h"
-#include "cons_masterbranch.h"
-#include "pub_gcgpqueue.h"
-#include "pub_pricingjob.h"
-#include "pub_pricingprob.h"
-#include "pub_solver.h"
-#include "pricingjob.h"
-#include "pricingprob.h"
+#include "gcg/class_pricingcontroller.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/class_pricingtype.h"
+#include "gcg/gcg.h"
+#include "gcg/scip_misc.h"
+#include "gcg/branch_generic.h"
+#include "gcg/cons_masterbranch.h"
+#include "gcg/pub_gcgpqueue.h"
+#include "gcg/pub_pricingjob.h"
+#include "gcg/pub_pricingprob.h"
+#include "gcg/pub_solver.h"
+#include "gcg/pricingjob.h"
+#include "gcg/pricingprob.h"
 
 #include "scip/scip.h"
 #include "objscip/objscip.h"
 
 #ifdef _OPENMP
-#include "struct_locks.h"
+#include "gcg/struct_locks.h"
 #endif
 
 #include <exception>

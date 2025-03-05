@@ -49,10 +49,10 @@
 #include <iomanip>
 #include <functional>
 
-#include "class_partialdecomp.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "score.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/score.h"
 
 /* column headers */
 #define DEFAULT_COLUMN_MIN_WIDTH  4 /**< min width of a column in the menu table */

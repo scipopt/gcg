@@ -35,9 +35,9 @@
 
 #include <assert.h>
 
-#include "solver_xyz.h"
-#include "pricer_gcg.h"
-#include "pub_solver.h"
+#include "gcg/solver_xyz.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/pub_solver.h"
 
 #define DEC_CLASSIFIERNAME   "xyz pricing problem solver"    /**< name of pricing solver */
 #define DEC_DESC             "pricing solver template"       /**< short description of classification */

@@ -37,7 +37,7 @@
 #define __SCIP_STRUCT_GCGLOCKS_H__
 
 #include <omp.h>
-#include "type_locks.h"
+#include "gcg/type_locks.h"
 
 #ifdef __cplusplus
 extern "C" {

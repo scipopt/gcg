@@ -36,7 +36,7 @@
 #include <assert.h>
 
 #include "scip/branch_xyz.h"
-#include "type_branchgcg.h"
+#include "gcg/type_branchgcg.h"
 
 
 #define BRANCHRULE_NAME        "xyz branching rule"           /**< name of branching rule */

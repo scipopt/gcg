@@ -37,10 +37,10 @@
 #ifndef GCG_PUB_GCGVAR_H__
 #define GCG_PUB_GCGVAR_H__
 
-#include "type_decomp.h"
+#include "gcg/type_decomp.h"
 #include "scip/scip.h"
-#include "def.h"
-#include "struct_vardata.h"
+#include "gcg/def.h"
+#include "gcg/struct_vardata.h"
 
 #ifdef __cplusplus
 extern "C" {

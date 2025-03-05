@@ -37,7 +37,7 @@
 #define __SCIP_BENDERS_GCG_H__
 
 
-#include "def.h"
+#include "gcg/def.h"
 #include "scip/scip.h"
 #include "scip/bendersdefcuts.h"
 

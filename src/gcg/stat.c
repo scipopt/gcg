@@ -35,15 +35,15 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include "scip/scip.h"
-#include "stat.h"
-#include "scip_misc.h"
-#include "pub_decomp.h"
-#include "cons_decomp.h"
-#include "struct_detector.h"
-#include "pub_gcgvar.h"
-#include "pricer_gcg.h"
-#include "gcg.h"
-#include "relax_gcg.h"
+#include "gcg/stat.h"
+#include "gcg/scip_misc.h"
+#include "gcg/pub_decomp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/struct_detector.h"
+#include "gcg/pub_gcgvar.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/gcg.h"
+#include "gcg/relax_gcg.h"
 
 
 /** prints information about the best decomposition*/

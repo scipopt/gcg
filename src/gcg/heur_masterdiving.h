@@ -37,9 +37,9 @@
 #define GCG_HEUR_MASTERDIVING_H__
 
 
-#include "def.h"
+#include "gcg/def.h"
 #include "scip/scip.h"
-#include "type_masterdiving.h"
+#include "gcg/type_masterdiving.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -36,8 +36,8 @@
 #ifndef GCG_ROWGRAPH_WEIGHTED_H_
 #define GCG_ROWGRAPH_WEIGHTED_H_
 
-#include "graph.h"
-#include "rowgraph.h"
+#include "graph/graph.h"
+#include "graph/rowgraph.h"
 
 namespace gcg {
 

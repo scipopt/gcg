@@ -36,13 +36,13 @@
 #define GCG_OBJPRICER_GCG_H_
 
 #include "objscip/objscip.h"
-#include "class_pricingtype.h"
-#include "class_pricingcontroller.h"
-#include "class_stabilization.h"
-#include "pub_gcgcol.h"
-#include "pub_colpool.h"
-#include "pricestore_gcg.h"
-#include "type_branchgcg.h"
+#include "gcg/class_pricingtype.h"
+#include "gcg/class_pricingcontroller.h"
+#include "gcg/class_stabilization.h"
+#include "gcg/pub_gcgcol.h"
+#include "gcg/pub_colpool.h"
+#include "gcg/pricestore_gcg.h"
+#include "gcg/type_branchgcg.h"
 
 using gcg::Pricingcontroller;
 using gcg::Stabilization;

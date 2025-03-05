@@ -36,7 +36,7 @@
 #ifndef GCG_STRUCT_BRANCHGCG_H__
 #define GCG_STRUCT_BRANCHGCG_H__
 
-#include "type_branchgcg.h"
+#include "gcg/type_branchgcg.h"
 
 #include <scip/type_branch.h>
 

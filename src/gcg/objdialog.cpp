@@ -34,7 +34,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /*lint -e64 disable useless NULL pointer errors */
 #include <cassert>
-#include "objdialog.h"
+#include "gcg/objdialog.h"
 
 
 /*

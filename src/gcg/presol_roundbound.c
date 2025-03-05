@@ -36,7 +36,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include "presol_roundbound.h"
+#include "gcg/presol_roundbound.h"
 
 
 #define PRESOL_NAME            "roundbound"

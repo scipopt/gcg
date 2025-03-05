@@ -37,10 +37,13 @@
 #ifndef GCG_PUB_EXTENDEDMASTERCONSDATA_H_
 #define GCG_PUB_EXTENDEDMASTERCONSDATA_H_
 
-#include "struct_extendedmasterconsdata.h"
-#include "type_extendedmasterconsdata.h"
-#include "def.h"
+#include "gcg/type_extendedmasterconsdata.h"
+#include "gcg/def.h"
 #include "scip/scip.h"
+
+#ifdef NDEBUG
+#include "gcg/struct_extendedmasterconsdata.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

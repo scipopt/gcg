@@ -39,15 +39,15 @@
 #include <string.h>
 
 #include "scip/scip.h"
-#include "gcg.h"
-#include "solver_cplex.h"
-#include "pub_solver.h"
-#include "pub_gcgcol.h"
+#include "gcg/gcg.h"
+#include "gcg/solver_cplex.h"
+#include "gcg/pub_solver.h"
+#include "gcg/pub_gcgcol.h"
 
-#include "pricer_gcg.h"
-#include "scip_misc.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/scip_misc.h"
 
-#include "cplex.h"
+#include "gcg/cplex.h"
 
 #define CHECK_ZERO(x) { int _restat_;                                   \
       if( (_restat_ = (x)) != 0 )                                       \

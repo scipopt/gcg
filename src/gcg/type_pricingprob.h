@@ -36,7 +36,7 @@
 #ifndef GCG_TYPE_PRICINGPROB_H__
 #define GCG_TYPE_PRICINGPROB_H__
 
-#include "struct_pricingprob.h"
+#include "gcg/struct_pricingprob.h"
 
 #ifdef __cplusplus
 extern "C" {

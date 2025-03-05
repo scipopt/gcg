@@ -36,9 +36,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_origdiving.h"
-#include "relax_gcg.h"
-#include "gcg.h"
+#include "gcg/heur_origdiving.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/gcg.h"
 
 
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERPLUNGE

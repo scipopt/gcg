@@ -37,7 +37,7 @@
 #include <string.h>
 
 #include "scip/dialog_default.h"
-#include "dialog_master.h"
+#include "gcg/dialog_master.h"
 
 
 

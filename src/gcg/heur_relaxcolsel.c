@@ -34,9 +34,9 @@
 
 #include <assert.h>
 
-#include "heur_relaxcolsel.h"
-#include "gcg.h"
-#include "pricer_gcg.h"
+#include "gcg/heur_relaxcolsel.h"
+#include "gcg/gcg.h"
+#include "gcg/pricer_gcg.h"
 
 
 #define HEUR_NAME             "relaxcolsel"

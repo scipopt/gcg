@@ -41,12 +41,12 @@
 #endif
 #include <ctype.h>
 
-#include "reader_cls.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "class_detprobdata.h"
-#include "class_conspartition.h"
-#include "class_varpartition.h"
+#include "gcg/reader_cls.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/class_detprobdata.h"
+#include "gcg/class_conspartition.h"
+#include "gcg/class_varpartition.h"
 
 
 #define READER_NAME             "clsreader"

@@ -37,7 +37,7 @@
 #ifndef DIALOG_GRAPH_H_
 #define DIALOG_GRAPH_H_
 
-#include "objdialog.h"
+#include "gcg/objdialog.h"
 #include "graph/graph.h"
 
 namespace gcg

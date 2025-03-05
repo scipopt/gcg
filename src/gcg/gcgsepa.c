@@ -33,9 +33,9 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "gcg.h"
-#include "def.h"
-#include "pub_gcgsepa.h"
+#include "gcg/gcg.h"
+#include "gcg/def.h"
+#include "gcg/pub_gcgsepa.h"
 
 
 /** resets the parameters to disable separators */

@@ -37,7 +37,7 @@
 #ifndef GCG_STRUCT_VARDATA_H__
 #define GCG_STRUCT_VARDATA_H__
 
-#include "type_extendedmasterconsdata.h"
+#include "gcg/type_extendedmasterconsdata.h"
 
 #ifdef __cplusplus
 extern "C" {

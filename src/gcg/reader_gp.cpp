@@ -42,17 +42,17 @@
 
 #include "scip/scip.h"
 
-#include "reader_gp.h"
-#include "scip_misc.h"
-#include "struct_decomp.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "pub_decomp.h"
-#include "params_visu.h"
+#include "gcg/reader_gp.h"
+#include "gcg/scip_misc.h"
+#include "gcg/struct_decomp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/pub_decomp.h"
+#include "gcg/params_visu.h"
 
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "miscvisualization.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/miscvisualization.h"
 
 #define READER_NAME             "gpreader"
 #define READER_DESC             "gnuplot file writer for partialdec visualization"

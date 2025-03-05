@@ -37,17 +37,17 @@
 
 /*#define SCIP_DEBUG*/
 
-#include "branch_generic.h"
-#include "pub_gcgvar.h"
-#include "pub_extendedmasterconsdata.h"
-#include "relax_gcg.h"
-#include "cons_masterbranch.h"
-#include "cons_origbranch.h"
-#include "pricer_gcg.h"
-#include "type_branchgcg.h"
-#include "gcg.h"
-#include "cons_integralorig.h"
-#include "gcgsort.h"
+#include "gcg/branch_generic.h"
+#include "gcg/pub_gcgvar.h"
+#include "gcg/pub_extendedmasterconsdata.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/cons_masterbranch.h"
+#include "gcg/cons_origbranch.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/type_branchgcg.h"
+#include "gcg/gcg.h"
+#include "gcg/cons_integralorig.h"
+#include "gcg/gcgsort.h"
 
 #include "scip/cons_linear.h"
 #include "scip/nodesel_bfs.h"

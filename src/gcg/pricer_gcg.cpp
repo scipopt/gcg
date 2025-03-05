@@ -40,13 +40,14 @@
 /* #define SCIP_DEBUG */
 /* #define PRINTDUALSOLS */
 
-#include "pub_extendedmasterconsdata.h"
-#include "extendedmasterconsdata.h"
-#include "gcgvarhistory.h"
-#include "pub_gcgvar.h"
-#include "type_branchgcg.h"
-#include "type_extendedmasterconsdata.h"
-#include "type_pricingprob.h"
+#include "gcg/pub_extendedmasterconsdata.h"
+#include "gcg/extendedmasterconsdata.h"
+#include "gcg/gcgvarhistory.h"
+#include "gcg/pub_gcgvar.h"
+#include "gcg/type_branchgcg.h"
+#include "gcg/type_extendedmasterconsdata.h"
+#include "gcg/type_pricingprob.h"
+#include "gcg/struct_gcgcol.h"
 #include <cassert>
 #include <cstring>
 
@@ -58,35 +59,35 @@
 #endif
 #endif
 #include "scip/scip.h"
-#include "gcg.h"
+#include "gcg/gcg.h"
 
 #include "scip/cons_linear.h"
 #include "scip/cons_knapsack.h"
 
-#include "pricer_gcg.h"
-#include "objpricer_gcg.h"
-#include "sepa_original.h"
-#include "sepa_basis.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/objpricer_gcg.h"
+#include "gcg/sepa_original.h"
+#include "gcg/sepa_basis.h"
 
-#include "relax_gcg.h"
-#include "scip_misc.h"
-#include "pub_gcgvar.h"
-#include "pub_gcgcol.h"
-#include "pub_pricingjob.h"
-#include "pub_pricingprob.h"
-#include "pub_solver.h"
-#include "solver.h"
-#include "cons_masterbranch.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/scip_misc.h"
+#include "gcg/pub_gcgvar.h"
+#include "gcg/pub_gcgcol.h"
+#include "gcg/pub_pricingjob.h"
+#include "gcg/pub_pricingprob.h"
+#include "gcg/pub_solver.h"
+#include "gcg/solver.h"
+#include "gcg/cons_masterbranch.h"
 #include "objscip/objscip.h"
-#include "objpricer_gcg.h"
-#include "class_pricingtype.h"
-#include "class_pricingcontroller.h"
-#include "class_stabilization.h"
-#include "branch_generic.h"
-#include "event_display.h"
-#include "pub_colpool.h"
-#include "gcgvarhistory.h"
-#include "struct_solver.h"
+#include "gcg/objpricer_gcg.h"
+#include "gcg/class_pricingtype.h"
+#include "gcg/class_pricingcontroller.h"
+#include "gcg/class_stabilization.h"
+#include "gcg/branch_generic.h"
+#include "gcg/event_display.h"
+#include "gcg/pub_colpool.h"
+#include "gcg/gcgvarhistory.h"
+#include "gcg/struct_solver.h"
 
 #ifdef SCIP_STATISTIC
 #include "scip/struct_scip.h"
@@ -95,7 +96,7 @@
 
 #ifdef _OPENMP
 #include <omp.h>
-#include "struct_locks.h"
+#include "gcg/struct_locks.h"
 #endif
 
 using namespace scip;

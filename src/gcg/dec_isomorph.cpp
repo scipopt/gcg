@@ -42,16 +42,16 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /* #define SCIP_DEBUG */
 
-#include "dec_isomorph.h"
-#include "pub_decomp.h"
-#include "cons_decomp.h"
-#include "scip_misc.h"
-#include "gcg.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/dec_isomorph.h"
+#include "gcg/pub_decomp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/scip_misc.h"
+#include "gcg/gcg.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include "scip/clock.h"
 
-#include "pub_gcgvar.h"
+#include "gcg/pub_gcgvar.h"
 #include <cstring>
 #include <cassert>
 #include <algorithm>

@@ -43,11 +43,11 @@
 #endif
 #include <ctype.h>
 
-#include "reader_ref.h"
-#include "gcg.h"
+#include "gcg/reader_ref.h"
+#include "gcg/gcg.h"
 #include "scip/cons_linear.h"
-#include "cons_decomp.h"
-#include "relax_gcg.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/relax_gcg.h"
 
 #define READER_NAME             "refreader"
 #define READER_DESC             "file reader for blocks corresponding to a mip in lpb format"

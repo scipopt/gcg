@@ -42,7 +42,7 @@
 #define __SCIP_HEUR_MASTERFRACDIVING_H__
 
 
-#include "def.h"
+#include "gcg/def.h"
 #include "scip/scip.h"
 
 #ifdef __cplusplus

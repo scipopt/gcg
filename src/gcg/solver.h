@@ -37,8 +37,8 @@
 #ifndef GCG_SOLVER_H_
 #define GCG_SOLVER_H_
 
-#include "def.h"
-#include "type_solver.h"
+#include "gcg/def.h"
+#include "gcg/type_solver.h"
 #include "scip/scip.h"
 
 #ifdef __cplusplus

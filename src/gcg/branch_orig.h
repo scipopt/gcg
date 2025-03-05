@@ -36,9 +36,9 @@
 #ifndef GCG_BRANCH_ORIG_H__
 #define GCG_BRANCH_ORIG_H__
 
-#include "type_branchgcg.h"
+#include "gcg/type_branchgcg.h"
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/def.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -36,8 +36,8 @@
 #ifndef __GCG_SCORE_H__
 #define __GCG_SCORE_H__
 
-#include "type_score.h"
-#include "pub_score.h"
+#include "gcg/type_score.h"
+#include "gcg/pub_score.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -38,9 +38,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "disp_master.h"
+#include "gcg/disp_master.h"
 #include "scip/disp_default.h"
-#include "gcg.h"
+#include "gcg/gcg.h"
 
 #define DISP_NAME_ORIGINAL         "original"
 #define DISP_DESC_ORIGINAL         "display column printing a display line of the original SCIP instance"

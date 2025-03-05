@@ -37,7 +37,7 @@
 #define GCG_HYPERGRAPH_DEF_H_
 
 #include "scip/scip.h"
-#include "hypergraph.h"
+#include "graph/hypergraph.h"
 
 namespace gcg {
 

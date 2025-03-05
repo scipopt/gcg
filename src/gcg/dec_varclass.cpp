@@ -33,15 +33,15 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "dec_varclass.h"
-#include "cons_decomp.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "class_varpartition.h"
-#include "gcg.h"
+#include "gcg/dec_varclass.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/class_varpartition.h"
+#include "gcg/gcg.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
-#include "scip_misc.h"
+#include "gcg/scip_misc.h"
 #include "scip/clock.h"
 
 #include <sstream>

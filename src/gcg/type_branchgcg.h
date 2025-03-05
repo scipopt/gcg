@@ -39,7 +39,7 @@
 #include "scip/def.h"
 #include "scip/type_result.h"
 #include "scip/type_scip.h"
-#include "type_extendedmasterconsdata.h"
+#include "gcg/type_extendedmasterconsdata.h"
 
 #ifdef __cplusplus
 extern "C" {

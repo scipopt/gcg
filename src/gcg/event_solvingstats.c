@@ -43,8 +43,8 @@
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "event_solvingstats.h"
-#include "pricer_gcg.h"
+#include "gcg/event_solvingstats.h"
+#include "gcg/pricer_gcg.h"
 #include <string.h>
 
 #define EVENTHDLR_NAME         "solvingstats"

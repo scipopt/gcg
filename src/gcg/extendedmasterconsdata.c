@@ -32,13 +32,13 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "def.h"
-#include "pub_extendedmasterconsdata.h"
-#include "extendedmasterconsdata.h"
-#include "gcg.h"
+#include "gcg/def.h"
+#include "gcg/pub_extendedmasterconsdata.h"
+#include "gcg/extendedmasterconsdata.h"
+#include "gcg/gcg.h"
 #include "gcg/scip_misc.h"
-#include "pricer_gcg.h"
-#include "struct_extendedmasterconsdata.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/struct_extendedmasterconsdata.h"
 
 #include "scip/scip.h"
 #include "scip/cons_linear.h"

@@ -39,13 +39,13 @@
 #include <time.h>     // for measuring time performance
 #include <string>
 #include <algorithm>
-#include "dec_dbscan.h"
-#include "cons_decomp.h"
+#include <iostream>
+#include "gcg/dec_dbscan.h"
+#include "gcg/cons_decomp.h"
 #include "graph/matrixgraph.h"
 #include "graph/rowgraph_weighted.h"
 #include "graph/graph_gcg.h"
 #include "scip/clock.h"
-#include "iostream"
 
 using gcg::RowGraphWeighted;
 using gcg::Weights;

@@ -32,7 +32,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "dialog_graph.h"
+#include "gcg/dialog_graph.h"
 #include "scip/dialog_default.h"
 #include "graph/bipartitegraph.h"
 #include "graph/hyperrowcolgraph.h"
@@ -40,8 +40,8 @@
 #include "graph/hypercolgraph.h"
 #include "graph/columngraph.h"
 #include "graph/rowgraph.h"
-#include "scip_misc.h"
-#include "cons_decomp.h"
+#include "gcg/scip_misc.h"
+#include "gcg/cons_decomp.h"
 #include "graph/graph_tclique.h"
 
 namespace gcg

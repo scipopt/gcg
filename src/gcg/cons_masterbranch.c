@@ -40,14 +40,14 @@
 #include <assert.h>
 #include <string.h>
 
-#include "gcg.h"
-#include "branch_generic.h"
-#include "cons_masterbranch.h"
-#include "cons_origbranch.h"
-#include "relax_gcg.h"
-#include "pricer_gcg.h"
-#include "pub_colpool.h"
-#include "gcgvarhistory.h"
+#include "gcg/gcg.h"
+#include "gcg/branch_generic.h"
+#include "gcg/cons_masterbranch.h"
+#include "gcg/cons_origbranch.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/pub_colpool.h"
+#include "gcg/gcgvarhistory.h"
 
 
 /*#define CHECKPROPAGATEDVARS*/

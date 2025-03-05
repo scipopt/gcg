@@ -36,7 +36,7 @@
 #ifndef GCG_STRUCT_VARCLASSIFIER_H__
 #define GCG_STRUCT_VARCLASSIFIER_H__
 
-#include "type_varclassifier.h"
+#include "gcg/type_varclassifier.h"
 
 
 /** detector data structure */

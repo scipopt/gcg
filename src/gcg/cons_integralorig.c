@@ -37,15 +37,15 @@
 #include <assert.h>
 #include <string.h>
 
-#include "cons_integralorig.h"
-#include "pricer_gcg.h"
-#include "cons_masterbranch.h"
-#include "pub_gcgvar.h"
+#include "gcg/cons_integralorig.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/cons_masterbranch.h"
+#include "gcg/pub_gcgvar.h"
 #include "scip/struct_branch.h"
-#include "relax_gcg.h"
-#include "gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/gcg.h"
 
-#include "branch_orig.h"
+#include "gcg/branch_orig.h"
 
 #define CONSHDLR_NAME          "integralorig"
 #define CONSHDLR_DESC          "integrality constraint"

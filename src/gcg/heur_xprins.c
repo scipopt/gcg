@@ -36,8 +36,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "heur_xprins.h"
-#include "gcg.h"
+#include "gcg/heur_xprins.h"
+#include "gcg/gcg.h"
 
 #include "scip/scip.h"
 #include "scip/misc.h"

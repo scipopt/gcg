@@ -39,8 +39,8 @@
 #include <time.h>     // for measuring time performance
 #include <algorithm>
 
-#include "dec_mst.h"
-#include "cons_decomp.h"
+#include "gcg/dec_mst.h"
+#include "gcg/cons_decomp.h"
 #include "graph/matrixgraph.h"
 #include "graph/rowgraph_weighted.h"
 #include "graph/graph_gcg.h"

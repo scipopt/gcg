@@ -38,8 +38,8 @@
 #define GCG_CONS_MASTERBRANCH_H__
 
 #include "scip/scip.h"
-#include "type_branchgcg.h"
-#include "gcg.h"
+#include "gcg/type_branchgcg.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {

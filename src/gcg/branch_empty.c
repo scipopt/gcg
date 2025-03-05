@@ -37,12 +37,12 @@
 #include <assert.h>
 #include <string.h>
 
-#include "branch_empty.h"
-#include "relax_gcg.h"
-#include "gcg.h"
-#include "branch_orig.h"
-#include "cons_masterbranch.h"
-#include "cons_origbranch.h"
+#include "gcg/branch_empty.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/gcg.h"
+#include "gcg/branch_orig.h"
+#include "gcg/cons_masterbranch.h"
+#include "gcg/cons_origbranch.h"
 #include "scip/branch_allfullstrong.h"
 #include "scip/branch_fullstrong.h"
 #include "scip/branch_inference.h"
@@ -52,7 +52,7 @@
 #include "scip/branch_random.h"
 #include "scip/branch_relpscost.h"
 #include "scip/cons_varbound.h"
-#include "type_branchgcg.h"
+#include "gcg/type_branchgcg.h"
 
 #define BRANCHRULE_NAME          "empty"
 #define BRANCHRULE_DESC          "branching rule for the original problem while real branching is applied in the master"

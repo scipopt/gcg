@@ -37,10 +37,10 @@
 #ifndef GCG_ROWGRAPH_WEIGHTED_DEF_H_
 #define GCG_ROWGRAPH_WEIGHTED_DEF_H_
 
-#include "rowgraph_weighted.h"
-#include "graph_gcg.h"
-#include "graphalgorithms.h"
-#include "priority_graph.h"
+#include "graph/rowgraph_weighted.h"
+#include "graph/graph_gcg.h"
+#include "graph/graphalgorithms.h"
+#include "graph/priority_graph.h"
 #include <algorithm>
 #include <iostream>
 #include <vector>

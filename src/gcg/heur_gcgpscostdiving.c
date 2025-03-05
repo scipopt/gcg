@@ -36,10 +36,10 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_gcgpscostdiving.h"
-#include "heur_origdiving.h"
-#include "gcg.h"
-#include "pricer_gcg.h"
+#include "gcg/heur_gcgpscostdiving.h"
+#include "gcg/heur_origdiving.h"
+#include "gcg/gcg.h"
+#include "gcg/pricer_gcg.h"
 
 
 #define HEUR_NAME             "gcgpscostdiving"

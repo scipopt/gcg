@@ -53,8 +53,8 @@
 #include "scip/type_scip.h"
 #include "scip/type_reader.h"
 #include "scip/type_result.h"
-#include "def.h"
-#include "type_decomp.h"
+#include "gcg/def.h"
+#include "gcg/type_decomp.h"
 
 #ifdef __cplusplus
 extern "C" {

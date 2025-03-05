@@ -33,7 +33,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "class_conspartition.h"
+#include "gcg/class_conspartition.h"
 
 #include <cassert>
 #include <sstream>

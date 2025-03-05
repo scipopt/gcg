@@ -48,18 +48,18 @@
 // #define SCIP_DEBUG
 
 #include "scip/scipdefplugins.h"
-#include "gcg.h"
+#include "gcg/gcg.h"
 #include "objscip/objscip.h"
 #include "scip/scip.h"
-#include "class_detprobdata.h"
-#include "struct_detector.h"
-#include "pub_decomp.h"
-#include "struct_decomp.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "decomp.h"
-#include "miscvisualization.h"
-#include "scip_misc.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/struct_detector.h"
+#include "gcg/pub_decomp.h"
+#include "gcg/struct_decomp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/decomp.h"
+#include "gcg/miscvisualization.h"
+#include "gcg/scip_misc.h"
 #include "scip/clock.h"
 #include "scip/cons.h"
 #include "scip/scip.h"
@@ -75,7 +75,7 @@
 #include <random> /* needed for exponential distributed random dual variables */
 #include <set>
 
-#include "reader_gp.h"
+#include "gcg/reader_gp.h"
 
 
 #ifdef _OPENMP

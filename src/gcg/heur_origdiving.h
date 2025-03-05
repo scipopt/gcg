@@ -37,9 +37,9 @@
 #define GCG_HEUR_ORIGDIVING_H__
 
 
-#include "def.h"
+#include "gcg/def.h"
 #include "scip/scip.h"
-#include "type_origdiving.h"
+#include "gcg/type_origdiving.h"
 
 #ifdef __cplusplus
 extern "C" {

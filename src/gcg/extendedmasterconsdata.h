@@ -36,11 +36,10 @@
 #ifndef GCG_EXTENDEDMASTERCONSDATA_H_
 #define GCG_EXTENDEDMASTERCONSDATA_H_
 
-#include "def.h"
+#include "gcg/def.h"
 
-#include "pricer_gcg.h"
-#include "struct_extendedmasterconsdata.h"
-#include "type_extendedmasterconsdata.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/type_extendedmasterconsdata.h"
 
 #ifdef __cplusplus
 extern "C" {

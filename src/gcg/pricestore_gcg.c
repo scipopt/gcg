@@ -34,8 +34,8 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 #include <assert.h>
 
-#include "pub_gcgcol.h"
-#include "pub_gcgvar.h"
+#include "gcg/pub_gcgcol.h"
+#include "gcg/pub_gcgvar.h"
 #include "scip/def.h"
 #include "scip/set.h"
 #include "scip/stat.h"
@@ -47,13 +47,14 @@
 #include "scip/cons.h"
 #include "scip/debug.h"
 
-#include "gcg.h"
-#include "pricestore_gcg.h"
-#include "struct_pricestore_gcg.h"
-#include "pricer_gcg.h"
+#include "gcg/gcg.h"
+#include "gcg/pricestore_gcg.h"
+#include "gcg/struct_pricestore_gcg.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/struct_gcgcol.h"
 
 #ifdef _OPENMP
-#include "struct_locks.h"
+#include "gcg/struct_locks.h"
 #endif
 
 /*

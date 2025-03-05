@@ -38,7 +38,7 @@
 #define GCG_GRAPH_DEF_H_
 
 #include "scip/scip.h"
-#include "graph.h"
+#include "graph/graph.h"
 
 namespace gcg {
 

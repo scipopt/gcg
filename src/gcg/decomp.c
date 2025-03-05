@@ -38,13 +38,13 @@
 
 //#define SCIP_DEBUG
 
-#include "decomp.h"
-#include "gcg.h"
-#include "cons_decomp.h"
+#include "gcg/decomp.h"
+#include "gcg/gcg.h"
+#include "gcg/cons_decomp.h"
 #include "scip/scip.h"
-#include "struct_decomp.h"
-#include "scip_misc.h"
-#include "relax_gcg.h"
+#include "gcg/struct_decomp.h"
+#include "gcg/scip_misc.h"
+#include "gcg/relax_gcg.h"
 
 
 #include <assert.h>

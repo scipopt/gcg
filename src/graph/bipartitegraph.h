@@ -35,8 +35,8 @@
 #ifndef GCG_BIPARTITEGRAPH_H_
 #define GCG_BIPARTITEGRAPH_H_
 
-#include "matrixgraph.h"
-#include "graph.h"
+#include "graph/matrixgraph.h"
+#include "graph/graph.h"
 
 namespace gcg {
 

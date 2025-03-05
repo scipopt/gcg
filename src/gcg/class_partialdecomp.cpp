@@ -37,19 +37,19 @@
 
 /*#define SCIP_DEBUG*/
 
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
-#include "scip_misc.h"
-#include "struct_detector.h"
-#include "struct_score.h"
-#include "struct_decomp.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "params_visu.h"
-#include "miscvisualization.h"
-#include "reader_gp.h"
+#include "gcg/scip_misc.h"
+#include "gcg/struct_detector.h"
+#include "gcg/struct_score.h"
+#include "gcg/struct_decomp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/params_visu.h"
+#include "gcg/miscvisualization.h"
+#include "gcg/reader_gp.h"
 
 #include <sstream>
 #include <iostream>

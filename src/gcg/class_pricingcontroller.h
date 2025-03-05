@@ -35,14 +35,14 @@
 #ifndef CLASS_PRICINGCONTROLLER_H_
 #define CLASS_PRICINGCONTROLLER_H_
 
-#include "colpool.h"
-#include "pricestore_gcg.h"
-#include "class_pricingtype.h"
-#include "type_gcgpqueue.h"
-#include "type_pricingjob.h"
-#include "type_pricingprob.h"
+#include "gcg/colpool.h"
+#include "gcg/pricestore_gcg.h"
+#include "gcg/class_pricingtype.h"
+#include "gcg/type_gcgpqueue.h"
+#include "gcg/type_pricingjob.h"
+#include "gcg/type_pricingprob.h"
 #include "objscip/objscip.h"
-#include "type_locks.h"
+#include "gcg/type_locks.h"
 
 namespace gcg {
 

@@ -38,7 +38,7 @@
 #define __SCIP_DEC_STAIRCASE_LSP_H__
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/def.h"
 
 #ifdef __cplusplus
 extern "C" {

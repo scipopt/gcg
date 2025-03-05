@@ -35,14 +35,14 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "pricingjob.h"
-#include "pub_gcgcol.h"
-#include "pub_pricingjob.h"
+#include "gcg/pricingjob.h"
+#include "gcg/pub_gcgcol.h"
+#include "gcg/pub_pricingjob.h"
 
-#include "gcg.h"
-#include "pricer_gcg.h"
-#include "pub_pricingprob.h"
-#include "pub_solver.h"
+#include "gcg/gcg.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/pub_pricingprob.h"
+#include "gcg/pub_solver.h"
 
 #include "scip/scip.h"
 

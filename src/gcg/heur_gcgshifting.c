@@ -36,9 +36,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_gcgshifting.h"
-#include "gcg.h"
-#include "relax_gcg.h"
+#include "gcg/heur_gcgshifting.h"
+#include "gcg/gcg.h"
+#include "gcg/relax_gcg.h"
 #include "scip/misc.h"
 
 

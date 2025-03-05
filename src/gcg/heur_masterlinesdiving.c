@@ -36,8 +36,8 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_masterlinesdiving.h"
-#include "heur_masterdiving.h"
+#include "gcg/heur_masterlinesdiving.h"
+#include "gcg/heur_masterdiving.h"
 
 
 #define HEUR_NAME             "masterlinesdiving"

@@ -40,12 +40,12 @@
 
 #include "scip/scip.h"
 #include "scip/scipdefplugins.h"
-#include "sepa_basis.h"
-#include "sepa_original.h"
-#include "gcg.h"
-#include "relax_gcg.h"
-#include "pricer_gcg.h"
-#include "pub_gcgvar.h"
+#include "gcg/sepa_basis.h"
+#include "gcg/sepa_original.h"
+#include "gcg/gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/pub_gcgvar.h"
 
 
 #ifdef WITH_GSL

@@ -32,9 +32,9 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "gcg_general.h"
+#include "gcg/gcg_general.h"
 
-#include "gcggithash.h"
+#include "gcg/gcggithash.h"
 
 #include "scip/pub_message.h"
 #include "scip/scip_message.h"

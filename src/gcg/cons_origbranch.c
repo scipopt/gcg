@@ -38,10 +38,10 @@
 #include <assert.h>
 #include <string.h>
 
-#include "gcg.h"
-#include "branch_generic.h"
-#include "cons_masterbranch.h"
-#include "cons_origbranch.h"
+#include "gcg/gcg.h"
+#include "gcg/branch_generic.h"
+#include "gcg/cons_masterbranch.h"
+#include "gcg/cons_origbranch.h"
 
 #include "scip/nodesel_bfs.h"
 #include "scip/nodesel_dfs.h"

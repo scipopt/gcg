@@ -38,7 +38,7 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/def.h"
 
 /** includes the GCG display columns in SCIP */
 GCG_EXPORT

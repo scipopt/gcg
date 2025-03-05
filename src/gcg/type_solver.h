@@ -39,8 +39,8 @@
 
 #include "scip/def.h"
 #include "scip/type_scip.h"
-#include "type_gcgcol.h"
-#include "type_pricingstatus.h"
+#include "gcg/type_gcgcol.h"
+#include "gcg/type_pricingstatus.h"
 
 #ifdef __cplusplus
 extern "C" {

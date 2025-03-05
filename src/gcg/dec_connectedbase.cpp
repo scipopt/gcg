@@ -33,13 +33,13 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "dec_connectedbase.h"
-#include "cons_decomp.h"
-#include "gcg.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/dec_connectedbase.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/gcg.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include "scip/scip.h"
-#include "scip_misc.h"
+#include "gcg/scip_misc.h"
 #include "scip/clock.h"
 #include <iostream>
 #include <algorithm>

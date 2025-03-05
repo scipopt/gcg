@@ -33,11 +33,11 @@
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include <string.h>
-#include "event_relaxsol.h"
-#include "relax_gcg.h"
-#include "pricer_gcg.h"
-#include "gcg.h"
-#include "event_mastersol.h"
+#include "gcg/event_relaxsol.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/gcg.h"
+#include "gcg/event_mastersol.h"
 
 #define EVENTHDLR_NAME         "relaxsol"
 #define EVENTHDLR_DESC         "eventhandler to update the relaxation solution in the original problem when the master LP has been solved"

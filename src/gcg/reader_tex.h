@@ -41,9 +41,9 @@
 #define GCG_READER_TEX_H__
 
 #include "scip/scip.h"
-#include "def.h"
-#include "type_decomp.h"
-#include "cons_decomp.h"
+#include "gcg/def.h"
+#include "gcg/type_decomp.h"
+#include "gcg/cons_decomp.h"
 
 #ifdef __cplusplus
 extern "C" {

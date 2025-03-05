@@ -39,10 +39,10 @@
 #define GCG_HYPERGRAPH_H_
 #include "objscip/objscip.h"
 #include "tclique/tclique.h"
-#include "weights.h"
+#include "graph/weights.h"
 #include "gcg/pub_decomp.h"
-#include "graph.h"
-#include "graph_interface.h"
+#include "graph/graph.h"
+#include "graph/graph_interface.h"
 
 #include <exception>
 #include <vector>

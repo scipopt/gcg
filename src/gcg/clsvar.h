@@ -36,8 +36,8 @@
 #ifndef __GCG_CLSVAR_H__
 #define __GCG_CLSVAR_H__
 
-#include "type_varclassifier.h"
-#include "pub_clsvar.h"
+#include "gcg/type_varclassifier.h"
+#include "gcg/pub_clsvar.h"
 
 #ifdef __cplusplus
 extern "C" {

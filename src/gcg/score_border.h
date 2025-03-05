@@ -37,7 +37,7 @@
 #define __GCG_SCORE_BORDER_H__
 
 
-#include "gcg.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {

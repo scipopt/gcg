@@ -35,14 +35,14 @@
 
 #include <assert.h>
 
-#include "solver_cliquer.h"
+#include "gcg/solver_cliquer.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_varbound.h"
-#include "pub_solver.h"
-#include "pricer_gcg.h"
-#include "relax_gcg.h"
-#include "pub_gcgcol.h"
-#include "pub_gcgvar.h"
+#include "gcg/pub_solver.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/pub_gcgcol.h"
+#include "gcg/pub_gcgvar.h"
 
 #include "cliquer/cliquer.h"
 

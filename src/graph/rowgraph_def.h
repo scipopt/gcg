@@ -37,7 +37,7 @@
 #ifndef GCG_ROWGRAPH_DEF_H_
 #define GCG_ROWGRAPH_DEF_H_
 
-#include "rowgraph.h"
+#include "graph/rowgraph.h"
 #include <algorithm>
 
 namespace gcg {

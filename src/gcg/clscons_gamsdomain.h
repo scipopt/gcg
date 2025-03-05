@@ -38,8 +38,8 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
-#include "type_consclassifier.h"
+#include "gcg/def.h"
+#include "gcg/type_consclassifier.h"
 
 #ifdef __cplusplus
 extern "C" {

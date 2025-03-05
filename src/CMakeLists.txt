@@ -418,22 +418,21 @@ if(HIGHS_FOUND)
    )
 endif()
 
-if(HMETIS_FOUND)
-   if(NOT WIN32)
-      set(gcgsources ${gcgsources}
-         gcg/dec_hcgpartition.cpp
-         gcg/dec_hrcgpartition.cpp
-         gcg/dec_hrgpartition.cpp
-      )
-      set(gcgheaders ${gcgheaders}
-         gcg/dec_hcgpartition.h
-         gcg/dec_hrcgpartition.h
-         gcg/dec_hrgpartition.h
-      )
-      include_directories(${CMAKE_CURRENT_BINARY_DIR})
-      add_definitions(-DHMETIS_HEADER)
-      configure_file(hmetis.h.in hmetis.h)
-   endif()
+if(HMETIS_FOUND AND NOT WIN32)
+    add_definitions(-DHMETIS_HEADER)
+    configure_file(hmetis.h.in gcg/hmetis.h)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR})
+    set(gcgsources ${gcgsources}
+        gcg/dec_hcgpartition.cpp
+        gcg/dec_hrcgpartition.cpp
+        gcg/dec_hrgpartition.cpp
+    )
+    set(gcgheaders ${gcgheaders}
+        gcg/dec_hcgpartition.h
+        gcg/dec_hrcgpartition.h
+        gcg/dec_hrgpartition.h
+        ${CMAKE_CURRENT_BINARY_DIR}/gcg/hmetis.h
+    )
 endif()
 
 if(JANSSON_FOUND)
@@ -535,11 +534,6 @@ install(FILES ${gcgheaders} DESTINATION include/gcg)
 # separate installation of graph headers to preserve the folder structure
 # see e.g. here: https://stackoverflow.com/a/11097012
 install(FILES ${gcggraphheaders} DESTINATION include/graph)
-if(NOT WIN32)
-   if(HMETIS_FOUND)
-      install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hmetis.h DESTINATION include/gcg)
-   endif()
-endif()
 
 # install the binary and the library to appropriate locations and add them to an export group
 install(TARGETS gcg libgcg EXPORT gcg-targets

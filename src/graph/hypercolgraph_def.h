@@ -38,7 +38,7 @@
 #ifndef GCG_HYPERCOLGRAPH_DEF_H_
 #define GCG_HYPERCOLGRAPH_DEF_H_
 
-#include "hypercolgraph.h"
+#include "graph/hypercolgraph.h"
 #include "gcg/class_partialdecomp.h"
 #include "gcg/class_detprobdata.h"
 #include <set>

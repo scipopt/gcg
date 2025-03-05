@@ -42,7 +42,7 @@
 
 
 /* #define SCIP_DEBUG */
-#include "dec_hcgpartition.h"
+#include "gcg/dec_hcgpartition.h"
 
 
 #if !defined(_WIN32) && !defined(_WIN64)
@@ -56,15 +56,15 @@
 #include <queue>
 
 #ifdef HMETIS_HEADER
-#include "hmetis.h"
+#include "gcg/hmetis.h"
 #else
 #define HMETIS_EXECUTABLE "hmetis"
 #endif
 
-#include "cons_decomp.h"
-#include "struct_decomp.h"
-#include "pub_decomp.h"
-#include "scip_misc.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/struct_decomp.h"
+#include "gcg/pub_decomp.h"
+#include "gcg/scip_misc.h"
 #include "scip/pub_misc.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_setppc.h"
@@ -72,8 +72,8 @@
 #include "graph/hypercolgraph.h"
 #include "graph/graph_tclique.h"
 #include "graph/weights.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include "scip/clock.h"
 
 

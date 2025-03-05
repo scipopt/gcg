@@ -47,9 +47,9 @@
 #include <string.h>
 #ifdef _OPENMP
 #include <omp.h>
-#include "struct_locks.h"
+#include "gcg/struct_locks.h"
 #endif
-#include "type_locks.h"
+#include "gcg/type_locks.h"
 
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"
@@ -58,24 +58,24 @@
 #include "scip/misc.h"
 #include "scip/clock.h"
 
-#include "relax_gcg.h"
+#include "gcg/relax_gcg.h"
 
-#include "struct_branchgcg.h"
+#include "gcg/struct_branchgcg.h"
 
-#include "cons_origbranch.h"
-#include "cons_masterbranch.h"
-#include "pricer_gcg.h"
-#include "benders_gcg.h"
-#include "masterplugins.h"
-#include "bendersplugins.h"
-#include "cons_decomp.h"
-#include "scip_misc.h"
-#include "solver_knapsack.h"
+#include "gcg/cons_origbranch.h"
+#include "gcg/cons_masterbranch.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/benders_gcg.h"
+#include "gcg/masterplugins.h"
+#include "gcg/bendersplugins.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/scip_misc.h"
+#include "gcg/solver_knapsack.h"
 
-#include "params_visu.h"
+#include "gcg/params_visu.h"
 
-#include "gcg.h"
-#include "type_branchgcg.h"
+#include "gcg/gcg.h"
+#include "gcg/type_branchgcg.h"
 
 #ifndef NO_AUT_LIB
 #include "symmetry/pub_automorphism.h"

@@ -39,8 +39,8 @@
 #define GCG_BRANCH_BPSTRONG_H__
 
 #include "scip/scip.h"
-#include "def.h"
-#include "type_branchgcg.h"
+#include "gcg/def.h"
+#include "gcg/type_branchgcg.h"
 
 #ifdef __cplusplus
 extern "C"

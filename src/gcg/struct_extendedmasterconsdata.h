@@ -40,7 +40,7 @@
 #include <scip/type_cons.h>
 #include <scip/type_lp.h>
 #include <scip/type_var.h>
-#include "type_extendedmasterconsdata.h"
+#include "gcg/type_extendedmasterconsdata.h"
 
 #ifdef __cplusplus
 extern "C" {

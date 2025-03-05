@@ -63,18 +63,18 @@
 #include <scip/type_paramset.h>
 #include <scip/scipdefplugins.h>
 
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "miscvisualization.h"
-#include "scip_misc.h"
-#include "relax_gcg.h"
-#include "decomp.h"
-#include "cons_decomp.hpp"
-#include "cons_decomp.h"
-#include "struct_consclassifier.h"
-#include "struct_varclassifier.h"
-#include "struct_decomp.h"
-#include "struct_score.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/miscvisualization.h"
+#include "gcg/scip_misc.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/cons_decomp.h"
+#include "gcg/struct_consclassifier.h"
+#include "gcg/struct_varclassifier.h"
+#include "gcg/struct_decomp.h"
+#include "gcg/struct_score.h"
 
 /* constraint handler properties */
 #define CONSHDLR_NAME                                 "decomp"    /**< name of constraint handler */

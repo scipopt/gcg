@@ -38,7 +38,7 @@
 #define GCG_HEUR_SETCOVER_H__
 
 
-#include "def.h"
+#include "gcg/def.h"
 #include "scip/scip.h"
 
 #ifdef __cplusplus

@@ -37,7 +37,7 @@
 #define __GCG_STRUCT_SCORE_H__
 
 #include "scip/def.h"
-#include "type_score.h"
+#include "gcg/type_score.h"
 
 #ifdef __cplusplus
 extern "C" {

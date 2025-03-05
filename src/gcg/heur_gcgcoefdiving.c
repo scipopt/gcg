@@ -36,9 +36,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_gcgcoefdiving.h"
-#include "heur_origdiving.h"
-#include "gcg.h"
+#include "gcg/heur_gcgcoefdiving.h"
+#include "gcg/heur_origdiving.h"
+#include "gcg/gcg.h"
 
 
 #define HEUR_NAME             "gcgcoefdiving"

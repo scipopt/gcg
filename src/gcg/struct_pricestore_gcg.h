@@ -40,10 +40,10 @@
 #include "scip/def.h"
 #include "scip/type_lp.h"
 #include "scip/type_var.h"
-#include "type_pricestore_gcg.h"
-#include "pub_gcgcol.h"
-#include "type_gcgcol.h"
-#include "type_locks.h"
+#include "gcg/type_pricestore_gcg.h"
+#include "gcg/pub_gcgcol.h"
+#include "gcg/type_gcgcol.h"
+#include "gcg/type_locks.h"
 
 #ifdef __cplusplus
 extern "C" {

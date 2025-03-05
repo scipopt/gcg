@@ -36,13 +36,13 @@
 
 #include <scip/scipdefplugins.h>
 
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "scip_misc.h"
-#include "score.h"
-#include "score_strong.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/scip_misc.h"
+#include "gcg/score.h"
+#include "gcg/score_strong.h"
 
 
 /* score properties */

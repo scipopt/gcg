@@ -46,16 +46,16 @@
 #endif
 #include <ctype.h>
 
-#include "reader_dec.h"
-#include "scip_misc.h"
-#include "pub_gcgvar.h"
+#include "gcg/reader_dec.h"
+#include "gcg/scip_misc.h"
+#include "gcg/pub_gcgvar.h"
 
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "pub_decomp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/pub_decomp.h"
 
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 
 #define READER_NAME             "decreader"
 #define READER_DESC             "file reader for blocks in dec format"

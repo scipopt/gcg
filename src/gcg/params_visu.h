@@ -42,9 +42,9 @@
 extern "C" {
 #endif
 
-#include "def.h"
-#include "type_decomp.h"
-#include "type_parameter.h"
+#include "gcg/def.h"
+#include "gcg/type_decomp.h"
+#include "gcg/type_parameter.h"
 
 #include "scip/scip.h"
 

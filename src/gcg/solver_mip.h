@@ -37,9 +37,9 @@
 #define GCG_SOLVER_MIP_H__
 
 #include "scip/scip.h"
-#include "type_pricingstatus.h"
-#include "type_gcgcol.h"
-#include "def.h"
+#include "gcg/type_pricingstatus.h"
+#include "gcg/type_gcgcol.h"
+#include "gcg/def.h"
 
 #ifdef __cplusplus
 extern "C" {

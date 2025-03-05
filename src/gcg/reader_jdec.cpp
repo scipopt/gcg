@@ -35,10 +35,10 @@
 
 // #define SCIP_DEBUG
 
-#include "reader_jdec.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "cons_decomp.hpp"
+#include "gcg/reader_jdec.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/cons_decomp.hpp"
 #include "scip/scip_mem.h"
 
 #include <algorithm>

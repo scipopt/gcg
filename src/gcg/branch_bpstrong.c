@@ -35,21 +35,20 @@
 /*#define SCIP_DEBUG*/
 #include <assert.h>
 
-#include "branch_bpstrong.h"
-#include "type_branchgcg.h"
-#include "gcg.h"
-#include "branch_orig.h"
+#include "gcg/branch_bpstrong.h"
+#include "gcg/type_branchgcg.h"
+#include "gcg/branch_orig.h"
 
 #include <string.h>
 
-#include "gcg.h"
-#include "branch_relpsprob.h"
-#include "cons_integralorig.h"
-#include "cons_masterbranch.h"
-#include "cons_origbranch.h"
-#include "relax_gcg.h"
-#include "pricer_gcg.h"
-#include "type_branchgcg.h"
+#include "gcg/gcg.h"
+#include "gcg/branch_relpsprob.h"
+#include "gcg/cons_integralorig.h"
+#include "gcg/cons_masterbranch.h"
+#include "gcg/cons_origbranch.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/type_branchgcg.h"
 
 #include "scip/cons_linear.h"
 #include "scip/scipdefplugins.h"

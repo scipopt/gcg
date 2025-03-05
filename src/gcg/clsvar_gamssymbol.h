@@ -38,8 +38,8 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
-#include "type_varclassifier.h"
+#include "gcg/def.h"
+#include "gcg/type_varclassifier.h"
 
 #ifdef __cplusplus
 extern "C" {

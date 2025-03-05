@@ -36,8 +36,8 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_gcgsimplerounding.h"
-#include "gcg.h"
+#include "gcg/heur_gcgsimplerounding.h"
+#include "gcg/gcg.h"
 
 
 #define HEUR_NAME             "gcgsimplerounding"

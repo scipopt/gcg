@@ -36,9 +36,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_gcgrounding.h"
-#include "relax_gcg.h"
-#include "gcg.h"
+#include "gcg/heur_gcgrounding.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/gcg.h"
 
 
 #define HEUR_NAME             "gcgrounding"

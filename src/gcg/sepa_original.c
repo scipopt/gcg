@@ -38,10 +38,10 @@
 #include <string.h>
 
 #include "scip/scip.h"
-#include "sepa_original.h"
-#include "gcg.h"
-#include "relax_gcg.h"
-#include "pricer_gcg.h"
+#include "gcg/sepa_original.h"
+#include "gcg/gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/pricer_gcg.h"
 
 
 #define SEPA_NAME         "original"

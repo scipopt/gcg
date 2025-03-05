@@ -35,15 +35,15 @@
 #ifndef GCG_PRICINGPROB_H__
 #define GCG_PRICINGPROB_H__
 
-#include "def.h"
-#include "struct_pricingprob.h"
-#include "type_pricingprob.h"
+#include "gcg/def.h"
+#include "gcg/struct_pricingprob.h"
+#include "gcg/type_pricingprob.h"
 
-#include "pricer_gcg.h"
-#include "type_colpool.h"
-#include "type_pricestore_gcg.h"
-#include "type_pricingjob.h"
-#include "type_solver.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/type_colpool.h"
+#include "gcg/type_pricestore_gcg.h"
+#include "gcg/type_pricingjob.h"
+#include "gcg/type_solver.h"
 
 #ifdef __cplusplus
 extern "C" {

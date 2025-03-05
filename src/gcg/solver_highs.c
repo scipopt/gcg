@@ -38,13 +38,13 @@
 #include <stdint.h>
 
 #include "scip/scip.h"
-#include "gcg.h"
-#include "solver_highs.h"
-#include "pub_solver.h"
-#include "pub_gcgcol.h"
+#include "gcg/gcg.h"
+#include "gcg/solver_highs.h"
+#include "gcg/pub_solver.h"
+#include "gcg/pub_gcgcol.h"
 
-#include "pricer_gcg.h"
-#include "scip_misc.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/scip_misc.h"
 
 #include "interfaces/highs_c_api.h"
 

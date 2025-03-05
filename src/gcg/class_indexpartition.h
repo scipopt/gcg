@@ -39,7 +39,7 @@
 #include "objscip/objscip.h"
 #include <vector>
 #include <string>
-#include "def.h"
+#include "gcg/def.h"
 
 namespace gcg
 {

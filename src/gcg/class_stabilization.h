@@ -37,8 +37,8 @@
 #define CLASS_STABILIZATION_H_
 
 #include "objscip/objscip.h"
-#include "class_pricingtype.h"
-#include "type_extendedmasterconsdata.h"
+#include "gcg/class_pricingtype.h"
+#include "gcg/type_extendedmasterconsdata.h"
 #include <scip/type_misc.h>
 #include <scip/type_retcode.h>
 

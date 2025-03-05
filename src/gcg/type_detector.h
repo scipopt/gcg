@@ -40,7 +40,7 @@
 #include "scip/type_retcode.h"
 #include "scip/type_scip.h"
 #include "scip/type_result.h"
-#include "type_decomp.h"
+#include "gcg/type_decomp.h"
 
 
 typedef struct GCG_Detector GCG_DETECTOR;

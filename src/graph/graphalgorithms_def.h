@@ -40,7 +40,7 @@
 #include <algorithm>
 #include <map>
 #include <iostream>
-#include "stdlib.h"
+#include <stdlib.h>
 #include "graph/graph_tclique.h"
 #include "graph/graph_gcg.h"
 

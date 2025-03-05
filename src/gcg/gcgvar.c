@@ -35,10 +35,10 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "gcg.h"
-#include "pub_gcgvar.h"
-#include "struct_vardata.h"
-#include "relax_gcg.h"
+#include "gcg/gcg.h"
+#include "gcg/pub_gcgvar.h"
+#include "gcg/struct_vardata.h"
+#include "gcg/relax_gcg.h"
 #include "scip/cons_linear.h"
 
 #define STARTMAXMASTERVARS 8

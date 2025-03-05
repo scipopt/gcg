@@ -34,19 +34,19 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 #define SCIP_DEBUG
 
-#include "clscons_gamsdomain.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
+#include "gcg/clscons_gamsdomain.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
 #include <vector>
 #include <string>
 #include <set>
 #include <stdio.h>
 #include <sstream>
 
-#include "class_detprobdata.h"
+#include "gcg/class_detprobdata.h"
 
-#include "class_conspartition.h"
-#include "scip_misc.h"
+#include "gcg/class_conspartition.h"
+#include "gcg/scip_misc.h"
 
 /* classifier properties */
 #define CLSCONS_NAME                  "gamsdomain"                 /**< name of classifier */
