@@ -33,7 +33,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-/* #define SCIP_DEBUG */
+#define SCIP_DEBUG
 
 #include <assert.h>
 
@@ -66,6 +66,7 @@
 #define DEFAULT_INTERCEPT    2000
 #define DEFAULT_OBJCOEFDISTR 0
 #define DEFAULT_USEMULTIPL   FALSE
+#define DEFAULT_CLIQUECONSTHRESH 0.5
 
 /*
  * Data structures.
@@ -90,6 +91,7 @@ struct GCG_SolverData
    SCIP_Real             density;            /**< graph density threshold above which to use solver */
    int                   densitystart;       /**< graph node threshold above which to apply density and linear cutoff */
    int                   nodelimit;          /**< graph node threshold below which to use solver */
+   SCIP_Real             cliqueconsthresh;   /**< clique constraint percentage threshold below which to use solver */
    SCIP_Bool*            isnotapplicable;    /**< array tracking if solver is not applicable in root node (& no cuts) */
    int                   objcoefdistr;       /**< param deciding strategy for distributing obj coefs of coupling vars */
    SCIP_Bool             usemultiplicity;    /**< boolean for activating usage of var multiplicities for weighting */
@@ -2050,6 +2052,7 @@ SCIP_RETCODE solveCliquer(
    int               nfixedvars;
    int               nodeindex0;
    int               nodeindex1;
+   int               cliqueconscount;
    CLIQUER_CONSTYPE* cliquerconstypes;
    GCG_COL*          col;
 
@@ -2172,6 +2175,26 @@ SCIP_RETCODE solveCliquer(
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
       setProblemNotApplicable(scip, probnr, solver->isnotapplicable);
       goto TERMINATE;
+   }
+
+   /* Cliquer may perform worse than other solvers (e.g. SCIP) on problems containing many clique inequalities:
+    * ->    Thus, we do not apply the solver if the percentage of clique constraints exceeds a threshold parameter. */
+   if( SCIPisLT(pricingprob, solver->cliqueconsthresh, 1.0) )
+   {
+      cliqueconscount = 0;
+      for( i = 0; i < nconss; i++ )
+      {
+         if( cliquerconstypes[i] == LINEAR_CLIQUE )
+            cliqueconscount++;
+      }
+
+      if( SCIPisGT(pricingprob, ((SCIP_Real)cliqueconscount / nconss), solver->cliqueconsthresh) )
+      {
+         SCIPdebugMessage("Exit: Clique-constraint percentage threshold exceeded, clique-cons perc.: %3.f\n",
+                          ((SCIP_Real)cliqueconscount / nconss));
+         *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
+         goto TERMINATE;
+      }
    }
 
    /* Propagate the already fixed variables to (potentially) get more fixed variables.
@@ -2805,21 +2828,25 @@ SCIP_RETCODE GCGincludeSolverCliquer(
          solverInitsolCliquer, solverExitsolCliquer, solverdata) );
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/cliquer/density",
-         "graph density threshold below which to use solver",
-         &solverdata->density, TRUE, DEFAULT_DENSITY, 0.0, 1.0, NULL, NULL) );
+          "graph density threshold below which to use solver",
+          &solverdata->density, TRUE, DEFAULT_DENSITY, 0.0, 1.0, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/cliquer/densitystart",
-         "graph node threshold above which to apply density threshold / linear cutoff (below not applied)",
-         &solverdata->densitystart, TRUE, DEFAULT_DENSITYSTART, 0, INT_MAX, NULL, NULL) );
+          "graph node threshold above which to apply density threshold / linear cutoff (below not applied)",
+          &solverdata->densitystart, TRUE, DEFAULT_DENSITYSTART, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/cliquer/maxcliqueconsperc",
+          "threshold for share of clique constraints in pricing problem below which to use solver (disabled = 1.0)",
+          &solverdata->cliqueconsthresh, TRUE, DEFAULT_CLIQUECONSTHRESH, 0.0, 1.0, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/cliquer/nodelimit",
-         "graph node threshold below which to use solver",
-         &solverdata->nodelimit, TRUE, DEFAULT_NODELIMIT, 0, INT_MAX, NULL, NULL) );
+          "graph node threshold below which to use solver",
+          &solverdata->nodelimit, TRUE, DEFAULT_NODELIMIT, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/cliquer/objcoefdistr",
-         "distribution of objective coefficients of coupling variables (disabled = 0, natural share = 1, "
-         "MIS-based = 2, uniform = 3)",
-         &solverdata->objcoefdistr, TRUE, DEFAULT_OBJCOEFDISTR, 0, 3, NULL, NULL) );
+          "distribution of objective coefficients of coupling variables (disabled = 0, natural share = 1, "
+          "MIS-based = 2, uniform = 3)",
+          &solverdata->objcoefdistr, TRUE, DEFAULT_OBJCOEFDISTR, 0, 3, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricingsolver/cliquer/usemultiplicity",
           "should the usage of multiplicity of linked variables be used to weight distributed coefficients be enabled? "
@@ -2827,17 +2854,17 @@ SCIP_RETCODE GCGincludeSolverCliquer(
           &solverdata->usemultiplicity, TRUE, DEFAULT_USEMULTIPL, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(origprob, "pricingsolver/cliquer/lincutoff/enable",
-         "should linear cutoff (n > m*d + b) for usage of solver <cliquer>, based on graph (d)ensity and (n)odes, "
-         "be enabled?",
-         &solverdata->uselincutoff, FALSE, DEFAULT_USELINCUTOFF, NULL, NULL) );
+          "should linear cutoff (n > m*d + b) for usage of solver <cliquer>, based on graph (d)ensity and (n)odes, "
+          "be enabled?",
+          &solverdata->uselincutoff, FALSE, DEFAULT_USELINCUTOFF, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/cliquer/lincutoff/slope",
-         "slope m in the linear cutoff formula (n > m*d + b), with (d)ensity and (n)odes",
-         &solverdata->lincutoffslope, TRUE, DEFAULT_SLOPE, SCIP_REAL_MIN, SCIP_REAL_MAX, NULL, NULL) );
+          "slope m in the linear cutoff formula (n > m*d + b), with (d)ensity and (n)odes",
+          &solverdata->lincutoffslope, TRUE, DEFAULT_SLOPE, SCIP_REAL_MIN, SCIP_REAL_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/cliquer/lincutoff/intercept",
-         "intercept b in the linear cutoff formula (n > m*d + b), with (d)ensity and (n)odes",
-         &solverdata->lincutoffintercept, TRUE, DEFAULT_INTERCEPT, SCIP_REAL_MIN, SCIP_REAL_MAX, NULL, NULL) );
+          "intercept b in the linear cutoff formula (n > m*d + b), with (d)ensity and (n)odes",
+          &solverdata->lincutoffintercept, TRUE, DEFAULT_INTERCEPT, SCIP_REAL_MIN, SCIP_REAL_MAX, NULL, NULL) );
 
    return SCIP_OKAY;
 }
