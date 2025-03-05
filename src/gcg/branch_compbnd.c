@@ -449,7 +449,7 @@ SCIP_RETCODE createBranchingCons(
    int nadditionalvars;
    SCIP_CONS** additionalcons;
    int nadditionalcons;
-   GCG_PRICINGMODIFICATION* pricingmods; // will always only contain one element in this branching rule
+   GCG_PRICINGMODIFICATION** pricingmods; // will always only contain one element in this branching rule
 
    char name[SCIP_MAXSTRLEN];
 
@@ -619,7 +619,7 @@ SCIP_RETCODE createBranchingCons(
    assert(pricingmods != NULL);
    SCIP_CALL( GCGpricingmodificationCreate(
       scip,
-      &pricingmods[0],
+      &(pricingmods[0]),
       branchdata->blocknr,
       coefvar,
       additionalvars,

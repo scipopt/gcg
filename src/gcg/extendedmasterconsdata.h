@@ -60,7 +60,7 @@ SCIP_RETCODE GCGextendedmasterconsUpdateDualValue(
 /** apply a pricing modification */
 SCIP_RETCODE GCGpricingmodificationApply(
    SCIP*                         pricingscip,            /**< pricing scip */
-   GCG_PRICINGMODIFICATION       pricingmodification     /**< pricing modification */
+   GCG_PRICINGMODIFICATION*      pricingmodification     /**< pricing modification */
    );
 
 /** apply all pricing modifications */
@@ -72,7 +72,7 @@ SCIP_RETCODE GCGextendedmasterconsApplyPricingModifications(
 /** undo a pricing modification */
 SCIP_RETCODE GCGpricingmodificationUndo(
    SCIP*                         pricingscip,            /**< pricing scip */
-   GCG_PRICINGMODIFICATION       pricingmodification     /**< pricing modification */
+   GCG_PRICINGMODIFICATION*      pricingmodification     /**< pricing modification */
    );
 
 /** undo all pricing modifications */

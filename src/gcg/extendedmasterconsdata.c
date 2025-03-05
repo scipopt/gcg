@@ -46,8 +46,8 @@
 /** free a pricing modification */
 static
 SCIP_RETCODE GCGpricingmodificationFree(
-   SCIP*                  scip,               /**< SCIP data structure */
-   GCG_PRICINGMODIFICATION* pricingmodification /**< pointer to the pricing modification */
+   SCIP*                         scip,                            /**< SCIP data structure */
+   GCG_PRICINGMODIFICATION**     pricingmodification              /**< pointer to the pricing modification */
    )
 {
    SCIP* originalscip;
@@ -59,24 +59,25 @@ SCIP_RETCODE GCGpricingmodificationFree(
    assert(pricingmodification != NULL);
 
    originalscip = GCGmasterGetOrigprob(scip);
-   pricingscip = GCGgetPricingprob(originalscip, pricingmodification->blocknr);
+   pricingscip = GCGgetPricingprob(originalscip, (*pricingmodification)->blocknr);
 
-   SCIP_CALL( SCIPreleaseVar(pricingscip, &pricingmodification->coefvar) );
+   SCIP_CALL( SCIPreleaseVar(pricingscip, &(*pricingmodification)->coefvar) );
 
-   for( i = 0; i < pricingmodification->nadditionalvars; i++ )
+   for( i = 0; i < (*pricingmodification)->nadditionalvars; i++ )
    {
-      SCIP_CALL( SCIPreleaseVar(pricingscip, &pricingmodification->additionalvars[i]) );
+      SCIP_CALL( SCIPreleaseVar(pricingscip, &(*pricingmodification)->additionalvars[i]) );
    }
 
-   for( i = 0; i < pricingmodification->nadditionalconss; i++ )
+   for( i = 0; i < (*pricingmodification)->nadditionalconss; i++ )
    {
-      SCIP_CALL( SCIPreleaseCons(pricingscip, &pricingmodification->additionalconss[i]) );
+      SCIP_CALL( SCIPreleaseCons(pricingscip, &(*pricingmodification)->additionalconss[i]) );
    }
 
-   SCIPfreeBlockMemoryArrayNull(pricingscip, &pricingmodification->additionalvars, pricingmodification->nadditionalvars);
-   assert(pricingmodification->additionalvars == NULL);
-   SCIPfreeBlockMemoryArrayNull(pricingscip, &pricingmodification->additionalconss, pricingmodification->nadditionalconss);
-   assert(pricingmodification->additionalconss == NULL);
+   SCIPfreeBlockMemoryArrayNull(pricingscip, &(*pricingmodification)->additionalvars, (*pricingmodification)->nadditionalvars);
+   assert((*pricingmodification)->additionalvars == NULL);
+   SCIPfreeBlockMemoryArrayNull(pricingscip, &(*pricingmodification)->additionalconss, (*pricingmodification)->nadditionalconss);
+   assert((*pricingmodification)->additionalconss == NULL);
+   SCIPfreeBlockMemoryNull(scip, pricingmodification);
 
 
    return SCIP_OKAY;
@@ -84,16 +85,16 @@ SCIP_RETCODE GCGpricingmodificationFree(
 
 /** create a pricing modification, taking ownership over additionalvars and additionalcons */
 SCIP_RETCODE GCGpricingmodificationCreate(
-   SCIP*                  scip,               /**< SCIP data structure */
-   GCG_PRICINGMODIFICATION* pricingmodification, /**< pointer to store the pricing modification */
-   int                    blocknr,             /**< block number of the extended master cons */
-   SCIP_VAR*              coefvar,             /**< variable in the pricing problem inferred from the extended master cons
-                                                  * always has the objective coefficient of the negated dual value of the extended master cons
-                                                  * its solution value corresponds to the coefficient of the new mastervariable in the extended master cons */
-   SCIP_VAR**             additionalvars,      /**< array of additional variables with no objective coefficient in the pricing programs inferred from the extended master cons */
-   int                    nadditionalvars,     /**< number of additional variables in the pricing programs */
-   SCIP_CONS**            additionalconss,     /**< array of additional constraints in the pricing programs inferred from the extended master cons */
-   int                    nadditionalconss     /**< number of additional constraints in the pricing programs */
+   SCIP*                         scip,                            /**< SCIP data structure */
+   GCG_PRICINGMODIFICATION**     pricingmodification,             /**< pointer to store the created pricing modification */
+   int                           blocknr,                         /**< block number of the extended master cons */
+   SCIP_VAR*                     coefvar,                         /**< variable in the pricing problem inferred from the extended master cons
+                                                                   * always has the objective coefficient of the negated dual value of the extended master cons
+                                                                   * its solution value corresponds to the coefficient of the new mastervariable in the extended master cons */
+   SCIP_VAR**                    additionalvars,                  /**< array of additional variables with no objective coefficient in the pricing programs inferred from the extended master cons */
+   int                           nadditionalvars,                 /**< number of additional variables in the pricing programs */
+   SCIP_CONS**                   additionalconss,                 /**< array of additional constraints in the pricing programs inferred from the extended master cons */
+   int                           nadditionalconss                 /**< number of additional constraints in the pricing programs */
    )
 {
    int i;
@@ -123,25 +124,26 @@ SCIP_RETCODE GCGpricingmodificationCreate(
       assert(additionalconss[i] != NULL);
    }
 
-   pricingmodification->blocknr = blocknr;
-   pricingmodification->coefvar = coefvar;
-   pricingmodification->additionalvars = additionalvars;
-   pricingmodification->nadditionalvars = nadditionalvars;
-   pricingmodification->additionalconss = additionalconss;
-   pricingmodification->nadditionalconss = nadditionalconss;
+   SCIP_CALL( SCIPallocBlockMemory(scip, pricingmodification) );
+   (*pricingmodification)->blocknr = blocknr;
+   (*pricingmodification)->coefvar = coefvar;
+   (*pricingmodification)->additionalvars = additionalvars;
+   (*pricingmodification)->nadditionalvars = nadditionalvars;
+   (*pricingmodification)->additionalconss = additionalconss;
+   (*pricingmodification)->nadditionalconss = nadditionalconss;
 
    return SCIP_OKAY;
 }
 
 /** create an extended master cons, taking ownership over pricingmodifications */
 SCIP_RETCODE GCGextendedmasterconsCreateFromCons(
-   SCIP*                  scip,                 /**< SCIP data structure */
-   GCG_EXTENDEDMASTERCONSDATA**    extendedmasterconsdata,        /**< pointer to store the extended master cons data */
-   SCIP_CONS*             cons,                 /**< constraint in the master problem that represents the extended master cons */
-   GCG_PRICINGMODIFICATION* pricingmodifications,/**< pricing modifications for the extended master cons */
-   int                    npricingmodifications,/**< number of pricing modifications for the extended master cons */
-   void*                  data,                 /**< any data that might be required to calculate the coefficient of a column solution */
-   GCG_DECL_EXTENDEDMASTERCONSGETCOEFF((*extendedmasterconsGetCoeff))/**< callback to calculate the coefficient of a column solution */
+   SCIP*                         scip,                            /**< SCIP data structure */
+   GCG_EXTENDEDMASTERCONSDATA**  extendedmasterconsdata,          /**< pointer to store the extended master cons data */
+   SCIP_CONS*                    cons,                            /**< constraint in the master problem that represents the extended master cons */
+   GCG_PRICINGMODIFICATION**     pricingmodifications,            /**< pricing modifications for the extended master cons */
+   int                           npricingmodifications,           /**< number of pricing modifications for the extended master cons */
+   void*                         data,                            /**< any data that might be required to calculate the coefficient of a column solution */
+   GCG_DECL_EXTENDEDMASTERCONSGETCOEFF((*extendedmasterconsGetCoeff))   /**< callback to calculate the coefficient of a column solution */
    )
 {
 #ifndef NDEBUG
@@ -167,12 +169,12 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromCons(
 
    for( i = 0; i < npricingmodifications; i++ )
    {
-      assert(pricingmodifications[i].blocknr >= 0);
-      assert(pricingmodifications[i].blocknr < GCGgetNPricingprobs(originalproblem));
-      assert(GCGisPricingprobRelevant(originalproblem, pricingmodifications[i].blocknr));
+      assert(pricingmodifications[i]->blocknr >= 0);
+      assert(pricingmodifications[i]->blocknr < GCGgetNPricingprobs(originalproblem));
+      assert(GCGisPricingprobRelevant(originalproblem, pricingmodifications[i]->blocknr));
 #ifndef NDEBUG
-      assert(!seenblocks[pricingmodifications[i].blocknr]);
-      seenblocks[pricingmodifications[i].blocknr] = TRUE;
+      assert(!seenblocks[pricingmodifications[i]->blocknr]);
+      seenblocks[pricingmodifications[i]->blocknr] = TRUE;
 #endif
    }
 
@@ -191,9 +193,9 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromCons(
    (*extendedmasterconsdata)->extendedmasterconsGetCoeff = extendedmasterconsGetCoeff;
 
    for( i = 0; i < npricingmodifications; i++ ) {
-      SCIPvarGetData(pricingmodifications[i].coefvar)->data.inferredpricingvardata.extendedmasterconsdata = *extendedmasterconsdata;
-      for( j = 0; j < pricingmodifications[i].nadditionalvars; j++ ) {
-         SCIPvarGetData(pricingmodifications[i].additionalvars[j])->data.inferredpricingvardata.extendedmasterconsdata = *extendedmasterconsdata;
+      SCIPvarGetData(pricingmodifications[i]->coefvar)->data.inferredpricingvardata.extendedmasterconsdata = *extendedmasterconsdata;
+      for( j = 0; j < pricingmodifications[i]->nadditionalvars; j++ ) {
+         SCIPvarGetData(pricingmodifications[i]->additionalvars[j])->data.inferredpricingvardata.extendedmasterconsdata = *extendedmasterconsdata;
       }
    }
 
@@ -202,13 +204,13 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromCons(
 
 /** create an extended master cons, taking ownership over pricingmodifications */
 SCIP_RETCODE GCGextendedmasterconsCreateFromRow(
-   SCIP*                  scip,                 /**< SCIP data structure */
-   GCG_EXTENDEDMASTERCONSDATA**    extendedmasterconsdata,        /**< pointer to store the extended master cons data */
-   SCIP_ROW*              row,                  /**< row in the master problem that represents the extended master cons cut */
-   GCG_PRICINGMODIFICATION* pricingmodifications,/**< pricing modifications for the extended master cons */
-   int                    npricingmodifications,/**< number of pricing modifications for the extended master cons */
-   void*                  data,                 /**< any data that might be required to calculate the coefficient of a column solution */
-   GCG_DECL_EXTENDEDMASTERCONSGETCOEFF((*extendedmasterconsGetCoeff))/**< callback to calculate the coefficient of a column solution */
+   SCIP*                            scip,                         /**< SCIP data structure */
+   GCG_EXTENDEDMASTERCONSDATA**     extendedmasterconsdata,       /**< pointer to store the extended master cons data */
+   SCIP_ROW*                        row,                          /**< row in the master problem that represents the extended master cons cut */
+   GCG_PRICINGMODIFICATION**        pricingmodifications,         /**< pricing modifications for the extended master cons */
+   int                              npricingmodifications,        /**< number of pricing modifications for the extended master cons */
+   void*                            data,                         /**< any data that might be required to calculate the coefficient of a column solution */
+   GCG_DECL_EXTENDEDMASTERCONSGETCOEFF((*extendedmasterconsGetCoeff))   /**< callback to calculate the coefficient of a column solution */
    )
 {
 #ifndef NDEBUG
@@ -234,12 +236,12 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromRow(
 
    for( i = 0; i < npricingmodifications; i++ )
    {
-      assert(pricingmodifications[i].blocknr >= 0);
-      assert(pricingmodifications[i].blocknr < GCGgetNPricingprobs(originalproblem));
-      assert(GCGisPricingprobRelevant(originalproblem, pricingmodifications[i].blocknr));
+      assert(pricingmodifications[i]->blocknr >= 0);
+      assert(pricingmodifications[i]->blocknr < GCGgetNPricingprobs(originalproblem));
+      assert(GCGisPricingprobRelevant(originalproblem, pricingmodifications[i]->blocknr));
 #ifndef NDEBUG
-      assert(!seenblocks[pricingmodifications[i].blocknr]);
-      seenblocks[pricingmodifications[i].blocknr] = TRUE;
+      assert(!seenblocks[pricingmodifications[i]->blocknr]);
+      seenblocks[pricingmodifications[i]->blocknr] = TRUE;
 #endif
    }
 
@@ -257,9 +259,9 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromRow(
    (*extendedmasterconsdata)->extendedmasterconsGetCoeff = extendedmasterconsGetCoeff;
 
    for( i = 0; i < npricingmodifications; i++ ) {
-      SCIPvarGetData(pricingmodifications[i].coefvar)->data.inferredpricingvardata.extendedmasterconsdata = *extendedmasterconsdata;
-      for( j = 0; j < pricingmodifications[i].nadditionalvars; j++ ) {
-         SCIPvarGetData(pricingmodifications[i].additionalvars[j])->data.inferredpricingvardata.extendedmasterconsdata = *extendedmasterconsdata;
+      SCIPvarGetData(pricingmodifications[i]->coefvar)->data.inferredpricingvardata.extendedmasterconsdata = *extendedmasterconsdata;
+      for( j = 0; j < pricingmodifications[i]->nadditionalvars; j++ ) {
+         SCIPvarGetData(pricingmodifications[i]->additionalvars[j])->data.inferredpricingvardata.extendedmasterconsdata = *extendedmasterconsdata;
       }
    }
 
@@ -268,8 +270,8 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromRow(
 
 /** free an extended master cons */
 SCIP_RETCODE GCGextendedmasterconsFree(
-   SCIP*                  scip,               /**< SCIP data structure */
-   GCG_EXTENDEDMASTERCONSDATA**    extendedmasterconsdata        /**< pointer to the extended master cons data */
+   SCIP*                            scip,                         /**< SCIP data structure */
+   GCG_EXTENDEDMASTERCONSDATA**     extendedmasterconsdata        /**< pointer to the extended master cons data */
    )
 {
    int i;
@@ -296,6 +298,7 @@ SCIP_RETCODE GCGextendedmasterconsFree(
    for( i = 0; i < (*extendedmasterconsdata)->npricingmodifications; i++ )
    {
       SCIP_CALL( GCGpricingmodificationFree(scip, &(*extendedmasterconsdata)->pricingmodifications[i]) );
+      assert((*extendedmasterconsdata)->pricingmodifications[i] == NULL);
    }
 
    SCIPfreeBlockMemoryArray(scip, &(*extendedmasterconsdata)->pricingmodifications, (*extendedmasterconsdata)->npricingmodifications);
@@ -308,7 +311,7 @@ SCIP_RETCODE GCGextendedmasterconsFree(
 
 /** determine whether the extendedmasterconsdata is active in the masterscip */
 SCIP_Bool GCGextendedmasterconsIsActive(
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata       /**< extended master cons data */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    )
 {
    assert(extendedmasterconsdata != NULL);
@@ -329,10 +332,10 @@ SCIP_Bool GCGextendedmasterconsIsActive(
 
 /** add a new variable along with its coefficient to the extended master cons */
 SCIP_RETCODE GCGextendedmasterconsAddMasterVar(
-   SCIP*                  masterscip,         /**< master scip */
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata,      /**< extended master cons data */
-   SCIP_VAR*              var,                /**< variable to add */
-   SCIP_Real              coef                /**< coefficient of the variable */
+   SCIP*                            masterscip,                /**< master scip */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata,    /**< extended master cons data */
+   SCIP_VAR*                        var,                       /**< variable to add */
+   SCIP_Real                        coef                       /**< coefficient of the variable */
    )
 {
    assert(masterscip != NULL);
@@ -359,9 +362,9 @@ SCIP_RETCODE GCGextendedmasterconsAddMasterVar(
 
 /** update the extended master cons with the new dual value */
 SCIP_RETCODE GCGextendedmasterconsUpdateDualValue(
-   SCIP*                  masterscip,         /**< master scip */
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata,      /**< extended master cons data */
-   SCIP_Real              dualvalue           /**< dual value */
+   SCIP*                            masterscip,                /**< master scip */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata,    /**< extended master cons data */
+   SCIP_Real                        dualvalue                  /**< dual value */
    )
 {
    int i;
@@ -376,13 +379,13 @@ SCIP_RETCODE GCGextendedmasterconsUpdateDualValue(
 
    for( i = 0; i < extendedmasterconsdata->npricingmodifications; i++ )
    {
-      assert(extendedmasterconsdata->pricingmodifications[i].coefvar != NULL);
-      assert(GCGvarIsInferredPricing(extendedmasterconsdata->pricingmodifications[i].coefvar));
+      assert(extendedmasterconsdata->pricingmodifications[i]->coefvar != NULL);
+      assert(GCGvarIsInferredPricing(extendedmasterconsdata->pricingmodifications[i]->coefvar));
 
-      pricingscip = GCGgetPricingprob(origscip, extendedmasterconsdata->pricingmodifications[i].blocknr);
+      pricingscip = GCGgetPricingprob(origscip, extendedmasterconsdata->pricingmodifications[i]->blocknr);
       assert(pricingscip != NULL);
 
-      SCIP_CALL( SCIPchgVarObj(pricingscip, extendedmasterconsdata->pricingmodifications[i].coefvar, -dualvalue) );
+      SCIP_CALL( SCIPchgVarObj(pricingscip, extendedmasterconsdata->pricingmodifications[i]->coefvar, -dualvalue) );
    }
 
    return SCIP_OKAY;
@@ -391,7 +394,7 @@ SCIP_RETCODE GCGextendedmasterconsUpdateDualValue(
 #ifndef NDEBUG
 /** get the constraint that is the extended master cons */
 SCIP_CONS* GCGextendedmasterconsGetCons(
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata       /**< extended master cons data */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    )
 {
    assert(extendedmasterconsdata != NULL);
@@ -405,7 +408,7 @@ SCIP_CONS* GCGextendedmasterconsGetCons(
 #ifndef NDEBUG
 /** get the row that is the extended master cons */
 SCIP_ROW* GCGextendedmasterconsGetRow(
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata       /**< extended master cons data */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    )
 {
    assert(extendedmasterconsdata != NULL);
@@ -419,7 +422,7 @@ SCIP_ROW* GCGextendedmasterconsGetRow(
 #ifndef NDEBUG
 /** get the variable that determines the coefficient of a column in the extended master cons */
 SCIP_VAR* GCGpricingmodificationGetCoefVar(
-   GCG_PRICINGMODIFICATION* pricingmodification /**< pricing modification */
+   GCG_PRICINGMODIFICATION*         pricingmodification           /**< pricing modification */
    )
 {
    assert(pricingmodification != NULL);
@@ -431,7 +434,7 @@ SCIP_VAR* GCGpricingmodificationGetCoefVar(
 #ifndef NDEBUG
 /** get the additional variables that are inferred by the extended master cons */
 SCIP_VAR** GCGpricingmodificationGetAdditionalVars(
-   GCG_PRICINGMODIFICATION* pricingmodification /**< pricing modification */
+   GCG_PRICINGMODIFICATION*         pricingmodification           /**< pricing modification */
    )
 {
    assert(pricingmodification != NULL);
@@ -443,7 +446,7 @@ SCIP_VAR** GCGpricingmodificationGetAdditionalVars(
 #ifndef NDEBUG
 /** get the number of additional variables that are inferred by the extended master cons */
 int GCGpricingmodificationGetNAdditionalVars(
-   GCG_PRICINGMODIFICATION* pricingmodification /**< pricing modification */
+   GCG_PRICINGMODIFICATION*         pricingmodification           /**< pricing modification */
    )
 {
    assert(pricingmodification != NULL);
@@ -455,7 +458,7 @@ int GCGpricingmodificationGetNAdditionalVars(
 #ifndef NDEBUG
 /** get the additional constraints that are inferred by the extended master cons */
 SCIP_CONS** GCGpricingmodificationGetAdditionalConss(
-   GCG_PRICINGMODIFICATION* pricingmodification /**< pricing modification */
+   GCG_PRICINGMODIFICATION*         pricingmodification           /**< pricing modification */
    )
 {
    assert(pricingmodification != NULL);
@@ -467,7 +470,7 @@ SCIP_CONS** GCGpricingmodificationGetAdditionalConss(
 #ifndef NDEBUG
 /** get the number of additional constraints that are inferred by the extended master cons */
 int GCGpricingmodificationGetNAdditionalConss(
-   GCG_PRICINGMODIFICATION* pricingmodification /**< pricing modification */
+   GCG_PRICINGMODIFICATION*         pricingmodification           /**< pricing modification */
    )
 {
    assert(pricingmodification != NULL);
@@ -478,9 +481,9 @@ int GCGpricingmodificationGetNAdditionalConss(
 
 /** get the pricing modification for a block, if exists, else NULL */
 GCG_PRICINGMODIFICATION* GCGextendedmasterconsGetPricingModification(
-   SCIP*                  masterscip,         /**< master scip */
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata,      /**< extended master cons data */
-   int                    blocknr             /**< block number */
+   SCIP*                            masterscip,                   /**< master scip */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata,       /**< extended master cons data */
+   int                              blocknr                       /**< block number */
    )
 {
    int i;
@@ -493,8 +496,8 @@ GCG_PRICINGMODIFICATION* GCGextendedmasterconsGetPricingModification(
 
    for( i = 0; i < extendedmasterconsdata->npricingmodifications; i++ )
    {
-      if( extendedmasterconsdata->pricingmodifications[i].blocknr == blocknr )
-         return &extendedmasterconsdata->pricingmodifications[i];
+      if( extendedmasterconsdata->pricingmodifications[i]->blocknr == blocknr )
+         return extendedmasterconsdata->pricingmodifications[i];
    }
 
    return NULL;
@@ -502,8 +505,8 @@ GCG_PRICINGMODIFICATION* GCGextendedmasterconsGetPricingModification(
 
 #ifndef NDEBUG
 /** get the pricing modifications for the extended master cons */
-GCG_PRICINGMODIFICATION* GCGextendedmasterconsGetPricingModifications(
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata       /**< extended master cons data */
+GCG_PRICINGMODIFICATION** GCGextendedmasterconsGetPricingModifications(
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    )
 {
    assert(extendedmasterconsdata != NULL);
@@ -515,7 +518,7 @@ GCG_PRICINGMODIFICATION* GCGextendedmasterconsGetPricingModifications(
 #ifndef NDEBUG
 /** get the number of pricing modifications for the extended master cons */
 int GCGextendedmasterconsGetNPricingModifications(
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata       /**< extended master cons data */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    )
 {
    assert(extendedmasterconsdata != NULL);
@@ -526,8 +529,8 @@ int GCGextendedmasterconsGetNPricingModifications(
 
 /** apply a pricing modification */
 SCIP_RETCODE GCGpricingmodificationApply(
-   SCIP*                  pricingscip,        /**< pricing scip */
-   GCG_PRICINGMODIFICATION pricingmodification /**< pricing modification */
+   SCIP*                            pricingscip,                  /**< pricing scip */
+   GCG_PRICINGMODIFICATION*         pricingmodification           /**< pricing modification */
    )
 {
    int i;
@@ -535,19 +538,19 @@ SCIP_RETCODE GCGpricingmodificationApply(
    assert(pricingscip != NULL);
 
    // add the inferred pricing variables
-   assert(GCGvarIsInferredPricing(pricingmodification.coefvar));
-   SCIP_CALL( SCIPaddVar(pricingscip, pricingmodification.coefvar) );
+   assert(GCGvarIsInferredPricing(pricingmodification->coefvar));
+   SCIP_CALL( SCIPaddVar(pricingscip, pricingmodification->coefvar) );
 
-   for( i=0; i < pricingmodification.nadditionalvars; i++)
+   for( i=0; i < pricingmodification->nadditionalvars; i++)
    {
-      assert(GCGvarIsInferredPricing(pricingmodification.additionalvars[i]));
-      SCIP_CALL( SCIPaddVar(pricingscip, pricingmodification.additionalvars[i]) );
+      assert(GCGvarIsInferredPricing(pricingmodification->additionalvars[i]));
+      SCIP_CALL( SCIPaddVar(pricingscip, pricingmodification->additionalvars[i]) );
    }
 
    // add the inferred pricing constraints
-   for( i=0; i < pricingmodification.nadditionalconss; i++)
+   for( i=0; i < pricingmodification->nadditionalconss; i++)
    {
-      SCIP_CALL( SCIPaddCons(pricingscip, pricingmodification.additionalconss[i]) );
+      SCIP_CALL( SCIPaddCons(pricingscip, pricingmodification->additionalconss[i]) );
    }
 
    return SCIP_OKAY;
@@ -555,8 +558,8 @@ SCIP_RETCODE GCGpricingmodificationApply(
 
 /** apply all pricing modifications */
 SCIP_RETCODE GCGextendedmasterconsApplyPricingModifications(
-   SCIP*                  masterscip,         /**< master scip */
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata       /**< extended master cons data */
+   SCIP*                            masterscip,                   /**< master scip */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    )
 {
    int i;
@@ -572,7 +575,7 @@ SCIP_RETCODE GCGextendedmasterconsApplyPricingModifications(
 
    for( i = 0; i < extendedmasterconsdata->npricingmodifications; i++ )
    {
-      pricingprob = GCGgetPricingprob(origscip, extendedmasterconsdata->pricingmodifications[i].blocknr);
+      pricingprob = GCGgetPricingprob(origscip, extendedmasterconsdata->pricingmodifications[i]->blocknr);
       assert(pricingprob != NULL);
       SCIP_CALL( GCGpricingmodificationApply(pricingprob, extendedmasterconsdata->pricingmodifications[i]) );
    }
@@ -582,8 +585,8 @@ SCIP_RETCODE GCGextendedmasterconsApplyPricingModifications(
 
 /** undo a pricing modification */
 SCIP_RETCODE GCGpricingmodificationUndo(
-   SCIP*                  pricingscip,        /**< pricing scip */
-   GCG_PRICINGMODIFICATION pricingmodification /**< pricing modification */
+   SCIP*                            pricingscip,                  /**< pricing scip */
+   GCG_PRICINGMODIFICATION*         pricingmodification           /**< pricing modification */
    )
 {
    int i;
@@ -592,23 +595,23 @@ SCIP_RETCODE GCGpricingmodificationUndo(
    assert(pricingscip != NULL);
 
    // add the inferred pricing variables
-   assert(GCGvarIsInferredPricing(pricingmodification.coefvar));
+   assert(GCGvarIsInferredPricing(pricingmodification->coefvar));
    deleted = FALSE;
-   SCIP_CALL( SCIPdelVar(pricingscip, pricingmodification.coefvar, &deleted) );
+   SCIP_CALL( SCIPdelVar(pricingscip, pricingmodification->coefvar, &deleted) );
    assert(deleted);
 
-   for( i=0; i < pricingmodification.nadditionalvars; i++)
+   for( i=0; i < pricingmodification->nadditionalvars; i++)
    {
-      assert(GCGvarIsInferredPricing(pricingmodification.additionalvars[i]));
+      assert(GCGvarIsInferredPricing(pricingmodification->additionalvars[i]));
       deleted = FALSE;
-      SCIP_CALL( SCIPdelVar(pricingscip, pricingmodification.additionalvars[i], &deleted) );
+      SCIP_CALL( SCIPdelVar(pricingscip, pricingmodification->additionalvars[i], &deleted) );
       assert(deleted);
    }
 
    // add the inferred pricing constraints
-   for( i=0; i < pricingmodification.nadditionalconss; i++)
+   for( i=0; i < pricingmodification->nadditionalconss; i++)
    {
-      SCIP_CALL( SCIPdelCons(pricingscip, pricingmodification.additionalconss[i]) );
+      SCIP_CALL( SCIPdelCons(pricingscip, pricingmodification->additionalconss[i]) );
    }
 
    return SCIP_OKAY;
@@ -616,8 +619,8 @@ SCIP_RETCODE GCGpricingmodificationUndo(
 
 /** undo all pricing modifications */
 SCIP_RETCODE GCGextendedmasterconsUndoPricingModifications(
-   SCIP*                  masterscip,         /**< master scip */
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata       /**< extended master cons data */
+   SCIP*                            masterscip,                   /**< master scip */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    )
 {
    int i;
@@ -633,7 +636,7 @@ SCIP_RETCODE GCGextendedmasterconsUndoPricingModifications(
 
    for( i = 0; i < extendedmasterconsdata->npricingmodifications; i++ )
    {
-      pricingprob = GCGgetPricingprob(origscip, extendedmasterconsdata->pricingmodifications[i].blocknr);
+      pricingprob = GCGgetPricingprob(origscip, extendedmasterconsdata->pricingmodifications[i]->blocknr);
       assert(pricingprob != NULL);
       SCIP_CALL( GCGpricingmodificationUndo(pricingprob, extendedmasterconsdata->pricingmodifications[i]) );
    }
@@ -643,19 +646,19 @@ SCIP_RETCODE GCGextendedmasterconsUndoPricingModifications(
 
 /** check whether a given variable is a coefficient variable of a given pricing modification */
 SCIP_Bool GCGpricingmodificationIsCoefVar(
-   GCG_PRICINGMODIFICATION pricingmodification, /**< pricing modification */
-   SCIP_VAR*              var                 /**< variable to check */
+   GCG_PRICINGMODIFICATION*         pricingmodification,          /**< pricing modification */
+   SCIP_VAR*                        var                           /**< variable to check */
    )
 {
    assert(var != NULL);
 
-   return pricingmodification.coefvar == var;
+   return pricingmodification->coefvar == var;
 }
 
 /** check whether a given variable is a coefficient variable of a given extended master cons */
 SCIP_Bool GCGextendedmasterconsIsCoefVar(
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata,      /**< extended master cons data */
-   SCIP_VAR*              var                 /**< variable to check */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata,       /**< extended master cons data */
+   SCIP_VAR*                        var                           /**< variable to check */
    )
 {
    int i;
@@ -674,7 +677,7 @@ SCIP_Bool GCGextendedmasterconsIsCoefVar(
 
 /** get name of the extended master cons */
 const char* GCGextendedmasterconsGetName(
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata       /**< extended master cons data */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    )
 {
    assert(extendedmasterconsdata != NULL);
@@ -695,8 +698,8 @@ const char* GCGextendedmasterconsGetName(
 
 /** get the lhs of the extended master cons */
 SCIP_Real GCGextendedmasterconsGetLhs(
-   SCIP*                  scip,               /**< SCIP data structure */
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata       /**< extended master cons data */
+   SCIP*                            scip,                         /**< SCIP data structure */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    )
 {
    assert(extendedmasterconsdata != NULL);
@@ -717,8 +720,8 @@ SCIP_Real GCGextendedmasterconsGetLhs(
 
 /** get the rhs of the extended master cons */
 SCIP_Real GCGextendedmasterconsGetRhs(
-   SCIP*                  scip,               /**< SCIP data structure */
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata       /**< extended master cons data */
+   SCIP*                            scip,                         /**< SCIP data structure */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    )
 {
    assert(extendedmasterconsdata != NULL);
@@ -739,8 +742,8 @@ SCIP_Real GCGextendedmasterconsGetRhs(
 
 /** get the constant of the extended master cons (always returns 0 if extended master cons is a constraint, returns constant of row otherwise) */
 SCIP_Real GCGextendedmasterconsGetConstant(
-   SCIP*                  scip,               /**< SCIP data structure */
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata       /**< extended master cons data */
+   SCIP*                            scip,                         /**< SCIP data structure */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    )
 {
    assert(extendedmasterconsdata != NULL);
@@ -760,8 +763,8 @@ SCIP_Real GCGextendedmasterconsGetConstant(
 
 /** get number of nonzero entries in the extended master cons */
 int GCGextendedmasterconsGetNNonz(
-   SCIP*                  scip,               /**< SCIP data structure */
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata       /**< extended master cons data */
+   SCIP*                            scip,                         /**< SCIP data structure */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    )
 {
    assert(extendedmasterconsdata != NULL);
@@ -782,8 +785,8 @@ int GCGextendedmasterconsGetNNonz(
 
 /** get array of columns with nonzero entries */
 SCIP_COL** GCGextendedmasterconsGetCols(
-   SCIP*                  scip,               /**< SCIP data structure */
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata       /**< extended master cons data */
+   SCIP*                            scip,                         /**< SCIP data structure */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    )
 {
    assert(extendedmasterconsdata != NULL);
@@ -804,8 +807,8 @@ SCIP_COL** GCGextendedmasterconsGetCols(
 
 /** get array of coefficients with nonzero entries */
 SCIP_Real* GCGextendedmasterconsGetVals(
-   SCIP*                  scip,               /**< SCIP data structure */
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata       /**< extended master cons data */
+   SCIP*                            scip,                         /**< SCIP data structure */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    )
 {
    assert(extendedmasterconsdata != NULL);
@@ -827,7 +830,7 @@ SCIP_Real* GCGextendedmasterconsGetVals(
 #ifndef NDEBUG
 /** get the additional data */
 void* GCGextendedmasterconsGetData(
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata       /**< extended master cons data */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    )
 {
    assert(extendedmasterconsdata != NULL);
@@ -838,12 +841,12 @@ void* GCGextendedmasterconsGetData(
 
 /** calculate the coefficient of a column solution in the extended master cons */
 SCIP_Real GCGextendedmasterconsGetCoeff(
-   SCIP*                  scip,               /**< SCIP data structure */
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata,      /**< extended master cons data */
-   SCIP_VAR**             solvars,            /**< array of column solution variables */
-   SCIP_Real*             solvals,            /**< array of column solution values */
-   int                    nsolvars,           /**< number of column solution variables and values */
-   int                    probnr              /**< the pricing problem that the column belongs to */
+   SCIP*                            scip,                         /**< SCIP data structure */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata,       /**< extended master cons data */
+   SCIP_VAR**                       solvars,                      /**< array of column solution variables */
+   SCIP_Real*                       solvals,                      /**< array of column solution values */
+   int                              nsolvars,                     /**< number of column solution variables and values */
+   int                              probnr                        /**< the pricing problem that the column belongs to */
    )
 {
    SCIP_Real coef;
@@ -859,7 +862,7 @@ SCIP_Real GCGextendedmasterconsGetCoeff(
 #ifndef NDEBUG
 /** gets the type of the extended master cons */
 GCG_EXTENDEDMASTERCONSTYPE GCGextendedmasterconsGetType(
-   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata       /**< extended master cons data */
+   GCG_EXTENDEDMASTERCONSDATA*     extendedmasterconsdata         /**< extended master cons data */
    )
 {
    assert(extendedmasterconsdata != NULL);

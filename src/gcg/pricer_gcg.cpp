@@ -2354,7 +2354,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       }
 
       /* get columns and vals of the cons */
-      switch( branchextendedmasterconsdata[i]->type )
+      switch( GCGextendedmasterconsGetType(branchextendedmasterconsdata[i]) )
       {
       case GCG_EXTENDEDMASTERCONSTYPE_CONS:
          extendedmasterconscons = GCGextendedmasterconsGetCons(branchextendedmasterconsdata[i]);
@@ -2409,7 +2409,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
 #endif
          }
       }
-      switch( branchextendedmasterconsdata[i]->type )
+      switch( GCGextendedmasterconsGetType(branchextendedmasterconsdata[i]) )
       {
       case GCG_EXTENDEDMASTERCONSTYPE_CONS:
          SCIPfreeBufferArray(scip_, &consvals);
