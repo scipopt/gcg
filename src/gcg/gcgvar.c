@@ -1085,40 +1085,6 @@ SCIP_VAR** GCGpricingVarGetOrigvars(
 #endif
 
 #ifndef NDEBUG
-/** returns the index used by the pricer to refer to the variable */
-int GCGpricingVarGetPricerIndex(
-   SCIP_VAR*             var                 /**< SCIP variable structure */
-   )
-{
-   SCIP_VARDATA* vardata;
-   assert(var != NULL);
-   assert(GCGvarIsPricing(var));
-
-   vardata = SCIPvarGetData(var);
-   assert(vardata != NULL);
-   assert(vardata->data.pricingvardata.pricerindex >= 0);
-
-   return vardata->data.pricingvardata.pricerindex;
-}
-#endif
-
-/** returns the index used by the pricer to refer to the variable */
-void GCGpricingVarSetPricerIndex(
-   SCIP_VAR*             var,                /**< SCIP variable structure */
-   int                   index               /**< index used by the pricer */
-   )
-{
-   SCIP_VARDATA* vardata;
-   assert(var != NULL);
-   assert(GCGvarIsPricing(var));
-
-   vardata = SCIPvarGetData(var);
-   assert(vardata != NULL);
-
-   vardata->data.pricingvardata.pricerindex = index;
-}
-
-#ifndef NDEBUG
 /** returns the block of the variable */
 int GCGvarGetBlock(
    SCIP_VAR*             var                 /**< SCIP variable structure */
@@ -1327,7 +1293,6 @@ SCIP_RETCODE GCGoriginalVarCreatePricingVar(
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(vardata->data.pricingvardata.origvars), vardata->data.pricingvardata.maxorigvars) ); /*lint !e506*/
    vardata->data.pricingvardata.origvars[0] = origvar;
    vardata->data.pricingvardata.norigvars = 1;
-   vardata->data.pricingvardata.pricerindex = -1;
 
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", pricingprobnr, SCIPvarGetName(origvar));
    SCIP_CALL( SCIPcreateVar(scip, var, name, SCIPvarGetLbGlobal(origvar),
@@ -1362,7 +1327,6 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
    SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &(vardata->data.pricingvardata.origvars), vardata->data.pricingvardata.maxorigvars) ); /*lint !e506*/
    vardata->data.pricingvardata.origvars[0] = origvar;
    vardata->data.pricingvardata.norigvars = 1;
-   vardata->data.pricingvardata.pricerindex = -1;
 
    /* create and add variable */
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", pricingprobnr, SCIPvarGetName(origvar));
