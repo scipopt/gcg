@@ -670,7 +670,7 @@ SCIP_RETCODE createChildNodesCompBndSeq(
    SCIP_NODE* upChild;
    SCIP_CONS* upChildcons;
 
-   assert(origprob != NULL);
+   assert(gcg != NULL);
    assert(compBndSeqSize > 0);
    assert(compBndSeq != NULL);
 
