@@ -303,6 +303,36 @@ else()
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BLISS_DEFINITIONS} -DNO_AUT_LIB")
 endif()
 
+# if changing these flags, also update GCCWARN/GXXWARN in make/make.project
+set(ADD_C_AND_CXX_FLAGS -pedantic -Wall -W -Wpointer-arith -Wcast-align -Wwrite-strings -Wshadow  -Wredundant-decls -Wdisabled-optimization -Wno-long-long -Wno-unknown-pragmas -Wno-unused-parameter)
+set(ADD_C_FLAGS -Wsign-compare -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes -Wno-override-init -Wno-uninitialized -Wno-maybe-uninitialized)
+set(ADD_CXX_FLAGS -Wnon-virtual-dtor -Wreorder -Woverloaded-virtual -Wsign-promo -Wsynth -Wcast-qual -Wno-strict-overflow -Wno-psabi)
+
+# disable fused floating point contraction to enhance reproducibility across compilers and architectures
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    add_compile_options(/fp:precise)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+    add_compile_options(-fp-model=precise)
+    # to prevent symbols from svml exported twice we use the -shared-intel flag, see https://git.zib.de/integer/scip/issues/2872
+    # this happens with the cplex static lib
+    if(LPS MATCHES "cpx")
+        add_compile_options(-shared-intel) # for c and cxx
+    endif()
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    # require at least gcc 4.8
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8)
+        message(WARNING "GCC version not supported, should be at least 4.8!")
+    endif()
+    add_compile_options(-ffp-contract=off ${ADD_C_AND_CXX_FLAGS})
+    add_compile_options("$<$<COMPILE_LANGUAGE:C>:${ADD_C_FLAGS}>$<$<COMPILE_LANGUAGE:CXX>:${ADD_CXX_FLAGS}>")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # clang specific suppressions
+    set(ADD_C_AND_CXX_FLAGS ${ADD_C_AND_CXX_FLAGS} -Wno-unknown-warning-option)
+    set(ADD_C_FLAGS ${ADD_C_FLAGS} -Wno-initializer-overrides)
+    add_compile_options(-ffp-contract=off ${ADD_C_AND_CXX_FLAGS})
+    add_compile_options("$<$<COMPILE_LANGUAGE:C>:${ADD_C_FLAGS}>$<$<COMPILE_LANGUAGE:CXX>:${ADD_CXX_FLAGS}>")
+endif()
+
 # TODO: In SCIP, license is in COPYING file and not in LICENSE.
 # TODO: SCIP has src/scipbuildflag.c which adds a function that returns the used build flags. Do we also want this?
 # TODO: Symmetry handling is separate from the remaining code: there is a symmetry/* code that is compiled differently depending on whether BLISS was found or not. the other tools (presol_sym*) is always included, but can query the symmetry code whether it can actually detect symmetry. This is slightly cleaner from a build system point of view.

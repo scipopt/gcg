@@ -500,6 +500,9 @@ endif()
 add_executable(GCG::GCG ALIAS gcg)
 add_library(GCG::libgcg ALIAS libgcg)
 
+target_compile_options(gcg PRIVATE ${GCG_COMP_OPTIONS})
+target_compile_options(libgcg PRIVATE ${GCG_COMP_OPTIONS})
+
 include(GenerateExportHeader)
 generate_export_header(libgcg BASE_NAME gcg EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/gcg/gcg_export.h)
 target_compile_definitions(gcg PRIVATE GCG_STATIC_DEFINE)
