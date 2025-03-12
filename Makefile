@@ -202,6 +202,7 @@ endif
 #-----------------------------------------------------------------------------
 
 ifeq ($(CPLEXSOLVER),true)
+LDFLAGS		+=	-ldl
 FLAGS		+=	-DWITH_CPLEXSOLVER -I$(SCIPDIR)/lib/include/cpxinc
 endif
 

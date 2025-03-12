@@ -38,6 +38,7 @@
 #define GCG_SOLVER_CLIQUER_H__
 
 #include "scip/scip.h"
+#include "gcg/gcg.h"
 
 
 #ifdef __cplusplus

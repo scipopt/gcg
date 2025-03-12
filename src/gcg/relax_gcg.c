@@ -3510,7 +3510,7 @@ SCIP_RETCODE GCGincludeRelaxGcg(
    {
       char name[SCIP_MAXSTRLEN];
       GCGgetBlissName(name, SCIP_MAXSTRLEN);
-      SCIP_CALL( SCIPincludeExternalCodeInformation(scip, name, "A Tool for Computing Automorphism Groups of Graphs by T. Junttila and P. Kaski (http://www.tcs.hut.fi/Software/bliss/)") );
+      SCIP_CALL( SCIPincludeExternalCodeInformation(origprob, name, "A Tool for Computing Automorphism Groups of Graphs by T. Junttila and P. Kaski (http://www.tcs.hut.fi/Software/bliss/)") );
    }
 #endif
 
@@ -3523,7 +3523,7 @@ SCIP_RETCODE GCGincludeRelaxGcg(
 #endif
 
 #ifdef WITH_CLIQUER
-      SCIP_CALL( SCIPincludeExternalCodeInformation(scip, "Cliquer", "A set of C routines for finding cliques in an arbitrary weighted graph by S. Niskanen and P. Ostergard (https://users.aalto.fi/~pat/cliquer.html)") );
+      SCIP_CALL( SCIPincludeExternalCodeInformation(origprob, "Cliquer", "A set of C routines for finding cliques in an arbitrary weighted graph by S. Niskanen and P. Ostergard (https://users.aalto.fi/~pat/cliquer.html)") );
 #endif
 
    /* create GCG relaxator data */
