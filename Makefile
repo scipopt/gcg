@@ -484,7 +484,7 @@ SPLINT		=       splint
 SPLINTFLAGS	=	-UNDEBUG -UWITH_READLINE -UROUNDING_FE -UWITH_GMP -UWITH_ZLIB -which-lib -warn-posix-headers +skip-sys-headers -preproc -formatcode -weak \
 			-redef +export-header +export-local +decl-undef +relaxtypes
 
-GCGGITHASHFILE	= 	$(SRCDIR)/githash.c
+GCGGITHASHFILE	= 	$(SRCDIR)/gcg/githash.c
 
 #-----------------------------------------------------------------------------
 # Flags
