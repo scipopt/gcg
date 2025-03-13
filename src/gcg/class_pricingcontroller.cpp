@@ -210,7 +210,7 @@ SCIP_DECL_SORTPTRCOMP(Pricingcontroller::comparePricingjobs)
 SCIP_RETCODE Pricingcontroller::getGenericBranchconss()
 {
    /* get current branching rule */
-   SCIP_CONS* branchcons = GCGconsMasterbranchGetActiveCons(scip_);
+   SCIP_CONS* branchcons = GCGconsMasterbranchGetActiveCons(gcg);
    SCIP_BRANCHRULE* branchrule = GCGconsMasterbranchGetBranchrule(branchcons);
 
    assert(branchcons != NULL);
@@ -239,8 +239,8 @@ SCIP_RETCODE Pricingcontroller::getGenericBranchconss()
             /* search for the pricing problem to which the generic branching decision belongs */
             if( consblocknr == GCGpricingprobGetProbnr(pricingprobs[i]) )
             {
-               SCIP_CALL( GCGpricingprobAddGenericBranchData(scip_, pricingprobs[i], branchcons,
-                  pricingtype_->consGetDual(scip_, mastercons)) );
+               SCIP_CALL( GCGpricingprobAddGenericBranchData(gcg, pricingprobs[i], branchcons,
+                  pricingtype_->consGetDual(mastercons)) );
                break;
             }
          }
@@ -297,7 +297,7 @@ SCIP_RETCODE Pricingcontroller::initSol()
    {
       if( GCGisPricingprobRelevant(gcg, i) )
       {
-         SCIP_CALL_EXC( GCGpricingprobCreate(scip_, &pricingprobs[npricingprobs], GCGgetPricingprob(gcg, i), i, nroundscol) );
+         SCIP_CALL_EXC( GCGpricingprobCreate(gcg, &pricingprobs[npricingprobs], GCGgetPricingprob(gcg, i), i, nroundscol) );
 
          for( int j = 0; j < nsolvers; ++j )
          {
@@ -327,7 +327,7 @@ SCIP_RETCODE Pricingcontroller::exitSol()
 
    for( int i = 0; i < npricingprobs; ++i )
    {
-      GCGpricingprobFree(scip_, &pricingprobs[i]);
+      GCGpricingprobFree(gcg, &pricingprobs[i]);
    }
    for( int i = 0; i < npricingjobs; ++i )
    {
@@ -388,7 +388,7 @@ SCIP_RETCODE Pricingcontroller::setupPriorityQueue(
 
    /* reset pricing problems */
    for( int i = 0; i < npricingprobs; ++i )
-      GCGpricingprobReset(scip_, pricingprobs[i]);
+      GCGpricingprobReset(gcg, pricingprobs[i]);
 
    for( int i = 0; i < npricingjobs; ++i )
    {
@@ -482,7 +482,7 @@ void Pricingcontroller::updatePricingprob(
    int                   nimpcols            /**< number of new improving columns */
    )
 {
-   GCGpricingprobUpdate(scip_, pricingprob, status, lowerbound, nimpcols);
+   GCGpricingprobUpdate(gcg, pricingprob, status, lowerbound, nimpcols);
 }
 
 /** decide whether a pricing job must be treated again */

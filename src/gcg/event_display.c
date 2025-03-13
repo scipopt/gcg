@@ -62,12 +62,14 @@ SCIP_DECL_EVENTEXEC(eventExecDisplay)
 
 /** activates the eventhandler in SCIP */
 SCIP_RETCODE GCGactivateEventHdlrDisplay(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
+   SCIP* scip;
    SCIP_EVENTHDLR* eventhdlr;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
+   scip = GCGgetMasterprob(gcg);
    assert(GCGisMaster(scip));
 
    eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);

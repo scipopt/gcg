@@ -915,10 +915,12 @@ SCIP_Bool GCGgetConsIsCardinalityCons(
 
 /** returns TRUE or FALSE, depending whether we are in the root node or not */
 SCIP_Bool GCGisRootNode(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
-   assert(scip != NULL);
+   SCIP* scip;
+   assert(gcg != NULL);
+   scip = GCGgetMasterprob(gcg);
    if( SCIPgetStage(scip) < SCIP_STAGE_SOLVING )
       return TRUE;
    else

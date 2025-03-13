@@ -1957,7 +1957,7 @@ SCIP_RETCODE GCGprintBlockcandidateInformation(
    if( detprobdata == NULL )
       SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), NULL, "No block number candidates are calculated yet, consider detecting first..  \n" );
    else
-      detprobdata->printBlockcandidateInformation(scip, file);
+      detprobdata->printBlockcandidateInformation(file);
 
    return SCIP_OKAY;
 }
@@ -2156,7 +2156,7 @@ SCIP_RETCODE GCGdetectStructure(
          {
             GCGconshdlrDecompClassify(gcg, FALSE);
             if( SCIPgetVerbLevel(origprob) >= SCIP_VERBLEVEL_FULL )
-               conshdlrdata->detprobdataorig->printBlockcandidateInformation(origprob, NULL);
+               conshdlrdata->detprobdataorig->printBlockcandidateInformation(NULL);
          }
          else
             SCIPdebugMessage("classification for orig problem disabled \n" );
@@ -2257,7 +2257,7 @@ SCIP_RETCODE GCGdetectStructure(
    SCIPdebugMessage("Detection took %fs\n", SCIPgetClockTime( origprob, conshdlrdata->detectorclock));
 
    if( conshdlrdata->detprobdatapres != NULL && SCIPgetVerbLevel(origprob) >= SCIP_VERBLEVEL_FULL )
-      conshdlrdata->detprobdatapres->printBlockcandidateInformation(origprob, NULL);
+      conshdlrdata->detprobdatapres->printBlockcandidateInformation(NULL);
 
    /* display timing statistics */
    SCIPverbMessage(origprob, SCIP_VERBLEVEL_HIGH, NULL, "Detection Time: %.2f\n", GCGconshdlrDecompGetCompleteDetectionTime(gcg));

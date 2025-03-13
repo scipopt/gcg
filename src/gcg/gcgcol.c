@@ -747,7 +747,7 @@ SCIP_Real GCGcolComputeDualObjPara(
    assert(gcgcol != NULL);
 
    masterconss = GCGgetMasterConss(gcg);
-   originalsepamastercuts = GCGsepaGetOriginalSepaMastercuts(masterprob);
+   originalsepamastercuts = GCGsepaGetOriginalSepaMastercuts(gcg);
    extendedmasterconsbounds = colGetExtendedmasterconsBounds(gcgcol);
 
    para = 0.0;

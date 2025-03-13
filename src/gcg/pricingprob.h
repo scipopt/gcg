@@ -51,7 +51,7 @@ extern "C" {
 
 /** create a pricing problem */
 SCIP_RETCODE GCGpricingprobCreate(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure (master problem) */
    GCG_PRICINGPROB**     pricingprob,        /**< pricing problem to be created */
    SCIP*                 pricingscip,        /**< SCIP data structure of the corresponding pricing problem */
    int                   probnr,             /**< index of the corresponding pricing problem */
@@ -60,7 +60,7 @@ SCIP_RETCODE GCGpricingprobCreate(
 
 /** free a pricing problem */
 void GCGpricingprobFree(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure (master problem) */
    GCG_PRICINGPROB**     pricingprob         /**< pricing problem to be freed */
 );
 
@@ -77,7 +77,7 @@ void GCGpricingprobExitPricing(
 
 /** add generic branching data (constraint and dual value) to the current pricing problem */
 SCIP_RETCODE GCGpricingprobAddGenericBranchData(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    SCIP_CONS*            branchcons,         /**< generic branching constraint */
    SCIP_Real             branchdual          /**< corresponding dual solution value */
@@ -85,13 +85,13 @@ SCIP_RETCODE GCGpricingprobAddGenericBranchData(
 
 /** reset the pricing problem statistics for the current pricing round */
 void GCGpricingprobReset(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    );
 
 /** update solution information of a pricing problem */
 void GCGpricingprobUpdate(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    GCG_PRICINGSTATUS     status,             /**< status of last pricing job */
    SCIP_Real             lowerbound,         /**< new lower bound */

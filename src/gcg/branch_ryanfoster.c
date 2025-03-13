@@ -469,7 +469,7 @@ SCIP_RETCODE createChildNodesRyanfoster(
    {
       /* create and add the masterbranch constraints */
       SCIP_CALL( GCGcreateConsMasterbranch(gcg, &cons1, samename, child1,
-         GCGconsMasterbranchGetActiveCons(masterprob), branchrule, branchsamedata, origbranchconss1, norigvars1,
+         GCGconsMasterbranchGetActiveCons(gcg), branchrule, branchsamedata, origbranchconss1, norigvars1,
          maxorigvars1) );
 
       SCIP_CALL( SCIPaddConsNode(masterprob, child1, cons1, NULL) );
@@ -482,7 +482,7 @@ SCIP_RETCODE createChildNodesRyanfoster(
    {
       /* create and add the masterbranch constraints */
       SCIP_CALL( GCGcreateConsMasterbranch(gcg, &cons2, differname, child2,
-         GCGconsMasterbranchGetActiveCons(masterprob), branchrule, branchdifferdata, origbranchconss2, norigvars1,
+         GCGconsMasterbranchGetActiveCons(gcg), branchrule, branchdifferdata, origbranchconss2, norigvars1,
          maxorigvars1) );
 
       SCIP_CALL( SCIPaddConsNode(masterprob, child2, cons2, NULL) );
@@ -548,7 +548,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
       return SCIP_OKAY;
    }
 
-   if( GCGcurrentNodeIsGeneric(scip) )
+   if( GCGcurrentNodeIsGeneric(branchruledata->gcg) )
    {
       SCIPdebugMessage("Not executing Ryan&Foster branching, node was branched by generic branchrule\n");
       return SCIP_OKAY;
@@ -871,7 +871,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
       return SCIP_OKAY;
    }
 
-   if( GCGcurrentNodeIsGeneric(scip) )
+   if( GCGcurrentNodeIsGeneric(branchruledata->gcg) )
    {
       SCIPdebugMessage("Not executing Ryanfoster branching, node was branched by generic branchrule\n");
       return SCIP_OKAY;
@@ -879,7 +879,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
 
    /* get unfixed variables and stack of active origbranchconss */
    SCIP_CALL( SCIPgetPseudoBranchCands(origscip, &branchcands, NULL, &nbranchcands) );
-   GCGconsOrigbranchGetStack(origscip, &origbranchconss, &norigbranchconss);
+   GCGconsOrigbranchGetStack(branchruledata->gcg, &origbranchconss, &norigbranchconss);
 
    ovar1 = NULL;
    ovar2 = NULL;

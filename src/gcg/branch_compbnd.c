@@ -725,13 +725,13 @@ SCIP_RETCODE createChildNodesCompBndSeq(
    /* add the nodes to the tree */
    SCIP_CALL( SCIPcreateChild(masterprob, &downChild, 0.0, SCIPgetLocalTransEstimate(masterprob)) );
    SCIP_CALL( GCGcreateConsMasterbranch(gcg, &downChildcons, downChildname, downChild,
-      GCGconsMasterbranchGetActiveCons(masterprob), branchrule, downBranchData, NULL, 0, 0) );
+      GCGconsMasterbranchGetActiveCons(gcg), branchrule, downBranchData, NULL, 0, 0) );
    SCIP_CALL( SCIPaddConsNode(masterprob, downChild, downChildcons, NULL) );
    SCIP_CALL( createBranchingCons(gcg, downChild, downBranchData) );
 
    SCIP_CALL( SCIPcreateChild(masterprob, &upChild, 0.0, SCIPgetLocalTransEstimate(masterprob)) );
    SCIP_CALL( GCGcreateConsMasterbranch(gcg, &upChildcons, upChildname, upChild,
-      GCGconsMasterbranchGetActiveCons(masterprob), branchrule, upBranchData, NULL, 0, 0) );
+      GCGconsMasterbranchGetActiveCons(gcg), branchrule, upBranchData, NULL, 0, 0) );
    SCIP_CALL( SCIPaddConsNode(masterprob, upChild, upChildcons, NULL) );
    SCIP_CALL( createBranchingCons(gcg, upChild, upBranchData) );
 

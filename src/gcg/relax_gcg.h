@@ -311,7 +311,7 @@ GCG_LOCKS* GCGgetLocks(
 /** sets the pricing problem parameters */
 SCIP_RETCODE GCGsetPricingProblemParameters(
    GCG_DECTYPE           dectype,            /**< the dectype of the decomp */
-   SCIP*                 scip,               /**< SCIP data structure of the pricing problem */
+   SCIP*                 pricingprob,        /**< SCIP data structure of the pricing problem */
    int                   clocktype,          /**< clocktype to use in the pricing problem */
    SCIP_Real             infinity,           /**< values larger than this are considered infinity in the pricing problem */
    SCIP_Real             epsilon,            /**< absolute values smaller than this are considered zero in the pricing problem */

@@ -73,7 +73,8 @@ struct SCIP_ReaderData
 
 
 /** write classification data */
-SCIP_RETCODE GCGwriteCls(
+static
+SCIP_RETCODE writeCls(
    GCG*                  gcg,                /**< GCG data structure */
    FILE*                 file                /**< File pointer to write to */
    )
@@ -213,7 +214,7 @@ SCIP_DECL_READERWRITE(readerWriteCls)
 
    readerdata = SCIPreaderGetData( reader );
    assert( readerdata != NULL );
-   SCIP_CALL( GCGwriteCls( readerdata->gcg, file ) );
+   SCIP_CALL( writeCls( readerdata->gcg, file ) );
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;

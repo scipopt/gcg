@@ -52,7 +52,8 @@ SCIP_DECL_DIALOGEXEC(GCGmasterDialogExecNotAvailable)
 }
 
 /** creates a root dialog */
-SCIP_RETCODE GCGcreateRootMasterDialog(
+static
+SCIP_RETCODE createRootMasterDialog(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_DIALOG**         root                /**< pointer to store the root dialog */
    )
@@ -85,7 +86,7 @@ SCIP_RETCODE GCGincludeDialogMaster(
    root = SCIPgetRootDialog(masterprob);
    if( root == NULL )
    {
-      SCIP_CALL( GCGcreateRootMasterDialog(masterprob, &root) );
+      SCIP_CALL( createRootMasterDialog(masterprob, &root) );
    }
    
    /* change */

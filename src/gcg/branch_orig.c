@@ -336,7 +336,7 @@ SCIP_RETCODE branchVar(
 
       /* create and add the masterbranch constraint */
       SCIP_CALL( GCGcreateConsMasterbranch(gcg, &cons, name, child,
-         GCGconsMasterbranchGetActiveCons(masterprob), branchrule, branchdata, origbranchconss, norigbranchconss,
+         GCGconsMasterbranchGetActiveCons(gcg), branchrule, branchdata, origbranchconss, norigbranchconss,
          maxorigbranchconss) );
       SCIP_CALL( SCIPaddConsNode(masterprob, child, cons, NULL) );
    }
@@ -398,7 +398,7 @@ SCIP_RETCODE branchVar(
 
       /* create and add the masterbranch constraint */
       SCIP_CALL( GCGcreateConsMasterbranch(gcg, &cons, name, child,
-         GCGconsMasterbranchGetActiveCons(masterprob), branchrule, branchdata, origbranchconss, norigbranchconss,
+         GCGconsMasterbranchGetActiveCons(gcg), branchrule, branchdata, origbranchconss, norigbranchconss,
          maxorigbranchconss) );
       SCIP_CALL( SCIPaddConsNode(masterprob, child, cons, NULL) );
    }
@@ -459,7 +459,7 @@ SCIP_RETCODE branchVar(
 
       /* create and add the masterbranch constraint */
       SCIP_CALL( GCGcreateConsMasterbranch(gcg, &cons, name, child,
-         GCGconsMasterbranchGetActiveCons(masterprob), branchrule, branchdata, origbranchconss, norigbranchconss,
+         GCGconsMasterbranchGetActiveCons(gcg), branchrule, branchdata, origbranchconss, norigbranchconss,
          maxorigbranchconss) );
       SCIP_CALL( SCIPaddConsNode(masterprob, child, cons, NULL) );
    }
@@ -765,7 +765,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
    origprob = GCGgetOrigprob(branchruledata->gcg);
    assert(origprob != NULL);
 
-   if( GCGcurrentNodeIsGeneric(scip) )
+   if( GCGcurrentNodeIsGeneric(branchruledata->gcg) )
    {
       SCIPdebugMessage("Not executing orig branching, node was branched by generic branchrule\n");
       *result = SCIP_DIDNOTRUN;
@@ -799,7 +799,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
    branchruledata = SCIPbranchruleGetData(branchrule);
    assert(branchruledata != NULL);
 
-   if( GCGcurrentNodeIsGeneric(scip) )
+   if( GCGcurrentNodeIsGeneric(branchruledata->gcg) )
    {
       SCIPdebugMessage("Not executing orig branching, node was branched by generic branchrule\n");
       *result = SCIP_DIDNOTRUN;
@@ -869,7 +869,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
    origprob = GCGgetOrigprob(branchruledata->gcg);
    assert(origprob != NULL);
 
-   if( GCGcurrentNodeIsGeneric(scip) )
+   if( GCGcurrentNodeIsGeneric(branchruledata->gcg) )
    {
       SCIPdebugMessage("Not executing orig branching, node was branched by generic branchrule\n");
       *result = SCIP_DIDNOTRUN;
@@ -1134,13 +1134,15 @@ SCIP_Real GCGbranchOrigGetNewbound(
 
 /** updates extern branching candidates before branching */
 SCIP_RETCODE GCGbranchOrigUpdateExternBranchcands(
-   SCIP*                 scip               /**< SCIP data structure */
+   GCG*                  gcg                /**< GCG data structure */
 )
 {
+   SCIP* scip;
    SCIP_VAR** origvars;
    int norigvars;
    int i;
 
+   scip = GCGgetOrigprob(gcg);
    assert(GCGisOriginal(scip));
 
    origvars = SCIPgetVars(scip);

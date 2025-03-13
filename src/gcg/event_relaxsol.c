@@ -124,7 +124,7 @@ SCIP_DECL_EVENTEXEC(eventExecRelaxsol)
     * comes from a master heuristic; otherwise it is assumed to already come from the original problem
     */
    if( (SCIPeventGetType(event) & SCIP_EVENTTYPE_SOLFOUND) && SCIPsolGetHeur(SCIPeventGetSol(event)) == NULL
-      && GCGeventhdlrMastersolIsTriggered(origprob) )
+      && GCGeventhdlrMastersolIsTriggered(eventhdlrdata->gcg) )
       return SCIP_OKAY;
 
    eventhdlrdata->triggered = TRUE;

@@ -473,7 +473,7 @@ SCIP_RETCODE convertStructToGCG(
 
          /* Assign the corresponding problem variable to the block */
          if( SCIPvarGetData(relevantvar) == NULL )
-            SCIP_CALL( GCGorigVarCreateData(origprob, relevantvar) );
+            SCIP_CALL( GCGorigVarCreateData(gcg, relevantvar) );
          SCIP_CALL( setOriginalVarBlockNr(gcg, relaxdata, relevantvar, i) );
 
          SCIPdebugMessage("\t\tTransformed var %s (%p) in block %d\n", SCIPvarGetName(relevantvar), (void*) relevantvar, i);
@@ -810,7 +810,7 @@ SCIP_RETCODE checkIdenticalBlocks(
 /** sets the pricing problem parameters */
 SCIP_RETCODE GCGsetPricingProblemParameters(
    GCG_DECTYPE           dectype,            /**< the dectype of the decomp */
-   SCIP*                 scip,               /**< GCG data structure of the pricing problem */
+   SCIP*                 pricingprob,        /**< SCIP data structure of the pricing problem */
    int                   clocktype,          /**< clocktype to use in the pricing problem */
    SCIP_Real             infinity,           /**< values larger than this are considered infinity in the pricing problem */
    SCIP_Real             epsilon,            /**< absolute values smaller than this are considered zero in the pricing problem */
@@ -821,45 +821,45 @@ SCIP_RETCODE GCGsetPricingProblemParameters(
    SCIP_Bool             enableppcuts        /**< should ppcuts be stored for sepa_basis */
    )
 {
-   assert(scip != NULL);
+   assert(pricingprob != NULL);
 
    if( dectype != GCG_DECTYPE_DIAGONAL )
    {
       /* disable conflict analysis */
-      SCIP_CALL( SCIPsetBoolParam(scip, "conflict/useprop", FALSE) );
-      SCIP_CALL( SCIPsetCharParam(scip, "conflict/useinflp", 'o') );
-      SCIP_CALL( SCIPsetCharParam(scip, "conflict/useboundlp", 'o') );
-      SCIP_CALL( SCIPsetBoolParam(scip, "conflict/usesb", FALSE) );
-      SCIP_CALL( SCIPsetBoolParam(scip, "conflict/usepseudo", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(pricingprob, "conflict/useprop", FALSE) );
+      SCIP_CALL( SCIPsetCharParam(pricingprob, "conflict/useinflp", 'o') );
+      SCIP_CALL( SCIPsetCharParam(pricingprob, "conflict/useboundlp", 'o') );
+      SCIP_CALL( SCIPsetBoolParam(pricingprob, "conflict/usesb", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(pricingprob, "conflict/usepseudo", FALSE) );
 
       /* reduce the effort spent for hash tables */
-      SCIP_CALL( SCIPsetBoolParam(scip, "misc/usevartable", FALSE) );
-      SCIP_CALL( SCIPsetBoolParam(scip, "misc/useconstable", FALSE) );
-      SCIP_CALL( SCIPsetBoolParam(scip, "misc/usesmalltables", TRUE) );
+      SCIP_CALL( SCIPsetBoolParam(pricingprob, "misc/usevartable", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(pricingprob, "misc/useconstable", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(pricingprob, "misc/usesmalltables", TRUE) );
 
       /* disable expensive presolving */
       /* @todo test whether this really helps, perhaps set presolving emphasis to fast? */
-      SCIP_CALL( SCIPsetBoolParam(scip, "constraints/linear/presolpairwise", FALSE) );
-      SCIP_CALL( SCIPsetBoolParam(scip, "constraints/setppc/presolpairwise", FALSE) );
-      SCIP_CALL( SCIPsetBoolParam(scip, "constraints/logicor/presolpairwise", FALSE) );
-      SCIP_CALL( SCIPsetBoolParam(scip, "constraints/linear/presolusehashing", FALSE) );
-      SCIP_CALL( SCIPsetBoolParam(scip, "constraints/setppc/presolusehashing", FALSE) );
-      SCIP_CALL( SCIPsetBoolParam(scip, "constraints/logicor/presolusehashing", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(pricingprob, "constraints/linear/presolpairwise", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(pricingprob, "constraints/setppc/presolpairwise", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(pricingprob, "constraints/logicor/presolpairwise", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(pricingprob, "constraints/linear/presolusehashing", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(pricingprob, "constraints/setppc/presolusehashing", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(pricingprob, "constraints/logicor/presolusehashing", FALSE) );
 
       /* disable dual fixing presolver for the moment (propagator should be safe), because we want to avoid variables fixed to infinity */
-      SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/maxprerounds", 0) );
-      SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/maxprerounds") );
+      SCIP_CALL( SCIPsetIntParam(pricingprob, "propagating/dualfix/maxprerounds", 0) );
+      SCIP_CALL( SCIPfixParam(pricingprob, "propagating/dualfix/maxprerounds") );
 
 
       /* disable solution storage ! */
-      SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
-      SCIP_CALL( SCIPfixParam(scip, "limits/maxorigsol") );
+      SCIP_CALL( SCIPsetIntParam(pricingprob, "limits/maxorigsol", 0) );
+      SCIP_CALL( SCIPfixParam(pricingprob, "limits/maxorigsol") );
 
       /* @todo enable presolving and propagation of xor constraints if bug is fixed */
 
       /* disable presolving and propagation of xor constraints as work-around for a SCIP bug */
-      SCIP_CALL( SCIPsetIntParam(scip, "constraints/xor/maxprerounds", 0) );
-      SCIP_CALL( SCIPsetIntParam(scip, "constraints/xor/propfreq", -1) );
+      SCIP_CALL( SCIPsetIntParam(pricingprob, "constraints/xor/maxprerounds", 0) );
+      SCIP_CALL( SCIPsetIntParam(pricingprob, "constraints/xor/propfreq", -1) );
 
       /* jonas' stuff */
       if( enableppcuts )
@@ -867,38 +867,38 @@ SCIP_RETCODE GCGsetPricingProblemParameters(
          int pscost;
          int prop;
 
-         SCIP_CALL( SCIPgetIntParam(scip, "branching/pscost/priority", &pscost) );
-         SCIP_CALL( SCIPgetIntParam(scip, "propagating/maxroundsroot", &prop) );
-         SCIP_CALL( SCIPsetIntParam(scip, "branching/pscost/priority", 11000) );
-         SCIP_CALL( SCIPsetIntParam(scip, "propagating/maxroundsroot", 0) );
-         SCIP_CALL( SCIPsetPresolving(scip, SCIP_PARAMSETTING_OFF, TRUE) );
+         SCIP_CALL( SCIPgetIntParam(pricingprob, "branching/pscost/priority", &pscost) );
+         SCIP_CALL( SCIPgetIntParam(pricingprob, "propagating/maxroundsroot", &prop) );
+         SCIP_CALL( SCIPsetIntParam(pricingprob, "branching/pscost/priority", 11000) );
+         SCIP_CALL( SCIPsetIntParam(pricingprob, "propagating/maxroundsroot", 0) );
+         SCIP_CALL( SCIPsetPresolving(pricingprob, SCIP_PARAMSETTING_OFF, TRUE) );
       }
    }
 
    /* disable multiaggregation because of infinite values */
-   SCIP_CALL( SCIPsetBoolParam(scip, "presolving/donotmultaggr", TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(pricingprob, "presolving/donotmultaggr", TRUE) );
 
    /* disable output to console */
-   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
+   SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
    #if SCIP_VERSION > 210
-      SCIP_CALL( SCIPsetBoolParam(scip, "misc/printreason", FALSE) );
+      SCIP_CALL( SCIPsetBoolParam(pricingprob, "misc/printreason", FALSE) );
    #endif
 
    /* do not abort subproblem on CTRL-C */
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/catchctrlc", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(pricingprob, "misc/catchctrlc", FALSE) );
 
    /* set clock type */
-   SCIP_CALL( SCIPsetIntParam(scip, "timing/clocktype", clocktype) );
+   SCIP_CALL( SCIPsetIntParam(pricingprob, "timing/clocktype", clocktype) );
 
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/calcintegral", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/finitesolutionstore", TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(pricingprob, "misc/calcintegral", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(pricingprob, "misc/finitesolutionstore", TRUE) );
 
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/infinity", infinity) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/epsilon", epsilon) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/sumepsilon", sumepsilon) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/feastol", feastol) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/lpfeastolfactor", lpfeastolfactor) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/dualfeastol", dualfeastol) );
+   SCIP_CALL( SCIPsetRealParam(pricingprob, "numerics/infinity", infinity) );
+   SCIP_CALL( SCIPsetRealParam(pricingprob, "numerics/epsilon", epsilon) );
+   SCIP_CALL( SCIPsetRealParam(pricingprob, "numerics/sumepsilon", sumepsilon) );
+   SCIP_CALL( SCIPsetRealParam(pricingprob, "numerics/feastol", feastol) );
+   SCIP_CALL( SCIPsetRealParam(pricingprob, "numerics/lpfeastolfactor", lpfeastolfactor) );
+   SCIP_CALL( SCIPsetRealParam(pricingprob, "numerics/dualfeastol", dualfeastol) );
 
    return SCIP_OKAY;
 }
@@ -2820,7 +2820,7 @@ SCIP_RETCODE initializeMasterProblemSolve(
       SCIP_CALL( transformMaster(gcg, relax) );
       /* transform the decomposition */
       // SCIP_CALL( GCGdecompTransform(scip, relaxdata->decomp) );
-      SCIP_CALL( GCGconsOrigbranchAddRootCons(scip) );
+      SCIP_CALL( GCGconsOrigbranchAddRootCons(gcg) );
       assert(relaxdata->decomp != NULL);
    }
 
@@ -3260,7 +3260,7 @@ SCIP_RETCODE relaxExecGcgDantzigWolfe(
             SCIPdebugMessage("  updated current best primal feasible solution.\n");
       }
 
-      activeorigcons = GCGconsOrigbranchGetActiveCons(scip);
+      activeorigcons = GCGconsOrigbranchGetActiveCons(gcg);
       if( GCGconsOrigbranchGetBranchrule(activeorigcons) != NULL )
       {
          SCIP_CALL( GCGrelaxBranchMasterSolved(gcg, GCGconsOrigbranchGetBranchrule(activeorigcons ),
@@ -4560,8 +4560,8 @@ SCIP_RETCODE GCGrelaxNewProbingnodeOrig(
    /* add a probing node in the original problem together with an original branching constraint */
    SCIP_CALL( SCIPnewProbingNode(scip) );
    probingnode = SCIPgetCurrentNode(scip);
-   SCIP_CALL( GCGcreateConsOrigbranch(scip, &probingcons, "probingcons", probingnode,
-      GCGconsOrigbranchGetActiveCons(scip), NULL, NULL) );
+   SCIP_CALL( GCGcreateConsOrigbranch(gcg, &probingcons, "probingcons", probingnode,
+      GCGconsOrigbranchGetActiveCons(gcg), NULL, NULL) );
    SCIP_CALL( SCIPaddConsNode(scip, probingnode, probingcons, NULL) );
    SCIP_CALL( SCIPreleaseCons(scip, &probingcons) );
 
@@ -4613,9 +4613,9 @@ SCIP_RETCODE GCGrelaxNewProbingnodeMaster(
    /* add a probing node in the master problem together with a master branching constraint */
    SCIP_CALL( SCIPnewProbingNode(masterprob) );
    probingnode = SCIPgetCurrentNode(masterprob);
-   assert(GCGconsMasterbranchGetActiveCons(masterprob) != NULL);
-   SCIP_CALL( GCGcreateConsMasterbranch(relaxdata->gcg, &probingcons, "mprobingcons", probingnode,
-      GCGconsMasterbranchGetActiveCons(masterprob), NULL, NULL, NULL, 0, 0) );
+   assert(GCGconsMasterbranchGetActiveCons(gcg) != NULL);
+   SCIP_CALL( GCGcreateConsMasterbranch(gcg, &probingcons, "mprobingcons", probingnode,
+      GCGconsMasterbranchGetActiveCons(gcg), NULL, NULL, NULL, 0, 0) );
    SCIP_CALL( SCIPaddConsNode(masterprob, probingnode, probingcons, NULL) );
    SCIP_CALL( SCIPreleaseCons(masterprob, &probingcons) );
 
@@ -4672,9 +4672,9 @@ SCIP_RETCODE GCGrelaxNewProbingnodeMasterCons(
    /* add a probing node in the master problem together with a master branching constraint */
    SCIP_CALL( SCIPnewProbingNode(masterprob) );
    probingnode = SCIPgetCurrentNode(masterprob);
-   assert(GCGconsMasterbranchGetActiveCons(masterprob) != NULL);
+   assert(GCGconsMasterbranchGetActiveCons(gcg) != NULL);
    SCIP_CALL( GCGcreateConsMasterbranch(relaxdata->gcg, &probingcons, "mprobingcons", probingnode,
-      GCGconsMasterbranchGetActiveCons(masterprob), branchrule, branchdata, origbranchconss, norigbranchconss, maxorigbranchconss) );
+      GCGconsMasterbranchGetActiveCons(gcg), branchrule, branchdata, origbranchconss, norigbranchconss, maxorigbranchconss) );
    SCIP_CALL( SCIPaddConsNode(masterprob, probingnode, probingcons, NULL) );
    SCIP_CALL( SCIPreleaseCons(masterprob, &probingcons) );
 

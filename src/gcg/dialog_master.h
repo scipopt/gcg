@@ -49,13 +49,6 @@ extern "C" {
 GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGmasterDialogExecNotAvailable);
 
-/** creates a root dialog */
-GCG_EXPORT
-SCIP_RETCODE GCGcreateRootMasterDialog(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_DIALOG**         root                /**< pointer to store the root dialog */
-   );
-
 /** includes or updates the master dialog menus in GCG */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeDialogMaster(

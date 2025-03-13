@@ -1204,10 +1204,10 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    SCIP_CALL( SCIPconstructLP(origscip, &cutoff) );
 
    /* add origcuts to probing lp */
-   for( i = 0; i < GCGsepaGetNOriginalSepaCuts(scip); ++i )
+   for( i = 0; i < GCGsepaGetNOriginalSepaCuts(gcg); ++i )
    {
-      if( SCIProwGetLPPos(GCGsepaGetOriginalSepaOrigcuts(scip)[i]) == -1 )
-         SCIP_CALL( SCIPaddRowProbing(origscip, GCGsepaGetOriginalSepaOrigcuts(scip)[i]) );
+      if( SCIProwGetLPPos(GCGsepaGetOriginalSepaOrigcuts(gcg)[i]) == -1 )
+         SCIP_CALL( SCIPaddRowProbing(origscip, GCGsepaGetOriginalSepaOrigcuts(gcg)[i]) );
    }
 
    /* add new cuts which did not cut off master sol to probing lp */
@@ -1461,7 +1461,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          colvarused = FALSE;
          origcut = cuts[i];
 
-         if( GCGsepaOriginalSepaOrigcutExists(scip, origcut) )
+         if( GCGsepaOriginalSepaOrigcutExists(gcg, origcut) )
             continue;
 
          /* if cut is violated by LP solution, increase nviolatedcuts */
@@ -1530,7 +1530,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          sepadata->mastercuts[sepadata->nmastercuts] = mastercut;
          SCIP_CALL( SCIPcaptureRow(scip, sepadata->mastercuts[sepadata->nmastercuts]) );
          sepadata->nmastercuts++;
-         SCIP_CALL( GCGsepaAddOriginalSepaCuts(scip, origcut, mastercut) );
+         SCIP_CALL( GCGsepaAddOriginalSepaCuts(gcg, origcut, mastercut) );
 
          SCIP_CALL( SCIPreleaseRow(scip, &mastercut) );
          SCIPfreeBufferArray(scip, &roworigvars);
@@ -1699,15 +1699,15 @@ SCIP_RETCODE GCGincludeSepaBasis(
 
 /** returns the array of original cuts saved in the separator data */
 SCIP_ROW** GCGsepaBasisGetOrigcuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   sepa = SCIPfindSepa(GCGgetMasterprob(gcg), SEPA_NAME);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
@@ -1718,15 +1718,15 @@ SCIP_ROW** GCGsepaBasisGetOrigcuts(
 
 /** returns the number of original cuts saved in the separator data */
 int GCGsepaBasisGetNOrigcuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   sepa = SCIPfindSepa(GCGgetMasterprob(gcg), SEPA_NAME);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
@@ -1737,15 +1737,15 @@ int GCGsepaBasisGetNOrigcuts(
 
 /** returns the array of master cuts saved in the separator data */
 SCIP_ROW** GCGsepaBasisGetMastercuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   sepa = SCIPfindSepa(GCGgetMasterprob(gcg), SEPA_NAME);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
@@ -1756,15 +1756,15 @@ SCIP_ROW** GCGsepaBasisGetMastercuts(
 
 /** returns the number of master cuts saved in the separator data */
 int GCGsepaBasisGetNMastercuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   sepa = SCIPfindSepa(GCGgetMasterprob(gcg), SEPA_NAME);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);

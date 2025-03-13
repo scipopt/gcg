@@ -66,7 +66,7 @@ SCIP_Real GCGbranchOrigGetNewbound(
 
 /** updates extern branching candidates before branching */
 SCIP_RETCODE GCGbranchOrigUpdateExternBranchcands(
-   SCIP*                 scip               /**< SCIP data structure */
+   GCG*                  gcg                /**< GCG data structure */
 );
 
 #ifdef __cplusplus

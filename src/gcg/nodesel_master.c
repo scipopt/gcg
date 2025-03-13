@@ -142,7 +142,7 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
 
    if( orignodenumber != nodeseldata->lastorignodenumber )
    {
-      SCIP_CONS* origcons = GCGconsOrigbranchGetActiveCons(origscip);
+      SCIP_CONS* origcons = GCGconsOrigbranchGetActiveCons(nodeseldata->gcg);
       SCIP_CONS* parentorigcons = GCGconsOrigbranchGetParentcons(origcons);
 
       nodeseldata->lastorignodenumber = orignodenumber;
@@ -221,8 +221,8 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
    }
 
 #ifndef NDEBUG
-   GCGconsOrigbranchCheckConsistency(origscip);
-   GCGconsMasterbranchCheckConsistency(scip);
+   GCGconsOrigbranchCheckConsistency(nodeseldata->gcg);
+   GCGconsMasterbranchCheckConsistency(nodeseldata->gcg);
 #endif
 
    return SCIP_OKAY;
@@ -313,9 +313,9 @@ SCIP_DECL_EVENTEXEC(eventExecFocusnode)
    /* set the dual bound to the lower bound of the corresponding original node */
    SCIP_CALL( SCIPupdateNodeDualbound(scip, focusnode, SCIPgetNodeLowerbound(origscip, SCIPgetCurrentNode(origscip))) );
    assert(
-      (GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(origscip)) == SCIPgetRootNode(origscip)
+      (GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(eventhdlrdata->gcg)) == SCIPgetRootNode(origscip)
          && SCIPnodeGetDepth(SCIPgetCurrentNode(origscip)) == SCIPnodeGetDepth(focusnode))
-      || focusnode == GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(GCGconsOrigbranchGetActiveCons(origscip))));
+      || focusnode == GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(GCGconsOrigbranchGetActiveCons(eventhdlrdata->gcg))));
 
    return SCIP_OKAY;
 }
@@ -328,7 +328,7 @@ SCIP_DECL_EVENTEXEC(eventExecFocusnode)
 /** creates the node selector for depth first search and includes it in SCIP */
 SCIP_RETCODE GCGincludeNodeselMaster(
    GCG*                  gcg                 /**< SCIP data structure */
-)
+   )
 {
    SCIP_NODESELDATA* nodeseldata;
    SCIP_EVENTHDLR* eventhdlr;

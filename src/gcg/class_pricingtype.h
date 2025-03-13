@@ -79,7 +79,6 @@ public:
 
    /** get dual value of a constraint */
    virtual SCIP_Real consGetDual(
-      SCIP*                 scip,               /**< SCIP data structure */
       SCIP_CONS*            cons                /**< constraint to get dual for */
       ) const = 0;
 
@@ -90,7 +89,6 @@ public:
 
    /** get dual value of an extended master cons */
    virtual SCIP_Real extendedmasterconsGetDual(
-      SCIP*                 scip,
       GCG_EXTENDEDMASTERCONSDATA*    extendedmasterconsdata       /**< extended master cons data */
       ) const = 0;
 
@@ -182,7 +180,6 @@ public:
    virtual SCIP_RETCODE addParameters();
 
    virtual SCIP_Real consGetDual(
-     SCIP*                 scip,
      SCIP_CONS*            cons
      ) const;
 
@@ -191,7 +188,6 @@ public:
      ) const;
 
    virtual SCIP_Real extendedmasterconsGetDual(
-     SCIP*                 scip,
      GCG_EXTENDEDMASTERCONSDATA*    extendedmasterconsdata
      ) const;
 
@@ -225,7 +221,6 @@ public:
    virtual SCIP_RETCODE addParameters();
 
    virtual SCIP_Real consGetDual(
-      SCIP*                 scip,
       SCIP_CONS*            cons
       ) const;
 
@@ -234,7 +229,6 @@ public:
       ) const;
 
    virtual SCIP_Real extendedmasterconsGetDual(
-      SCIP*                 scip,
       GCG_EXTENDEDMASTERCONSDATA*    extendedmasterconsdata
       ) const;
 

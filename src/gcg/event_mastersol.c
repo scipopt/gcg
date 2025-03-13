@@ -189,15 +189,15 @@ SCIP_RETCODE GCGincludeEventHdlrMastersol(
 
 /** return whether event has been triggered */
 SCIP_Bool GCGeventhdlrMastersolIsTriggered(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_EVENTHDLR* eventhdlr;
    SCIP_EVENTHDLRDATA* eventhdlrdata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
+   eventhdlr = SCIPfindEventhdlr(GCGgetOrigprob(gcg), EVENTHDLR_NAME);
    assert(eventhdlr != NULL);
 
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);

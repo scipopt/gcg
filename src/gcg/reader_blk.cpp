@@ -1092,76 +1092,9 @@ SCIP_RETCODE readBLKFile(
    return retcode;
 }
 
-
-/*
- * Callback methods of reader
- */
-
-/** destructor of reader to free user data (called when SCIP is exiting) */
-static
-SCIP_DECL_READERFREE(readerFreeBlk)
-{
-   SCIP_READERDATA* readerdata;
-
-   readerdata = SCIPreaderGetData(reader);
-   assert(readerdata != NULL);
-
-   SCIPfreeMemory(scip, &readerdata);
-
-   return SCIP_OKAY;
-}
-
-
-/** problem reading method of reader */
-static
-SCIP_DECL_READERREAD(readerReadBlk)
-{  /*lint --e{715} */
-
-   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
-   {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Please read in a problem before reading in the corresponding structure file!\n");
-      return SCIP_OKAY;
-   }
-   SCIP_CALL( SCIPreadBlk(scip, filename, result) );
-
-   return SCIP_OKAY;
-}
-
-
-/** problem writing method of reader */
-static
-SCIP_DECL_READERWRITE(readerWriteBlk)
-{ /*lint --e{715}*/
-   return SCIP_OKAY;
-}
-
-/*
- * reader specific interface methods
- */
-
-/** includes the blk file reader in SCIP */
-SCIP_RETCODE GCGincludeReaderBlk(
-   GCG*                  gcg                 /**< GCG data structure */
-   )
-{
-   SCIP_READERDATA* readerdata = NULL;
-   SCIP* origprob = GCGgetOrigprob(gcg);
-   assert(origprob != NULL);
-
-   /* create blk reader data */
-   SCIP_CALL( SCIPallocMemory(origprob, &readerdata) );
-   readerdata->gcg = gcg;
-
-   /* include blk reader */
-   SCIP_CALL( SCIPincludeReader(origprob, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
-         readerFreeBlk, readerReadBlk, readerWriteBlk, readerdata) );
-
-   return SCIP_OKAY;
-}
-
-
 /* reads problem from file */
-SCIP_RETCODE SCIPreadBlk(
+static
+SCIP_RETCODE readBlk(
    SCIP*                 scip,               /**< SCIP data structure */
    const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */
    SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
@@ -1225,6 +1158,73 @@ SCIP_RETCODE SCIPreadBlk(
    {
       *result = SCIP_SUCCESS;
    }
+
+   return SCIP_OKAY;
+}
+
+
+/*
+ * Callback methods of reader
+ */
+
+/** destructor of reader to free user data (called when SCIP is exiting) */
+static
+SCIP_DECL_READERFREE(readerFreeBlk)
+{
+   SCIP_READERDATA* readerdata;
+
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
+
+   SCIPfreeMemory(scip, &readerdata);
+
+   return SCIP_OKAY;
+}
+
+
+/** problem reading method of reader */
+static
+SCIP_DECL_READERREAD(readerReadBlk)
+{  /*lint --e{715} */
+
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Please read in a problem before reading in the corresponding structure file!\n");
+      return SCIP_OKAY;
+   }
+   SCIP_CALL( readBlk(scip, filename, result) );
+
+   return SCIP_OKAY;
+}
+
+
+/** problem writing method of reader */
+static
+SCIP_DECL_READERWRITE(readerWriteBlk)
+{ /*lint --e{715}*/
+   return SCIP_OKAY;
+}
+
+/*
+ * reader specific interface methods
+ */
+
+/** includes the blk file reader in SCIP */
+SCIP_RETCODE GCGincludeReaderBlk(
+   GCG*                  gcg                 /**< GCG data structure */
+   )
+{
+   SCIP_READERDATA* readerdata = NULL;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
+
+   /* create blk reader data */
+   SCIP_CALL( SCIPallocMemory(origprob, &readerdata) );
+   readerdata->gcg = gcg;
+
+   /* include blk reader */
+   SCIP_CALL( SCIPincludeReader(origprob, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
+         readerFreeBlk, readerReadBlk, readerWriteBlk, readerdata) );
 
    return SCIP_OKAY;
 }

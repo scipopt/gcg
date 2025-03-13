@@ -642,7 +642,6 @@ public:
     */
    GCG_EXPORT
    SCIP_Bool isFiniteNonnegativeIntegral(
-      SCIP*                 scip,               /**< SCIP data structure */
       SCIP_Real             x                   /**< value */
       );
 
@@ -668,7 +667,6 @@ public:
    */
    GCG_EXPORT
    SCIP_Bool isRangedRow(
-      SCIP*                 scip,   /**< SCIP data structure */
       SCIP_Real             lhs,    /**< left hand side */
       SCIP_Real             rhs     /**< right hand side */
       );
@@ -694,7 +692,6 @@ public:
     */
    GCG_EXPORT
    void printBlockcandidateInformation(
-      SCIP*                 scip,                /**< SCIP data structure */
       FILE*                 file                 /**< output file or NULL for standard output */
       );
 

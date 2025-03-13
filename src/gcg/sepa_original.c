@@ -401,15 +401,15 @@ SCIP_RETCODE GCGincludeSepaOriginal(
 
 /** returns the array of original cuts in the original problem saved in the separator data */
 SCIP_ROW** GCGsepaGetOriginalSepaOrigcuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   sepa = SCIPfindSepa(GCGgetMasterprob(gcg), SEPA_NAME);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
@@ -421,15 +421,15 @@ SCIP_ROW** GCGsepaGetOriginalSepaOrigcuts(
 
 /** returns the number of cuts saved in the separator data */
 int GCGsepaGetNOriginalSepaCuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   sepa = SCIPfindSepa(GCGgetMasterprob(gcg), SEPA_NAME);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
@@ -440,15 +440,15 @@ int GCGsepaGetNOriginalSepaCuts(
 
 /** returns the array of original cuts in the master problem saved in the separator data */
 SCIP_ROW** GCGsepaGetOriginalSepaMastercuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   sepa = SCIPfindSepa(GCGgetMasterprob(gcg), SEPA_NAME);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
@@ -459,16 +459,18 @@ SCIP_ROW** GCGsepaGetOriginalSepaMastercuts(
 
 /** adds given original cut in both the original and master problem to master separator data */
 SCIP_RETCODE GCGsepaAddOriginalSepaCuts(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    SCIP_ROW*            origcut,            /**< pointer to orginal cut in the original problem */
    SCIP_ROW*            mastercut           /**< pointer to original cut in the master problem */
    )
 {
+   SCIP* scip;
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
+   scip = GCGgetMasterprob(gcg);
    sepa = SCIPfindSepa(scip, SEPA_NAME);
    assert(sepa != NULL);
 
@@ -490,16 +492,16 @@ SCIP_RETCODE GCGsepaAddOriginalSepaCuts(
 
 /** checks whether a given original cut in the original problem is already known */
 SCIP_Bool GCGsepaOriginalSepaOrigcutExists(
-   SCIP*                scip,            /**< SCIP data structure */
+   GCG*                 gcg,             /**< GCG data structure */
    SCIP_ROW*            origcut          /**< pointer to orginal cut in the original problem */
    )
 {
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   sepa = SCIPfindSepa(GCGgetMasterprob(gcg), SEPA_NAME);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);

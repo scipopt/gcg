@@ -88,6 +88,7 @@ struct SCIP_ConsData
 /** constraint handler data */
 struct SCIP_ConshdlrData
 {
+   GCG*                  gcg;                /**< GCG data structure */
    SCIP_CONS**           stack;              /**< stack for storing active constraints */
    int                   nstack;             /**< number of elements on the stack */
    int                   maxstacksize;       /**< maximum size of the stack */
@@ -152,7 +153,7 @@ SCIP_DECL_CONSINITSOL(consInitsolOrigbranch)
       --(conshdlrData->nstack);
    }
 
-   GCGconsOrigbranchCheckConsistency(scip);
+   GCGconsOrigbranchCheckConsistency(conshdlrData->gcg);
 
    return SCIP_OKAY;
 }
@@ -421,6 +422,7 @@ SCIP_RETCODE GCGincludeConshdlrOrigbranch(
    assert(origprob != NULL);
 
    SCIP_CALL( SCIPallocMemory(origprob, &conshdlrData) );
+   conshdlrData->gcg = gcg;
    conshdlrData->stack = NULL;
    conshdlrData->nstack = 0;
    conshdlrData->maxstacksize = 25;
@@ -448,7 +450,7 @@ SCIP_RETCODE GCGincludeConshdlrOrigbranch(
 
 /** creates and captures a origbranch constraint */
 SCIP_RETCODE GCGcreateConsOrigbranch(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
    const char*           name,               /**< name of constraint */
    SCIP_NODE*            node,               /**< the node to which this origbranch constraint belongs */
@@ -458,12 +460,14 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
                                               *   corresponding node */
    )
 {
+   SCIP* scip;
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSDATA* consdata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert((parentcons == NULL) == (node == NULL));
 
+   scip = GCGgetOrigprob(gcg);
    /* find the origbranch constraint handler */
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
@@ -525,13 +529,15 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
 
 /** returns the branch orig constraint of the current node, only needs the pointer to scip */
 SCIP_CONS* GCGconsOrigbranchGetActiveCons(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
+   SCIP* scip;
    SCIP_CONSHDLR*     conshdlr;
    SCIP_CONSHDLRDATA* conshdlrData;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
+   scip = GCGgetOrigprob(gcg);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
 
@@ -545,15 +551,17 @@ SCIP_CONS* GCGconsOrigbranchGetActiveCons(
 
 /** returns the stack and the number of elements on it */
 void GCGconsOrigbranchGetStack(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_CONS***          stack,              /**< return value: pointer to the stack */
    int*                  nstackelements      /**< return value: pointer to int, for number of elements on the stack */
    )
 {
+   SCIP* scip;
    SCIP_CONSHDLR*     conshdlr;
    SCIP_CONSHDLRDATA* conshdlrData;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
+   scip = GCGgetOrigprob(gcg);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
 
@@ -706,9 +714,10 @@ SCIP_CONS* GCGconsOrigbranchGetMastercons(
 
 /** adds initial constraint to root node */
 SCIP_RETCODE GCGconsOrigbranchAddRootCons(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
+   SCIP* scip;
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
    SCIP_CONS* cons;
@@ -716,8 +725,9 @@ SCIP_RETCODE GCGconsOrigbranchAddRootCons(
    int nconss;
    int i;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
+   scip = GCGgetOrigprob(gcg);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    assert(conshdlr != NULL);
 
@@ -734,24 +744,24 @@ SCIP_RETCODE GCGconsOrigbranchAddRootCons(
    assert(SCIPconshdlrGetNConss(conshdlr) == 0);
    if( conshdlrdata->rootcons == NULL )
    {
-      SCIP_CALL( GCGcreateConsOrigbranch(scip, &cons, "root-origbranch", NULL, NULL, NULL, NULL) );
+      SCIP_CALL( GCGcreateConsOrigbranch(gcg, &cons, "root-origbranch", NULL, NULL, NULL, NULL) );
       SCIP_CALL( SCIPaddConsNode(scip, SCIPgetRootNode(scip), cons, SCIPgetRootNode(scip)) );
       conshdlrdata->rootcons = cons;
    }
 
    /* check consistency */
-   GCGconsOrigbranchCheckConsistency(scip);
+   GCGconsOrigbranchCheckConsistency(gcg);
 
    return SCIP_OKAY;
 }
 
 /** checks the consistency of the origbranch constraints in the problem */
 void GCGconsOrigbranchCheckConsistency(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
 #ifdef CHECKCONSISTENCY
-
+   SCIP* scip;
    SCIP_CONSHDLR*     conshdlr;
 
 #ifndef NDEBUG
@@ -760,7 +770,8 @@ void GCGconsOrigbranchCheckConsistency(
    int i;
 #endif
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
+   scip = GCGgetOrigprob(gcg);
    conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
    if( conshdlr == NULL )
    {

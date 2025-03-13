@@ -126,7 +126,7 @@ SCIP_RETCODE Stabilization::updateStabcenterconsvals()
 
 SCIP_RETCODE Stabilization::updateStabcenteroriginalcutvals()
 {
-   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(masterprob);
+   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(gcg);
 
    if( noriginalsepacuts == nstabcenteroriginalsepacutvals )
    {
@@ -201,7 +201,7 @@ SCIP_RETCODE Stabilization::updateSubgradientconsvals()
 
 SCIP_RETCODE Stabilization::updateSubgradientoriginalcutvals()
 {
-   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(masterprob);
+   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(gcg);
 
    if( noriginalsepacuts == nsubgradientoriginalsepacutvals )
    {
@@ -308,7 +308,7 @@ SCIP_Real Stabilization::linkingconsGetDual(
 
    return computeDual(
       stabcenterlinkingconsvals[i],
-      pricingtype->consGetDual(masterprob, cons),
+      pricingtype->consGetDual(cons),
       subgradient,
       0.0,
       0.0
@@ -343,7 +343,7 @@ SCIP_RETCODE Stabilization::consGetDual(
 
    *dual = computeDual(
       stabcenterconsvals[i],
-      pricingtype->consGetDual(masterprob, cons),
+      pricingtype->consGetDual(cons),
       subgradient,
       SCIPgetLhsLinear(masterprob, cons),
       SCIPgetRhsLinear(masterprob, cons)
@@ -358,12 +358,12 @@ SCIP_RETCODE Stabilization::rowGetDual(
    )
 {
 #ifndef NDEBUG
-   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(masterprob);
+   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(gcg);
 #endif
    assert(i < noriginalsepacuts);
    assert(dual != NULL);
 
-   SCIP_ROW* originalsepacut = GCGsepaGetOriginalSepaMastercuts(masterprob)[i];
+   SCIP_ROW* originalsepacut = GCGsepaGetOriginalSepaMastercuts(gcg)[i];
    SCIP_Real subgradient = 0.0;
 
    if( i >= nstabcenteroriginalsepacutvals )
@@ -405,7 +405,7 @@ SCIP_Real Stabilization::convGetDual(
 
    return computeDual(
       stabcenterconv[i],
-      pricingtype->consGetDual(masterprob, cons),
+      pricingtype->consGetDual(cons),
       subgradient,
       (SCIP_Real) GCGgetNIdenticalBlocks(gcg, i),
       (SCIP_Real) GCGgetNIdenticalBlocks(gcg, i)
@@ -447,7 +447,7 @@ SCIP_RETCODE Stabilization::extendedmasterconsGetDual(
 
    *dual = computeDual(
       stabcenter,
-      pricingtype->extendedmasterconsGetDual(masterprob, extendedmasterconsdata),
+      pricingtype->extendedmasterconsGetDual(extendedmasterconsdata),
       0.0,
       GCGextendedmasterconsGetLhs(gcg, extendedmasterconsdata),
       GCGextendedmasterconsGetRhs(gcg, extendedmasterconsdata)
@@ -492,7 +492,7 @@ SCIP_RETCODE Stabilization::updateStabilityCenter(
 
    /* get new dual values */
    int nconss = GCGgetNMasterConss(gcg);
-   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(masterprob);
+   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(gcg);
    int nprobs = GCGgetNPricingprobs(gcg);
 
    assert(nstabcenterlinkingconsvals <= GCGgetNVarLinkingconss(gcg) );
@@ -677,9 +677,9 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
    assert(nstabcenterlinkingconsvals <= GCGgetNVarLinkingconss(gcg) );
    int nconss = GCGgetNMasterConss(gcg);
    assert(nconss <= nstabcenterconsvals);
-   SCIP_ROW** originalsepamastercuts = GCGsepaGetOriginalSepaMastercuts(masterprob);
-   SCIP_ROW** originalsepaorigcuts = GCGsepaGetOriginalSepaOrigcuts(masterprob);
-   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(masterprob);
+   SCIP_ROW** originalsepamastercuts = GCGsepaGetOriginalSepaMastercuts(gcg);
+   SCIP_ROW** originalsepaorigcuts = GCGsepaGetOriginalSepaOrigcuts(gcg);
+   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(gcg);
    assert(noriginalsepacuts <= nstabcenteroriginalsepacutvals);
 
    SCIP_Real gradientproduct = 0.0;
@@ -699,7 +699,7 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
       GCGconsGetVars(origprob, origcons, vars, nvars);
       GCGconsGetVals(origprob, origcons, vals, nvars);
 
-      SCIP_Real dual =  pricingtype->consGetDual(masterprob, masterconss[i]);
+      SCIP_Real dual =  pricingtype->consGetDual(masterconss[i]);
       SCIP_Real stabdual;
 
       SCIP_CALL( consGetDual(i, &stabdual) );
@@ -846,7 +846,7 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
       cols = GCGextendedmasterconsGetCols(gcg, tmpextendedmasterconsdata);
       vals = GCGextendedmasterconsGetVals(gcg, tmpextendedmasterconsdata);
 
-      SCIP_Real dual = pricingtype->extendedmasterconsGetDual(masterprob, tmpextendedmasterconsdata);
+      SCIP_Real dual = pricingtype->extendedmasterconsGetDual(tmpextendedmasterconsdata);
       assert(!SCIPisInfinity(masterprob, ABS(dual)));
 
       SCIP_Real stabdual;
@@ -922,7 +922,7 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
       assert(GCGvarIsPricing(pricingvar));
 
       assert(stabcenterlinkingconsvals != NULL);
-      SCIP_Real dual = pricingtype->consGetDual(masterprob, linkingcons) - stabcenterlinkingconsvals[i];
+      SCIP_Real dual = pricingtype->consGetDual(linkingcons) - stabcenterlinkingconsvals[i];
 
       SCIP_Real stabdual = linkingconsGetDual(i);
 
@@ -958,8 +958,8 @@ SCIP_RETCODE Stabilization::calculateSubgradient(
    assert(nstabcenterlinkingconsvals <= GCGgetNVarLinkingconss(gcg) );
    int nconss = GCGgetNMasterConss(gcg);
    assert(nconss <= nstabcenterconsvals);
-   SCIP_ROW** originalsepaorigcuts = GCGsepaGetOriginalSepaOrigcuts(masterprob);
-   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(masterprob);
+   SCIP_ROW** originalsepaorigcuts = GCGsepaGetOriginalSepaOrigcuts(gcg);
+   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(gcg);
    assert(noriginalsepacuts <= nstabcenteroriginalsepacutvals);
 
    subgradientnorm = 0.0;
@@ -1237,8 +1237,8 @@ void Stabilization::calculateDualdiffnorm()
    assert(nstabcenterlinkingconsvals <= GCGgetNVarLinkingconss(gcg) );
    int nconss = GCGgetNMasterConss(gcg);
    assert(nconss <= nstabcenterconsvals);
-   SCIP_ROW** originalsepamastercuts = GCGsepaGetOriginalSepaMastercuts(masterprob);
-   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(masterprob);
+   SCIP_ROW** originalsepamastercuts = GCGsepaGetOriginalSepaMastercuts(gcg);
+   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(gcg);
    assert(noriginalsepacuts <= nstabcenteroriginalsepacutvals);
 
    dualdiffnorm = 0.0;
@@ -1248,7 +1248,7 @@ void Stabilization::calculateDualdiffnorm()
 
    for( int i = 0; i < nconss; ++i )
    {
-      SCIP_Real dualdiff = SQR(stabcenterconsvals[i] - pricingtype->consGetDual(masterprob, masterconss[i]));
+      SCIP_Real dualdiff = SQR(stabcenterconsvals[i] - pricingtype->consGetDual(masterconss[i]));
 
       if( SCIPisPositive(masterprob, dualdiff) )
          dualdiffnorm += dualdiff;
@@ -1273,7 +1273,7 @@ void Stabilization::calculateDualdiffnorm()
       tmpextendedmasterconsdata = stabcenterextendedmasterconss[i];
       assert(tmpextendedmasterconsdata != NULL);
 
-      SCIP_Real dualdiff = SQR(stabcenterextendedmasterconsvals[i] - pricingtype->extendedmasterconsGetDual(masterprob, tmpextendedmasterconsdata));
+      SCIP_Real dualdiff = SQR(stabcenterextendedmasterconsvals[i] - pricingtype->extendedmasterconsGetDual(tmpextendedmasterconsdata));
 
       if( SCIPisPositive(masterprob, dualdiff) )
          dualdiffnorm += dualdiff;
@@ -1284,7 +1284,7 @@ void Stabilization::calculateDualdiffnorm()
 
    for( int i = 0; i < nlinkingconss; ++i )
    {
-      SCIP_Real dualdiff = SQR(stabcenterlinkingconsvals[i] - pricingtype->consGetDual(masterprob, linkingconss[i]));
+      SCIP_Real dualdiff = SQR(stabcenterlinkingconsvals[i] - pricingtype->consGetDual(linkingconss[i]));
 
       if( SCIPisPositive(masterprob, dualdiff) )
          dualdiffnorm += dualdiff;
@@ -1303,8 +1303,8 @@ void Stabilization::calculateBeta()
    assert(nstabcenterlinkingconsvals <= GCGgetNVarLinkingconss(gcg) );
    int nconss = GCGgetNMasterConss(gcg);
    assert(nconss <= nstabcenterconsvals);
-   SCIP_ROW** originalsepamastercuts = GCGsepaGetOriginalSepaMastercuts(masterprob);
-   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(masterprob);
+   SCIP_ROW** originalsepamastercuts = GCGsepaGetOriginalSepaMastercuts(gcg);
+   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(gcg);
    assert(noriginalsepacuts <= nstabcenteroriginalsepacutvals);
 
    beta = 0.0;
@@ -1314,7 +1314,7 @@ void Stabilization::calculateBeta()
 
    for( int i = 0; i < nconss; ++i )
    {
-      SCIP_Real dualdiff = ABS(pricingtype->consGetDual(masterprob, masterconss[i]) - stabcenterconsvals[i]);
+      SCIP_Real dualdiff = ABS(pricingtype->consGetDual(masterconss[i]) - stabcenterconsvals[i]);
       SCIP_Real product = dualdiff * ABS(subgradientconsvals[i]);
 
       if( SCIPisPositive(masterprob, product) )
@@ -1341,7 +1341,7 @@ void Stabilization::calculateBeta()
       tmpextendedmasterconsdata = stabcenterextendedmasterconss[i];
       assert(tmpextendedmasterconsdata != NULL);
 
-      SCIP_Real dualdiff = ABS(pricingtype->extendedmasterconsGetDual(masterprob, tmpextendedmasterconsdata) - stabcenterextendedmasterconsvals[i]);
+      SCIP_Real dualdiff = ABS(pricingtype->extendedmasterconsGetDual(tmpextendedmasterconsdata) - stabcenterextendedmasterconsvals[i]);
       SCIP_Real product = dualdiff * ABS(subgradientextendedmasterconsvals[i]);
 
       if( SCIPisPositive(masterprob, product) )
@@ -1353,7 +1353,7 @@ void Stabilization::calculateBeta()
 
    for( int i = 0; i < nlinkingconss; ++i )
    {
-      SCIP_Real dualdiff = ABS(pricingtype->consGetDual(masterprob, linkingconss[i]) - stabcenterlinkingconsvals[i]);
+      SCIP_Real dualdiff = ABS(pricingtype->consGetDual(linkingconss[i]) - stabcenterlinkingconsvals[i]);
       SCIP_Real product = dualdiff * ABS(subgradientlinkingconsvals[i]);
 
       if( SCIPisPositive(masterprob, product) )
@@ -1378,8 +1378,8 @@ void Stabilization::calculateHybridFactor()
    assert(nstabcenterlinkingconsvals <= GCGgetNVarLinkingconss(gcg) );
    int nconss = GCGgetNMasterConss(gcg);
    assert(nconss <= nstabcenterconsvals);
-   SCIP_ROW** originalsepamastercuts = GCGsepaGetOriginalSepaMastercuts(masterprob);
-   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(masterprob);
+   SCIP_ROW** originalsepamastercuts = GCGsepaGetOriginalSepaMastercuts(gcg);
+   int noriginalsepacuts = GCGsepaGetNOriginalSepaCuts(gcg);
    assert(noriginalsepacuts <= nstabcenteroriginalsepacutvals);
 
    SCIP_Real divisornorm = 0.0;
@@ -1391,7 +1391,7 @@ void Stabilization::calculateHybridFactor()
    {
       SCIP_Real divisor = SQR((beta - 1.0) * stabcenterconsvals[i]
                         + beta * (subgradientconsvals[i] * dualdiffnorm / subgradientnorm)
-                        + (1 - beta) * pricingtype->consGetDual(masterprob, masterconss[i]));
+                        + (1 - beta) * pricingtype->consGetDual(masterconss[i]));
 
       if( SCIPisPositive(masterprob, divisor) )
          divisornorm += divisor;
@@ -1420,7 +1420,7 @@ void Stabilization::calculateHybridFactor()
 
       SCIP_Real divisor = SQR((beta - 1.0) * stabcenterextendedmasterconsvals[i]
                         + beta * (subgradientextendedmasterconsvals[i] * dualdiffnorm / subgradientnorm)
-                        + (1 - beta) * pricingtype->extendedmasterconsGetDual(masterprob, tmpextendedmasterconsdata));
+                        + (1 - beta) * pricingtype->extendedmasterconsGetDual(tmpextendedmasterconsdata));
 
       if( SCIPisPositive(masterprob, divisor) )
          divisornorm += divisor;
@@ -1433,7 +1433,7 @@ void Stabilization::calculateHybridFactor()
    {
       SCIP_Real divisor = SQR((beta - 1.0) * stabcenterlinkingconsvals[i]
                         + beta * (subgradientlinkingconsvals[i] * dualdiffnorm / subgradientnorm)
-                        + (1 - beta) * pricingtype->consGetDual(masterprob, linkingconss[i]));
+                        + (1 - beta) * pricingtype->consGetDual(linkingconss[i]));
 
       if( SCIPisPositive(masterprob, divisor) )
          divisornorm += divisor;

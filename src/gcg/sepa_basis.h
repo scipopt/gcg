@@ -54,25 +54,25 @@ SCIP_RETCODE GCGincludeSepaBasis(
 /** returns the array of original cuts saved in the separator data */
 GCG_EXPORT
 SCIP_ROW** GCGsepaBasisGetOrigcuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** returns the number of original cuts saved in the separator data */
 GCG_EXPORT
 int GCGsepaBasisGetNOrigcuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** returns the array of master cuts saved in the separator data */
 GCG_EXPORT
 SCIP_ROW** GCGsepaBasisGetMastercuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** returns the number of master cuts saved in the separator data */
 GCG_EXPORT
 int GCGsepaBasisGetNMastercuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** transforms cut in pricing variables to cut in original variables and adds it to newcuts array */

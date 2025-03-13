@@ -301,7 +301,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify)
             if( SCIPisNegative(origprob, vals[i]) )
                b -= vals[i];
          }
-         unmatched = unmatched || !detprobdata->isFiniteNonnegativeIntegral(origprob, b);
+         unmatched = unmatched || !detprobdata->isFiniteNonnegativeIntegral(b);
 
          if( !unmatched )
          {
@@ -353,7 +353,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify)
          unmatched = FALSE;
 
          b = rhs;
-         unmatched = unmatched || !detprobdata->isFiniteNonnegativeIntegral(origprob, b);
+         unmatched = unmatched || !detprobdata->isFiniteNonnegativeIntegral(b);
 
          for( i = 0; i < nvars && !unmatched; i++ )
          {
@@ -397,7 +397,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify)
 
          if( !unmatched )
          {
-            SCIPdebugMsg(origprob, "classified as MIXEDBINARY (%d): ", detprobdata->isRangedRow(origprob, lhs, rhs) ? 2 : 1);
+            SCIPdebugMsg(origprob, "classified as MIXEDBINARY (%d): ", detprobdata->isRangedRow(lhs, rhs) ? 2 : 1);
             SCIPdebugPrintCons(origprob, cons, NULL);
             nfoundconstypesrangeddoublecount[SCIP_CONSTYPE_MIXEDBINARY] += 1 ;
             nfoundconstypesrangedsinglecount[SCIP_CONSTYPE_MIXEDBINARY]++;

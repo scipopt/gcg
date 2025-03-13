@@ -52,7 +52,7 @@ SCIP_RETCODE GCGincludeEventHdlrMastersol(
 /** return whether event has been triggered */
 GCG_EXPORT
 SCIP_Bool GCGeventhdlrMastersolIsTriggered(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

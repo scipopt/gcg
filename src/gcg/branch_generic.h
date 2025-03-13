@@ -75,12 +75,6 @@ SCIP_RETCODE GCGincludeBranchruleGeneric(
    GCG*                  gcg                 /**< GCG data structure */
    );
 
-/** initializes branchdata */
-SCIP_RETCODE GCGbranchGenericCreateBranchdata(
-   SCIP*                 scip,               /**< SCIP data structure */
-   GCG_BRANCHDATA**      branchdata          /**< branching data to initialize */
-   );
-
 /** get component bound sequence */
 GCG_COMPSEQUENCE* GCGbranchGenericBranchdataGetConsS(
    GCG_BRANCHDATA*       branchdata          /**< branching data to initialize */

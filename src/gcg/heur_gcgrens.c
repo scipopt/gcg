@@ -330,7 +330,8 @@ SCIP_RETCODE createNewSol(
 }
 
 /** main procedure of the GCG RENS heuristic, creates and solves a sub-SCIP */
-SCIP_RETCODE GCGapplyGcgrens(
+static
+SCIP_RETCODE applyGcgrens(
    SCIP*                 scip,               /**< original SCIP data structure                                   */
    SCIP_HEUR*            heur,               /**< heuristic data structure                                       */
    SCIP_RESULT*          result,             /**< result data structure                                          */
@@ -799,7 +800,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrens)
    if( SCIPisStopped(scip) )
       return SCIP_OKAY;
 
-   SCIP_CALL( GCGapplyGcgrens(scip, heur, result, heurdata->minfixingrate, heurdata->minimprove,
+   SCIP_CALL( applyGcgrens(scip, heur, result, heurdata->minfixingrate, heurdata->minimprove,
          heurdata->maxnodes, nstallnodes, heurdata->binarybounds, heurdata->uselprows) );
 
    return SCIP_OKAY;

@@ -50,13 +50,6 @@ SCIP_RETCODE GCGincludeReaderCls(
    GCG*                  gcg                 /**< GCG data structure */
    );
 
-/** write a CLS file for a given decomposition */
-SCIP_RETCODE GCGwriteCls(
-   SCIP*                 scip,                /**< SCIP data structure */
-   FILE*                 file                 /**< File pointer to write to */
-   );
-
-
 #ifdef __cplusplus
 }
 #endif

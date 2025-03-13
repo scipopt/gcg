@@ -126,11 +126,10 @@ FarkasPricing::FarkasPricing(
 }
 
 SCIP_Real FarkasPricing::consGetDual(
-   SCIP*                 scip,
    SCIP_CONS*            cons
    ) const
 {
-   return SCIPgetDualfarkasLinear(scip, cons);
+   return SCIPgetDualfarkasLinear(masterprob, cons);
 }
 
 SCIP_Real FarkasPricing::rowGetDual(
@@ -141,16 +140,14 @@ SCIP_Real FarkasPricing::rowGetDual(
 }
 
 SCIP_Real FarkasPricing::extendedmasterconsGetDual(
-   SCIP*                         scip,
    GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata
    ) const
 {
-   assert(scip != NULL);
    assert(extendedmasterconsdata != NULL);
    switch( GCGextendedmasterconsGetType(extendedmasterconsdata) )
    {
    case GCG_EXTENDEDMASTERCONSTYPE_CONS:
-      return SCIPgetDualfarkasLinear(scip, GCGextendedmasterconsGetCons(extendedmasterconsdata));
+      return SCIPgetDualfarkasLinear(masterprob, GCGextendedmasterconsGetCons(extendedmasterconsdata));
    case GCG_EXTENDEDMASTERCONSTYPE_ROW:
       return SCIProwGetDualfarkas(GCGextendedmasterconsGetRow(extendedmasterconsdata));
    default:
@@ -205,11 +202,10 @@ SCIP_RETCODE FarkasPricing::addParameters()
 }
 
 SCIP_Real ReducedCostPricing::consGetDual(
-   SCIP*                 scip,
    SCIP_CONS*            cons
    ) const
 {
-   return SCIPgetDualsolLinear(scip, cons);
+   return SCIPgetDualsolLinear(masterprob, cons);
 }
 
 SCIP_Real ReducedCostPricing::rowGetDual(
@@ -220,16 +216,14 @@ SCIP_Real ReducedCostPricing::rowGetDual(
 }
 
 SCIP_Real ReducedCostPricing::extendedmasterconsGetDual(
-   SCIP*                         scip,
    GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata
    ) const
 {
-   assert(scip != NULL);
    assert(extendedmasterconsdata != NULL);
    switch( GCGextendedmasterconsGetType(extendedmasterconsdata) )
    {
    case GCG_EXTENDEDMASTERCONSTYPE_CONS:
-      return SCIPgetDualsolLinear(scip, GCGextendedmasterconsGetCons(extendedmasterconsdata));
+      return SCIPgetDualsolLinear(masterprob, GCGextendedmasterconsGetCons(extendedmasterconsdata));
    case GCG_EXTENDEDMASTERCONSTYPE_ROW:
       return SCIProwGetDualsol(GCGextendedmasterconsGetRow(extendedmasterconsdata));
    default:
@@ -263,19 +257,19 @@ SCIP_Real ReducedCostPricing::varGetObj(
 /** returns the maximal number of columns per pricing round */
 int ReducedCostPricing::getMaxcolsround() const
 {
-   return GCGisRootNode(masterprob) ? maxcolsroundroot : maxcolsround;
+   return GCGisRootNode(gcg) ? maxcolsroundroot : maxcolsround;
 }
 
 /** returns the maximal number of columns per problem to be generated during pricing */
 int ReducedCostPricing::getMaxcolsprob() const
 {
-   return GCGisRootNode(masterprob) ? maxcolsprobroot : maxcolsprob;
+   return GCGisRootNode(gcg) ? maxcolsprobroot : maxcolsprob;
 }
 
 /** returns the maximal percentage of pricing problems that are solved if variables have already been found */
 SCIP_Real ReducedCostPricing::getRelmaxprobs() const
 {
-   return GCGisRootNode(masterprob) ? relmaxprobsroot : relmaxprobs;
+   return GCGisRootNode(gcg) ? relmaxprobsroot : relmaxprobs;
 }
 
 SCIP_RETCODE ReducedCostPricing::addParameters()

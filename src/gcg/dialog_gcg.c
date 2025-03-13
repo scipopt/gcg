@@ -1256,7 +1256,8 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsFast)
 
 /** creates a root dialog
  * @returns SCIP return code */
-SCIP_RETCODE GCGcreateRootDialog(
+static
+SCIP_RETCODE createRootDialog(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_DIALOG**         root                /**< pointer to store the root dialog */
    )
@@ -1320,7 +1321,7 @@ SCIP_RETCODE GCGincludeDialogGcg(
    root = SCIPgetRootDialog(origprob);
    if( root == NULL )
    {
-      SCIP_CALL( GCGcreateRootDialog(origprob, &root) );
+      SCIP_CALL( createRootDialog(origprob, &root) );
    }
 
    /* display */

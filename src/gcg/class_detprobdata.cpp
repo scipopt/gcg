@@ -1136,13 +1136,10 @@ bool DETPROBDATA::isConsSetpp(
 
 
 SCIP_Bool DETPROBDATA::isFiniteNonnegativeIntegral(
-   SCIP*                 givenScip,          /**< SCIP data structure */
    SCIP_Real             x                   /**< value */
    )
 {
-   assert(scip != NULL);
-
-   return (!SCIPisInfinity(givenScip, x) && !SCIPisNegative(givenScip, x) && SCIPisIntegral(givenScip, x));
+   return (!SCIPisInfinity(scip, x) && !SCIPisNegative(scip, x) && SCIPisIntegral(scip, x));
 }
 
 
@@ -1161,15 +1158,14 @@ SCIP_Bool DETPROBDATA::isAssignedToOrigProb()
 
 
 SCIP_Bool DETPROBDATA::isRangedRow(
-   SCIP*                 givenScip,               /**< SCIP data structure */
    SCIP_Real             lhs,
    SCIP_Real             rhs
    )
 {
    assert(scip != NULL);
 
-   return !(SCIPisEQ(givenScip, lhs, rhs)
-      || SCIPisInfinity(givenScip, -lhs) || SCIPisInfinity(givenScip, rhs) );
+   return !(SCIPisEQ(scip, lhs, rhs)
+      || SCIPisInfinity(scip, -lhs) || SCIPisInfinity(scip, rhs) );
 }
 
 
@@ -1195,20 +1191,19 @@ SCIP_Bool DETPROBDATA::partialdecIsNoDuplicateOfPartialdecs(
 
 
 void DETPROBDATA::printBlockcandidateInformation(
- SCIP*                 givenscip,               /**< SCIP data structure */
  FILE*                 file                /**< output file or NULL for standard output */
    )
 {
 
    std::sort( candidatesNBlocks.begin(), candidatesNBlocks.end(), sort_decr() );
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "NBLOCKCANDIDATES   \n" );
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "The following %d candidates for the number of blocks are known: (candidate : number of votes)   \n", (int) candidatesNBlocks.size() );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "NBLOCKCANDIDATES   \n" );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "The following %d candidates for the number of blocks are known: (candidate : number of votes)   \n", (int) candidatesNBlocks.size() );
    for( size_t i  = 0; i  < candidatesNBlocks.size(); ++i )
    {
       if( candidatesNBlocks[i].second != INT_MAX )
-         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d : %d  \n", candidatesNBlocks[i].first, candidatesNBlocks[i].second );
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d : %d  \n", candidatesNBlocks[i].first, candidatesNBlocks[i].second );
       else
-         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d : %s  \n", candidatesNBlocks[i].first, "user given" );
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d : %s  \n", candidatesNBlocks[i].first, "user given" );
    }
 }
 

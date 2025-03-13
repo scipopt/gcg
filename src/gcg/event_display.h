@@ -47,7 +47,7 @@ extern "C" {
 /** activates the eventhandler in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGactivateEventHdlrDisplay(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** creates event handler for display event */

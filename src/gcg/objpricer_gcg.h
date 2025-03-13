@@ -125,7 +125,6 @@ public:
 
    /** creates a new master variable corresponding to the given solution and problem */
    SCIP_RETCODE createNewMasterVar(
-      SCIP*              scip,               /**< SCIP data structure */
       PricingType*       pricetype,          /**< type of the pricing */
       SCIP_SOL*          sol,                /**< solution to compute reduced cost for */
       SCIP_VAR**         solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
@@ -140,7 +139,6 @@ public:
 
    /** creates a new master variable corresponding to the given gcg column */
    SCIP_RETCODE createNewMasterVarFromGcgCol(
-      SCIP*                 scip,               /**< SCIP data structure */
       PricingType*          pricetype,          /**< type of pricing */
       GCG_COL*              gcgcol,             /**< GCG column data structure */
       SCIP_Bool             force,              /**< should the given variable be added also if it has non-negative reduced cost? */

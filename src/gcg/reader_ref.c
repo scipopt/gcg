@@ -730,76 +730,9 @@ SCIP_RETCODE writeREFFile(
    return SCIP_OKAY;
 }
 
-
-/*
- * Callback methods of reader
- */
-
-/** destructor of reader to free user data (called when SCIP is exiting) */
-static
-SCIP_DECL_READERFREE(readerFreeRef)
-{
-   SCIP_READERDATA* readerdata;
-   
-   assert(scip != NULL);
-   assert(reader != NULL);
-   readerdata = SCIPreaderGetData(reader);
-   SCIPfreeMemory(scip, &readerdata);
-   return SCIP_OKAY;
-}
-
-/** problem reading method of reader */
-static
-SCIP_DECL_READERREAD(readerReadRef)
-{
-   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
-   {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists, will not detect structure!\n");
-      return SCIP_OKAY;
-   }
-
-   SCIP_CALL( SCIPreadRef(scip, reader, filename, result) );
-
-   return SCIP_OKAY;
-}
-
-
-/** problem writing method of reader */
-static
-SCIP_DECL_READERWRITE(readerWriteRef)
-{
-   /*lint --e{715}*/
-   SCIP_CALL( writeREFFile(scip, reader, file) );
-   *result = SCIP_SUCCESS;
-   return SCIP_OKAY;
-}
-
-/*
- * reader specific interface methods
- */
-
-/** includes the ref file reader in SCIP */
-SCIP_RETCODE GCGincludeReaderRef(
-   GCG*                  gcg                 /**< GCG data structure */
-   )
-{
-   SCIP_READERDATA* readerdata;
-   SCIP* origprob = GCGgetOrigprob(gcg);
-   assert(origprob != NULL);
-   
-   SCIP_CALL( SCIPallocMemory(origprob, &readerdata) );
-   readerdata->gcg = gcg;
-   
-   /* include reader */
-   SCIP_CALL( SCIPincludeReader(origprob, READER_NAME, READER_DESC, READER_EXTENSION,
-         NULL, readerFreeRef, readerReadRef, readerWriteRef, readerdata) );
-
-   return SCIP_OKAY;
-}
-
-
 /** reads problem from file */
-SCIP_RETCODE SCIPreadRef(
+static
+SCIP_RETCODE readRef(
    SCIP*                 scip,               /**< SCIP data structure */
    SCIP_READER*          reader,             /**< the file reader itself */
    const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */
@@ -890,4 +823,71 @@ SCIP_RETCODE SCIPreadRef(
    }
 
    return retcode;
+}
+
+
+/*
+ * Callback methods of reader
+ */
+
+/** destructor of reader to free user data (called when SCIP is exiting) */
+static
+SCIP_DECL_READERFREE(readerFreeRef)
+{
+   SCIP_READERDATA* readerdata;
+   
+   assert(scip != NULL);
+   assert(reader != NULL);
+   readerdata = SCIPreaderGetData(reader);
+   SCIPfreeMemory(scip, &readerdata);
+   return SCIP_OKAY;
+}
+
+/** problem reading method of reader */
+static
+SCIP_DECL_READERREAD(readerReadRef)
+{
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "No problem exists, will not detect structure!\n");
+      return SCIP_OKAY;
+   }
+
+   SCIP_CALL( readRef(scip, reader, filename, result) );
+
+   return SCIP_OKAY;
+}
+
+
+/** problem writing method of reader */
+static
+SCIP_DECL_READERWRITE(readerWriteRef)
+{
+   /*lint --e{715}*/
+   SCIP_CALL( writeREFFile(scip, reader, file) );
+   *result = SCIP_SUCCESS;
+   return SCIP_OKAY;
+}
+
+/*
+ * reader specific interface methods
+ */
+
+/** includes the ref file reader in SCIP */
+SCIP_RETCODE GCGincludeReaderRef(
+   GCG*                  gcg                 /**< GCG data structure */
+   )
+{
+   SCIP_READERDATA* readerdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
+   
+   SCIP_CALL( SCIPallocMemory(origprob, &readerdata) );
+   readerdata->gcg = gcg;
+   
+   /* include reader */
+   SCIP_CALL( SCIPincludeReader(origprob, READER_NAME, READER_DESC, READER_EXTENSION,
+         NULL, readerFreeRef, readerReadRef, readerWriteRef, readerdata) );
+
+   return SCIP_OKAY;
 }
