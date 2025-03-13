@@ -105,7 +105,6 @@ SCIP_RETCODE GCGcolpoolCreate(
 /** frees col pool */
 GCG_EXPORT
 SCIP_RETCODE GCGcolpoolFree(
-   SCIP*                scip,               /**< SCIP data structure */
    GCG_COLPOOL**        colpool             /**< pointer to store col pool */
    );
 

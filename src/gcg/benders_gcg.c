@@ -441,6 +441,7 @@ SCIP_RETCODE mergeSubproblemIntoMaster(
    int                   probnumber          /**< the index of the subproblem that will be merged */
    )
 {
+   SCIP_BENDERSDATA* bendersdata;
    SCIP* subproblem;
    SCIP_HASHMAP* varmap;
    SCIP_HASHMAP* consmap;
@@ -451,6 +452,8 @@ SCIP_RETCODE mergeSubproblemIntoMaster(
    assert(masterprob != NULL);
    assert(benders != NULL);
 
+   bendersdata = SCIPbendersGetData(benders);
+   assert(bendersdata != NULL);
    subproblem = SCIPbendersSubproblem(benders, probnumber);
 
    /* allocating the memory for the variable and constraint hashmaps */
@@ -466,7 +469,7 @@ SCIP_RETCODE mergeSubproblemIntoMaster(
       SCIP_VAR* mastervar;
 
       mastervar = (SCIP_VAR*) SCIPhashmapGetImage(varmap, vars[i]);
-      SCIP_CALL( GCGcopyPricingvarDataToMastervar(masterprob, vars[i], mastervar) );
+      SCIP_CALL( GCGcopyPricingvarDataToMastervar(bendersdata->gcg, vars[i], mastervar) );
    }
 
    /* freeing the variable and constraint hashmaps */
@@ -550,17 +553,19 @@ SCIP_DECL_BENDERSFREE(bendersFreeGcg)
 static
 SCIP_DECL_BENDERSINITPRE(bendersInitpreGcg)
 {  /*lint --e{715}*/
+   SCIP_BENDERSDATA* bendersdata;
    int nsubproblems;
    int i;
 
    assert(scip != NULL);
    assert(benders != NULL);
 
+   bendersdata = SCIPbendersGetData(benders);
    nsubproblems = SCIPbendersGetNSubproblems(benders);
 
    for( i = 0; i < nsubproblems; i++ )
    {
-      SCIP_CALL( GCGaddDataAuxiliaryVar(scip, SCIPbendersGetAuxiliaryVar(benders, i), i) );
+      SCIP_CALL( GCGaddDataAuxiliaryVar(bendersdata->gcg, SCIPbendersGetAuxiliaryVar(benders, i), i) );
    }
 
    return SCIP_OKAY;

@@ -178,15 +178,16 @@ SCIP_RETCODE GCGpricestoreCreate(
 
 /** frees price storage */
 SCIP_RETCODE GCGpricestoreFree(
-   SCIP*                 scip,                /**< SCIP data structure */
    GCG_PRICESTORE**      pricestore           /**< pointer to store price storage */
    )
 {
+   SCIP* scip;
    int i;
-   assert(scip == (*pricestore)->masterprob);
    assert(pricestore != NULL);
    assert(*pricestore != NULL);
    assert((*pricestore)->ncolstotal == 0);
+
+   scip = (*pricestore)->masterprob;
 
    SCIPhashtableFree(&(*pricestore)->hashtable);
 
@@ -363,7 +364,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
     */
    forcecol = forcecol || pricestore->forcecols;
 
-   GCGcolComputeNorm(pricestore->masterprob, col);
+   GCGcolComputeNorm(pricestore->gcg, col);
 
    if( forcecol )
    {
@@ -523,7 +524,7 @@ SCIP_RETCODE pricestoreUpdateOrthogonalities(
          SCIP_Real thisortho;
 
          /* update orthogonality */
-         thisortho = GCGcolComputeOrth(pricestore->masterprob, col, pricestore->cols[i][pos]);
+         thisortho = GCGcolComputeOrth(pricestore->gcg, col, pricestore->cols[i][pos]);
 
          if( thisortho < pricestore->orthogonalities[i][pos] )
          {

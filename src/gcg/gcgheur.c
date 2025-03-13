@@ -38,7 +38,7 @@
 
 /** resets the parameters to their default value */
 static
-SCIP_RETCODE setHeuristicsDefault(
+SCIP_RETCODE setOrigHeuristicsDefault(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -59,7 +59,7 @@ SCIP_RETCODE setHeuristicsDefault(
 
 /** sets the parameters to aggressive values */
 static
-SCIP_RETCODE setHeuristicsAggressive(
+SCIP_RETCODE setOrigHeuristicsAggressive(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -106,7 +106,7 @@ SCIP_RETCODE setHeuristicsAggressive(
 
 /** sets the parameters to fast values */
 static
-SCIP_RETCODE setHeuristicsFast(
+SCIP_RETCODE setOrigHeuristicsFast(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
@@ -130,7 +130,7 @@ SCIP_RETCODE setHeuristicsFast(
 
    assert(scip != NULL);
 
-   SCIP_CALL( setHeuristicsDefault(scip) );
+   SCIP_CALL( setOrigHeuristicsDefault(scip) );
 
    /* explicitly turn off expensive heuristics, if included */
    for( i = 0; i < NEXPENSIVEHEURS; ++i )
@@ -150,25 +150,28 @@ SCIP_RETCODE setHeuristicsFast(
  *  - SCIP_PARAMSETTING_OFF which turns off all heuristics
  */
 SCIP_RETCODE GCGsetHeuristics(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,               /**< SCIP data structure */
    SCIP_PARAMSETTING     paramsetting        /**< parameter settings */
    )
 {
+   SCIP* origprob;
    assert(paramsetting == SCIP_PARAMSETTING_DEFAULT || paramsetting == SCIP_PARAMSETTING_FAST
       || paramsetting == SCIP_PARAMSETTING_AGGRESSIVE || paramsetting == SCIP_PARAMSETTING_OFF);
+
+   origprob = GCGgetOrigprob(gcg);
 
    switch( paramsetting )
    {
    case SCIP_PARAMSETTING_AGGRESSIVE:
-      SCIP_CALL( setHeuristicsAggressive(scip) );
+      SCIP_CALL( setOrigHeuristicsAggressive(origprob) );
       break;
    case SCIP_PARAMSETTING_OFF:
       break;
    case SCIP_PARAMSETTING_FAST:
-      SCIP_CALL( setHeuristicsFast(scip) );
+      SCIP_CALL( setOrigHeuristicsFast(origprob) );
       break;
    case SCIP_PARAMSETTING_DEFAULT:
-      SCIP_CALL( setHeuristicsDefault(scip) );
+      SCIP_CALL( setOrigHeuristicsDefault(origprob) );
       break;
    default:
       SCIPerrorMessage("The given paramsetting is invalid!\n");

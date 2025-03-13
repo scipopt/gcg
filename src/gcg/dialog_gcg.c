@@ -1175,7 +1175,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsAggressive)
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
    SCIP_CALL( SCIPsetHeuristics(scip, SCIP_PARAMSETTING_AGGRESSIVE, FALSE) );
-   SCIP_CALL( GCGsetHeuristics(scip, SCIP_PARAMSETTING_AGGRESSIVE) );
+   SCIP_CALL( GCGsetHeuristics(GCGorigGetGcg(scip), SCIP_PARAMSETTING_AGGRESSIVE) );
 
    return SCIP_OKAY;
 }
@@ -1188,7 +1188,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsOff)
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
    SCIP_CALL( SCIPsetHeuristics(scip, SCIP_PARAMSETTING_OFF, FALSE) );
-   SCIP_CALL( GCGsetHeuristics(scip, SCIP_PARAMSETTING_OFF) );
+   SCIP_CALL( GCGsetHeuristics(GCGorigGetGcg(scip), SCIP_PARAMSETTING_OFF) );
 
    return SCIP_OKAY;
 }
@@ -1201,7 +1201,7 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetHeuristicsFast)
    *nextdialog = SCIPdialoghdlrGetRoot(dialoghdlr);
 
    SCIP_CALL( SCIPsetHeuristics(scip, SCIP_PARAMSETTING_FAST, FALSE) );
-   SCIP_CALL( GCGsetHeuristics(scip, SCIP_PARAMSETTING_FAST) );
+   SCIP_CALL( GCGsetHeuristics(GCGorigGetGcg(scip), SCIP_PARAMSETTING_FAST) );
 
    return SCIP_OKAY;
 }

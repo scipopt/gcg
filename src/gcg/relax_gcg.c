@@ -423,7 +423,7 @@ SCIP_RETCODE convertStructToGCG(
 
    SCIP_CALL( SCIPhashmapCreate(&transvar2origvar, SCIPblkmem(origprob), nvars) );
    relaxdata->npricingprobs = nblocks;
-   SCIP_CALL( GCGcreateOrigVarsData(origprob) );
+   SCIP_CALL( GCGcreateOrigVarsData(gcg) );
 
    SCIPdebugMessage("Copying structure with %d blocks, %d linking vars and %d linking constraints.\n", nblocks, nlinkingvars, nlinkingconss);
 
@@ -1000,7 +1000,7 @@ SCIP_RETCODE createLinkingPricingVars(
 
       if( relaxdata->mode != GCG_DECMODE_BENDERS )
       {
-         SCIP_CALL( GCGlinkingVarCreateMasterCons(GCGgetMasterprob(relaxdata->gcg), i, origvar, &linkcons) );
+         SCIP_CALL( GCGlinkingVarCreateMasterCons(relaxdata->gcg, i, origvar, &linkcons) );
          GCGlinkingVarSetLinkingCons(origvar, linkcons, i);
          SCIP_CALL( SCIPaddCons(GCGgetMasterprob(relaxdata->gcg), linkcons) );
 
@@ -1421,7 +1421,7 @@ SCIP_RETCODE saveOriginalVarMastercoeffs(
       GCGconsGetVals(scip, origmasterconss[i], vals, nvars);
       for( v = 0; v < nvars; v++ )
       {
-         SCIP_CALL( GCGoriginalVarAddCoef(scip, vars[v], vals[v], masterconss[i]) );
+         SCIP_CALL( GCGoriginalVarAddCoef(gcg, vars[v], vals[v], masterconss[i]) );
       }
       SCIPfreeBufferArray(scip, &vals);
       SCIPfreeBufferArray(scip, &vars);
@@ -1513,7 +1513,7 @@ SCIP_RETCODE createMasterprobConss(
                SCIP_CALL( GCGcreateInitialMasterVar(gcg, consvars[i], &consvars[i]) );
                SCIP_CALL( SCIPaddVar(GCGgetMasterprob(gcg), consvars[i]) );
 
-               SCIP_CALL( GCGoriginalVarAddMasterVar(scip, origvar, consvars[i], 1.0) );
+               SCIP_CALL( GCGoriginalVarAddMasterVar(gcg, origvar, consvars[i], 1.0) );
 
                releasevars[i] = TRUE;
             }
@@ -2973,7 +2973,7 @@ SCIP_DECL_RELAXEXITSOL(relaxExitsolGcg)
       relaxdata->decomp = NULL;
    }
 
-   SCIP_CALL( GCGfreeOrigVarsData(scip) );
+   SCIP_CALL( GCGfreeOrigVarsData(relaxdata->gcg) );
 
    /* free root node clock */
    if( relaxdata->rootnodetime != NULL )
@@ -4084,7 +4084,7 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    /* add coefs of the original variables in the constraint to their variable data */
    for( v = 0; v < nconsvars; v++ )
    {
-      SCIP_CALL( GCGoriginalVarAddCoef(scip, consvars[v], consvals[v], mastercons) );
+      SCIP_CALL( GCGoriginalVarAddCoef(gcg, consvars[v], consvals[v], mastercons) );
    }
 
    /* add master variables to the corresponding master constraint */

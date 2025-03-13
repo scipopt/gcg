@@ -335,7 +335,7 @@ SCIP_DECL_EVENTEXEC(eventExecVardeleted)
    /* remove master variable from corresponding pricing original variables */
    for( i = 0; i < GCGmasterVarGetNOrigvars(var); ++i )
    {
-      SCIP_CALL( GCGoriginalVarRemoveMasterVar(scip, origvars[i], var) );
+      SCIP_CALL( GCGoriginalVarRemoveMasterVar(pricer->getGcg(), origvars[i], var) );
    }
 
    /* remove variable from array of stored priced variables */
@@ -2563,7 +2563,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
       pricerdata->npointsprob[prob]++;
    }
 
-   SCIP_CALL( GCGcreateMasterVar(scip, origprob, pricerdata->pricingprobs[prob], &newvar, varname, objcoeff,
+   SCIP_CALL( GCGcreateMasterVar(gcg, pricerdata->pricingprobs[prob], &newvar, varname, objcoeff,
          pricerdata->vartype, solisray, prob, nsolvars, solvals, solvars, FALSE));
 
    SCIPvarMarkDeletable(newvar);
@@ -2598,7 +2598,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
       *addedvar = newvar;
    }
 
-   GCGupdateVarStatistics(scip, origprob, newvar, redcost);
+   GCGupdateVarStatistics(gcg, newvar, redcost);
 
 #ifdef SCIP_STATISTIC
    if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) && pricetype != NULL && pricetype->getType() == GCG_PRICETYPE_REDCOST )
@@ -2722,7 +2722,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
       pricerdata->npointsprob[prob]++;
    }
 
-   SCIP_CALL( GCGcreateMasterVar(scip, origprob, pricerdata->pricingprobs[prob], &newvar, varname, objcoeff,
+   SCIP_CALL( GCGcreateMasterVar(gcg, pricerdata->pricingprobs[prob], &newvar, varname, objcoeff,
          pricerdata->vartype, isray, prob, nsolvars, solvals, solvars, FALSE));
 
    SCIPvarMarkDeletable(newvar);
@@ -2759,7 +2759,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
       *addedvar = newvar;
    }
 
-   GCGupdateVarStatistics(scip, origprob, newvar, redcost);
+   GCGupdateVarStatistics(gcg, newvar, redcost);
 
 #ifdef SCIP_STATISTIC
    if( SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip) && pricetype->getType() == GCG_PRICETYPE_REDCOST )
@@ -4214,9 +4214,9 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    stabilization = NULL;
 
    if( pricerdata->usecolpool )
-      SCIP_CALL( GCGcolpoolFree(scip_, &colpool) );
+      SCIP_CALL( GCGcolpoolFree(&colpool) );
 
-   SCIP_CALL( GCGpricestoreFree(scip_, &pricestore) );
+   SCIP_CALL( GCGpricestoreFree(&pricestore) );
 
    SCIPhashmapFree(&(pricerdata->mapcons2idx));
 
@@ -4432,7 +4432,7 @@ SCIP_RETCODE ObjPricerGcg::addArtificialVars(
       {
          (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "art_lhs_%s", SCIPconsGetName(masterconss[i]));
          ensureSizeArtificialvars(pricerdata->nartificialvars + 1);
-         SCIP_CALL( GCGcreateArtificialVar(scip_, &(pricerdata->artificialvars[pricerdata->nartificialvars]), varname, bigm) );
+         SCIP_CALL( GCGcreateArtificialVar(gcg, &(pricerdata->artificialvars[pricerdata->nartificialvars]), varname, bigm) );
          SCIP_CALL( SCIPaddCoefLinear(scip_, masterconss[i], pricerdata->artificialvars[pricerdata->nartificialvars], 1.0) );
          SCIP_CALL( SCIPaddVar(scip_, pricerdata->artificialvars[pricerdata->nartificialvars]) );
          ++(pricerdata->nartificialvars);
@@ -4442,7 +4442,7 @@ SCIP_RETCODE ObjPricerGcg::addArtificialVars(
       {
          (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "art_rhs_%s", SCIPconsGetName(masterconss[i]));
          ensureSizeArtificialvars(pricerdata->nartificialvars + 1);
-         SCIP_CALL( GCGcreateArtificialVar(scip_, &(pricerdata->artificialvars[pricerdata->nartificialvars]), varname, bigm) );
+         SCIP_CALL( GCGcreateArtificialVar(gcg, &(pricerdata->artificialvars[pricerdata->nartificialvars]), varname, bigm) );
          SCIP_CALL( SCIPaddCoefLinear(scip_, masterconss[i], pricerdata->artificialvars[pricerdata->nartificialvars], -1.0) );
          SCIP_CALL( SCIPaddVar(scip_, pricerdata->artificialvars[pricerdata->nartificialvars]) );
          ++(pricerdata->nartificialvars);
@@ -4462,7 +4462,7 @@ SCIP_RETCODE ObjPricerGcg::addArtificialVars(
       {
          (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "art_lhs_%s", SCIPconsGetName(convcons));
          ensureSizeArtificialvars(pricerdata->nartificialvars + 1);
-         SCIP_CALL( GCGcreateArtificialVar(scip_, &(pricerdata->artificialvars[pricerdata->nartificialvars]), varname, bigm) );
+         SCIP_CALL( GCGcreateArtificialVar(gcg, &(pricerdata->artificialvars[pricerdata->nartificialvars]), varname, bigm) );
          SCIP_CALL( SCIPaddCoefLinear(scip_, convcons, pricerdata->artificialvars[pricerdata->nartificialvars], 1.0) );
          SCIP_CALL( SCIPaddVar(scip_, pricerdata->artificialvars[pricerdata->nartificialvars]) );
          ++(pricerdata->nartificialvars);
@@ -4472,7 +4472,7 @@ SCIP_RETCODE ObjPricerGcg::addArtificialVars(
       {
          (void) SCIPsnprintf(varname, SCIP_MAXSTRLEN, "art_rhs_%s", SCIPconsGetName(convcons));
          ensureSizeArtificialvars(pricerdata->nartificialvars + 1);
-         SCIP_CALL( GCGcreateArtificialVar(scip_, &(pricerdata->artificialvars[pricerdata->nartificialvars]), varname, bigm) );
+         SCIP_CALL( GCGcreateArtificialVar(gcg, &(pricerdata->artificialvars[pricerdata->nartificialvars]), varname, bigm) );
          SCIP_CALL( SCIPaddCoefLinear(scip_, convcons, pricerdata->artificialvars[pricerdata->nartificialvars], -1.0) );
          SCIP_CALL( SCIPaddVar(scip_, pricerdata->artificialvars[pricerdata->nartificialvars]) );
          ++(pricerdata->nartificialvars);
@@ -5589,7 +5589,7 @@ SCIP_RETCODE GCGmasterCreateInitialMastervars(
          SCIP_CALL( GCGcreateInitialMasterVar(gcg, var, &newvar) );
          SCIP_CALL( SCIPaddVar(masterprob, newvar) );
 
-         SCIP_CALL( GCGoriginalVarAddMasterVar(origprob, var, newvar, 1.0) );
+         SCIP_CALL( GCGoriginalVarAddMasterVar(gcg, var, newvar, 1.0) );
 
          linkconss = GCGoriginalVarGetMasterconss(var);
 

@@ -124,13 +124,14 @@ SCIP_RETCODE GCGcolpoolCreate(
 
 /** frees col pool */
 SCIP_RETCODE GCGcolpoolFree(
-   SCIP*                scip,               /**< SCIP data structure */
    GCG_COLPOOL**        colpool             /**< pointer to store col pool */
    )
 {
-   assert(scip == (*colpool)->scip);
+   SCIP* scip;
    assert(colpool != NULL);
    assert(*colpool != NULL);
+
+   scip = (*colpool)->scip;
 
    /* remove all cols from the pool */
    SCIP_CALL( GCGcolpoolClear(*colpool) );

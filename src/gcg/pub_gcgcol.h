@@ -199,7 +199,7 @@ void GCGcolSetNorm(
 /** get norm of column */
 GCG_EXPORT
 void GCGcolComputeNorm(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
@@ -307,7 +307,7 @@ SCIP_Real GCGcolComputeDualObjPara(
 /** compute orthogonality of two gcg columns */
 GCG_EXPORT
 SCIP_Real GCGcolComputeOrth(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    GCG_COL*             gcgcol1,            /**< first gcg column */
    GCG_COL*             gcgcol2             /**< second gcg column */
    );

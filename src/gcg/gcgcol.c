@@ -457,16 +457,18 @@ void GCGcolSetNorm(
 
 /** get norm of column */
 void GCGcolComputeNorm(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    GCG_COL*             gcgcol              /**< gcg column structure */
    )
 {
+   SCIP* scip;
    int i;
    SCIP_Real norm;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(gcgcol != NULL);
 
+   scip = GCGgetMasterprob(gcg);
    norm = 0.0;
    /* compute scalar of master values of gcg columns */
    for( i = 0; i < gcgcol->nmastercoefs; ++i )
@@ -838,20 +840,23 @@ SCIP_Real GCGcolComputeDualObjPara(
 
 /** compute orthogonality of two gcg columns */
 SCIP_Real GCGcolComputeOrth(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    GCG_COL*             gcgcol1,            /**< first gcg column */
    GCG_COL*             gcgcol2             /**< second gcg column */
    )
 {
+   SCIP* scip;
    int i;
    int j;
    SCIP_Real para = 0.0;
    SCIP_Real norm1 = 0.0;
    SCIP_Real norm2 = 0.0;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(gcgcol1 != NULL);
    assert(gcgcol2 != NULL);
+
+   scip = GCGgetMasterprob(gcg);
 
    /* compute scalar of master values of gcg columns */
    for( i = 0; i < gcgcol1->nmastercoefs; ++i )

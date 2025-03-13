@@ -703,7 +703,7 @@ SCIP_Bool GCGisMaster(
    )
 {
    assert(scip != NULL);
-   return SCIPfindPricer(scip, "gcg") != NULL;
+   return SCIPfindPricer(scip, "gcg") != NULL || SCIPfindBenders(scip, "gcg") != NULL;
 }
 
 /* print out GCG statistics
