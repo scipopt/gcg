@@ -1704,7 +1704,8 @@ SCIP_RETCODE ObjPricerGcg::addRootBounds(
 
       for( j = 0; j < nprobvars; j++ )
       {
-         idx = GCGpricingVarGetPricerIndex(probvars[j]);
+         idx = SCIPvarGetIndex(probvars[j]);
+         assert(idx >= 0 && idx < pricerdata->nrealdualvalues[blocknr]);
          pricerdata->dualvalues[pricerdata->nrootbounds][i][idx] = pricerdata->realdualvalues[i][idx];
       }
    }
@@ -3213,7 +3214,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
          for( j = 0; j < nprobvars; j++ )
          {
-            idx = GCGpricingVarGetPricerIndex(probvars[j]);
+            idx = SCIPvarGetIndex(probvars[j]);
             olddualvalues[i][idx] = pricerdata->realdualvalues[i][idx];
          }
       }
@@ -4371,7 +4372,7 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
    SCIP_CALL( reducedcostpricing->stopClock() );
 
 #ifdef SCIP_STATISTIC
-   if( SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) && GCGsepaGetNOriginalSepaCuts(scip_) == 0 )
+   if( SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) && GCGsepaGetNOriginalSepaCuts(gcg) == 0 )
    {
       SCIP_CALL( addRootBounds(SCIPgetLPObjval(scip_), *lowerbound) );
       SCIPdebugMessage("Add bounds, %f\n", *lowerbound);

@@ -1697,8 +1697,8 @@ SCIP_RETCODE GCGincludeHeurXprins(
    SCIP_CALL( SCIPsetHeurInit(origprob, heur, heurInitXprins) );
    SCIP_CALL( SCIPsetHeurExit(origprob, heur, heurExitXprins) );
 #ifdef SCIP_STATISTIC
-   SCIP_CALL( SCIPsetHeurInitsol(scip, heur, heurInitsolXprins) );
-   SCIP_CALL( SCIPsetHeurExitsol(scip, heur, heurExitsolXprins) );
+   SCIP_CALL( SCIPsetHeurInitsol(origprob, heur, heurInitsolXprins) );
+   SCIP_CALL( SCIPsetHeurExitsol(origprob, heur, heurExitsolXprins) );
 #endif
 
    /* add Extreme Point RINS primal heuristic parameters */

@@ -1756,8 +1756,8 @@ SCIP_RETCODE GCGincludeHeurXpcrossover(
    SCIP_CALL( SCIPsetHeurInit(origprob, heur, heurInitXpcrossover) );
    SCIP_CALL( SCIPsetHeurExit(origprob, heur, heurExitXpcrossover) );
 #ifdef SCIP_STATISTIC
-   SCIP_CALL( SCIPsetHeurInitsol(scip, heur, heurInitsolXpcrossover) );
-   SCIP_CALL( SCIPsetHeurExitsol(scip, heur, heurExitsolXpcrossover) );
+   SCIP_CALL( SCIPsetHeurInitsol(origprob, heur, heurInitsolXpcrossover) );
+   SCIP_CALL( SCIPsetHeurExitsol(origprob, heur, heurExitsolXpcrossover) );
 #endif
 
    /* add Extreme Point Crossover primal heuristic parameters */

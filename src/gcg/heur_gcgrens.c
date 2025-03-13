@@ -836,8 +836,8 @@ SCIP_RETCODE GCGincludeHeurGcgrens(
    SCIP_CALL( SCIPsetHeurFree(origprob, heur, heurFreeGcgrens) );
    SCIP_CALL( SCIPsetHeurInit(origprob, heur, heurInitGcgrens) );
 #ifdef SCIP_STATISTIC
-   SCIP_CALL( SCIPsetHeurInitsol(scip, heur, heurInitsolGcgrens) );
-   SCIP_CALL( SCIPsetHeurExitsol(scip, heur, heurExitsolGcgrens) );
+   SCIP_CALL( SCIPsetHeurInitsol(origprob, heur, heurInitsolGcgrens) );
+   SCIP_CALL( SCIPsetHeurExitsol(origprob, heur, heurExitsolGcgrens) );
 #endif
 
    /* add rens primal heuristic parameters */

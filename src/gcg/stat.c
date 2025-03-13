@@ -183,7 +183,7 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
       rootlpsolval = NAN;
 
 #ifdef SCIP_STATISTIC
-      rootlpsolval = SCIPgetSolVal(scip, GCGmasterGetRootLPSol(scip), vars[i]);
+      rootlpsolval = SCIPgetSolVal(masterprob, GCGmasterGetRootLPSol(gcg), vars[i]);
 #endif
       SCIPinfoMessage(masterprob, NULL, "VAR: <%s>\t%lld\t%f\t%lld\t%lld\t%f\t%f\t%f\t%f\n", SCIPvarGetName(vars[i]), node, time,
          iteration, rootredcostcall, redcost, gap, SCIPgetSolVal(masterprob, sol, vars[i]), rootlpsolval);
