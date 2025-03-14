@@ -56,6 +56,7 @@
 #include "scip/scip_timing.h"
 #include "gcg/struct_decomp.h"
 #include "gcg/class_detprobdata.h"
+#include "gcg/pub_gcg.hpp"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -329,7 +330,7 @@ SCIP_RETCODE buildProblem(
    SCIP_CALL( SCIPcopyOrigConss(pricingprob, subgcgorig, varmap, NULL, TRUE, &valid) );
    assert(valid);
 
-   pricer = dynamic_cast<ObjPricerGcg*>(SCIPfindObjPricer(GCGgetMasterprob(subgcg), "gcg"));
+   pricer = GCGgetObjPricer(subgcg);
    assert(pricer != NULL);
 
    nsolvers = pricer->getNumSolvers();
