@@ -25,41 +25,25 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   struct_gcg.h
- * @ingroup DATASTRUCTURES
- * @brief  gcg data structure
+/**@file   type_gcgpricer.h
+ * @ingroup TYPEDEFINITIONS
+ * @brief  incomplete pricer type for C interface
  * @author Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_STRUCT_GCG_H_
-#define GCG_STRUCT_GCG_H_
-
-#include "scip/def.h"
-#include "scip/type_scip.h"
-#include "scip/type_relax.h"
-
-#include "gcg/type_gcg.h"
-#include "gcg/type_gcgpricer.h"
+#ifndef __GCG_TYPE_GCGPRICER_H__
+#define __GCG_TYPE_GCGPRICER_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** Column data structure */
-struct Gcg
-{
-   SCIP*                origprob;         /**< SCIP data structure of origprob */
-   SCIP*                masterprob;       /**< SCIP data structure of masterprob */
-   SCIP*                dwmasterprob;     /**< SCIP data structure of DW masterprob */
-   SCIP*                bendersmasterprob;/**< SCIP data structure of Benders masterprob */
-   SCIP_RELAX*          relax;            /**< GCG's relaxation handler */
-   GCG_PRICER*          pricer;           /**< GCG pricer */
-};
+typedef struct GCG_PRICER GCG_PRICER;     /**< incomplete pricer type for C interface */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* STRUCT_GCG_H_ */
+#endif

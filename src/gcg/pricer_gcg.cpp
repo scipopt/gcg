@@ -48,6 +48,8 @@
 #include "gcg/type_extendedmasterconsdata.h"
 #include "gcg/type_pricingprob.h"
 #include "gcg/struct_gcgcol.h"
+#include "gcg/struct_gcg.h"
+#include "gcg/pub_gcg.hpp"
 #include <cassert>
 #include <cstring>
 
@@ -267,6 +269,11 @@ struct SCIP_PricerData
 #endif
 };
 
+struct SCIP_EventhdlrData
+{
+   GCG*                 gcg;                 /**< GCG data structure */
+};
+
 
 /** information method for a parameter change of disablecutoff */
 static
@@ -289,7 +296,17 @@ SCIP_DECL_PARAMCHGD(paramChgdDisablecutoff)
  */
 
 /** destructor of event handler to free user data (called when SCIP is exiting) */
-#define eventFreeVardeleted NULL
+static
+SCIP_DECL_EVENTFREE(eventFreeVardeleted)
+{
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+   assert(eventhdlr != NULL);
+
+   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
+   assert(eventhdlrdata != NULL);
+   SCIPfreeBlockMemory(scip, &eventhdlrdata);
+   return SCIP_OKAY;
+}
 
 /** initialization method of event handler (called after problem was transformed) */
 #define eventInitVardeleted NULL
@@ -314,9 +331,13 @@ SCIP_DECL_EVENTEXEC(eventExecVardeleted)
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
    SCIP_VAR** origvars;
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
    int i;
 
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(scip, PRICER_NAME));
+   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
+   assert(eventhdlrdata != NULL);
+
+   pricer = GCGgetObjPricer(eventhdlrdata->gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -3714,11 +3735,8 @@ SCIP_RETCODE GCGsetPricingObjs(
    ObjPricerGcg* pricer;
    SCIP_Bool stabilizationtmp;
    int i;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    stabilizationtmp = pricer->pricerdata->stabilization;
@@ -3753,11 +3771,8 @@ SCIP_RETCODE GCGcreateNewMasterVarFromGcgCol(
 {
    ObjPricerGcg* pricer;
    PricingType* pricetype;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    if( infarkas )
@@ -3779,11 +3794,8 @@ SCIP_RETCODE GCGcomputeColMastercoefs(
    )
 {
    ObjPricerGcg* pricer;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricer->computeColMastercoefs(gcgcol);
@@ -3805,11 +3817,8 @@ SCIP_Real GCGcomputeRedCostGcgCol(
    ObjPricerGcg* pricer;
    PricingType* pricetype;
    SCIP_Real redcost;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    if( infarkas )
@@ -3933,6 +3942,8 @@ SCIP_DECL_PRICERFREE(ObjPricerGcg::scip_free)
    SCIP_CALL( solversFree() );
 
    SCIPfreeMemoryArray(scip, &pricerdata->solvers);
+
+   gcg->pricer = NULL;
 
    /* free memory for pricerdata*/
    if( pricerdata != NULL )
@@ -4642,6 +4653,7 @@ SCIP_RETCODE GCGincludePricerGcg(
    SCIP* masterprob;
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata = NULL;
+   SCIP_EventhdlrData* eventhdlrdata = NULL;
 
    masterprob = GCGgetMasterprob(gcg);
    origprob = GCGgetOrigprob(gcg);
@@ -4672,11 +4684,15 @@ SCIP_RETCODE GCGincludePricerGcg(
    SCIP_CALL( pricer->createPricingTypes() );
    SCIP_CALL( pricer->createPricingcontroller() );
 
+   gcg->pricer = reinterpret_cast<GCG_PRICER*>(pricer);
+
    /* include event handler into master SCIP */
+   SCIP_CALL( SCIPallocBlockMemory(masterprob, &eventhdlrdata) );
+   eventhdlrdata->gcg = gcg;
    SCIP_CALL( SCIPincludeEventhdlr(masterprob, EVENTHDLR_NAME, EVENTHDLR_DESC,
          NULL, eventFreeVardeleted, eventInitVardeleted, eventExitVardeleted,
          eventInitsolVardeleted, eventExitsolVardeleted, eventDeleteVardeleted, eventExecVardeleted,
-         NULL) );
+         eventhdlrdata) );
 
    pricerdata->eventhdlr = SCIPfindEventhdlr(masterprob, EVENTHDLR_NAME);
 
@@ -4784,11 +4800,8 @@ SCIP_VAR** GCGmasterGetPricedvars(
 {
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -4805,11 +4818,8 @@ int GCGmasterGetNPricedvars(
 {
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -4829,13 +4839,11 @@ SCIP_RETCODE GCGmasterAddMasterconsToHashmap(
 {
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
    assert(cons != NULL);
    assert(pos >= 0);
 
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -4859,11 +4867,8 @@ SCIP_RETCODE GCGmasterSetRootLPSol(
 {
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(scip != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -4882,11 +4887,8 @@ SCIP_SOL* GCGmasterGetRootLPSol(
 {
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -4919,11 +4921,8 @@ SCIP_RETCODE GCGpricerIncludeSolver(
    GCG_SOLVER* solver;
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -4959,11 +4958,8 @@ GCG_SOLVER** GCGpricerGetSolvers(
 {
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -4980,11 +4976,8 @@ int GCGpricerGetNSolvers(
 {
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -5007,7 +5000,7 @@ void GCGpricerPrintListOfSolvers(
 
    assert(masterprob != NULL);
 
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -5043,7 +5036,7 @@ void GCGpricerPrintPricingStatistics(
 
    assert(masterprob != NULL);
 
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -5091,7 +5084,7 @@ void GCGpricerPrintStatistics(
 
    assert(masterprob != NULL);
 
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -5193,11 +5186,8 @@ SCIP_RETCODE GCGpricerExistRays(
 
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -5226,11 +5216,8 @@ int GCGpricerGetNPointsProb(
 {
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -5251,11 +5238,8 @@ int GCGpricerGetNRaysProb(
 {
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -5274,11 +5258,8 @@ int GCGpricerGetMaxColsRound(
    )
 {
    ObjPricerGcg* pricer;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    return pricer->getMaxColsRound();
@@ -5291,11 +5272,8 @@ int GCGpricerGetMaxColsProb(
    )
 {
    ObjPricerGcg* pricer;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    return pricer->getMaxColsProb();
@@ -5309,9 +5287,8 @@ SCIP_RETCODE GCGpricerAddCol(
    )
 {
    ObjPricerGcg* pricer;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    SCIP_CALL( pricer->addColToPricestore(col, NULL) );
@@ -5328,9 +5305,8 @@ SCIP_RETCODE GCGpricerAddColResult(
    )
 {
    ObjPricerGcg* pricer;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    SCIP_CALL( pricer->addColToPricestore(col, added) );
@@ -5386,7 +5362,7 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    pricerdata = NULL;   /* the pricerdata is set to NULL when the Benders' decomposition mode is used. */
    if( GCGgetDecompositionMode(gcg) == GCG_DECMODE_DANTZIGWOLFE )
    {
-      pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+      pricer = GCGgetObjPricer(gcg);
       assert(pricer != NULL);
 
       pricerdata = pricer->getPricerdata();
@@ -5636,7 +5612,7 @@ SCIP_Real GCGmasterGetDegeneracy(
 
    assert(masterprob != NULL);
 
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -5668,7 +5644,7 @@ SCIP_Bool GCGmasterIsCurrentSolValid(
    if( GCGgetDecompositionMode(gcg) != GCG_DECMODE_DANTZIGWOLFE )
       return TRUE;
 
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -5713,7 +5689,7 @@ SCIP_Bool GCGmasterIsBestsolValid(
    if( GCGgetDecompositionMode(gcg) != GCG_DECMODE_DANTZIGWOLFE )
       return TRUE;
 
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -5753,7 +5729,7 @@ SCIP_Bool GCGmasterIsSolValid(
    if( GCGgetDecompositionMode(gcg) != GCG_DECMODE_DANTZIGWOLFE )
       return TRUE;
 
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -5780,11 +5756,8 @@ SCIP_Longint GCGmasterGetPricingSimplexIters(
 {
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -5806,7 +5779,7 @@ SCIP_RETCODE GCGmasterPrintSimplexIters(
 
    assert(masterprob != NULL);
 
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -5851,11 +5824,8 @@ GCG_COLPOOL* GCGgetColpool(
    )
 {
    ObjPricerGcg* pricer;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    return pricer->colpool;
@@ -5871,7 +5841,7 @@ GCG_VARHISTORY* GCGgetCurrentVarhistoryReference(
 
    assert(gcg != NULL);
 
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(GCGgetMasterprob(gcg), PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();
@@ -5888,11 +5858,8 @@ int GCGpricerGetMaxNThreads(
 {
    ObjPricerGcg* pricer;
    SCIP_PRICERDATA* pricerdata;
-   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(masterprob != NULL);
-
-   pricer = static_cast<ObjPricerGcg*>(SCIPfindObjPricer(masterprob, PRICER_NAME));
+   pricer = GCGgetObjPricer(gcg);
    assert(pricer != NULL);
 
    pricerdata = pricer->getPricerdata();

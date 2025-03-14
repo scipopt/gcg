@@ -38,6 +38,7 @@
 #include "scip/def.h"
 #include "scip/type_scip.h"
 #include "scip/type_retcode.h"
+#include "gcg/def.h"
 #include "gcg/type_gcg.h"
 
 

@@ -37,8 +37,10 @@
 #include "gcg/gcgplugins.h"
 #include "gcg/benders_gcg.h"
 #include "gcg/pricer_gcg.h"
+#include "gcg/objpricer_gcg.h"
 
 /** create a gcg struct */
+extern "C"
 SCIP_RETCODE GCGcreate(
    GCG**                gcg               /**< pointer to store GCG data structure */
    )
@@ -58,6 +60,7 @@ SCIP_RETCODE GCGcreate(
 }
 
 /** free a gcg column */
+extern "C"
 SCIP_RETCODE GCGfree(
    GCG**                gcg               /**< pointer to gcg structure */
    )
@@ -76,6 +79,7 @@ SCIP_RETCODE GCGfree(
 
 #ifndef NDEBUG
 /** returns the original problem */
+extern "C"
 SCIP* GCGgetOrigprob(
    GCG*                 gcg                  /**< GCG data structure */
    )
@@ -87,6 +91,7 @@ SCIP* GCGgetOrigprob(
 
 #ifndef NDEBUG
 /** returns the master problem */
+extern "C"
 SCIP* GCGgetMasterprob(
    GCG*                 gcg                  /**< GCG data structure */
    )
@@ -98,6 +103,7 @@ SCIP* GCGgetMasterprob(
 
 #ifndef NDEBUG
 /** returns the benders master problem */
+extern "C"
 SCIP* GCGgetBendersMasterprob(
    GCG*                 gcg                  /**< GCG data structure */
    )
@@ -109,6 +115,7 @@ SCIP* GCGgetBendersMasterprob(
 
 #ifndef NDEBUG
 /** returns the dw master problem */
+extern "C"
 SCIP* GCGgetDwMasterprob(
    GCG*                 gcg                  /**< GCG data structure */
    )
@@ -119,6 +126,7 @@ SCIP* GCGgetDwMasterprob(
 #endif
 
 /** returns the GCG data structure */
+extern "C"
 GCG* GCGmasterGetGcg(
    SCIP*                masterprob           /**< SCIP data structure */
    )
@@ -149,6 +157,7 @@ GCG* GCGmasterGetGcg(
 }
 
 /** returns the GCG data structure */
+extern "C"
 GCG* GCGorigGetGcg(
    SCIP*                origprob             /**< SCIP data structure */
    )
@@ -158,11 +167,24 @@ GCG* GCGorigGetGcg(
 }
 
 #ifndef NDEBUG
+/** gets GCG's relaxator */
+extern "C"
 SCIP_RELAX* GCGgetRelax(
    GCG*                 gcg               /**< GCG data structure */
    )
 {
    assert(gcg != NULL);
    return gcg->relax;
+}
+#endif
+
+#ifndef NDEBUG
+/** gets the GCG pricer */
+ObjPricerGcg* GCGgetObjPricer(
+   GCG*                 gcg               /**< GCG data structure */
+   )
+{
+   assert(gcg != NULL);
+   return reinterpret_cast<ObjPricerGcg*>(gcg->pricer);
 }
 #endif

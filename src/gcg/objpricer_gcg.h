@@ -69,7 +69,7 @@ public:
          const char* desc, /**< description of variable pricer */
          int priority, /**< priority of the variable pricer */
          unsigned int delay, /**< should the pricer be delayed until no other pricers or already existing*/
-         SCIP_PRICERDATA *pricerdata /**< pricerdata data structure */
+         SCIP_PRICERDATA* p_pricerdata /**< pricerdata data structure */
    );
    /** destructor */
    virtual ~ObjPricerGcg()
@@ -89,7 +89,7 @@ public:
    virtual SCIP_DECL_PRICERREDCOST(scip_redcost);
    /** farkas pricing method of variable pricer for infeasible LPs */
    virtual SCIP_DECL_PRICERFARKAS(scip_farkas);
-   inline SCIP_PRICERDATA *getPricerdata()
+   inline SCIP_PRICERDATA* getPricerdata()
    {
       return pricerdata;
    }

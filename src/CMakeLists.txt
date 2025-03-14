@@ -80,7 +80,7 @@ set(gcgsources
     gcg/event_mastersol.c
     gcg/event_relaxsol.c
     gcg/event_solvingstats.c
-    gcg/gcg.c
+    gcg/gcg.cpp
     gcg/gcg_general.c
     gcg/gcgcol.c
     gcg/gcggithash.c
@@ -269,6 +269,7 @@ set(gcgheaders
     gcg/pub_colpool.h
     gcg/pub_decomp.h
     gcg/pub_gcg.h
+    gcg/pub_gcg.hpp
     gcg/pub_gcgcol.h
     gcg/pub_gcgheur.h
     gcg/pub_gcgsepa.h
@@ -330,6 +331,7 @@ set(gcgheaders
     gcg/type_gcg.h
     gcg/type_gcgcol.h
     gcg/type_gcgpqueue.h
+    gcg/type_gcgpricer.h
     gcg/type_locks.h
     gcg/type_extendedmasterconsdata.h
     gcg/type_masterdiving.h
