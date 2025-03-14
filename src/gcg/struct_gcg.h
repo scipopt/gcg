@@ -38,6 +38,7 @@
 
 #include "scip/def.h"
 #include "scip/type_scip.h"
+#include "scip/type_relax.h"
 
 #include "gcg/type_gcg.h"
 
@@ -52,6 +53,7 @@ struct Gcg
    SCIP*                masterprob;       /**< SCIP data structure of masterprob */
    SCIP*                dwmasterprob;     /**< SCIP data structure of DW masterprob */
    SCIP*                bendersmasterprob;/**< SCIP data structure of Benders masterprob */
+   SCIP_RELAX*          relax;            /**< GCG's relaxation handler */
 };
 
 #ifdef __cplusplus

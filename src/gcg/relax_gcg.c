@@ -2271,7 +2271,7 @@ GCG_DECOMP* GCGgetStructDecomp(
 
    assert(gcg != NULL);
 
-   relax = SCIPfindRelax(GCGgetOrigprob(gcg), RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -2287,16 +2287,13 @@ SCIP_RETCODE GCGsetStructDecomp(
    GCG_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
-   SCIP* scip;
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
 
    assert(gcg != NULL);
    assert(decomp != NULL);
 
-   scip = GCGgetOrigprob(gcg);
-
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -2724,8 +2721,6 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
       SCIP_CALL( SCIPfree(&(relaxdata->gcg->bendersmasterprob)) );
    }
 
-   relaxdata->gcg->masterprob = NULL;
-
    /* free used decomposition */
    if( relaxdata->decomp != NULL )
    {
@@ -2740,6 +2735,11 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
       SCIPfreeBlockMemory(scip, &relaxdata->locks);
    }
 #endif
+
+   relaxdata->gcg->masterprob = NULL;
+   relaxdata->gcg->dwmasterprob = NULL;
+   relaxdata->gcg->bendersmasterprob = NULL;
+   relaxdata->gcg->relax = NULL;
 
    SCIPfreeMemory(scip, &relaxdata);
    return SCIP_OKAY;
@@ -3500,6 +3500,7 @@ SCIP_RETCODE GCGincludeRelaxGcg(
    GCG*                  gcg                 /**< GCG data structure */
    )
 {
+   SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
    SCIP* origprob;
 
@@ -3533,6 +3534,9 @@ SCIP_RETCODE GCGincludeRelaxGcg(
    /* include relaxator */
    SCIP_CALL( SCIPincludeRelax(origprob, RELAX_NAME, RELAX_DESC, RELAX_PRIORITY, RELAX_FREQ, relaxCopyGcg, relaxFreeGcg, relaxInitGcg,
          relaxExitGcg, relaxInitsolGcg, relaxExitsolGcg, relaxExecGcg, relaxdata) );
+   relax = SCIPfindRelax(origprob, RELAX_NAME);
+   assert(relax != NULL);
+   gcg->relax = relax;
 
    /* inform the main scip, that no LPs should be solved */
    SCIP_CALL( SCIPsetIntParam(origprob, "lp/solvefreq", 0) );
@@ -3642,15 +3646,12 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP* origprob;
    int pos;
 
    assert(gcg != NULL);
    assert(branchrule != NULL);
 
-   origprob = GCGgetOrigprob(gcg);
-   assert(origprob != NULL);
-   relax = SCIPfindRelax(origprob, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -3685,12 +3686,11 @@ SCIP_RETCODE GCGrelaxBranchActiveMaster(
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
    int i;
-   SCIP* scip = GCGgetOrigprob(gcg);
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(branchrule != NULL);
 
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -3723,7 +3723,6 @@ SCIP_RETCODE GCGrelaxBranchDeactiveMaster(
    GCG_BRANCHDATA*       branchdata          /**< data representing the branching decision */
    )
 {
-   SCIP* scip;
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
    int i;
@@ -3731,8 +3730,7 @@ SCIP_RETCODE GCGrelaxBranchDeactiveMaster(
    assert(gcg != NULL);
    assert(branchrule != NULL);
 
-   scip = GCGgetOrigprob(gcg);
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -3766,7 +3764,6 @@ SCIP_RETCODE GCGrelaxBranchPropMaster(
    SCIP_RESULT*          result              /**< pointer to store the result of the propagation call */
    )
 {
-   SCIP* scip;
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
    int i;
@@ -3775,8 +3772,7 @@ SCIP_RETCODE GCGrelaxBranchPropMaster(
    assert(branchrule != NULL);
    assert(result != NULL);
 
-   scip = GCGgetOrigprob(gcg);
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -3811,7 +3807,6 @@ SCIP_RETCODE GCGrelaxBranchDataDelete(
    SCIP_Bool             force               /**< branch data must be deleted if true */
    )
 {
-   SCIP* scip;
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
    int i;
@@ -3820,8 +3815,7 @@ SCIP_RETCODE GCGrelaxBranchDataDelete(
    assert(branchrule != NULL);
    assert(branchdata != NULL);
 
-   scip = GCGgetOrigprob(gcg);
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -3859,7 +3853,6 @@ SCIP_RETCODE GCGrelaxBranchNewCol(
    SCIP_VAR*             mastervar           /**< new mastervariable that was created */
    )
 {
-   SCIP* scip;
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
    int i;
@@ -3869,8 +3862,7 @@ SCIP_RETCODE GCGrelaxBranchNewCol(
    assert(branchdata != NULL);
    assert(mastervar != NULL);
 
-   scip = GCGgetOrigprob(gcg);
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -3920,7 +3912,6 @@ SCIP_RETCODE GCGrelaxBranchGetExtendedMasterCons(
    GCG_EXTENDEDMASTERCONSDATA**   extendedmasterconsdata       /**< the extendedmasterconsdata to grab */
    )
 {
-   SCIP* original;
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
    int i;
@@ -3929,10 +3920,7 @@ SCIP_RETCODE GCGrelaxBranchGetExtendedMasterCons(
    assert(branchrule != NULL);
    assert(extendedmasterconsdata == NULL);
 
-   original = GCGgetOrigprob(gcg);
-   assert(original != NULL);
-
-   relax = SCIPfindRelax(original, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -3968,16 +3956,12 @@ SCIP_RETCODE GCGrelaxBranchGetAllActiveExtendedMasterConss(
    int*                  nextendedmasterconss         /**< number of currently active branching rules that created extended master conss */
    )
 {
-   SCIP* original;
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
 
    assert(gcg != NULL);
 
-   original = GCGgetOrigprob(gcg);
-   assert(original != NULL);
-
-   relax = SCIPfindRelax(original, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -3999,7 +3983,6 @@ SCIP_RETCODE GCGrelaxBranchMasterSolved(
    SCIP_Real             newlowerbound       /**< the new local lowerbound */
    )
 {
-   SCIP* scip;
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
    int i;
@@ -4007,8 +3990,7 @@ SCIP_RETCODE GCGrelaxBranchMasterSolved(
    assert(gcg != NULL);
    assert(branchrule != NULL);
 
-   scip = GCGgetOrigprob(gcg);
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4059,7 +4041,7 @@ SCIP_RETCODE GCGrelaxTransOrigToMasterCons(
    assert(cons != NULL);
 
    scip = GCGgetOrigprob(gcg);
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4137,7 +4119,7 @@ SCIP* GCGgetPricingprob(
 
    assert(gcg != NULL);
 
-   relax = SCIPfindRelax(GCGgetOrigprob(gcg), RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4153,11 +4135,8 @@ int GCGgetNRelPricingprobs(
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP* origprob = GCGgetOrigprob(gcg);
 
-   assert(origprob != NULL);
-
-   relax = SCIPfindRelax(origprob, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4174,11 +4153,8 @@ int GCGgetNPricingprobs(
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP* origprob = GCGgetOrigprob(gcg);
 
-   assert(origprob != NULL);
-
-   relax = SCIPfindRelax(origprob, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4200,7 +4176,7 @@ SCIP_Bool GCGisPricingprobRelevant(
 
    assert(gcg != NULL);
 
-   relax = SCIPfindRelax(GCGgetOrigprob(gcg), RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4226,7 +4202,7 @@ int GCGgetBlockRepresentative(
 
    assert(gcg != NULL);
 
-   relax = SCIPfindRelax(GCGgetOrigprob(gcg), RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4253,7 +4229,7 @@ int GCGgetNIdenticalBlocks(
 
    assert(gcg != NULL);
 
-   relax = SCIPfindRelax(GCGgetOrigprob(gcg), RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
    assert(pricingprobnr >= 0);
 
@@ -4275,11 +4251,8 @@ int GCGgetNMasterConss(
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP* origprob = GCGgetOrigprob(gcg);
 
-   assert(origprob != NULL);
-
-   relax = SCIPfindRelax(origprob, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4295,11 +4268,8 @@ SCIP_CONS** GCGgetMasterConss(
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP* origprob = GCGgetOrigprob(gcg);
 
-   assert(origprob != NULL);
-
-   relax = SCIPfindRelax(origprob, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4315,11 +4285,8 @@ SCIP_CONS** GCGgetOrigMasterConss(
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP* origprob = GCGgetOrigprob(gcg);
 
-   assert(origprob != NULL);
-
-   relax = SCIPfindRelax(origprob, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4341,7 +4308,7 @@ SCIP_CONS* GCGgetConvCons(
    assert(gcg != NULL);
    assert(blocknr >= 0);
 
-   relax = SCIPfindRelax(GCGgetOrigprob(gcg), RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4362,7 +4329,7 @@ GCG_PARAMDATA* GCGgetParamsVisu(
 
    assert(gcg != NULL);
 
-   relax = SCIPfindRelax(GCGgetOrigprob(gcg), RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4385,7 +4352,7 @@ SCIP_SOL* GCGrelaxGetCurrentOrigSol(
 
    assert(gcg != NULL);
 
-   relax = SCIPfindRelax(GCGgetOrigprob(gcg), RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4404,7 +4371,7 @@ SCIP_Bool GCGrelaxIsOrigSolFeasible(
 
    assert(gcg != NULL);
 
-   relax = SCIPfindRelax(GCGgetOrigprob(gcg), RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4423,7 +4390,7 @@ SCIP_Bool GCGisMasterSetCovering(
 
    assert(gcg != NULL);
 
-   relax = SCIPfindRelax(GCGgetOrigprob(gcg), RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4442,7 +4409,7 @@ SCIP_Bool GCGisMasterSetPartitioning(
 
    assert(gcg != NULL);
 
-   relax = SCIPfindRelax(GCGgetOrigprob(gcg), RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4470,7 +4437,7 @@ SCIP_RETCODE GCGrelaxStartProbing(
    assert(gcg != NULL);
 
    scip = GCGgetOrigprob(gcg);
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4513,7 +4480,7 @@ SCIP_HEUR* GCGrelaxGetProbingheur(
 
    assert(gcg != NULL);
 
-   relax = SCIPfindRelax(GCGgetOrigprob(gcg), RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4539,7 +4506,7 @@ SCIP_RETCODE GCGrelaxNewProbingnodeOrig(
    assert(gcg != NULL);
 
    scip = GCGgetOrigprob(gcg);
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4589,7 +4556,7 @@ SCIP_RETCODE GCGrelaxNewProbingnodeMaster(
    assert(gcg != NULL);
 
    scip = GCGgetOrigprob(gcg);
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4648,7 +4615,7 @@ SCIP_RETCODE GCGrelaxNewProbingnodeMasterCons(
    assert(gcg != NULL);
 
    scip = GCGgetOrigprob(gcg);
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4698,7 +4665,7 @@ SCIP_RETCODE GCGrelaxBacktrackProbing(
    assert(gcg != NULL);
 
    scip = GCGgetOrigprob(gcg);
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -4735,7 +4702,6 @@ SCIP_RETCODE performProbing(
    SCIP_Bool*            cutoff              /**< pointer to store whether the probing direction is infeasible */
    )
 {
-   SCIP* scip;
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
    SCIP* masterprob;
@@ -4745,10 +4711,9 @@ SCIP_RETCODE performProbing(
    SCIP_Longint nodelimit;
 
    assert(gcg != NULL);
-   scip = GCGgetOrigprob(gcg);
 
    /* get the relaxator */
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    /* get the relaxator data */
@@ -4878,7 +4843,7 @@ SCIP_RETCODE GCGrelaxEndProbing(
    assert(gcg != NULL);
 
    scip = GCGgetOrigprob(gcg);
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -5046,7 +5011,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
    assert(gcg != NULL);
 
    scip = GCGgetOrigprob(gcg);
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -5181,14 +5146,11 @@ SCIP_Real GCGgetPricingprobsMemUsed(
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP* origprob = GCGgetOrigprob(gcg);
 
    int p;
    SCIP_Real memused;
 
-   assert(origprob != NULL);
-
-   relax = SCIPfindRelax(origprob, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -5216,11 +5178,8 @@ SCIP_Bool GCGrelaxIsInitialized(
 
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP* origprob = GCGgetOrigprob(gcg);
 
-   assert(origprob != NULL);
-
-   relax = SCIPfindRelax(origprob, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -5261,11 +5220,8 @@ SCIP_CONS** GCGgetVarLinkingconss(
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP* origprob = GCGgetOrigprob(gcg);
 
-   assert(origprob != NULL);
-
-   relax = SCIPfindRelax(origprob, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -5281,11 +5237,8 @@ int* GCGgetVarLinkingconssBlock(
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP* origprob = GCGgetOrigprob(gcg);
 
-   assert(origprob != NULL);
-
-   relax = SCIPfindRelax(origprob, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -5301,11 +5254,8 @@ int GCGgetNVarLinkingconss(
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP* origprob = GCGgetOrigprob(gcg);
 
-   assert(origprob != NULL);
-
-   relax = SCIPfindRelax(origprob, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -5321,11 +5271,8 @@ int GCGgetNLinkingvars(
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP* origprob = GCGgetOrigprob(gcg);
 
-   assert(origprob != NULL);
-
-   relax = SCIPfindRelax(origprob, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -5341,11 +5288,8 @@ int GCGgetNTransvars(
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   SCIP* origprob = GCGgetOrigprob(gcg);
 
-   assert(origprob != NULL);
-
-   relax = SCIPfindRelax(origprob, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -5362,11 +5306,8 @@ SCIP_SOL* GCGgetBendersRelaxationSol(
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
    SCIP_BENDERS* benders;
-   SCIP* origprob = GCGgetOrigprob(gcg);
 
-   assert(origprob != NULL);
-
-   relax = SCIPfindRelax(origprob, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -5388,7 +5329,7 @@ GCG_DECMODE GCGgetDecompositionMode(
 
    assert(gcg != NULL);
 
-   relax = SCIPfindRelax(GCGgetOrigprob(gcg), RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -5407,7 +5348,7 @@ SCIP_CLOCK* GCGgetRootNodeTime(
 
    assert(gcg != NULL);
 
-   relax = SCIPfindRelax(GCGgetOrigprob(gcg), RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);
@@ -5779,7 +5720,7 @@ SCIP_RETCODE GCGinitializeMasterProblemSolve(
 
    assert(gcg != NULL);
 
-   relax = SCIPfindRelax(GCGgetOrigprob(gcg), RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
    assert(SCIPgetStage(GCGgetOrigprob(gcg)) >= SCIP_STAGE_TRANSFORMED);
    return initializeMasterProblemSolve(gcg, relax);
@@ -5796,7 +5737,7 @@ SCIP_RETCODE GCGstashLimitSettings(
 
    scip = GCGgetOrigprob(gcg);
    masterprob = GCGgetMasterprob(gcg);
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
@@ -5834,7 +5775,7 @@ SCIP_RETCODE GCGrestoreLimitSettings(
 
    scip = GCGgetOrigprob(gcg);
    masterprob = GCGgetMasterprob(gcg);
-   relax = SCIPfindRelax(scip, RELAX_NAME);
+   relax = GCGgetRelax(gcg);
    assert(relax != NULL);
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
@@ -5861,7 +5802,7 @@ GCG_LOCKS* GCGgetLocks(
    )
 {
    SCIP_RELAXDATA* relaxdata;
-   SCIP_RELAX* relax = SCIPfindRelax(GCGgetOrigprob(gcg), RELAX_NAME);
+   SCIP_RELAX* relax = GCGgetRelax(gcg);
    assert(relax != NULL);
 
    relaxdata = SCIPrelaxGetData(relax);

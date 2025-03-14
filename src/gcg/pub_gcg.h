@@ -518,6 +518,16 @@ SCIP_Real GCGgetGap(
    GCG*                 gcg               /**< GCG data structure */
    );
 
+#ifdef NDEBUG
+#define GCGgetRelax(gcg)               (gcg->relax)
+#else
+/** gets GCG's relaxator */
+GCG_EXPORT
+SCIP_RELAX* GCGgetRelax(
+   GCG*                 gcg               /**< GCG data structure */
+   );
+#endif
+
 /**@} */
 
 #ifdef __cplusplus

@@ -156,3 +156,13 @@ GCG* GCGorigGetGcg(
    assert(origprob != NULL);
    return GCGrelaxGetGcg(origprob);
 }
+
+#ifndef NDEBUG
+SCIP_RELAX* GCGgetRelax(
+   GCG*                 gcg               /**< GCG data structure */
+   )
+{
+   assert(gcg != NULL);
+   return gcg->relax;
+}
+#endif
