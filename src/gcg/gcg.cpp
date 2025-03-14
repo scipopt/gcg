@@ -188,3 +188,14 @@ ObjPricerGcg* GCGgetObjPricer(
    return reinterpret_cast<ObjPricerGcg*>(gcg->pricer);
 }
 #endif
+
+#ifndef NDEBUG
+/** gets the orig separator */
+SCIP_SEPA* GCGgetSepaorig(
+   GCG*                 gcg               /**< GCG data structure */
+   )
+{
+   assert(gcg != NULL);
+   return gcg->sepaorig;
+}
+#endif

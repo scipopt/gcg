@@ -42,6 +42,7 @@
 #include "gcg/gcg.h"
 #include "gcg/relax_gcg.h"
 #include "gcg/pricer_gcg.h"
+#include "gcg/struct_gcg.h"
 
 
 #define SEPA_NAME         "original"
@@ -126,6 +127,8 @@ SCIP_DECL_SEPAFREE(sepaFreeOriginal)
    SCIPfreeBlockMemoryArray(scip, &(sepadata->origcuts), sepadata->maxcuts);
    SCIPfreeBlockMemoryArray(scip, &(sepadata->mastercuts), sepadata->maxcuts);
    SCIPhashmapFree(&sepadata->origcutidxmap);
+
+   sepadata->gcg->sepaorig = NULL;
 
    SCIPfreeBlockMemory(scip, &sepadata);
 
@@ -388,6 +391,9 @@ SCIP_RETCODE GCGincludeSepaOriginal(
          sepaInitsolOriginal, sepaExitsolOriginal,
          sepaExeclpOriginal, sepaExecsolOriginal,
          sepadata) );
+   
+   gcg->sepaorig = SCIPfindSepa(masterprob, SEPA_NAME);
+   assert(gcg->sepaorig != NULL);
 
    SCIP_CALL( SCIPaddBoolParam(GCGgetOrigprob(gcg), "sepa/" SEPA_NAME "/enable", "enable original separator",
          &(sepadata->enable), FALSE, TRUE, NULL, NULL) );
@@ -409,7 +415,7 @@ SCIP_ROW** GCGsepaGetOriginalSepaOrigcuts(
 
    assert(gcg != NULL);
 
-   sepa = SCIPfindSepa(GCGgetMasterprob(gcg), SEPA_NAME);
+   sepa = GCGgetSepaorig(gcg);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
@@ -429,7 +435,7 @@ int GCGsepaGetNOriginalSepaCuts(
 
    assert(gcg != NULL);
 
-   sepa = SCIPfindSepa(GCGgetMasterprob(gcg), SEPA_NAME);
+   sepa = GCGgetSepaorig(gcg);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
@@ -448,7 +454,7 @@ SCIP_ROW** GCGsepaGetOriginalSepaMastercuts(
 
    assert(gcg != NULL);
 
-   sepa = SCIPfindSepa(GCGgetMasterprob(gcg), SEPA_NAME);
+   sepa = GCGgetSepaorig(gcg);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
@@ -471,7 +477,7 @@ SCIP_RETCODE GCGsepaAddOriginalSepaCuts(
    assert(gcg != NULL);
 
    scip = GCGgetMasterprob(gcg);
-   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   sepa = GCGgetSepaorig(gcg);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
@@ -501,7 +507,7 @@ SCIP_Bool GCGsepaOriginalSepaOrigcutExists(
 
    assert(gcg != NULL);
 
-   sepa = SCIPfindSepa(GCGgetMasterprob(gcg), SEPA_NAME);
+   sepa = GCGgetSepaorig(gcg);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);

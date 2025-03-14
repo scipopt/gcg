@@ -529,6 +529,16 @@ SCIP_RELAX* GCGgetRelax(
    );
 #endif
 
+#ifdef NDEBUG
+#define GCGgetSepaorig(gcg)               (gcg->sepaorig)
+#else
+/** gets the orig separator */
+GCG_EXPORT
+SCIP_SEPA* GCGgetSepaorig(
+   GCG*                 gcg               /**< GCG data structure */
+   );
+#endif
+
 /**@} */
 
 #ifdef __cplusplus

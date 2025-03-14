@@ -39,6 +39,7 @@
 #include "scip/def.h"
 #include "scip/type_scip.h"
 #include "scip/type_relax.h"
+#include "scip/type_sepa.h"
 
 #include "gcg/type_gcg.h"
 #include "gcg/type_gcgpricer.h"
@@ -56,6 +57,7 @@ struct Gcg
    SCIP*                bendersmasterprob;/**< SCIP data structure of Benders masterprob */
    SCIP_RELAX*          relax;            /**< GCG's relaxation handler */
    GCG_PRICER*          pricer;           /**< GCG pricer */
+   SCIP_SEPA*           sepaorig;         /**< orig cuts separator */
 };
 
 #ifdef __cplusplus
