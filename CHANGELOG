@@ -33,7 +33,8 @@ New/modified/removed structures, defines, and classes:
 New/modified/removed API functions:
 ---------------------------
 
-- many public GCG functions use the new GCG data structure
+- public GCG functions use the new GCG data structure
+- added functions 'GCGcreate', 'GCGfree', 'GCGgetOrigprob', 'GCGgetMasterprob', 'GCGgetBendersMasterprob', 'GCGgetDwMasterprob', 'GCGmasterGetGcg', 'GCGorigGetGcg'
 - removed 'GCGgetPartialdecToWrite'
 - 'GCGconshdlrDecompAddBasicPartialdec' returns now SCIP_RETCODE and sets a pointer to the created decomposition
 - public C functions working with (partial) decompositions use now 'PARTIALDECOMP_C' pointers instead of the id of the decomposition
