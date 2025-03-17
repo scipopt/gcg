@@ -50,11 +50,8 @@
 #define GCG_READER_REF_H__
 
 
-#include "scip/type_scip.h"
-#include "scip/type_reader.h"
-#include "scip/type_result.h"
-#include "def.h"
-#include "type_decomp.h"
+#include "scip/scip.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,16 +59,8 @@ extern "C" {
 
 /** includes the ref file reader into SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeReaderRef(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/* reads problem from file */
-SCIP_RETCODE SCIPreadRef(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_READER*          reader,             /**< the file reader itself */
-   const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */
-   SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
+SCIP_RETCODE GCGincludeReaderRef(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

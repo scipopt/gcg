@@ -35,8 +35,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "dec_xyz.h"
-#include "cons_decomp.h"
+#include "gcg/dec_xyz.h"
+#include "gcg/cons_decomp.h"
 
 /* detector properties */
 #define DEC_NAME                  "xyz"       /**< name of detector */
@@ -118,8 +118,8 @@ static DEC_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecXyz)
  */
 
 /** creates the handler for xyz detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorXyz(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorXyz(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_DETECTORDATA* detectordata;
@@ -127,7 +127,7 @@ SCIP_RETCODE SCIPincludeDetectorXyz(
    /**@todo create xyz detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectorFreeXyz, detectorInitXyz, detectorExitXyz, detectorPropagatePartialdecXyz, detectorFinishPartialdecXyz, detectorPostprocessPartialdecXyz, setParamAggressiveXyz, setParamDefaultXyz, setParamFastXyz) );
+   SCIP_CALL( GCGincludeDetector(gcg, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, detectorFreeXyz, detectorInitXyz, detectorExitXyz, detectorPropagatePartialdecXyz, detectorFinishPartialdecXyz, detectorPostprocessPartialdecXyz, setParamAggressiveXyz, setParamDefaultXyz, setParamFastXyz) );
 
    /**@todo add xyz detector parameters */
 

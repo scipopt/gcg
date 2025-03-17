@@ -40,8 +40,8 @@
 
 
 #include "scip/scip.h"
-#include "type_decomp.h"
-#include "type_detector.h"
+#include "gcg/type_decomp.h"
+#include "gcg/type_detector.h"
 
 #ifdef __cplusplus
 extern "C" {

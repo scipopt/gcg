@@ -34,19 +34,19 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 #define SCIP_DEBUG
 
-#include "clscons_gamssymbol.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
+#include "gcg/clscons_gamssymbol.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
 #include <vector>
 #include <string>
 #include <map>
 #include <stdio.h>
 #include <sstream>
 
-#include "class_detprobdata.h"
+#include "gcg/class_detprobdata.h"
 
-#include "class_conspartition.h"
-#include "scip_misc.h"
+#include "gcg/class_conspartition.h"
+#include "gcg/scip_misc.h"
 
 /* classifier properties */
 #define CLSCONS_NAME                  "gamssymbol"                 /**< name of classifier */
@@ -80,8 +80,9 @@ static
 GCG_DECL_FREECONSCLASSIFIER(classifierFree)
 {
    GCG_CLASSIFIERDATA* classifierdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
-   assert(scip != NULL);
+   assert(origprob != NULL);
 
    classifierdata = GCGconsClassifierGetData(classifier);
    assert(classifierdata != NULL);
@@ -89,7 +90,7 @@ GCG_DECL_FREECONSCLASSIFIER(classifierFree)
 
    delete classifierdata->constosymbol;
 
-   SCIPfreeMemory(scip, &classifierdata);
+   SCIPfreeBlockMemory(origprob, &classifierdata);
 
    return SCIP_OKAY;
 }
@@ -97,13 +98,14 @@ GCG_DECL_FREECONSCLASSIFIER(classifierFree)
 static
 GCG_DECL_CONSCLASSIFY(classifierClassify) {
    gcg::DETPROBDATA* detprobdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
    if( transformed )
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(gcg);
    }
    else
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
    }
 
    int ncons = detprobdata->getNConss();
@@ -112,7 +114,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
    std::vector<int> classForCons( ncons, - 1 ); // [i] holds class index for constraint i -> indexing over detection internal constraint array!
    int counterClasses = 0;
 
-   GCG_CONSCLASSIFIER* classifier = GCGfindConsClassifier(scip, CLSCONS_NAME);
+   GCG_CONSCLASSIFIER* classifier = GCGfindConsClassifier(gcg, CLSCONS_NAME);
    assert(classifier != NULL);
 
    GCG_CLASSIFIERDATA* classdata = GCGconsClassifierGetData(classifier);
@@ -164,7 +166,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
    assert( counterClasses == (int) symbolidxForClass.size() );
 
    /* secondly, use these information to create a ConsPartition */
-   gcg::ConsPartition* partition = new gcg::ConsPartition(scip, "gamssymbols", counterClasses, detprobdata->getNConss() );
+   gcg::ConsPartition* partition = new gcg::ConsPartition(gcg, "gamssymbols", counterClasses, detprobdata->getNConss() );
 
    /* set class names and descriptions of every class */
    for( int c = 0; c < partition->getNClasses(); ++ c )
@@ -183,7 +185,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
    {
       partition->assignConsToClass( i, classForCons[i] );
    }
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d  different constraint classes \n", partition->getName(), partition->getNClasses() );
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d  different constraint classes \n", partition->getName(), partition->getNClasses() );
 
    detprobdata->addConsPartition(partition);
    return SCIP_OKAY;
@@ -211,17 +213,18 @@ SCIP_RETCODE GCGconsClassifierGamssymbolAddEntry(
 }
 
 /** creates the handler for gamssymbol classifier and includes it in SCIP */
-SCIP_RETCODE SCIPincludeConsClassifierGamssymbol(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeConsClassifierGamssymbol(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_CLASSIFIERDATA* classifierdata = NULL;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
-   SCIP_CALL( SCIPallocMemory(scip, &classifierdata) );
+   SCIP_CALL( SCIPallocBlockMemory(origprob, &classifierdata) );
    assert(classifierdata != NULL);
    classifierdata->constosymbol = new std::map<std::string, int>();
 
-   SCIP_CALL( GCGincludeConsClassifier(scip, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( GCGincludeConsClassifier(gcg, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

@@ -36,9 +36,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_gcgguideddiving.h"
-#include "heur_origdiving.h"
-#include "gcg.h"
+#include "gcg/heur_gcgguideddiving.h"
+#include "gcg/heur_origdiving.h"
+#include "gcg/gcg.h"
 
 
 #define HEUR_NAME             "gcgguideddiving"
@@ -130,7 +130,7 @@ SCIP_Bool areVarsInSameBlock(
  */
 static
 SCIP_RETCODE getMasterDownFrac(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             var,                /**< original variable to get fractionality for */
    SCIP_Real*            frac                /**< pointer to store fractionality */
    )
@@ -143,11 +143,11 @@ SCIP_RETCODE getMasterDownFrac(
    int norigmastervars;
    SCIP_Real roundval;
    SCIP_Real masterlpval;
-
    int i;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(gcg);
    assert(masterprob != NULL);
 
    /* get master variable information */
@@ -158,7 +158,7 @@ SCIP_RETCODE getMasterDownFrac(
    origmastervals = GCGoriginalVarGetMastervals(var);
    norigmastervars = GCGoriginalVarGetNMastervars(var);
 
-   roundval = SCIPfeasFloor(scip, SCIPgetRelaxSolVal(scip, var));
+   roundval = SCIPfeasFloor(origprob, SCIPgetRelaxSolVal(origprob, var));
    *frac = 0.0;
 
    /* calculate sum of fractionalities over all master variables
@@ -200,7 +200,7 @@ SCIP_RETCODE getMasterDownFrac(
  */
 static
 SCIP_RETCODE getMasterUpFrac(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             var,                /**< original variable to get fractionality for */
    SCIP_Real*            frac                /**< pointer to store fractionality */
    )
@@ -213,11 +213,11 @@ SCIP_RETCODE getMasterUpFrac(
    int norigmastervars;
    SCIP_Real roundval;
    SCIP_Real masterlpval;
-
    int i;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(gcg);
    assert(masterprob != NULL);
 
    /* get master variable information */
@@ -228,7 +228,7 @@ SCIP_RETCODE getMasterUpFrac(
    origmastervals = GCGoriginalVarGetMastervals(var);
    norigmastervars = GCGoriginalVarGetNMastervars(var);
 
-   roundval = SCIPfeasCeil(scip, SCIPgetRelaxSolVal(scip, var));
+   roundval = SCIPfeasCeil(origprob, SCIPgetRelaxSolVal(origprob, var));
    *frac = 0.0;
 
    /* calculate sum of fractionalities over all master variables
@@ -277,12 +277,11 @@ GCG_DECL_DIVINGFREE(heurFreeGcgguideddiving) /*lint --e{715}*/
    GCG_DIVINGDATA* divingdata;
 
    assert(heur != NULL);
-   assert(scip != NULL);
 
    /* free diving rule specific data */
    divingdata = GCGheurGetDivingDataOrig(heur);
    assert(divingdata != NULL);
-   SCIPfreeMemory(scip, &divingdata);
+   SCIPfreeMemory(GCGgetOrigprob(gcg), &divingdata);
    GCGheurSetDivingDataOrig(heur, NULL);
 
    return SCIP_OKAY;
@@ -294,6 +293,7 @@ static
 GCG_DECL_DIVINGINITEXEC(heurInitexecGcgguideddiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    GCG_DIVINGDATA* divingdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    assert(heur != NULL);
 
@@ -302,7 +302,7 @@ GCG_DECL_DIVINGINITEXEC(heurInitexecGcgguideddiving) /*lint --e{715}*/
    assert(divingdata != NULL);
 
    /* store a copy of the best solution */
-   SCIP_CALL( SCIPcreateSolCopy(scip, &divingdata->bestsol, SCIPgetBestSol(scip)) );
+   SCIP_CALL( SCIPcreateSolCopy(origprob, &divingdata->bestsol, SCIPgetBestSol(origprob)) );
 
    return SCIP_OKAY;
 }
@@ -313,6 +313,7 @@ static
 GCG_DECL_DIVINGEXITEXEC(heurExitexecGcgguideddiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    GCG_DIVINGDATA* divingdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    assert(heur != NULL);
 
@@ -321,7 +322,7 @@ GCG_DECL_DIVINGEXITEXEC(heurExitexecGcgguideddiving) /*lint --e{715}*/
    assert(divingdata != NULL);
 
    /* free copied best solution */
-   SCIP_CALL( SCIPfreeSol(scip, &divingdata->bestsol) );
+   SCIP_CALL( SCIPfreeSol(origprob, &divingdata->bestsol) );
 
    return SCIP_OKAY;
 }
@@ -352,9 +353,10 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgguideddiving) /*lint --e{715}*/
    SCIP_Bool bestcandmayrounddown;
    SCIP_Bool bestcandmayroundup;
    int c;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* check preconditions */
-   assert(scip != NULL);
+   assert(origprob != NULL);
    assert(heur != NULL);
    assert(bestcand != NULL);
    assert(bestcandmayround != NULL);
@@ -366,14 +368,14 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgguideddiving) /*lint --e{715}*/
    assert(divingdata->bestsol != NULL);
 
    /* get fractional variables that should be integral */
-   SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetExternBranchCands(origprob, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL, NULL, NULL) );
    assert(lpcands != NULL);
    assert(lpcandsfrac != NULL);
    assert(lpcandssol != NULL);
 
    bestcandmayrounddown = TRUE;
    bestcandmayroundup = TRUE;
-   bestobjgain = SCIPinfinity(scip);
+   bestobjgain = SCIPinfinity(origprob);
    bestscore = SCIP_INVALID;
 
    /* get best candidate */
@@ -405,7 +407,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgguideddiving) /*lint --e{715}*/
       solval = lpcandssol[c];
       frac = lpcandsfrac[c];
       obj = SCIPvarGetObj(var);
-      bestsolval = SCIPgetSolVal(scip, divingdata->bestsol, var);
+      bestsolval = SCIPgetSolVal(origprob, divingdata->bestsol, var);
 
       /* select default rounding direction */
       roundup = (solval < bestsolval);
@@ -446,15 +448,15 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgguideddiving) /*lint --e{715}*/
                SCIP_Real downfrac;
                SCIP_Real upfrac;
 
-               SCIP_CALL( getMasterDownFrac(scip, var, &downfrac) );
-               SCIP_CALL( getMasterUpFrac(scip, var, &upfrac) );
+               SCIP_CALL( getMasterDownFrac(gcg, var, &downfrac) );
+               SCIP_CALL( getMasterUpFrac(gcg, var, &upfrac) );
                score = roundup ? upfrac : downfrac;
             }
             else
                score = frac;
 
             /* check, if candidate is new best candidate */
-            if( SCIPisLT(scip, objgain, bestobjgain) || (SCIPisEQ(scip, objgain, bestobjgain) && score < bestscore) )
+            if( SCIPisLT(origprob, objgain, bestobjgain) || (SCIPisEQ(origprob, objgain, bestobjgain) && score < bestscore) )
             {
                *bestcand = var;
                bestobjgain = objgain;
@@ -474,8 +476,8 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgguideddiving) /*lint --e{715}*/
             SCIP_Real downfrac;
             SCIP_Real upfrac;
 
-            SCIP_CALL( getMasterDownFrac(scip, var, &downfrac) );
-            SCIP_CALL( getMasterUpFrac(scip, var, &upfrac) );
+            SCIP_CALL( getMasterDownFrac(gcg, var, &downfrac) );
+            SCIP_CALL( getMasterUpFrac(gcg, var, &upfrac) );
             score = roundup ? upfrac : downfrac;
          }
          else
@@ -513,17 +515,18 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgguideddiving) /*lint --e{715}*/
 
 /** creates the gcgguideddiving heuristic and includes it in GCG */
 SCIP_RETCODE GCGincludeHeurGcgguideddiving(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_HEUR* heur;
    GCG_DIVINGDATA* divingdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* create gcgguideddiving primal heuristic data */
-   SCIP_CALL( SCIPallocMemory(scip, &divingdata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &divingdata) );
 
    /* include diving heuristic */
-   SCIP_CALL( GCGincludeDivingHeurOrig(scip, &heur,
+   SCIP_CALL( GCGincludeDivingHeurOrig(gcg, &heur,
          HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, heurFreeGcgguideddiving, NULL, NULL, NULL, NULL, heurInitexecGcgguideddiving,
          heurExitexecGcgguideddiving, heurSelectVarGcgguideddiving, divingdata) );
@@ -531,7 +534,7 @@ SCIP_RETCODE GCGincludeHeurGcgguideddiving(
    assert(heur != NULL);
 
    /* add gcgguideddiving specific parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/usemasterfracs",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "heuristics/"HEUR_NAME"/usemasterfracs",
          "calculate the fractionalities w.r.t. the master LP?",
          &divingdata->usemasterfracs, TRUE, DEFAULT_USEMASTERFRACS, NULL, NULL) );
 

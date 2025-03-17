@@ -38,7 +38,7 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,8 +46,8 @@ extern "C" {
 
 /** creates the xyz classifier and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeVarClassifierXyz(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeVarClassifierXyz(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

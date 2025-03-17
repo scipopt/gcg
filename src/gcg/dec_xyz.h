@@ -37,7 +37,7 @@
 #define GCG_DEC_XYZ_H__
 
 #include "scip/scip.h"
-#include "def.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,8 +45,8 @@ extern "C" {
 
 /** creates the xyz detector and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorXyz(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorXyz(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

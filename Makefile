@@ -202,6 +202,7 @@ endif
 #-----------------------------------------------------------------------------
 
 ifeq ($(CPLEXSOLVER),true)
+LDFLAGS		+=	-ldl
 FLAGS		+=	-DWITH_CPLEXSOLVER -I$(SCIPDIR)/lib/include/cpxinc
 endif
 
@@ -363,6 +364,7 @@ LIBOBJ = \
 			gcg/extendedmasterconsdata.o \
 			gcg/masterplugins.o \
 			gcg/bendersplugins.o \
+			gcg/gcg.o \
 			gcg/gcgvarhistory.o \
 			gcg/misc.o \
 			gcg/miscvisualization.o \
@@ -483,7 +485,7 @@ SPLINT		=       splint
 SPLINTFLAGS	=	-UNDEBUG -UWITH_READLINE -UROUNDING_FE -UWITH_GMP -UWITH_ZLIB -which-lib -warn-posix-headers +skip-sys-headers -preproc -formatcode -weak \
 			-redef +export-header +export-local +decl-undef +relaxtypes
 
-GCGGITHASHFILE	= 	$(SRCDIR)/githash.c
+GCGGITHASHFILE	= 	$(SRCDIR)/gcg/githash.c
 
 #-----------------------------------------------------------------------------
 # Flags

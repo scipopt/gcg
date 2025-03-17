@@ -41,21 +41,21 @@
 #define GCG_CLASS_PARTIALDECOMP_H__
 
 #include "objscip/objscip.h"
-#include "struct_detector.h"
+#include "gcg/struct_detector.h"
 
 #include <vector>
 #include <string>
 #include <functional>
 #include <unordered_map>
 
-#include "def.h"
-#include "class_conspartition.h"
-#include "class_varpartition.h"
+
+#include "gcg/class_conspartition.h"
+#include "gcg/class_varpartition.h"
 #include "graph/graph_gcg.h"
 #include "graph/graph.h"
-#include "type_score.h"
+#include "gcg/type_score.h"
 
-#include "reader_gp.h"
+#include "gcg/reader_gp.h"
 
 namespace gcg {
 
@@ -117,6 +117,7 @@ struct BLOCK_STRUCTURE
 class PARTIALDECOMP
 {
 private:
+   GCG* gcg;                                                   /**< GCG data structure */
    SCIP* scip;                                                 /**< SCIP data structure */
    int id;                                                     /**< unique id of the partialdec, unique */
    int nblocks;                                                /**< number of blocks the partial decomposition currently has */
@@ -272,8 +273,8 @@ public:
     */
    GCG_EXPORT
    PARTIALDECOMP(
-      SCIP* scip,                                  /**< scip data structure */
-      bool originalProblem                             /**< true iff partialdec is for presolved problem (else for original problem) */
+      GCG* gcgstruct,                              /**< GCG data structure */
+      bool originalProblem                         /**< true iff partialdec is for presolved problem (else for original problem) */
       );
 
    /**
@@ -1445,12 +1446,10 @@ public:
 
    /**
     * @brief prints partition information as described in \see cls reader
-    * @param givenscip scip data structure
     * @param file output file
     */
    GCG_EXPORT
    void printPartitionInformation(
-      SCIP*                givenscip,
       FILE*                file
       );
 
@@ -1587,12 +1586,10 @@ public:
 
    /**
     * @brief sets detector that finished the partialdec in the original problem
-    * @param detectorID pointer to detector that has finished this partialdecs
     * @note does not add the detector to the detectorchain and does not modify partition statistics
     */
    GCG_EXPORT
    void setDetectorFinishedOrig(
-      GCG_DETECTOR* detectorID
       );
 
    /**

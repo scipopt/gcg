@@ -36,7 +36,7 @@
 #include <assert.h>
 
 #include "scip/branch_xyz.h"
-#include "type_branchgcg.h"
+#include "gcg/type_branchgcg.h"
 
 
 #define BRANCHRULE_NAME        "xyz branching rule"           /**< name of branching rule */
@@ -333,7 +333,7 @@ GCG_DECL_BRANCHGETEXTENDEDMASTERCONS(branchGetExtendedMasterConsXyz)
  */
 
 /** creates the xyz branching rule and includes it in SCIP */
-SCIP_RETCODE SCIPincludeBranchruleXyz(
+SCIP_RETCODE GCGincludeBranchruleXyz(
    SCIP*                 scip                /**< SCIP data structure */
 )
 {

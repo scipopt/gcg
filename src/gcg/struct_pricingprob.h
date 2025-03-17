@@ -40,9 +40,9 @@
 #include "scip/type_misc.h"
 #include "scip/scip.h"
 
-#include "type_pricingprob.h"
-#include "type_gcgcol.h"
-#include "type_solver.h"
+#include "gcg/type_pricingprob.h"
+#include "gcg/type_gcgcol.h"
+#include "gcg/type_solver.h"
 
 #ifdef __cplusplus
 extern "C" {

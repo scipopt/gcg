@@ -36,8 +36,8 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_gcgsimplerounding.h"
-#include "gcg.h"
+#include "gcg/heur_gcgsimplerounding.h"
+#include "gcg/gcg.h"
 
 
 #define HEUR_NAME             "gcgsimplerounding"
@@ -54,6 +54,7 @@
 /* locally defined heuristic data */
 struct SCIP_HeurData
 {
+   GCG*                  gcg;                /**< GCG data structure */
    SCIP_SOL*             sol;                /**< working solution */
    SCIP_Longint          lastlp;             /**< last LP number where the heuristic was applied */
    int                   nroundablevars;     /**< number of variables that can be rounded (-1 if not yet calculated) */
@@ -70,7 +71,20 @@ struct SCIP_HeurData
 #define heurCopyGcgsimplerounding NULL
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
-#define heurFreeGcgsimplerounding NULL
+static
+SCIP_DECL_HEURFREE(heurFreeGcgsimplerounding) /*lint --e{715}*/
+{  /*lint --e{715}*/
+   SCIP_HEURDATA* heurdata;
+
+   assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
+
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+
+   SCIPfreeMemory(scip, &heurdata);
+
+   return SCIP_OKAY;
+}
 
 
 /** initialization method of primal heuristic (called after problem was transformed) */
@@ -80,14 +94,14 @@ SCIP_DECL_HEURINIT(heurInitGcgsimplerounding) /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
-   assert(SCIPheurGetData(heur) == NULL);
+
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
 
    /* create heuristic data */
-   SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
    SCIP_CALL( SCIPcreateSol(scip, &heurdata->sol, heur) );
    heurdata->lastlp = -1;
    heurdata->nroundablevars = -1;
-   SCIPheurSetData(heur, heurdata);
 
    return SCIP_OKAY;
 }
@@ -105,8 +119,6 @@ SCIP_DECL_HEUREXIT(heurExitGcgsimplerounding) /*lint --e{715}*/
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
    SCIP_CALL( SCIPfreeSol(scip, &heurdata->sol) );
-   SCIPfreeMemory(scip, &heurdata);
-   SCIPheurSetData(heur, NULL);
 
    return SCIP_OKAY;
 }
@@ -148,8 +160,12 @@ SCIP_DECL_HEUREXEC(heurExecGcgsimplerounding) /*lint --e{715}*/
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
    assert(result != NULL);
 
+   /* get heuristic data */
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(heurdata->gcg);
    assert(masterprob != NULL);
 
    *result = SCIP_DIDNOTRUN;
@@ -166,10 +182,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgsimplerounding) /*lint --e{715}*/
    /* only call heuristic, if an optimal LP solution is at hand */
    if( SCIPgetStage(masterprob) > SCIP_STAGE_SOLVING || SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
       return SCIP_OKAY;
-
-   /* get heuristic data */
-   heurdata = SCIPheurGetData(heur);
-   assert(heurdata != NULL);
 
    /* on our first call, calculate the number of roundable variables */
    if( heurdata->nroundablevars == -1 )
@@ -292,16 +304,21 @@ SCIP_DECL_HEUREXEC(heurExecGcgsimplerounding) /*lint --e{715}*/
  */
 
 /** creates the GCG simple rounding heuristic and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurGcgsimplerounding(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeHeurGcgsimplerounding(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
+   SCIP_HEURDATA* heurdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+
+   SCIP_CALL( SCIPallocMemory(origprob, &heurdata) );
+   heurdata->gcg = gcg;
+
    /* include heuristic */
-   SCIP_CALL( SCIPincludeHeur(scip, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
+   SCIP_CALL( SCIPincludeHeur(origprob, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, HEUR_TIMING, HEUR_USESSUBSCIP,
          heurCopyGcgsimplerounding, heurFreeGcgsimplerounding, heurInitGcgsimplerounding, heurExitGcgsimplerounding,
-         heurInitsolGcgsimplerounding, heurExitsolGcgsimplerounding, heurExecGcgsimplerounding,
-         NULL) );
+         heurInitsolGcgsimplerounding, heurExitsolGcgsimplerounding, heurExecGcgsimplerounding, heurdata) );
 
    return SCIP_OKAY;
 }

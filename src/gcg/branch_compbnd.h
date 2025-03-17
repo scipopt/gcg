@@ -47,8 +47,7 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
-#include "type_branchgcg.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,15 +74,8 @@ typedef struct ComponentBound GCG_COMPBND;
 
 /** creates the component bound branching rule and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeBranchruleCompBnd(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** prepares informations for using the component bound branching scheme */
-SCIP_RETCODE GCGbranchCompBndInitbranch(
-   SCIP*                 masterscip,              /**< SCIP data structure */
-   SCIP_BRANCHRULE*      branchrule,              /**< branching rule */
-   SCIP_RESULT*          result                   /**< pointer to store the result of the branching call */
+SCIP_RETCODE GCGincludeBranchruleCompBnd(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** returns true when the branch rule is the generic branchrule */

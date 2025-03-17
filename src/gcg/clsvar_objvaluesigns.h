@@ -38,15 +38,15 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeVarClassifierObjValueSigns(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeVarClassifierObjValueSigns(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

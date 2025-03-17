@@ -33,17 +33,17 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "clsvar_xyz.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
+#include "gcg/clsvar_xyz.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
 #include <vector>
 #include <stdio.h>
 #include <sstream>
 
-#include "class_detprobdata.h"
+#include "gcg/class_detprobdata.h"
 
-#include "class_varpartition.h"
-#include "scip_misc.h"
+#include "gcg/class_varpartition.h"
+#include "gcg/scip_misc.h"
 
 /* classifier properties */
 #define CLSVAR_NAME                  "xyz variable classifier"           /**< name of classifier */
@@ -117,8 +117,8 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
  */
 
 /** creates the handler for xyz classifier and includes it in SCIP */
-SCIP_RETCODE SCIPincludeVarClassifierXyz(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeVarClassifierXyz(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_CLASSIFIERDATA* classifierdata;
@@ -126,7 +126,7 @@ SCIP_RETCODE SCIPincludeVarClassifierXyz(
    /**@todo create xyz classifier data here*/
    classifierdata = NULL;
 
-   SCIP_CALL( GCGincludeVarClassifier(scip, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( GCGincludeVarClassifier(gcg, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

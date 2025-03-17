@@ -34,13 +34,13 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include "scip/scip.h"
-#include "class_pricingtype.h"
+#include "gcg/class_pricingtype.h"
 #include "scip/cons_linear.h"
-#include "pub_gcgvar.h"
-#include "pub_extendedmasterconsdata.h"
+#include "gcg/pub_gcgvar.h"
+#include "gcg/pub_extendedmasterconsdata.h"
 #include "scip/pub_lp.h"
 #include "scip/clock.h"
-#include "scip_misc.h"
+#include "gcg/scip_misc.h"
 
 #include <exception>
 
@@ -71,10 +71,10 @@
                        while( FALSE )
 
 PricingType::PricingType(
-   SCIP*                 scip
-   )
+   GCG*                 gcgstruct
+   ) : gcg(gcgstruct)
 {
-   scip_ = scip;                             /* SCIP instance (master problem) */
+   masterprob = GCGgetMasterprob(gcg);       /* SCIP instance (master problem) */
    type  = GCG_PRICETYPE_UNKNOWN;            /* type of pricing */
 
    /* statistical values */
@@ -91,46 +91,45 @@ PricingType::PricingType(
    relmaxprobs = 1.0;                        /* maximal percentage of pricing problems that are solved if variables have already been found */
    relmaxsuccessfulprobs = 1.0;              /* maximal percentage of successfully solved pricing problems until pricing loop is aborted */
 
-   SCIP_CALL_EXC( SCIPcreateCPUClock(scip, &(clock)) );
+   SCIP_CALL_EXC( SCIPcreateCPUClock(masterprob, &(clock)) );
 }
 
 PricingType::~PricingType()
 {
-   SCIP_CALL_ABORT( SCIPfreeClock(scip_, &(clock)) );
+   SCIP_CALL_ABORT( SCIPfreeClock(masterprob, &(clock)) );
 
-   scip_ = (SCIP*) NULL;
+   masterprob = (SCIP*) NULL;
 }
 
 SCIP_RETCODE PricingType::startClock()
 {
-   SCIP_CALL( SCIPstartClock(scip_, clock) );
+   SCIP_CALL( SCIPstartClock(masterprob, clock) );
    return SCIP_OKAY;
 }
 
 SCIP_RETCODE PricingType::stopClock()
 {
-   SCIP_CALL( SCIPstopClock(scip_, clock) );
+   SCIP_CALL( SCIPstopClock(masterprob, clock) );
    return SCIP_OKAY;
 }
 
 SCIP_Real PricingType::getClockTime() const
 {
-   return SCIPgetClockTime(scip_, clock);
+   return SCIPgetClockTime(masterprob, clock);
 }
 
 FarkasPricing::FarkasPricing(
-   SCIP*                 scip
-   ) : PricingType(scip)
+   GCG*                  gcgstruct
+   ) : PricingType(gcgstruct)
 {
    type = GCG_PRICETYPE_FARKAS;
 }
 
 SCIP_Real FarkasPricing::consGetDual(
-   SCIP*                 scip,
    SCIP_CONS*            cons
    ) const
 {
-   return SCIPgetDualfarkasLinear(scip, cons);
+   return SCIPgetDualfarkasLinear(masterprob, cons);
 }
 
 SCIP_Real FarkasPricing::rowGetDual(
@@ -141,16 +140,14 @@ SCIP_Real FarkasPricing::rowGetDual(
 }
 
 SCIP_Real FarkasPricing::extendedmasterconsGetDual(
-   SCIP*                         scip,
    GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata
    ) const
 {
-   assert(scip != NULL);
    assert(extendedmasterconsdata != NULL);
    switch( GCGextendedmasterconsGetType(extendedmasterconsdata) )
    {
    case GCG_EXTENDEDMASTERCONSTYPE_CONS:
-      return SCIPgetDualfarkasLinear(scip, GCGextendedmasterconsGetCons(extendedmasterconsdata));
+      return SCIPgetDualfarkasLinear(masterprob, GCGextendedmasterconsGetCons(extendedmasterconsdata));
    case GCG_EXTENDEDMASTERCONSTYPE_ROW:
       return SCIProwGetDualfarkas(GCGextendedmasterconsGetRow(extendedmasterconsdata));
    default:
@@ -187,7 +184,7 @@ SCIP_Real FarkasPricing::getRelmaxprobs() const
 
 SCIP_RETCODE FarkasPricing::addParameters()
 {
-   SCIP* origprob = GCGmasterGetOrigprob(scip_);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/maxcolsroundfarkas",
          "maximal number of columns per Farkas pricing round",
@@ -205,11 +202,10 @@ SCIP_RETCODE FarkasPricing::addParameters()
 }
 
 SCIP_Real ReducedCostPricing::consGetDual(
-   SCIP*                 scip,
    SCIP_CONS*            cons
    ) const
 {
-   return SCIPgetDualsolLinear(scip, cons);
+   return SCIPgetDualsolLinear(masterprob, cons);
 }
 
 SCIP_Real ReducedCostPricing::rowGetDual(
@@ -220,16 +216,14 @@ SCIP_Real ReducedCostPricing::rowGetDual(
 }
 
 SCIP_Real ReducedCostPricing::extendedmasterconsGetDual(
-   SCIP*                         scip,
    GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata
    ) const
 {
-   assert(scip != NULL);
    assert(extendedmasterconsdata != NULL);
    switch( GCGextendedmasterconsGetType(extendedmasterconsdata) )
    {
    case GCG_EXTENDEDMASTERCONSTYPE_CONS:
-      return SCIPgetDualsolLinear(scip, GCGextendedmasterconsGetCons(extendedmasterconsdata));
+      return SCIPgetDualsolLinear(masterprob, GCGextendedmasterconsGetCons(extendedmasterconsdata));
    case GCG_EXTENDEDMASTERCONSTYPE_ROW:
       return SCIProwGetDualsol(GCGextendedmasterconsGetRow(extendedmasterconsdata));
    default:
@@ -239,8 +233,8 @@ SCIP_Real ReducedCostPricing::extendedmasterconsGetDual(
 }
 
 ReducedCostPricing::ReducedCostPricing(
-   SCIP*                 p_scip
-   ) : PricingType(p_scip)
+   GCG*                  gcgstruct
+   ) : PricingType(gcgstruct)
 {
    type = GCG_PRICETYPE_REDCOST;
 }
@@ -263,24 +257,24 @@ SCIP_Real ReducedCostPricing::varGetObj(
 /** returns the maximal number of columns per pricing round */
 int ReducedCostPricing::getMaxcolsround() const
 {
-   return GCGisRootNode(scip_) ? maxcolsroundroot : maxcolsround;
+   return GCGisRootNode(gcg) ? maxcolsroundroot : maxcolsround;
 }
 
 /** returns the maximal number of columns per problem to be generated during pricing */
 int ReducedCostPricing::getMaxcolsprob() const
 {
-   return GCGisRootNode(scip_) ? maxcolsprobroot : maxcolsprob;
+   return GCGisRootNode(gcg) ? maxcolsprobroot : maxcolsprob;
 }
 
 /** returns the maximal percentage of pricing problems that are solved if variables have already been found */
 SCIP_Real ReducedCostPricing::getRelmaxprobs() const
 {
-   return GCGisRootNode(scip_) ? relmaxprobsroot : relmaxprobs;
+   return GCGisRootNode(gcg) ? relmaxprobsroot : relmaxprobs;
 }
 
 SCIP_RETCODE ReducedCostPricing::addParameters()
 {
-   SCIP* origprob = GCGmasterGetOrigprob(scip_);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/maxroundsredcost",
          "maximal number of pricing rounds per node after the root node",

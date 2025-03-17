@@ -34,8 +34,8 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 #include <assert.h>
 
-#include "pub_gcgcol.h"
-#include "pub_gcgvar.h"
+#include "gcg/pub_gcgcol.h"
+#include "gcg/pub_gcgvar.h"
 #include "scip/def.h"
 #include "scip/set.h"
 #include "scip/stat.h"
@@ -47,13 +47,14 @@
 #include "scip/cons.h"
 #include "scip/debug.h"
 
-#include "gcg.h"
-#include "pricestore_gcg.h"
-#include "struct_pricestore_gcg.h"
-#include "pricer_gcg.h"
+#include "gcg/gcg.h"
+#include "gcg/pricestore_gcg.h"
+#include "gcg/struct_pricestore_gcg.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/struct_gcgcol.h"
 
 #ifdef _OPENMP
-#include "struct_locks.h"
+#include "gcg/struct_locks.h"
 #endif
 
 /*
@@ -70,22 +71,22 @@ SCIP_RETCODE pricestoreEnsureColsMem(
 {
    int retcode;
    assert(pricestore != NULL);
-   assert(pricestore->scip != NULL);
+   assert(pricestore->masterprob != NULL);
 
    if( num > pricestore->colssize[arrayindex] )
    {
       int newsize;
 
-      newsize = SCIPcalcMemGrowSize(pricestore->scip, num);
+      newsize = SCIPcalcMemGrowSize(pricestore->masterprob, num);
 
       GCG_SET_LOCK(&pricestore->locks->memorylock);
-      retcode = SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->cols[arrayindex], pricestore->colssize[arrayindex], newsize);
+      retcode = SCIPreallocBlockMemoryArray(pricestore->masterprob, &pricestore->cols[arrayindex], pricestore->colssize[arrayindex], newsize);
       if( retcode == SCIP_OKAY )
-         retcode = SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->objparallelisms[arrayindex], pricestore->colssize[arrayindex], newsize);
+         retcode = SCIPreallocBlockMemoryArray(pricestore->masterprob, &pricestore->objparallelisms[arrayindex], pricestore->colssize[arrayindex], newsize);
       if( retcode == SCIP_OKAY )
-         retcode = SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->orthogonalities[arrayindex], pricestore->colssize[arrayindex], newsize);
+         retcode = SCIPreallocBlockMemoryArray(pricestore->masterprob, &pricestore->orthogonalities[arrayindex], pricestore->colssize[arrayindex], newsize);
       if( retcode == SCIP_OKAY )
-         retcode = SCIPreallocBlockMemoryArray(pricestore->scip, &pricestore->scores[arrayindex], pricestore->colssize[arrayindex], newsize);
+         retcode = SCIPreallocBlockMemoryArray(pricestore->masterprob, &pricestore->scores[arrayindex], pricestore->colssize[arrayindex], newsize);
       GCG_UNSET_LOCK(&pricestore->locks->memorylock);
 
       SCIP_CALL(retcode);
@@ -110,8 +111,7 @@ int pricestoreGetArrayIndex(
 
 /** creates price storage */
 SCIP_RETCODE GCGpricestoreCreate(
-   SCIP*                 scip,                /**< SCIP data structure (master problem) */
-   SCIP*                 origscip,            /**< SCIP data structure (original problem) */
+   GCG*                  gcg,                 /**< GCG data structure */
    GCG_PRICESTORE**      pricestore,          /**< pointer to store price storage */
    SCIP_Real             efficiacyfac,          /**< factor of -redcost/norm in score function */
    SCIP_Real             objparalfac,         /**< factor of objective parallelism in score function */
@@ -123,16 +123,21 @@ SCIP_RETCODE GCGpricestoreCreate(
    )
 {
    int i;
+   SCIP* masterprob;
+   assert(gcg != NULL);
    assert(pricestore != NULL);
 
-   SCIP_CALL( SCIPallocBlockMemory(scip, pricestore) );
+   masterprob = GCGgetMasterprob(gcg);
 
-   (*pricestore)->scip = scip;
+   SCIP_CALL( SCIPallocBlockMemory(masterprob, pricestore) );
+
+   (*pricestore)->gcg = gcg;
+   (*pricestore)->masterprob = masterprob;
    (*pricestore)->ncolstotal = 0;
    (*pricestore)->ncolsfound = 0;
    (*pricestore)->ncolsfoundround = 0;
    (*pricestore)->ncolsapplied = 0;
-   (*pricestore)->narrays = GCGgetNPricingprobs(GCGgetOriginalprob(scip));
+   (*pricestore)->narrays = GCGgetNPricingprobs(gcg);
    (*pricestore)->infarkas = FALSE;
    (*pricestore)->forcecols = FALSE;
    (*pricestore)->efficiacyfac = efficiacyfac;   /* factor of efficiacies in score function */
@@ -143,19 +148,19 @@ SCIP_RETCODE GCGpricestoreCreate(
    (*pricestore)->efficiacychoice = efficiacychoice;
 
 #ifdef _OPENMP
-   (*pricestore)->locks = GCGgetLocks(origscip);
+   (*pricestore)->locks = GCGgetLocks(gcg);
 #endif
 
-   SCIP_CALL( SCIPhashtableCreate(&(*pricestore)->hashtable, SCIPblkmem(scip),
+   SCIP_CALL( SCIPhashtableCreate(&(*pricestore)->hashtable, SCIPblkmem(masterprob),
          hashtablesize, GCGhashGetKeyCol, GCGhashKeyEqCol, GCGhashKeyValCol, (void*)pricestore) );
 
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(*pricestore)->cols, (*pricestore)->narrays) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(*pricestore)->objparallelisms, (*pricestore)->narrays) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(*pricestore)->orthogonalities, (*pricestore)->narrays) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(*pricestore)->scores, (*pricestore)->narrays) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(*pricestore)->colssize, (*pricestore)->narrays) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(*pricestore)->ncols, (*pricestore)->narrays) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(*pricestore)->nforcedcols, (*pricestore)->narrays) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(*pricestore)->cols, (*pricestore)->narrays) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(*pricestore)->objparallelisms, (*pricestore)->narrays) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(*pricestore)->orthogonalities, (*pricestore)->narrays) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(*pricestore)->scores, (*pricestore)->narrays) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(*pricestore)->colssize, (*pricestore)->narrays) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(*pricestore)->ncols, (*pricestore)->narrays) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(*pricestore)->nforcedcols, (*pricestore)->narrays) );
 
    for( i = 0; i < (*pricestore)->narrays; ++i )
    {
@@ -173,15 +178,16 @@ SCIP_RETCODE GCGpricestoreCreate(
 
 /** frees price storage */
 SCIP_RETCODE GCGpricestoreFree(
-   SCIP*                 scip,                /**< SCIP data structure */
    GCG_PRICESTORE**      pricestore           /**< pointer to store price storage */
    )
 {
+   SCIP* scip;
    int i;
-   assert(scip == (*pricestore)->scip);
    assert(pricestore != NULL);
    assert(*pricestore != NULL);
    assert((*pricestore)->ncolstotal == 0);
+
+   scip = (*pricestore)->masterprob;
 
    SCIPhashtableFree(&(*pricestore)->hashtable);
 
@@ -309,8 +315,8 @@ SCIP_RETCODE correctInferredPricingVariables(
    SCIP_Real redcost;
 
    /* update gcgcol */
-   SCIP_CALL( GCGcomputeColMastercoefs(scip, gcgcol) );
-   redcost = GCGcomputeRedCostGcgCol(scip, pricestore->infarkas, gcgcol, NULL);
+   SCIP_CALL( GCGcomputeColMastercoefs(pricestore->gcg, gcgcol) );
+   redcost = GCGcomputeRedCostGcgCol(pricestore->gcg, pricestore->infarkas, gcgcol, NULL);
    GCGcolUpdateRedcost(gcgcol, redcost, FALSE);
 
    return SCIP_OKAY;
@@ -320,7 +326,6 @@ SCIP_RETCODE correctInferredPricingVariables(
  *  if the col should be forced to enter the LP, an infinite score will be used
  */
 SCIP_RETCODE GCGpricestoreAddCol(
-   SCIP*                 scip,               /**< SCIP data structure */
    GCG_PRICESTORE*       pricestore,         /**< price storage */
    GCG_COL*              col,                /**< priced col */
    SCIP_Bool             forcecol,           /**< should the col be forced to enter the LP? */
@@ -349,7 +354,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
          Some inferred pricing variables might not have existed when the column was created
          As a consequence, some column related data (e.g. norm) might be invalid
       */
-      SCIP_CALL( correctInferredPricingVariables(scip, col, pricestore) );
+      SCIP_CALL( correctInferredPricingVariables(pricestore->masterprob, col, pricestore) );
    }
 
    /* a col is forced to enter the LP if
@@ -359,11 +364,11 @@ SCIP_RETCODE GCGpricestoreAddCol(
     */
    forcecol = forcecol || pricestore->forcecols;
 
-   GCGcolComputeNorm(scip, col);
+   GCGcolComputeNorm(pricestore->gcg, col);
 
    if( forcecol )
    {
-      colscore = SCIPinfinity(scip);
+      colscore = SCIPinfinity(pricestore->masterprob);
       colobjparallelism = 1.0;
    }
    else
@@ -371,8 +376,8 @@ SCIP_RETCODE GCGpricestoreAddCol(
       /* initialize values to invalid (will be initialized during col filtering) */
       colscore = SCIP_INVALID;
 
-      if( SCIPisPositive(scip, pricestore->objparalfac) )
-         colobjparallelism = GCGcolComputeDualObjPara(scip, col);
+      if( SCIPisPositive(pricestore->masterprob, pricestore->objparalfac) )
+         colobjparallelism = GCGcolComputeDualObjPara(pricestore->gcg, col);
       else
          colobjparallelism = 0.0; /* no need to calculate it */
    }
@@ -519,7 +524,7 @@ SCIP_RETCODE pricestoreUpdateOrthogonalities(
          SCIP_Real thisortho;
 
          /* update orthogonality */
-         thisortho = GCGcolComputeOrth(pricestore->scip, col, pricestore->cols[i][pos]);
+         thisortho = GCGcolComputeOrth(pricestore->gcg, col, pricestore->cols[i][pos]);
 
          if( thisortho < pricestore->orthogonalities[i][pos] )
          {
@@ -586,7 +591,7 @@ SCIP_RETCODE pricestoreApplyCol(
 
    arrayindex = pricestoreGetArrayIndex(pricestore, col);
 
-   SCIP_CALL( GCGcreateNewMasterVarFromGcgCol(pricestore->scip, pricestore->infarkas, col, force, added, NULL, score) );
+   SCIP_CALL( GCGcreateNewMasterVarFromGcgCol(pricestore->gcg, pricestore->infarkas, col, force, added, NULL, score) );
    assert(*added);
 
    if( !force )
@@ -596,7 +601,7 @@ SCIP_RETCODE pricestoreApplyCol(
    }
 
    /* update the orthogonalities if needed */
-   if( SCIPisGT(pricestore->scip, mincolorthogonality, SCIPepsilon(pricestore->scip)) || SCIPisPositive(pricestore->scip, pricestore->orthofac))
+   if( SCIPisGT(pricestore->masterprob, mincolorthogonality, SCIPepsilon(pricestore->masterprob)) || SCIPisPositive(pricestore->masterprob, pricestore->orthofac))
       SCIP_CALL( pricestoreUpdateOrthogonalities(pricestore, col, mincolorthogonality) );
 
    if( !force )
@@ -679,7 +684,7 @@ SCIP_RETCODE computeScore(
    colscore = pricestore->efficiacyfac * colefficiacy
             + pricestore->objparalfac * pricestore->objparallelisms[arrayindex][pos]
             + pricestore->orthofac * 1.0;
-   assert( !SCIPisInfinity(pricestore->scip, colscore) );
+   assert( !SCIPisInfinity(pricestore->masterprob, colscore) );
 
    pricestore->scores[arrayindex][pos] = colscore;
 
@@ -697,7 +702,7 @@ SCIP_RETCODE GCGpricestoreApplyCols(
    int*                  nfoundvars          /**< pointer to store number of variables that were added to the problem */
    )
 {
-   SCIP* scip;
+   SCIP* masterprob;
    SCIP_Bool added;
    int* ncolsappliedprob;
    SCIP_Real mincolorthogonality;
@@ -709,20 +714,20 @@ SCIP_RETCODE GCGpricestoreApplyCols(
 
    assert(pricestore != NULL);
 
-   scip = pricestore->scip;
+   masterprob = pricestore->masterprob;
 
    SCIPdebugMessage("applying %d cols\n", pricestore->ncolstotal);
 
    /* get maximal number of cols to add to the LP */
-   maxpricecols = GCGpricerGetMaxColsRound(scip);
-   maxpricecolsprob = GCGpricerGetMaxColsProb(scip);
+   maxpricecols = GCGpricerGetMaxColsRound(pricestore->gcg);
+   maxpricecolsprob = GCGpricerGetMaxColsProb(pricestore->gcg);
 
    ncolsapplied = 0;
-   SCIP_CALL( SCIPallocClearBufferArray(scip, &ncolsappliedprob, GCGgetNPricingprobs(GCGmasterGetOrigprob(scip))) );
+   SCIP_CALL( SCIPallocClearBufferArray(masterprob, &ncolsappliedprob, GCGgetNPricingprobs(pricestore->gcg)) );
 
    /* set minimal col orthogonality */
    mincolorthogonality = pricestore->mincolorth;
-   mincolorthogonality = MAX(mincolorthogonality, SCIPepsilon(scip)); /*lint !e666 */
+   mincolorthogonality = MAX(mincolorthogonality, SCIPepsilon(masterprob)); /*lint !e666 */
 
    /* Compute scores for all non-forced cols and initialize orthogonalities - make sure all cols are initialized again for the current dual solution */
    for( i = 0; i < pricestore->narrays; ++i )
@@ -742,7 +747,7 @@ SCIP_RETCODE GCGpricestoreApplyCols(
          int probnr;
 
          col = pricestore->cols[i][pos];
-         assert(SCIPisInfinity(scip, pricestore->scores[i][pos]));
+         assert(SCIPisInfinity(masterprob, pricestore->scores[i][pos]));
 
          probnr = GCGcolGetProbNr(col);
 
@@ -791,14 +796,14 @@ SCIP_RETCODE GCGpricestoreApplyCols(
       assert(pricestore->nforcedcols[i] <= bestpos && bestpos < pricestore->ncols[i]);
       assert(pricestore->scores[i][bestpos] != SCIP_INVALID ); /*lint !e777*/
       score = pricestore->scores[i][bestpos];
-      assert(!SCIPisInfinity(scip, pricestore->scores[i][bestpos]));
+      assert(!SCIPisInfinity(masterprob, pricestore->scores[i][bestpos]));
       probnr = GCGcolGetProbNr(col);
 
       /* Do not add (non-forced) non-violated cols.
        * Note: do not take SCIPsetIsEfficacious(), because constraint handlers often add cols w.r.t. SCIPsetIsFeasPositive().
        * Note2: if pricerating/feastolfac != -1, constraint handlers may even add cols w.r.t. SCIPsetIsPositive(); those are currently rejected here
        */
-      if( SCIPisDualfeasNegative(scip, GCGcolGetRedcost(col)) && ncolsapplied < maxpricecols )
+      if( SCIPisDualfeasNegative(masterprob, GCGcolGetRedcost(col)) && ncolsapplied < maxpricecols )
       {
          assert(ncolsappliedprob[probnr] < maxpricecolsprob);
          /* add col to the LP and update orthogonalities */
@@ -829,7 +834,7 @@ SCIP_RETCODE GCGpricestoreApplyCols(
    /* clear the price storage and reset statistics for price round */
    GCGpricestoreClearCols(pricestore);
 
-   SCIPfreeBufferArray(scip, &ncolsappliedprob);
+   SCIPfreeBufferArray(masterprob, &ncolsappliedprob);
 
    return SCIP_OKAY;
 }
@@ -869,10 +874,10 @@ void GCGpricestoreClearCols(
    {
       for( i = 0; i < pricestore->narrays; ++i )
       {
-         SCIPfreeBlockMemoryArrayNull(pricestore->scip, &pricestore->cols[i], pricestore->colssize[i]);
-         SCIPfreeBlockMemoryArrayNull(pricestore->scip, &pricestore->objparallelisms[i], pricestore->colssize[i]);
-         SCIPfreeBlockMemoryArrayNull(pricestore->scip, &pricestore->orthogonalities[i], pricestore->colssize[i]);
-         SCIPfreeBlockMemoryArrayNull(pricestore->scip, &pricestore->scores[i], pricestore->colssize[i]);
+         SCIPfreeBlockMemoryArrayNull(pricestore->masterprob, &pricestore->cols[i], pricestore->colssize[i]);
+         SCIPfreeBlockMemoryArrayNull(pricestore->masterprob, &pricestore->objparallelisms[i], pricestore->colssize[i]);
+         SCIPfreeBlockMemoryArrayNull(pricestore->masterprob, &pricestore->orthogonalities[i], pricestore->colssize[i]);
+         SCIPfreeBlockMemoryArrayNull(pricestore->masterprob, &pricestore->scores[i], pricestore->colssize[i]);
 
          pricestore->colssize[i] = 0;
       }

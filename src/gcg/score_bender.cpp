@@ -32,11 +32,11 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "score_bender.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/score_bender.h"
 
 /* score properties */
 #define SCORE_NAME                "experimental benders score"
@@ -89,7 +89,7 @@ GCG_DECL_SCORECALC(scoreCalcBender)
    nrelevantvars2 = 0;
    badblockvararea = 0;
 
-   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
+   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(gcg, partialdecid);
 
    gcg::DETPROBDATA* detprobdata = partialdec->getDetprobdata();
 
@@ -183,7 +183,7 @@ GCG_DECL_SCORECALC(scoreCalcBender)
    SCIP_Real borderareascore;
 
    SCIP_Real blockareascore = partialdec->calcBlockAreaScore();
-   borderareascore = partialdec->getScore(GCGconshdlrDecompFindScore(scip, "border area"));
+   borderareascore = partialdec->getScore(GCGconshdlrDecompFindScore(gcg, "border area"));
 
    *scorevalue = blockareascore + benderareascore + borderareascore - 1.;
 
@@ -199,13 +199,13 @@ GCG_DECL_SCORECALC(scoreCalcBender)
 
 /** creates the bender score and includes it in SCIP */
 SCIP_RETCODE GCGincludeScoreBender(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_SCOREDATA* scoredata = NULL;
 
    SCIP_CALL(
-      GCGincludeScore(scip, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata,
+      GCGincludeScore(gcg, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata,
          scoreFreeBender, scoreCalcBender) );
 
    return SCIP_OKAY;

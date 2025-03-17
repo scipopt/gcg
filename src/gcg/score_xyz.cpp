@@ -33,11 +33,11 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "score_xyz.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/score_xyz.h"
 
 
 /* score properties */
@@ -122,7 +122,7 @@ SCIP_RETCODE GCGincludeScoreXyz(
    /**@todo create xyz score data here*/
    scoredata = NULL;
 
-   SCIP_CALL( GCGincludeScore(scip, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata, scoreFreeXyz, scoreCalcXyz) );
+   SCIP_CALL( GCGincludeScore(gcg, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata, scoreFreeXyz, scoreCalcXyz) );
 
    return SCIP_OKAY;
 }

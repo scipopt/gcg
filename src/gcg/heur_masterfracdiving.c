@@ -36,8 +36,8 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_masterfracdiving.h"
-#include "heur_masterdiving.h"
+#include "gcg/heur_masterfracdiving.h"
+#include "gcg/heur_masterdiving.h"
 
 
 #define HEUR_NAME             "masterfracdiving"
@@ -62,7 +62,7 @@
  * - binary variables are preferred
  */
 static
-GCG_DECL_DIVINGSELECTVAR(heurSelectVarMasterfracdiving) /*lint --e{715}*/
+GCG_DECL_MASTER_DIVINGSELECTVAR(heurSelectVarMasterfracdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    SCIP_VAR** lpcands;
    SCIP_Real* lpcandssol;
@@ -73,22 +73,23 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarMasterfracdiving) /*lint --e{715}*/
    SCIP_Bool bestcandmayrounddown;
    SCIP_Bool bestcandmayroundup;
    int c;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
    /* check preconditions */
-   assert(scip != NULL);
+   assert(masterprob != NULL);
    assert(heur != NULL);
    assert(bestcand != NULL);
    assert(bestcandmayround != NULL);
 
    /* get fractional variables that should be integral */
-   SCIP_CALL( SCIPgetLPBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL) );
+   SCIP_CALL( SCIPgetLPBranchCands(masterprob, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL) );
    assert(lpcands != NULL);
    assert(lpcandsfrac != NULL);
    assert(lpcandssol != NULL);
 
    bestcandmayrounddown = TRUE;
    bestcandmayroundup = TRUE;
-   bestobjgain = SCIPinfinity(scip);
+   bestobjgain = SCIPinfinity(masterprob);
    bestfrac = SCIP_INVALID;
 
    for( c = 0; c < nlpcands; ++c )
@@ -133,7 +134,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarMasterfracdiving) /*lint --e{715}*/
                objgain *= 1000.0;
 
             /* check, if candidate is new best candidate */
-            if( SCIPisLT(scip, objgain, bestobjgain) || (SCIPisEQ(scip, objgain, bestobjgain) && frac > bestfrac) )
+            if( SCIPisLT(masterprob, objgain, bestobjgain) || (SCIPisEQ(masterprob, objgain, bestobjgain) && frac > bestfrac) )
             {
                *bestcand = var;
                bestobjgain = objgain;
@@ -177,13 +178,13 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarMasterfracdiving) /*lint --e{715}*/
 
 /** creates the masterfracdiving heuristic and includes it in GCG */
 SCIP_RETCODE GCGincludeHeurMasterfracdiving(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_HEUR* heur;
 
    /* include diving heuristic */
-   SCIP_CALL( GCGincludeDivingHeurMaster(scip, &heur,
+   SCIP_CALL( GCGincludeDivingHeurMaster(gcg, &heur,
          HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, NULL, NULL, NULL, NULL, NULL, NULL, NULL, heurSelectVarMasterfracdiving, NULL) );
 

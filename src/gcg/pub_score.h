@@ -36,9 +36,11 @@
 #ifndef __GCG_PUB_SCORE_H__
 #define __GCG_PUB_SCORE_H__
 
-#include "def.h"
+
 #include "scip/scip.h"
-#include "type_score.h"
+#include "gcg/def.h"
+#include "gcg/type_score.h"
+#include "gcg/type_gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,7 +57,7 @@ extern "C" {
  */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeScore(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    const char*           name,               /**< name of score */
    const char*           shortname,          /**< shortname of score */
    const char*           description,        /**< description of score */
@@ -70,7 +72,7 @@ SCIP_RETCODE GCGincludeScore(
  */
 GCG_EXPORT
 GCG_SCORE* GCGfindScore(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    const char*           name                /**< name of score */
    );
 
@@ -80,20 +82,20 @@ GCG_SCORE* GCGfindScore(
  */
 GCG_EXPORT
 GCG_SCORE* GCGfindScoreByShortname(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    const char*           shortname           /**< shortname of score */
    );
 
 /** returns the array of currently available scores */
 GCG_EXPORT
 GCG_SCORE** GCGgetScores(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** returns the number of currently available scores */
 GCG_EXPORT
 int GCGgetNScores(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** gets user data of score */

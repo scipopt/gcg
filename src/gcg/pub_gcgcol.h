@@ -35,13 +35,15 @@
 #ifndef GCG_PUB_GCGCOL_H__
 #define GCG_PUB_GCGCOL_H__
 
-#include "type_gcgcol.h"
-#include "def.h"
+#include "gcg/type_gcgcol.h"
+
 #include "scip/type_scip.h"
 #include "scip/type_retcode.h"
 #include "scip/type_var.h"
 #include "scip/type_cons.h"
 #include "scip/type_misc.h"
+#include "gcg/def.h"
+#include "gcg/type_gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,7 +61,7 @@ extern "C" {
 /** create a gcg column */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateGcgCol(
-   SCIP*                scip,               /**< SCIP data structure */
+   SCIP*                pricingprob,        /**< SCIP data structure */
    GCG_COL**            gcgcol,             /**< pointer to store gcg column */
    int                  prob,               /**< number of corresponding pricing problem */
    SCIP_VAR**           vars,               /**< (sorted) array of variables of corresponding pricing problem */
@@ -156,7 +158,6 @@ void GCGcolUpdateRedcost(
 /** return solution value of variable in gcg column */
 GCG_EXPORT
 SCIP_Real GCGcolGetSolVal(
-   SCIP*                scip,               /**< SCIP data structure */
    GCG_COL*             gcgcol,             /**< gcg column */
    SCIP_VAR*            var                 /**< variable */
    );
@@ -164,7 +165,6 @@ SCIP_Real GCGcolGetSolVal(
 /** returns true if the gcg column knows the solution value of the variable */
 GCG_EXPORT
 SCIP_Bool GCGcolKnowsSolVar(
-   SCIP*                scip,               /**< SCIP data structure */
    GCG_COL*             gcgcol,             /**< gcg column */
    SCIP_VAR*            var                 /**< variable */
    );
@@ -199,7 +199,7 @@ void GCGcolSetNorm(
 /** get norm of column */
 GCG_EXPORT
 void GCGcolComputeNorm(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
@@ -300,14 +300,14 @@ SCIP_Bool GCGcolIsAged(
 /** compute parallelism of column to dual objective */
 GCG_EXPORT
 SCIP_Real GCGcolComputeDualObjPara(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    GCG_COL*             gcgcol              /**< gcg column */
    );
 
 /** compute orthogonality of two gcg columns */
 GCG_EXPORT
 SCIP_Real GCGcolComputeOrth(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    GCG_COL*             gcgcol1,            /**< first gcg column */
    GCG_COL*             gcgcol2             /**< second gcg column */
    );

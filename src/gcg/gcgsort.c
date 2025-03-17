@@ -31,16 +31,16 @@
  */
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "gcgsort.h"
+#include "gcg/gcgsort.h"
 
 #define GCGSORTTPL_NAMEEXT     Ptr
 #define GCGSORTTPL_KEYTYPE     void*
 #define GCGSORTTPL_PTRCOMP
-#include "gcgsorttpl.c"
+#include "gcg/gcgsorttpl.c"
 
 #define GCGSORTTPL_NAMEEXT     PtrPtr
 #define GCGSORTTPL_KEYTYPE     void*
 #define GCGSORTTPL_FIELD1TYPE  void*
 #define GCGSORTTPL_PTRCOMP
-#include "gcgsorttpl.c"
+#include "gcg/gcgsorttpl.c"
 

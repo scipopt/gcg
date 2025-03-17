@@ -37,7 +37,7 @@
 #ifndef GCG_STRUCT_VARDATA_H__
 #define GCG_STRUCT_VARDATA_H__
 
-#include "type_extendedmasterconsdata.h"
+#include "gcg/type_extendedmasterconsdata.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,7 +85,6 @@ struct GCG_PricingVarData
    SCIP_VAR**            origvars;           /**< corresponding variables in the original program */
    int                   norigvars;          /**< number of corresponding variables in the original program */
    int                   maxorigvars;        /**< length of origvars array */
-   int                   pricerindex;        /**< index used by the pricer to store data of the variable */
 };
 typedef struct GCG_PricingVarData GCG_PRICINGVARDATA;
 

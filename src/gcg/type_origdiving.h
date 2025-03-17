@@ -37,6 +37,7 @@
 #define __SCIP_TYPE_ORIGDIVING_H__
 
 #include "scip/type_scip.h"
+#include "gcg/type_gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,26 +49,26 @@ typedef struct GCG_DivingData GCG_DIVINGDATA;   /**< locally defined diving data
 /** destructor of diving heuristic to free user data (called when GCG is exiting)
  *
  *  input:
- *  - scip            : SCIP main data structure
+ *  - gcg             : GCG data structure
  *  - heur            : the diving heuristic itself
  */
-#define GCG_DECL_DIVINGFREE(x) SCIP_RETCODE x (SCIP* scip, SCIP_HEUR* heur)
+#define GCG_DECL_DIVINGFREE(x) SCIP_RETCODE x (GCG* gcg, SCIP_HEUR* heur)
 
 /** initialization method of diving heuristic (called after problem was transformed)
  *
  *  input:
- *  - scip            : SCIP main data structure
+ *  - gcg             : GCG data structure
  *  - heur            : the diving heuristic itself
  */
-#define GCG_DECL_DIVINGINIT(x) SCIP_RETCODE x (SCIP* scip, SCIP_HEUR* heur)
+#define GCG_DECL_DIVINGINIT(x) SCIP_RETCODE x (GCG* gcg, SCIP_HEUR* heur)
 
 /** deinitialization method of diving heuristic (called before transformed problem is freed)
  *
  *  input:
- *  - scip            : SCIP main data structure
+ *  - gcg             : GCG data structure
  *  - heur            : the diving heuristic itself
  */
-#define GCG_DECL_DIVINGEXIT(x) SCIP_RETCODE x (SCIP* scip, SCIP_HEUR* heur)
+#define GCG_DECL_DIVINGEXIT(x) SCIP_RETCODE x (GCG* gcg, SCIP_HEUR* heur)
 
 /** solving process initialization method of diving heuristic (called when branch and bound process is about to begin)
  *
@@ -75,10 +76,10 @@ typedef struct GCG_DivingData GCG_DIVINGDATA;   /**< locally defined diving data
  *  The diving heuristic may use this call to initialize its branch and bound specific data.
  *
  *  input:
- *  - scip            : SCIP main data structure
+ *  - gcg             : GCG data structure
  *  - heur            : the diving heuristic itself
  */
-#define GCG_DECL_DIVINGINITSOL(x) SCIP_RETCODE x (SCIP* scip, SCIP_HEUR* heur)
+#define GCG_DECL_DIVINGINITSOL(x) SCIP_RETCODE x (GCG* gcg, SCIP_HEUR* heur)
 
 /** solving process deinitialization method of primal heuristic (called before branch and bound process data is freed)
  *
@@ -86,10 +87,10 @@ typedef struct GCG_DivingData GCG_DIVINGDATA;   /**< locally defined diving data
  *  The diving heuristic should use this call to clean up its branch and bound data.
  *
  *  input:
- *  - scip            : SCIP main data structure
+ *  - gcg             : GCG data structure
  *  - heur            : the diving heuristic itself
  */
-#define GCG_DECL_DIVINGEXITSOL(x) SCIP_RETCODE x (SCIP* scip, SCIP_HEUR* heur)
+#define GCG_DECL_DIVINGEXITSOL(x) SCIP_RETCODE x (GCG* gcg, SCIP_HEUR* heur)
 
 /** execution initialization method of diving heuristic (called when execution of diving heuristic is about to begin)
  *
@@ -97,10 +98,10 @@ typedef struct GCG_DivingData GCG_DIVINGDATA;   /**< locally defined diving data
  *  The diving heuristic may use this call to collect data which is specific to this call of the heuristic.
  *
  *  input:
- *  - scip            : SCIP main data structure
+ *  - gcg             : GCG data structure
  *  - heur            : the diving heuristic itself
  */
-#define GCG_DECL_DIVINGINITEXEC(x) SCIP_RETCODE x (SCIP* scip, SCIP_HEUR* heur)
+#define GCG_DECL_DIVINGINITEXEC(x) SCIP_RETCODE x (GCG* gcg, SCIP_HEUR* heur)
 
 /** execution deinitialization method of diving heuristic (called when execution data is freed)
  *
@@ -108,17 +109,17 @@ typedef struct GCG_DivingData GCG_DIVINGDATA;   /**< locally defined diving data
  *  The diving heuristic should use this call to clean up its execution specific data.
  *
  *  input:
- *  - scip            : SCIP main data structure
+ *  - gcg             : GCG data structure
  *  - heur            : the diving heuristic itself
  */
-#define GCG_DECL_DIVINGEXITEXEC(x) SCIP_RETCODE x (SCIP* scip, SCIP_HEUR* heur)
+#define GCG_DECL_DIVINGEXITEXEC(x) SCIP_RETCODE x (GCG* gcg, SCIP_HEUR* heur)
 
 /** variable selection method of diving heuristic
  *
  *  Selects a master variable to dive on
  *
  *  input:
- *  - scip             : SCIP main data structure
+ *  - gcg              : GCG data structure
  *  - heur             : the diving heuristic itself
  *  - tabulist         : an array containing variables that must not be chosen
  *  - tabulistsize     : the size of the array
@@ -126,7 +127,7 @@ typedef struct GCG_DivingData GCG_DIVINGDATA;   /**< locally defined diving data
  *  - bestcandmayround : pointer to store whether the variable may be rounded without losing LP feasibility
  *  - bestcandroundup  : pointer to store whether the variable is to be rounded up
  */
-#define GCG_DECL_DIVINGSELECTVAR(x) SCIP_RETCODE x (SCIP* scip, SCIP_HEUR* heur, SCIP_VAR** tabulist, int tabulistsize, SCIP_VAR** bestcand, SCIP_Bool* bestcandmayround, SCIP_Bool* bestcandroundup)
+#define GCG_DECL_DIVINGSELECTVAR(x) SCIP_RETCODE x (GCG* gcg, SCIP_HEUR* heur, SCIP_VAR** tabulist, int tabulistsize, SCIP_VAR** bestcand, SCIP_Bool* bestcandmayround, SCIP_Bool* bestcandroundup)
 
 #ifdef __cplusplus
 }

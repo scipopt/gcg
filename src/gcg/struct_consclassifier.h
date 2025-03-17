@@ -36,7 +36,7 @@
 #ifndef GCG_STRUCT_CONSCLASSIFIER_H__
 #define GCG_STRUCT_CONSCLASSIFIER_H__
 
-#include "type_consclassifier.h"
+#include "gcg/type_consclassifier.h"
 
 
 /** detector data structure */

@@ -38,8 +38,7 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
-#include "type_branchgcg.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,14 +71,8 @@ typedef struct GCG_Strip GCG_STRIP;
 
 /** creates the generic branching rule and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeBranchruleGeneric(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** initializes branchdata */
-SCIP_RETCODE GCGbranchGenericCreateBranchdata(
-   SCIP*                 scip,               /**< SCIP data structure */
-   GCG_BRANCHDATA**      branchdata          /**< branching data to initialize */
+SCIP_RETCODE GCGincludeBranchruleGeneric(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** get component bound sequence */
@@ -100,17 +93,6 @@ int GCGbranchGenericBranchdataGetConsblocknr(
 /** get master constraint */
 SCIP_CONS* GCGbranchGenericBranchdataGetMastercons(
    GCG_BRANCHDATA*       branchdata          /**< branching data to initialize */
-   );
-
-/** prepares informations for using the generic branching scheme */
-SCIP_RETCODE GCGbranchGenericInitbranch(
-   SCIP*                 masterscip,         /**< SCIP data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
-   SCIP_RESULT*          result,             /**< pointer to store the result of the branching call */
-   int**                 checkedblocks,      /**< blocks that have been checked */
-   int*                  ncheckedblocks,     /**< number of checked blocks */
-   GCG_STRIP****         checkedblockssortstrips, /**< sorted strips of checked blocks */
-   int**                 checkedblocksnsortstrips /**< sizes of the strips */
    );
 
 /** returns true when the branch rule is the generic branchrule */

@@ -37,7 +37,7 @@
 #define GCG_DEC_POSTPROCESS_H__
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,8 +45,8 @@ extern "C" {
 
 /** creates the handler for postprocess detector and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorPostprocess(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorPostprocess(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

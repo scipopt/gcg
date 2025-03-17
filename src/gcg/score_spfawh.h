@@ -37,7 +37,7 @@
 #define __GCG_SCORE_SPFAWH_H__
 
 
-#include "gcg.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +46,7 @@ extern "C" {
 /** creates the setpartitioning maximum foreseeing white area score with aggregation information score and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeScoreSpfawh(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

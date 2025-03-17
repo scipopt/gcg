@@ -33,13 +33,13 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "dec_postprocess.h"
-#include "cons_decomp.h"
-#include "gcg.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/dec_postprocess.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/gcg.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include "scip/scip.h"
-#include "scip_misc.h"
+#include "gcg/scip_misc.h"
 #include "scip/clock.h"
 #include <iostream>
 #include <algorithm>
@@ -93,8 +93,6 @@ static
 GCG_DECL_FREEDETECTOR(freePostprocess)
 {  /*lint --e{715}*/
    GCG_DETECTORDATA *detectordata;
-
-   assert(scip != NULL);
    assert(detector != NULL);
 
    assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
@@ -102,7 +100,7 @@ GCG_DECL_FREEDETECTOR(freePostprocess)
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   SCIPfreeMemory(scip, &detectordata);
+   SCIPfreeMemory(GCGgetOrigprob(gcg), &detectordata);
 
    return SCIP_OKAY;
 }
@@ -122,13 +120,14 @@ GCG_DECL_FREEDETECTOR(freePostprocess)
 static
 GCG_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
 {
+   SCIP* origprob = GCGgetOrigprob(gcg);
    *result = SCIP_DIDNOTFIND;
 
    assert(partialdecdetectiondata->workonpartialdec->isComplete());
 
    SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+   SCIP_CALL_ABORT( SCIPcreateClock(origprob, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
    char decinfo[SCIP_MAXSTRLEN];
    SCIP_Bool success;
    SCIP_Bool byconssadj;
@@ -137,7 +136,7 @@ GCG_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
    gcg::DETPROBDATA* detprobdata = partialdecdetectiondata->detprobdata;
    assert(partialdecdetectiondata->workonpartialdec->getDetprobdata() == detprobdata);
 
-   SCIPgetBoolParam(scip, "detection/detectors/postprocess/useconssadj", &byconssadj);
+   SCIPgetBoolParam(origprob, "detection/detectors/postprocess/useconssadj", &byconssadj);
 
    if ( byconssadj && !detprobdata->isConssAdjInitialized() )
       detprobdata->createConssAdjacency();
@@ -216,7 +215,7 @@ GCG_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
    else
       success = FALSE;
 
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+   SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock ) );
 
    assert(partialdec->checkConsistency());
 
@@ -227,19 +226,19 @@ GCG_DECL_POSTPROCESSPARTIALDEC(postprocessPartialdecPostprocess)
    }
    else
    {
-      partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 1) );
+      partialdecdetectiondata->detectiontime = SCIPgetClockTime(origprob, temporaryClock);
+      SCIP_CALL( SCIPallocMemoryArray(origprob, &(partialdecdetectiondata->newpartialdecs), 1) );
       partialdecdetectiondata->newpartialdecs[0] = partialdec;
       partialdecdetectiondata->nnewpartialdecs = 1;
       (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "postprocess");
       partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(decinfo);
-      partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
+      partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(origprob, temporaryClock));
       // we used the provided partialdec -> prevent deletion
       partialdecdetectiondata->workonpartialdec = NULL;
       *result = SCIP_SUCCESS;
    }
 
-   SCIP_CALL_ABORT( SCIPfreeClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPfreeClock(origprob, &temporaryClock) );
 
    return SCIP_OKAY;
 }
@@ -249,17 +248,17 @@ static
 GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressivePostprocess)
 {
    char setstr[SCIP_MAXSTRLEN];
-
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, TRUE ) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/postprocessingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, TRUE) );
 
 
    return SCIP_OKAY;
@@ -271,17 +270,17 @@ static
 GCG_DECL_SETPARAMDEFAULT(setParamDefaultPostprocess)
 {
    char setstr[SCIP_MAXSTRLEN];
-
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLED) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLEDFINISHING) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/postprocessingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDPOSTPROCESSING ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLEDPOSTPROCESSING ) );
 
 
    return SCIP_OKAY;
@@ -292,17 +291,17 @@ static
 GCG_DECL_SETPARAMFAST(setParamFastPostprocess)
 {
    char setstr[SCIP_MAXSTRLEN];
-
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE ) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/postprocessingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE ) );
 
 
    return SCIP_OKAY;
@@ -316,26 +315,28 @@ GCG_DECL_SETPARAMFAST(setParamFastPostprocess)
  */
 
 /** creates the handler for postprocess detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorPostprocess(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorPostprocess(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_DETECTORDATA* detectordata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    /**@todo create postprocess detector data here*/
    detectordata = NULL;
-   SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &detectordata) );
    assert(detectordata != NULL);
 
    detectordata->useconssadj = TRUE;
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freePostprocess,
+   SCIP_CALL( GCGincludeDetector(gcg, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freePostprocess,
                                  initPostprocess, exitPostprocess, propagatePartialdecPostprocess, finishPartialdecPostprocess,
                                  postprocessPartialdecPostprocess, setParamAggressivePostprocess, setParamDefaultPostprocess, setParamFastPostprocess) );
 
    /* add consname detector parameters */
       /**@todo add postprocess detector parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/postprocess/useconssadj", "should the constraint adjacency be used", &detectordata->useconssadj, FALSE, DEFAULT_USECONSSADJ, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(origprob, "detection/detectors/postprocess/useconssadj", "should the constraint adjacency be used", &detectordata->useconssadj, FALSE, DEFAULT_USECONSSADJ, NULL, NULL) );
 
 
    return SCIP_OKAY;

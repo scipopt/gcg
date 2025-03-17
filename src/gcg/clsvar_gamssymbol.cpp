@@ -33,17 +33,17 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "clsvar_gamssymbol.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
+#include "gcg/clsvar_gamssymbol.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
 #include <vector>
 #include <stdio.h>
 #include <sstream>
 
-#include "class_detprobdata.h"
+#include "gcg/class_detprobdata.h"
 
-#include "class_varpartition.h"
-#include "scip_misc.h"
+#include "gcg/class_varpartition.h"
+#include "gcg/scip_misc.h"
 
 /* classifier properties */
 #define CLSVAR_NAME        "gamssymbol"              /**< name of classifier */
@@ -78,15 +78,13 @@ struct GCG_ClassifierData
 static
 GCG_DECL_FREEVARCLASSIFIER(classifierFree)
 {
-   assert(scip != NULL);
-
    GCG_CLASSIFIERDATA* classifierdata = GCGvarClassifierGetData(classifier);
    assert(classifierdata != NULL);
    assert(strcmp(GCGvarClassifierGetName(classifier), CLSVAR_NAME) == 0);
 
    delete classifierdata->vartosymbol;
 
-   SCIPfreeMemory(scip, &classifierdata);
+   SCIPfreeMemory(GCGgetOrigprob(gcg), &classifierdata);
 
    return SCIP_OKAY;
 }
@@ -95,13 +93,14 @@ static
 GCG_DECL_VARCLASSIFY(classifierClassify)
 {
    gcg::DETPROBDATA* detprobdata;
+
    if( transformed )
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(gcg);
    }
    else
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
    }
 
    int nvar = detprobdata->getNVars();
@@ -110,7 +109,7 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
    std::vector<int> classForVar( nvar, - 1 );   // [i] holds class index for variable i -> indexing over detection internal variable array!
    int counterClasses = 0;
 
-   GCG_VARCLASSIFIER* classifier = GCGfindVarClassifier(scip, CLSVAR_NAME);
+   GCG_VARCLASSIFIER* classifier = GCGfindVarClassifier(gcg, CLSVAR_NAME);
    assert(classifier != NULL);
 
    GCG_CLASSIFIERDATA* classdata = GCGvarClassifierGetData(classifier);
@@ -160,7 +159,7 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
    assert( counterClasses == (int) symbolidxForClass.size() );
 
    /* secondly, use these information to create a ConsPartition */
-   gcg::VarPartition* partition = new gcg::VarPartition(scip, "gamssymbols", counterClasses, detprobdata->getNVars() );
+   gcg::VarPartition* partition = new gcg::VarPartition(gcg, "gamssymbols", counterClasses, detprobdata->getNVars() );
 
    /* set class names and descriptions of every class */
    for( int c = 0; c < partition->getNClasses(); ++ c )
@@ -179,7 +178,7 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
    {
       partition->assignVarToClass( i, classForVar[i] );
    }
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d  different variable classes \n", partition->getName(), partition->getNClasses() );
+   SCIPverbMessage(GCGgetOrigprob(gcg), SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d  different variable classes \n", partition->getName(), partition->getNClasses() );
 
    detprobdata->addVarPartition(partition);
    return SCIP_OKAY;
@@ -201,7 +200,7 @@ SCIP_RETCODE GCGvarClassifierGamssymbolAddEntry(
    GCG_CLASSIFIERDATA* classdata = GCGvarClassifierGetData(classifier);
    assert(classdata != NULL);
 
-   std::string varname = SCIPvarGetName( var );
+   std::string varname = SCIPvarGetName(var);
    char varnametrans[SCIP_MAXSTRLEN];
    (void) SCIPsnprintf(varnametrans, SCIP_MAXSTRLEN, "t_%s", varname.c_str());
    std::string nametrans(varnametrans);
@@ -212,17 +211,17 @@ SCIP_RETCODE GCGvarClassifierGamssymbolAddEntry(
 }
 
 /** creates the handler for gamssymbol classifier and includes it in SCIP */
-SCIP_RETCODE SCIPincludeVarClassifierGamssymbol(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeVarClassifierGamssymbol(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_CLASSIFIERDATA* classifierdata = NULL;
 
-   SCIP_CALL( SCIPallocMemory(scip, &classifierdata) );
+   SCIP_CALL( SCIPallocMemory(GCGgetOrigprob(gcg), &classifierdata) );
    assert(classifierdata != NULL);
    classifierdata->vartosymbol = new std::map<std::string, int>();
 
-   SCIP_CALL( GCGincludeVarClassifier(scip, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( GCGincludeVarClassifier(gcg, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

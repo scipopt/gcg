@@ -36,9 +36,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_masterdiving.h"
-#include "pricer_gcg.h"
-#include "relax_gcg.h"
+#include "gcg/heur_masterdiving.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/relax_gcg.h"
 
 
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERLPPLUNGE
@@ -76,15 +76,16 @@
 /* locally defined heuristic data for all diving heuristics */
 struct SCIP_HeurData
 {
-   GCG_DECL_DIVINGFREE   ((*divingfree));    /**< destructor of diving heuristic */
-   GCG_DECL_DIVINGINIT   ((*divinginit));    /**< initialize diving heuristic */
-   GCG_DECL_DIVINGEXIT   ((*divingexit));    /**< deinitialize diving heuristic */
-   GCG_DECL_DIVINGINITSOL ((*divinginitsol)); /**< solving process initialization method of diving heuristic */
-   GCG_DECL_DIVINGEXITSOL ((*divingexitsol)); /**< solving process deinitialization method of diving heuristic */
-   GCG_DECL_DIVINGINITEXEC ((*divinginitexec)); /**< execution initialization method of diving heuristic */
-   GCG_DECL_DIVINGEXITEXEC ((*divingexitexec)); /**< execution deinitialization method of diving heuristic */
-   GCG_DECL_DIVINGSELECTVAR ((*divingselectvar)); /**< variable selection method of diving heuristic */
-   GCG_DIVINGDATA*       divingdata;         /**< diving rule specific data */
+   GCG*                  gcg;                /**< GCG data structure */
+   GCG_DECL_MASTER_DIVINGFREE   ((*divingfree));         /**< destructor of diving heuristic */
+   GCG_DECL_MASTER_DIVINGINIT   ((*divinginit));         /**< initialize diving heuristic */
+   GCG_DECL_MASTER_DIVINGEXIT   ((*divingexit));         /**< deinitialize diving heuristic */
+   GCG_DECL_MASTER_DIVINGINITSOL ((*divinginitsol));     /**< solving process initialization method of diving heuristic */
+   GCG_DECL_MASTER_DIVINGEXITSOL ((*divingexitsol));     /**< solving process deinitialization method of diving heuristic */
+   GCG_DECL_MASTER_DIVINGINITEXEC ((*divinginitexec));   /**< execution initialization method of diving heuristic */
+   GCG_DECL_MASTER_DIVINGEXITEXEC ((*divingexitexec));   /**< execution deinitialization method of diving heuristic */
+   GCG_DECL_MASTER_DIVINGSELECTVAR ((*divingselectvar)); /**< variable selection method of diving heuristic */
+   GCG_MASTER_DIVINGDATA*       divingdata;         /**< diving rule specific data */
 
    SCIP_SOL*             sol;                /**< working solution */
    SCIP_Real             minreldepth;        /**< minimal relative depth to start diving */
@@ -160,7 +161,7 @@ SCIP_DECL_HEURFREE(heurFreeMasterdiving) /*lint --e{715}*/
 
    if( heurdata->divingfree != NULL )
    {
-      SCIP_CALL( heurdata->divingfree(scip, heur) );
+      SCIP_CALL( heurdata->divingfree(heurdata->gcg, heur) );
    }
 
    /* free heuristic data */
@@ -193,7 +194,7 @@ SCIP_DECL_HEURINIT(heurInitMasterdiving) /*lint --e{715}*/
    /* diving rule specific initialization */
    if( heurdata->divinginit != NULL )
    {
-      SCIP_CALL( heurdata->divinginit(scip, heur) );
+      SCIP_CALL( heurdata->divinginit(heurdata->gcg, heur) );
    }
 
    return SCIP_OKAY;
@@ -215,7 +216,7 @@ SCIP_DECL_HEUREXIT(heurExitMasterdiving) /*lint --e{715}*/
    /* diving rule specific deinitialization */
    if( heurdata->divingexit != NULL )
    {
-      SCIP_CALL( heurdata->divingexit(scip, heur) );
+      SCIP_CALL( heurdata->divingexit(heurdata->gcg, heur) );
    }
 
    /* free working solution */
@@ -259,7 +260,7 @@ SCIP_DECL_HEURINITSOL(heurInitsolMasterdiving)
    /* diving rule specific initialization */
    if( heurdata->divinginitsol != NULL )
    {
-      SCIP_CALL( heurdata->divinginitsol(scip, heur) );
+      SCIP_CALL( heurdata->divinginitsol(heurdata->gcg, heur) );
    }
 
    return SCIP_OKAY;
@@ -282,7 +283,7 @@ SCIP_DECL_HEUREXITSOL(heurExitsolMasterdiving)
    /* diving rule specific deinitialization */
    if( heurdata->divingexitsol != NULL )
    {
-      SCIP_CALL( heurdata->divingexitsol(scip, heur) );
+      SCIP_CALL( heurdata->divingexitsol(heurdata->gcg, heur) );
    }
 
    return SCIP_OKAY;
@@ -293,7 +294,6 @@ SCIP_DECL_HEUREXITSOL(heurExitsolMasterdiving)
 static
 SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
-   SCIP* origprob;
 #ifdef SCIP_STATISTIC
    SCIP_EVENTHDLR* eventhdlr;
    SCIP_EVENTHDLRDATA* eventhdlrdata;
@@ -344,9 +344,9 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    assert(scip != NULL);
    assert(result != NULL);
 
-   /* get original problem */
-   origprob = GCGmasterGetOrigprob(scip);
-   assert(origprob != NULL);
+   /* get heuristic data */
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
 
 #ifdef SCIP_STATISTIC
    /* get the masterdiving event handler and its data */
@@ -371,10 +371,6 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
       return SCIP_OKAY;
 
    *result = SCIP_DIDNOTRUN;
-
-   /* get heuristic data */
-   heurdata = SCIPheurGetData(heur);
-   assert(heurdata != NULL);
 
    /* check if fundamental diving callbacks are present */
    assert(heurdata->divingselectvar != NULL);
@@ -462,7 +458,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    /* diving rule specific initialization */
    if( heurdata->divinginitexec != NULL )
    {
-      SCIP_CALL( heurdata->divinginitexec(scip, heur) );
+      SCIP_CALL( heurdata->divinginitexec(heurdata->gcg, heur) );
    }
 
 
@@ -536,7 +532,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
       bestcandmayround = TRUE;
 
       /* choose a variable to dive on */
-      SCIP_CALL( heurdata->divingselectvar(scip, heur, tabulist, heurdata->maxdiscrepancy, &bestcand, &bestcandmayround) );
+      SCIP_CALL( heurdata->divingselectvar(heurdata->gcg, heur, tabulist, heurdata->maxdiscrepancy, &bestcand, &bestcandmayround) );
 
       /* if no variable could be chosen, abort diving */
       if( bestcand == NULL )
@@ -741,7 +737,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
          /* get new number of fractional variables */
          nlpcands = SCIPgetNLPBranchCands(scip);
 
-         if( GCGrelaxIsOrigSolFeasible(origprob) )
+         if( GCGrelaxIsOrigSolFeasible(heurdata->gcg) )
          {
             SCIPdebugMessage("   -> LP solution is feasible in the original problem\n");
          }
@@ -792,7 +788,7 @@ SCIP_DECL_HEUREXEC(heurExecMasterdiving) /*lint --e{715}*/
    /* free memory */
    if( heurdata->divingexitexec != NULL )
    {
-      SCIP_CALL( heurdata->divingexitexec(scip, heur) );
+      SCIP_CALL( heurdata->divingexitexec(heurdata->gcg, heur) );
    }
    SCIPstatistic( SCIP_CALL( SCIPfreeClock(scip, &lptime) ) );
    SCIPfreeBufferArray(scip, &selectedvars);
@@ -972,7 +968,7 @@ SCIP_DECL_EVENTEXEC(eventExecMasterdiving)
  */
 
 /** gets diving rule specific data of a diving heuristic */
-GCG_DIVINGDATA* GCGheurGetDivingDataMaster(
+GCG_MASTER_DIVINGDATA* GCGheurGetDivingDataMaster(
    SCIP_HEUR*               heur                    /**< primal heuristic */
    )
 {
@@ -990,7 +986,7 @@ GCG_DIVINGDATA* GCGheurGetDivingDataMaster(
 /** sets diving rule specific data of a diving heuristic */
 void GCGheurSetDivingDataMaster(
    SCIP_HEUR*               heur,                   /**< primal heuristic */
-   GCG_DIVINGDATA*          divingdata              /**< diving rule specific data */
+   GCG_MASTER_DIVINGDATA*   divingdata              /**< diving rule specific data */
    )
 {
    SCIP_HEURDATA* heurdata;
@@ -1006,7 +1002,7 @@ void GCGheurSetDivingDataMaster(
 
 /** creates a master diving heuristic and includes it in GCG */
 SCIP_RETCODE GCGincludeDivingHeurMaster(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_HEUR**           heur,               /**< pointer to diving heuristic */
    const char*           name,               /**< name of primal heuristic */
    const char*           desc,               /**< description of primal heuristic */
@@ -1015,15 +1011,15 @@ SCIP_RETCODE GCGincludeDivingHeurMaster(
    int                   freq,               /**< frequency for calling primal heuristic */
    int                   freqofs,            /**< frequency offset for calling primal heuristic */
    int                   maxdepth,           /**< maximal depth level to call heuristic at (-1: no limit) */
-   GCG_DECL_DIVINGFREE   ((*divingfree)),    /**< destructor of diving heuristic */
-   GCG_DECL_DIVINGINIT   ((*divinginit)),    /**< initialize diving heuristic */
-   GCG_DECL_DIVINGEXIT   ((*divingexit)),    /**< deinitialize diving heuristic */
-   GCG_DECL_DIVINGINITSOL ((*divinginitsol)), /**< solving process initialization method of diving heuristic */
-   GCG_DECL_DIVINGEXITSOL ((*divingexitsol)), /**< solving process deinitialization method of diving heuristic */
-   GCG_DECL_DIVINGINITEXEC ((*divinginitexec)), /**< execution initialization method of diving heuristic */
-   GCG_DECL_DIVINGEXITEXEC ((*divingexitexec)), /**< execution deinitialization method of diving heuristic */
-   GCG_DECL_DIVINGSELECTVAR ((*divingselectvar)), /**< variable selection method of diving heuristic */
-   GCG_DIVINGDATA*       divingdata          /**< diving rule specific data (or NULL) */
+   GCG_DECL_MASTER_DIVINGFREE   ((*divingfree)),         /**< destructor of diving heuristic */
+   GCG_DECL_MASTER_DIVINGINIT   ((*divinginit)),         /**< initialize diving heuristic */
+   GCG_DECL_MASTER_DIVINGEXIT   ((*divingexit)),         /**< deinitialize diving heuristic */
+   GCG_DECL_MASTER_DIVINGINITSOL ((*divinginitsol)),     /**< solving process initialization method of diving heuristic */
+   GCG_DECL_MASTER_DIVINGEXITSOL ((*divingexitsol)),     /**< solving process deinitialization method of diving heuristic */
+   GCG_DECL_MASTER_DIVINGINITEXEC ((*divinginitexec)),   /**< execution initialization method of diving heuristic */
+   GCG_DECL_MASTER_DIVINGEXITEXEC ((*divingexitexec)),   /**< execution deinitialization method of diving heuristic */
+   GCG_DECL_MASTER_DIVINGSELECTVAR ((*divingselectvar)), /**< variable selection method of diving heuristic */
+   GCG_MASTER_DIVINGDATA*     divingdata          /**< diving rule specific data (or NULL) */
    )
 {
 #ifdef SCIP_STATISTIC
@@ -1032,17 +1028,19 @@ SCIP_RETCODE GCGincludeDivingHeurMaster(
 #endif
    SCIP_HEURDATA* heurdata;
    char paramname[SCIP_MAXSTRLEN];
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
 #ifdef SCIP_STATISTIC
    /* get masterdiving event handler and its data */
-   eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
+   eventhdlr = SCIPfindEventhdlr(masterprob, EVENTHDLR_NAME);
    assert(eventhdlr != NULL);
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
 #endif
 
    /* create Masterdiving primal heuristic data */
-   SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
+   SCIP_CALL( SCIPallocMemory(masterprob, &heurdata) );
+   heurdata->gcg = gcg;
 
    /* set diving rule callbacks and data */
    heurdata->divingfree = divingfree;
@@ -1056,82 +1054,82 @@ SCIP_RETCODE GCGincludeDivingHeurMaster(
    heurdata->divingdata = divingdata;
 
    /* include primal heuristic */
-   SCIP_CALL( SCIPincludeHeurBasic(scip, heur,
+   SCIP_CALL( SCIPincludeHeurBasic(masterprob, heur,
          name, desc, dispchar, priority, freq, freqofs,
          maxdepth, HEUR_TIMING, HEUR_USESSUBSCIP, heurExecMasterdiving, heurdata) );
 
    assert(*heur != NULL);
 
    /* set non-NULL pointers to callback methods */
-   SCIP_CALL( SCIPsetHeurFree(scip, *heur, heurFreeMasterdiving) );
-   SCIP_CALL( SCIPsetHeurInit(scip, *heur, heurInitMasterdiving) );
-   SCIP_CALL( SCIPsetHeurExit(scip, *heur, heurExitMasterdiving) );
-   SCIP_CALL( SCIPsetHeurInitsol(scip, *heur, heurInitsolMasterdiving) );
-   SCIP_CALL( SCIPsetHeurExitsol(scip, *heur, heurExitsolMasterdiving) );
+   SCIP_CALL( SCIPsetHeurFree(masterprob, *heur, heurFreeMasterdiving) );
+   SCIP_CALL( SCIPsetHeurInit(masterprob, *heur, heurInitMasterdiving) );
+   SCIP_CALL( SCIPsetHeurExit(masterprob, *heur, heurExitMasterdiving) );
+   SCIP_CALL( SCIPsetHeurInitsol(masterprob, *heur, heurInitsolMasterdiving) );
+   SCIP_CALL( SCIPsetHeurExitsol(masterprob, *heur, heurExitsolMasterdiving) );
 
    /* masterdiving heuristic parameters */
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/minreldepth", name);
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(masterprob,
         paramname,
         "minimal relative depth to start diving",
         &heurdata->minreldepth, TRUE, DEFAULT_MINRELDEPTH, 0.0, 1.0, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxreldepth", name);
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(masterprob,
         paramname,
         "maximal relative depth to start diving",
         &heurdata->maxreldepth, TRUE, DEFAULT_MAXRELDEPTH, 0.0, 1.0, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxlpiterquot", name);
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(masterprob,
         paramname,
         "maximal fraction of diving LP iterations compared to node LP iterations",
         &heurdata->maxlpiterquot, FALSE, DEFAULT_MAXLPITERQUOT, 0.0, SCIP_REAL_MAX, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxlpiterofs", name);
-   SCIP_CALL( SCIPaddIntParam(scip,
+   SCIP_CALL( SCIPaddIntParam(masterprob,
         paramname,
         "additional number of allowed LP iterations",
         &heurdata->maxlpiterofs, FALSE, DEFAULT_MAXLPITEROFS, 0, INT_MAX, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxpricerounds", name);
-   SCIP_CALL( SCIPaddIntParam(scip,
+   SCIP_CALL( SCIPaddIntParam(masterprob,
         paramname,
         "maximal number of allowed pricing rounds (-1: no limit)",
         &heurdata->maxpricerounds, FALSE, DEFAULT_MAXPRICEROUNDS, -1, INT_MAX, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/usefarkasonly", name);
-   SCIP_CALL( SCIPaddBoolParam(scip,
+   SCIP_CALL( SCIPaddBoolParam(masterprob,
         paramname,
         "perform pricing only if infeasibility is encountered",
         &heurdata->usefarkasonly, TRUE, DEFAULT_USEFARKASONLY, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiveubquot", name);
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(masterprob,
         paramname,
         "maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound) where diving is performed (0.0: no limit)",
         &heurdata->maxdiveubquot, TRUE, DEFAULT_MAXDIVEUBQUOT, 0.0, 1.0, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiveavgquot", name);
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(masterprob,
         paramname,
         "maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound) where diving is performed (0.0: no limit)",
         &heurdata->maxdiveavgquot, TRUE, DEFAULT_MAXDIVEAVGQUOT, 0.0, SCIP_REAL_MAX, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiveubquotnosol", name);
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(masterprob,
         paramname,
         "maximal UBQUOT when no solution was found yet (0.0: no limit)",
         &heurdata->maxdiveubquotnosol, TRUE, DEFAULT_MAXDIVEUBQUOTNOSOL, 0.0, 1.0, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiveavgquotnosol", name);
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(masterprob,
         paramname,
         "maximal AVGQUOT when no solution was found yet (0.0: no limit)",
         &heurdata->maxdiveavgquotnosol, TRUE, DEFAULT_MAXDIVEAVGQUOTNOSOL, 0.0, SCIP_REAL_MAX, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/backtrack", name);
-   SCIP_CALL( SCIPaddBoolParam(scip,
+   SCIP_CALL( SCIPaddBoolParam(masterprob,
         paramname,
         "single backtracking by choosing another variable in case of infeasibility",
         &heurdata->backtrack, TRUE, DEFAULT_BACKTRACK, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiscrepancy", name);
-   SCIP_CALL( SCIPaddIntParam(scip,
+   SCIP_CALL( SCIPaddIntParam(masterprob,
         paramname,
         "maximal discrepancy allowed in backtracking and limited discrepancy search",
         &heurdata->maxdiscrepancy, TRUE, DEFAULT_MAXDISCREPANCY, 0, INT_MAX, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiscdepth", name);
-   SCIP_CALL( SCIPaddIntParam(scip,
+   SCIP_CALL( SCIPaddIntParam(masterprob,
         paramname,
         "maximal depth until which a limited discrepancy search is performed",
         &heurdata->maxdiscdepth, TRUE, DEFAULT_MAXDISCDEPTH, 0, INT_MAX, NULL, NULL) );
@@ -1155,13 +1153,14 @@ SCIP_RETCODE GCGincludeDivingHeurMaster(
 }
 
 /** creates event handler for masterdiving event */
-SCIP_RETCODE SCIPincludeEventHdlrMasterdiving(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeEventHdlrMasterdiving(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
 #ifdef SCIP_STATISTIC
    SCIP_EVENTHDLRDATA* eventhdlrdata;
    SCIP_EVENTHDLR* eventhdlr;
+   SCIP* scip = GCGgetMasterprob(gcg);
 
    /* create master event handler data */
    SCIP_CALL( SCIPallocMemory(scip, &eventhdlrdata) );

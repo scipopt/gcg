@@ -36,9 +36,8 @@
 #ifndef GCG_BRANCH_ORIG_H__
 #define GCG_BRANCH_ORIG_H__
 
-#include "type_branchgcg.h"
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,8 +45,8 @@ extern "C" {
 
 /** creates the branching on original variable branching rule and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeBranchruleOrig(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeBranchruleOrig(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** get the original variable on which the branching was performed */
@@ -67,7 +66,7 @@ SCIP_Real GCGbranchOrigGetNewbound(
 
 /** updates extern branching candidates before branching */
 SCIP_RETCODE GCGbranchOrigUpdateExternBranchcands(
-   SCIP*                 scip               /**< SCIP data structure */
+   GCG*                  gcg                /**< GCG data structure */
 );
 
 #ifdef __cplusplus

@@ -39,7 +39,7 @@
 #define GCG_GRAPHINTERFACE_H_
 
 #include "objscip/objscip.h"
-#include "weights.h"
+#include "graph/weights.h"
 
 #include <vector>
 #include <fstream>

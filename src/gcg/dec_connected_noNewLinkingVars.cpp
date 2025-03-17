@@ -33,13 +33,13 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "dec_connected_noNewLinkingVars.h"
-#include "cons_decomp.h"
-#include "gcg.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/dec_connected_noNewLinkingVars.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/gcg.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include "scip/scip.h"
-#include "scip_misc.h"
+#include "gcg/scip_misc.h"
 #include "scip/clock.h"
 #include <iostream>
 #include <algorithm>
@@ -137,8 +137,10 @@ SCIP_RETCODE detection(
 static
 GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConnected_noNewLinkingVars)
 {
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
    *result = SCIP_DIDNOTFIND;
-   detection(scip, partialdecdetectiondata);
+   detection(origprob, partialdecdetectiondata);
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -147,8 +149,10 @@ GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConnected_noNewLinkingVars)
 static
 GCG_DECL_FINISHPARTIALDEC(finishPartialdecConnected_noNewLinkingVars)
 {
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
    *result = SCIP_DIDNOTFIND;
-   detection(scip, partialdecdetectiondata);
+   detection(origprob, partialdecdetectiondata);
    *result = SCIP_SUCCESS;
 
    return SCIP_OKAY;
@@ -167,8 +171,8 @@ GCG_DECL_FINISHPARTIALDEC(finishPartialdecConnected_noNewLinkingVars)
  */
 
 /** creates the handler for connected_noNewLinkingVars detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorConnected_noNewLinkingVars(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorConnected_noNewLinkingVars(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_DETECTORDATA* detectordata;
@@ -176,7 +180,7 @@ SCIP_RETCODE SCIPincludeDetectorConnected_noNewLinkingVars(
    /**@todo create connected_noNewLinkingVars detector data here*/
    detectordata = NULL;
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeConnected_noNewLinkingVars, initConnected_noNewLinkingVars, exitConnected_noNewLinkingVars, propagatePartialdecConnected_noNewLinkingVars, finishPartialdecConnected_noNewLinkingVars, detectorPostprocessPartialdecConnected_noNewLinkingVars, setParamAggressiveConnected_noNewLinkingVars, setParamDefaultConnected_noNewLinkingVars, setParamFastConnected_noNewLinkingVars) );
+   SCIP_CALL( GCGincludeDetector(gcg, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeConnected_noNewLinkingVars, initConnected_noNewLinkingVars, exitConnected_noNewLinkingVars, propagatePartialdecConnected_noNewLinkingVars, finishPartialdecConnected_noNewLinkingVars, detectorPostprocessPartialdecConnected_noNewLinkingVars, setParamAggressiveConnected_noNewLinkingVars, setParamDefaultConnected_noNewLinkingVars, setParamFastConnected_noNewLinkingVars) );
 
    /**@todo add connected_noNewLinkingVars detector parameters */
 

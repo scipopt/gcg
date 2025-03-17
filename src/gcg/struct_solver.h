@@ -36,7 +36,7 @@
 #ifndef GCG_STRUCT_SOLVER_H__
 #define GCG_STRUCT_SOLVER_H__
 
-#include "type_solver.h"
+#include "gcg/type_solver.h"
 
 #ifdef __cplusplus
 extern "C" {

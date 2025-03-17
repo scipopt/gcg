@@ -37,7 +37,7 @@
 #define DEC_NEIGHBORHOODMASTER_H_
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,8 +45,8 @@ extern "C" {
 
 /** creates the handler for neighborhoodmasterconss detector and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorNeighborhoodmaster(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorNeighborhoodmaster(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

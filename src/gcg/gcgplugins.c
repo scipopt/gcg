@@ -34,7 +34,7 @@
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "gcgplugins.h"
+#include "gcg/gcgplugins.h"
 #include "scip/debug.h"
 
 #define USEHEURS 1
@@ -202,118 +202,119 @@
 #include "scip/cutsel_hybrid.h"
 
 #include "scip/scipshell.h"
-#include "reader_blk.h"
-#include "reader_dec.h"
-#include "pricer_gcg.h"
-#include "relax_gcg.h"
-#include "branch_empty.h"
+#include "gcg/reader_blk.h"
+#include "gcg/reader_dec.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/branch_empty.h"
 
 #if WITH_JSON
-#include "reader_jdec.h"
+#include "gcg/reader_jdec.h"
 #endif
 
-#include "cons_origbranch.h"
-#include "disp_gcg.h"
-#include "dialog_gcg.h"
-#include "reader_ref.h"
-#include "event_bestsol.h"
-#include "event_mastersol.h"
+#include "gcg/cons_origbranch.h"
+#include "gcg/disp_gcg.h"
+#include "gcg/dialog_gcg.h"
+#include "gcg/reader_ref.h"
+#include "gcg/event_bestsol.h"
+#include "gcg/event_mastersol.h"
 
 /* visualization */
-#include "reader_gp.h"
-#include "reader_tex.h"
-#include "reader_cls.h"
+#include "gcg/reader_gp.h"
+#include "gcg/reader_tex.h"
+#include "gcg/reader_cls.h"
 
 /* detection */
-#include "cons_decomp.h"
-#include "dec_constype.h"
-#include "dec_consclass.h"
-#include "dec_densemasterconss.h"
-#include "dec_stairheur.h"
-#include "dec_compgreedily.h"
-#include "dec_staircase_lsp.h"
-#include "dec_postprocess.h"
-#include "dec_mastersetpack.h"
-#include "dec_mastersetpart.h"
-#include "dec_mastersetcover.h"
-#include "dec_neighborhoodmaster.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/dec_constype.h"
+#include "gcg/dec_consclass.h"
+#include "gcg/dec_densemasterconss.h"
+#include "gcg/dec_stairheur.h"
+#include "gcg/dec_compgreedily.h"
+#include "gcg/dec_staircase_lsp.h"
+#include "gcg/dec_postprocess.h"
+#include "gcg/dec_mastersetpack.h"
+#include "gcg/dec_mastersetpart.h"
+#include "gcg/dec_mastersetcover.h"
+#include "gcg/dec_neighborhoodmaster.h"
 #if WITH_HMETIS
-#include "dec_hrcgpartition.h"
-#include "dec_hrgpartition.h"
-#include "dec_hcgpartition.h"
+#include "gcg/dec_hrcgpartition.h"
+#include "gcg/dec_hrgpartition.h"
+#include "gcg/dec_hcgpartition.h"
 #endif
-#include "dec_connectedbase.h"
-#include "dec_connected_noNewLinkingVars.h"
-#include "dec_generalmastersetcover.h"
-#include "dec_generalmastersetpack.h"
-#include "dec_generalmastersetpart.h"
-#include "dec_staircase_lsp.h"
-#include "dec_varclass.h"
+#include "gcg/dec_connectedbase.h"
+#include "gcg/dec_connected_noNewLinkingVars.h"
+#include "gcg/dec_generalmastersetcover.h"
+#include "gcg/dec_generalmastersetpack.h"
+#include "gcg/dec_generalmastersetpart.h"
+#include "gcg/dec_staircase_lsp.h"
+#include "gcg/dec_varclass.h"
 
 #ifndef NO_AUT_LIB
-#include "dec_isomorph.h"
+#include "gcg/dec_isomorph.h"
 #endif
 
 /* Christian's heuristics */
-#include "heur_gcgcoefdiving.h"
-#include "heur_gcgdins.h"
-#include "heur_gcgfeaspump.h"
-#include "heur_gcgfracdiving.h"
-#include "heur_gcgguideddiving.h"
-#include "heur_gcglinesdiving.h"
-#include "heur_gcgpscostdiving.h"
-#include "heur_gcgrens.h"
-#include "heur_gcgrins.h"
-#include "heur_gcgrounding.h"
-#include "heur_gcgshifting.h"
-#include "heur_gcgsimplerounding.h"
-#include "heur_gcgveclendiving.h"
-#include "heur_gcgzirounding.h"
-#include "heur_origdiving.h"
-#include "heur_xpcrossover.h"
-#include "heur_xprins.h"
+#include "gcg/heur_gcgcoefdiving.h"
+#include "gcg/heur_gcgdins.h"
+#include "gcg/heur_gcgfeaspump.h"
+#include "gcg/heur_gcgfracdiving.h"
+#include "gcg/heur_gcgguideddiving.h"
+#include "gcg/heur_gcglinesdiving.h"
+#include "gcg/heur_gcgpscostdiving.h"
+#include "gcg/heur_gcgrens.h"
+#include "gcg/heur_gcgrins.h"
+#include "gcg/heur_gcgrounding.h"
+#include "gcg/heur_gcgshifting.h"
+#include "gcg/heur_gcgsimplerounding.h"
+#include "gcg/heur_gcgveclendiving.h"
+#include "gcg/heur_gcgzirounding.h"
+#include "gcg/heur_origdiving.h"
+#include "gcg/heur_xpcrossover.h"
+#include "gcg/heur_xprins.h"
 
 /* Friedrike's detection stuff */
-#include "scip_misc.h"
+#include "gcg/scip_misc.h"
 #include "scip/table_default.h"
 
 /* Igor's detection with clustering */
-#include "dec_dbscan.h"
-#include "dec_mst.h"
+#include "gcg/dec_dbscan.h"
+#include "gcg/dec_mst.h"
 
 /* classifiers */
-#include "clscons_miplibconstypes.h"
-#include "clscons_nnonzeros.h"
-#include "clscons_consnamelevenshtein.h"
-#include "clscons_consnamenonumbers.h"
-#include "clscons_scipconstypes.h"
-#include "clscons_gamsdomain.h"
-#include "clscons_gamssymbol.h"
+#include "gcg/clscons_miplibconstypes.h"
+#include "gcg/clscons_nnonzeros.h"
+#include "gcg/clscons_consnamelevenshtein.h"
+#include "gcg/clscons_consnamenonumbers.h"
+#include "gcg/clscons_scipconstypes.h"
+#include "gcg/clscons_gamsdomain.h"
+#include "gcg/clscons_gamssymbol.h"
 
-#include "clsvar_gamsdomain.h"
-#include "clsvar_gamssymbol.h"
-#include "clsvar_objvalues.h"
-#include "clsvar_scipvartypes.h"
-#include "clsvar_objvaluesigns.h"
+#include "gcg/clsvar_gamsdomain.h"
+#include "gcg/clsvar_gamssymbol.h"
+#include "gcg/clsvar_objvalues.h"
+#include "gcg/clsvar_scipvartypes.h"
+#include "gcg/clsvar_objvaluesigns.h"
 
 /* scores */
-#include "score_bender.h"
-#include "score_border.h"
-#include "score_classic.h"
-#include "score_fawh.h"
-#include "score_forswh.h"
-#include "score_maxwhite.h"
-#include "score_spfawh.h"
-#include "score_spfwh.h"
-#include "score_strong.h"
+#include "gcg/score_bender.h"
+#include "gcg/score_border.h"
+#include "gcg/score_classic.h"
+#include "gcg/score_fawh.h"
+#include "gcg/score_forswh.h"
+#include "gcg/score_maxwhite.h"
+#include "gcg/score_spfawh.h"
+#include "gcg/score_spfwh.h"
+#include "gcg/score_strong.h"
 
 
 /** includes default plugins for generic column generation into SCIP */
-SCIP_RETCODE SCIPincludeGcgPlugins(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeGcgPlugins(
+   GCG*                 gcg               /**< GCG data structure */
    )
 {
-   SCIP_CALL( SCIPincludeDialogGcg(scip) );
+   SCIP* scip = GCGgetOrigprob(gcg);
+   SCIP_CALL( GCGincludeDialogGcg(gcg) );
 
    SCIP_CALL( SCIPincludeConshdlrAnd(scip) );
    SCIP_CALL( SCIPincludeConshdlrBounddisjunction(scip) );
@@ -474,104 +475,104 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludeCutselHybrid(scip) );
 
-   SCIP_CALL( SCIPincludeRelaxGcg(scip) );
-   SCIP_CALL( SCIPincludeReaderBlk(scip) );
-   SCIP_CALL( GCGincludeReaderDec(scip) );
-   SCIP_CALL( SCIPincludeReaderRef(scip) );
+   SCIP_CALL( GCGincludeRelaxGcg(gcg) );
+   SCIP_CALL( GCGincludeReaderBlk(gcg) );
+   SCIP_CALL( GCGincludeReaderDec(gcg) );
+   SCIP_CALL( GCGincludeReaderRef(gcg) );
 #if WITH_JSON
-   SCIP_CALL( SCIPincludeReaderJDec(scip) );
+   SCIP_CALL( GCGincludeReaderJDec(gcg) );
 #endif
-   SCIP_CALL( SCIPincludeBranchruleEmpty(scip) );
+   SCIP_CALL( GCGincludeBranchruleEmpty(gcg) );
 
-   SCIP_CALL( SCIPincludeConshdlrOrigbranch(scip) );
-   SCIP_CALL( SCIPincludeEventHdlrBestsol(scip) );
-   SCIP_CALL( SCIPincludeEventHdlrMastersol(scip) );
+   SCIP_CALL( GCGincludeConshdlrOrigbranch(gcg) );
+   SCIP_CALL( GCGincludeEventHdlrBestsol(gcg) );
+   SCIP_CALL( GCGincludeEventHdlrMastersol(gcg) );
 
    /* Visualizations */
-   SCIP_CALL( SCIPincludeReaderGp(scip) );
-   SCIP_CALL( SCIPincludeReaderTex(scip) );
-   SCIP_CALL( SCIPincludeReaderCls(scip) );
+   SCIP_CALL( GCGincludeReaderGp(gcg) );
+   SCIP_CALL( GCGincludeReaderTex(gcg) );
+   SCIP_CALL( GCGincludeReaderCls(gcg) );
 
    /* Detectors and decompositions */
-   SCIP_CALL( SCIPincludeConshdlrDecomp(scip) );
-   SCIP_CALL( SCIPincludeDetectorConstype(scip) );
-   SCIP_CALL( SCIPincludeDetectorPostprocess(scip) );
-   SCIP_CALL( SCIPincludeDetectorConsclass(scip) );
-   SCIP_CALL( SCIPincludeDetectorDensemasterconss(scip) );
-   SCIP_CALL( SCIPincludeDetectorNeighborhoodmaster(scip) );
-   SCIP_CALL( SCIPincludeDetectorStairheur(scip) );
-   SCIP_CALL( SCIPincludeDetectorStaircaseLsp(scip) );
+   SCIP_CALL( GCGincludeConshdlrDecomp(gcg) );
+   SCIP_CALL( GCGincludeDetectorConstype(gcg) );
+   SCIP_CALL( GCGincludeDetectorPostprocess(gcg) );
+   SCIP_CALL( GCGincludeDetectorConsclass(gcg) );
+   SCIP_CALL( GCGincludeDetectorDensemasterconss(gcg) );
+   SCIP_CALL( GCGincludeDetectorNeighborhoodmaster(gcg) );
+   SCIP_CALL( GCGincludeDetectorStairheur(gcg) );
+   SCIP_CALL( GCGincludeDetectorStaircaseLsp(gcg) );
 #ifdef WITH_GSL
-   SCIP_CALL( SCIPincludeDetectorDBSCAN(scip) );
-   SCIP_CALL( SCIPincludeDetectorMST(scip) );
+   SCIP_CALL( GCGincludeDetectorDBSCAN(gcg) );
+   SCIP_CALL( GCGincludeDetectorMST(gcg) );
 #endif
-   SCIP_CALL( SCIPincludeDetectorCompgreedily(scip) );
-   SCIP_CALL( SCIPincludeDetectorMastersetcover(scip) );
-   SCIP_CALL( SCIPincludeDetectorMastersetpack(scip) );
-   SCIP_CALL( SCIPincludeDetectorMastersetpart(scip) );
+   SCIP_CALL( GCGincludeDetectorCompgreedily(gcg) );
+   SCIP_CALL( GCGincludeDetectorMastersetcover(gcg) );
+   SCIP_CALL( GCGincludeDetectorMastersetpack(gcg) );
+   SCIP_CALL( GCGincludeDetectorMastersetpart(gcg) );
 #if WITH_HMETIS
-   SCIP_CALL( SCIPincludeDetectorHcgpartition(scip) );
-   SCIP_CALL( SCIPincludeDetectorHrgpartition(scip) );
-   SCIP_CALL( SCIPincludeDetectorHrcgpartition(scip) );
+   SCIP_CALL( GCGincludeDetectorHcgpartition(gcg) );
+   SCIP_CALL( GCGincludeDetectorHrgpartition(gcg) );
+   SCIP_CALL( GCGincludeDetectorHrcgpartition(gcg) );
 #endif
-   SCIP_CALL( SCIPincludeDetectorConnectedbase(scip) );
-   SCIP_CALL( SCIPincludeDetectorConnected_noNewLinkingVars(scip) );
-   SCIP_CALL( SCIPincludeDetectorGeneralmastersetpack(scip) );
-   SCIP_CALL( SCIPincludeDetectorGeneralmastersetpart(scip) );
-   SCIP_CALL( SCIPincludeDetectorGeneralmastersetcover(scip) );
-   SCIP_CALL( SCIPincludeDetectorVarclass(scip) );
+   SCIP_CALL( GCGincludeDetectorConnectedbase(gcg) );
+   SCIP_CALL( GCGincludeDetectorConnected_noNewLinkingVars(gcg) );
+   SCIP_CALL( GCGincludeDetectorGeneralmastersetpack(gcg) );
+   SCIP_CALL( GCGincludeDetectorGeneralmastersetpart(gcg) );
+   SCIP_CALL( GCGincludeDetectorGeneralmastersetcover(gcg) );
+   SCIP_CALL( GCGincludeDetectorVarclass(gcg) );
 
    #ifndef NO_AUT_LIB
-      SCIP_CALL( SCIPincludeDetectorIsomorphism(scip) );
+      SCIP_CALL( GCGincludeDetectorIsomorphism(gcg) );
    #endif
 
 
    /* Classifiers */
-   SCIP_CALL( SCIPincludeConsClassifierNNonzeros(scip) );
-   SCIP_CALL( SCIPincludeConsClassifierScipConstypes(scip) );
-   SCIP_CALL( SCIPincludeConsClassifierMiplibConstypes(scip) );
-   SCIP_CALL( SCIPincludeConsClassifierConsnameLevenshtein(scip) );
-   SCIP_CALL( SCIPincludeConsClassifierForConsnamesDigitFreeIdentical(scip) );
-   SCIP_CALL( SCIPincludeConsClassifierGamsdomain(scip) );
-   SCIP_CALL( SCIPincludeConsClassifierGamssymbol(scip) );
+   SCIP_CALL( GCGincludeConsClassifierNNonzeros(gcg) );
+   SCIP_CALL( GCGincludeConsClassifierScipConstypes(gcg) );
+   SCIP_CALL( GCGincludeConsClassifierMiplibConstypes(gcg) );
+   SCIP_CALL( GCGincludeConsClassifierConsnameLevenshtein(gcg) );
+   SCIP_CALL( GCGincludeConsClassifierForConsnamesDigitFreeIdentical(gcg) );
+   SCIP_CALL( GCGincludeConsClassifierGamsdomain(gcg) );
+   SCIP_CALL( GCGincludeConsClassifierGamssymbol(gcg) );
 
-   SCIP_CALL( SCIPincludeVarClassifierGamsdomain(scip) );
-   SCIP_CALL( SCIPincludeVarClassifierGamssymbol(scip) );
-   SCIP_CALL( SCIPincludeVarClassifierScipVartypes(scip) );
-   SCIP_CALL( SCIPincludeVarClassifierObjValues(scip) );
-   SCIP_CALL( SCIPincludeVarClassifierObjValueSigns(scip) );
+   SCIP_CALL( GCGincludeVarClassifierGamsdomain(gcg) );
+   SCIP_CALL( GCGincludeVarClassifierGamssymbol(gcg) );
+   SCIP_CALL( GCGincludeVarClassifierScipVartypes(gcg) );
+   SCIP_CALL( GCGincludeVarClassifierObjValues(gcg) );
+   SCIP_CALL( GCGincludeVarClassifierObjValueSigns(gcg) );
 
 
    /* Scores */
-   SCIP_CALL( GCGincludeScoreBender(scip) );
-   SCIP_CALL( GCGincludeScoreBorder(scip) );
-   SCIP_CALL( GCGincludeScoreClassic(scip) );
-   SCIP_CALL( GCGincludeScoreFawh(scip) );
-   SCIP_CALL( GCGincludeScoreForswh(scip) );
-   SCIP_CALL( GCGincludeScoreMaxwhite(scip) );
-   SCIP_CALL( GCGincludeScoreSpfawh(scip) );
-   SCIP_CALL( GCGincludeScoreSpfwh(scip) );
-   SCIP_CALL( GCGincludeScoreStrongDecomp(scip) );
+   SCIP_CALL( GCGincludeScoreBender(gcg) );
+   SCIP_CALL( GCGincludeScoreBorder(gcg) );
+   SCIP_CALL( GCGincludeScoreClassic(gcg) );
+   SCIP_CALL( GCGincludeScoreFawh(gcg) );
+   SCIP_CALL( GCGincludeScoreForswh(gcg) );
+   SCIP_CALL( GCGincludeScoreMaxwhite(gcg) );
+   SCIP_CALL( GCGincludeScoreSpfawh(gcg) );
+   SCIP_CALL( GCGincludeScoreSpfwh(gcg) );
+   SCIP_CALL( GCGincludeScoreStrongDecomp(gcg) );
 
 
    /* Christian's heuristics */
-   SCIP_CALL( SCIPincludeEventHdlrOrigdiving(scip) );
-   SCIP_CALL( GCGincludeHeurGcgcoefdiving(scip) );
-   SCIP_CALL( GCGincludeHeurGcgfracdiving(scip) );
-   SCIP_CALL( GCGincludeHeurGcgguideddiving(scip) );
-   SCIP_CALL( GCGincludeHeurGcglinesdiving(scip) );
-   SCIP_CALL( GCGincludeHeurGcgpscostdiving(scip) );
-   SCIP_CALL( GCGincludeHeurGcgveclendiving(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgdins(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgfeaspump(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgrens(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgrins(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgrounding(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgshifting(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgsimplerounding(scip) );
-   SCIP_CALL( SCIPincludeHeurGcgzirounding(scip) );
-   SCIP_CALL( SCIPincludeHeurXpcrossover(scip) );
-   SCIP_CALL( SCIPincludeHeurXprins(scip) );
+   SCIP_CALL( GCGincludeEventHdlrOrigdiving(gcg) );
+   SCIP_CALL( GCGincludeHeurGcgcoefdiving(gcg) );
+   SCIP_CALL( GCGincludeHeurGcgfracdiving(gcg) );
+   SCIP_CALL( GCGincludeHeurGcgguideddiving(gcg) );
+   SCIP_CALL( GCGincludeHeurGcglinesdiving(gcg) );
+   SCIP_CALL( GCGincludeHeurGcgpscostdiving(gcg) );
+   SCIP_CALL( GCGincludeHeurGcgveclendiving(gcg) );
+   SCIP_CALL( GCGincludeHeurGcgdins(gcg) );
+   SCIP_CALL( GCGincludeHeurGcgfeaspump(gcg) );
+   SCIP_CALL( GCGincludeHeurGcgrens(gcg) );
+   SCIP_CALL( GCGincludeHeurGcgrins(gcg) );
+   SCIP_CALL( GCGincludeHeurGcgrounding(gcg) );
+   SCIP_CALL( GCGincludeHeurGcgshifting(gcg) );
+   SCIP_CALL( GCGincludeHeurGcgsimplerounding(gcg) );
+   SCIP_CALL( GCGincludeHeurGcgzirounding(gcg) );
+   SCIP_CALL( GCGincludeHeurXpcrossover(gcg) );
+   SCIP_CALL( GCGincludeHeurXprins(gcg) );
 
    /* Jonas' stuff */
    SCIP_CALL( SCIPsetSeparating(scip, SCIP_PARAMSETTING_OFF, TRUE) );
@@ -582,8 +583,8 @@ SCIP_RETCODE SCIPincludeGcgPlugins(
    SCIP_CALL( SCIPfixParam(scip, "heuristics/clique/freq") );
    SCIP_CALL( SCIPfixParam(scip, "conflict/enable") );
 
-   SCIP_CALL( SCIPincludeDispGcg(scip) );
-   SCIP_CALL( GCGincludeDialogsGraph(scip) );
+   SCIP_CALL( GCGincludeDispGcg(gcg) );
+   SCIP_CALL( GCGincludeDialogsGraph(gcg) );
    SCIP_CALL( SCIPincludeTableDefault(scip) );
 
    return SCIP_OKAY;

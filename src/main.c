@@ -38,9 +38,9 @@
 #include "scip/scip.h"
 #include "scip/scipdefplugins.h"
 #include "scip/scipshell.h"
+
 #include "gcg/gcgplugins.h"
 #include "gcg/cons_decomp.h"
-
 #include "gcg/relax_gcg.h"
 #include "gcg/cons_decomp.h"
 #include "gcg/gcg.h"
@@ -73,11 +73,12 @@ SCIP_RETCODE readParams(
  * @returns SCIPreturn code */
 static
 SCIP_RETCODE fromCommandLine(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    const char*           filename,           /**< input file name */
    const char*           decname             /**< decomposition file name (or NULL) */
    )
 {
+   SCIP* scip = GCGgetOrigprob(gcg);
    /********************
     * Problem Creation *
     ********************/
@@ -86,7 +87,7 @@ SCIP_RETCODE fromCommandLine(
    SCIPinfoMessage(scip, NULL, "============\n\n");
    SCIP_CALL( SCIPreadProb(scip, filename, NULL) );
 
-   SCIP_CALL( GCGtransformProb(scip) );
+   SCIP_CALL( GCGtransformProb(gcg) );
 
    if( decname != NULL )
    {
@@ -101,7 +102,7 @@ SCIP_RETCODE fromCommandLine(
    SCIPinfoMessage(scip, NULL, "\nsolve problem\n");
    SCIPinfoMessage(scip, NULL, "=============\n\n");
 
-   SCIP_CALL( GCGsolve(scip) );
+   SCIP_CALL( GCGsolve(gcg) );
 
    SCIPinfoMessage(scip, NULL, "\nprimal solution:\n");
    SCIPinfoMessage(scip, NULL, "================\n\n");
@@ -114,7 +115,7 @@ SCIP_RETCODE fromCommandLine(
    SCIPinfoMessage(scip, NULL, "\nStatistics\n");
    SCIPinfoMessage(scip, NULL, "==========\n");
 
-   SCIP_CALL( GCGprintStatistics(scip, NULL) );
+   SCIP_CALL( GCGprintStatistics(gcg, NULL) );
 
    return SCIP_OKAY;
 }
@@ -122,8 +123,8 @@ SCIP_RETCODE fromCommandLine(
 /** evaluates command line parameters and runs GCG appropriately in the given SCIP instance
  * @returns SCIP return code */
 static
-SCIP_RETCODE SCIPprocessGCGShellArguments(
-   SCIP*                 scip,               /**< SCIP data structure */
+SCIP_RETCODE GCGprocessGCGShellArguments(
+   GCG*                  gcg,                /**< GCG data structure */
    int                   argc,               /**< number of shell parameters */
    char**                argv,               /**< array with shell parameters */
    const char*           defaultsetname      /**< name of default settings file */
@@ -142,12 +143,14 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
    const char* dualrefstring;
    const char* primalrefstring;
    int i;
+   SCIP* scip;
 
 
    /********************
     * Parse parameters *
     ********************/
 
+   scip = GCGgetOrigprob(gcg);
    quiet = FALSE;
    paramerror = FALSE;
    interactive = FALSE;
@@ -337,11 +340,11 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
 
       if( mastersetname != NULL )
       {
-         SCIP_CALL( readParams(GCGgetMasterprob(scip), mastersetname) );
+         SCIP_CALL( readParams(GCGgetMasterprob(gcg), mastersetname) );
       }
 
       /**************
-       * Start SCIP *
+       * Start GCG *
        **************/
 
       if( probname != NULL )
@@ -360,7 +363,7 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
             else
                validatesolve = TRUE;
          }
-         SCIP_CALL( fromCommandLine(scip, probname, decname) );
+         SCIP_CALL( fromCommandLine(gcg, probname, decname) );
 
          /* validate the solve */
          if( validatesolve )
@@ -395,37 +398,35 @@ SCIP_RETCODE SCIPprocessGCGShellArguments(
 /** runs the interactive shell
  * @returns SCIP return code */
 static
-SCIP_RETCODE SCIPrunGCGShell(
+SCIP_RETCODE GCGrunGCGShell(
    int                   argc,               /**< number of shell parameters */
    char**                argv,               /**< array with shell parameters */
    const char*           defaultsetname      /**< name of default settings file */
    )
 {
-   SCIP* scip = NULL;
+   GCG* gcg = NULL;
 
    /*********
     * Setup *
     *********/
 
-   /* initialize SCIP */
-   SCIP_CALL( SCIPcreate(&scip) );
-   GCGprintVersion(scip, NULL);
+   /* initialize GCG */
+   SCIP_CALL( GCGcreate(&gcg) );
 
+   GCGprintVersion(gcg, NULL);
 
-   /* include coloring plugins */
-   SCIP_CALL( SCIPincludeGcgPlugins(scip) );
 
    /**********************************
     * Process command line arguments *
     **********************************/
-   SCIP_CALL( SCIPprocessGCGShellArguments(scip, argc, argv, defaultsetname) );
+   SCIP_CALL( GCGprocessGCGShellArguments(gcg, argc, argv, defaultsetname) );
 
 
    /********************
     * Deinitialization *
     ********************/
 
-   SCIP_CALL( SCIPfree(&scip) );
+   SCIP_CALL( GCGfree(&gcg) );
 
    BMScheckEmptyMemory();
 
@@ -442,7 +443,7 @@ main(
 {
   SCIP_RETCODE retcode;
 
-  retcode = SCIPrunGCGShell(argc, argv, "gcg.set");
+  retcode = GCGrunGCGShell(argc, argv, "gcg.set");
 
   if( retcode != SCIP_OKAY )
   {

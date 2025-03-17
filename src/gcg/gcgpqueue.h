@@ -34,8 +34,8 @@
 #ifndef GCG_GCGPQUEUE_H__
 #define GCG_GCGPQUEUE_H__
 
-#include "struct_gcgpqueue.h"
-#include "type_gcgpqueue.h"
+#include "gcg/struct_gcgpqueue.h"
+#include "gcg/type_gcgpqueue.h"
 
 #ifdef __cplusplus
 extern "C" {

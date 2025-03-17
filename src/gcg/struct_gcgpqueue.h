@@ -40,8 +40,8 @@
 #include "scip/type_misc.h"
 #include "scip/scip.h"
 
-#include "type_gcgpqueue.h"
-#include "type_locks.h"
+#include "gcg/type_gcgpqueue.h"
+#include "gcg/type_locks.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -52,7 +52,8 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,16 +61,8 @@ extern "C" {
 
 /** includes the blk file reader into SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeReaderBlk(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-
-/* reads problem from file */
-SCIP_RETCODE SCIPreadBlk(
-   SCIP*                 scip,               /**< SCIP data structure */
-   const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */
-   SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
+SCIP_RETCODE GCGincludeReaderBlk(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

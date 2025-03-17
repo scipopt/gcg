@@ -163,18 +163,10 @@ SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsOff);
 GCG_EXPORT
 SCIP_DECL_DIALOGEXEC(GCGdialogExecSetSeparatorsAggressive);
 
-/** creates a root dialog
- * @returns SCIP return code */
-GCG_EXPORT
-SCIP_RETCODE GCGcreateRootDialog(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP_DIALOG**         root                /**< pointer to store the root dialog */
-   );
-
 /** includes or updates the GCG dialog menus in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDialogGcg(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDialogGcg(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

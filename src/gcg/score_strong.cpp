@@ -36,13 +36,13 @@
 
 #include <scip/scipdefplugins.h>
 
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "scip_misc.h"
-#include "score.h"
-#include "score_strong.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/scip_misc.h"
+#include "gcg/score.h"
+#include "gcg/score_strong.h"
 
 
 /* score properties */
@@ -95,13 +95,13 @@ typedef enum GCG_Random_dual_methods GCG_RANDOM_DUAL_METHOD;
  */
 static
 SCIP_RETCODE shuffleDualvalsRandom(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    GCG_SCORE* score,       /**< score */
    SCIP_Bool transformed   /**< whether the problem is tranformed yet */
    )
 {
    GCG_SCOREDATA* scoredata = GCGscoreGetData(score);
-
+   SCIP* scip = GCGgetOrigprob(gcg);
    GCG_RANDOM_DUAL_METHOD usedmethod;
    SCIP_RANDNUMGEN* randnumgen;
 
@@ -127,7 +127,7 @@ SCIP_RETCODE shuffleDualvalsRandom(
    // TODO ref replace default for random partialdec with parameter
    SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, DEFAULT_RANDPARTIALDEC, TRUE) );
 
-   gcg::DETPROBDATA* detprobdata = (transformed) ? GCGconshdlrDecompGetDetprobdataPresolved(scip) : GCGconshdlrDecompGetDetprobdataOrig(scip);
+   gcg::DETPROBDATA* detprobdata = (transformed) ? GCGconshdlrDecompGetDetprobdataPresolved(gcg) : GCGconshdlrDecompGetDetprobdataOrig(gcg);
 
    /* shuffle dual multipliers of constraints*/
 
@@ -259,7 +259,7 @@ SCIP_RETCODE shuffleDualvalsRandom(
  */
 static
 SCIP_Real getDualvalRandom(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    GCG_SCORE* score,       /**< score */
    int  consindex,         /**< consindex  index of constraint the value is asked for */
    SCIP_Bool transformed   /**< is the problem transformed yet */
@@ -268,7 +268,7 @@ SCIP_Real getDualvalRandom(
    GCG_SCOREDATA* scoredata = GCGscoreGetData(score);
 
    if( !scoredata->dualvalsrandomset )
-      shuffleDualvalsRandom(scip, score, transformed);
+      shuffleDualvalsRandom(gcg, score, transformed);
    scoredata->dualvalsrandomset = TRUE;
 
    return (*scoredata->dualvalsrandom)[consindex];
@@ -280,13 +280,13 @@ SCIP_Real getDualvalRandom(
  */
 static
 SCIP_RETCODE calculateDualvalsOptimalOrigLP(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    GCG_SCORE* score,       /**< score */
    SCIP_Bool transformed   /**< whether the problem is transormed yet */
    )
 {
    GCG_SCOREDATA* scoredata = GCGscoreGetData(score);
-
+   SCIP* scip = GCGgetOrigprob(gcg);
    SCIP* scipcopy;
    SCIP_HASHMAP* origtocopiedconss;
    SCIP_Bool valid;
@@ -345,7 +345,7 @@ SCIP_RETCODE calculateDualvalsOptimalOrigLP(
 
    SCIPsolve(scipcopy);
 
-   gcg::DETPROBDATA* detprobdata = (transformed) ? GCGconshdlrDecompGetDetprobdataPresolved(scip) : GCGconshdlrDecompGetDetprobdataOrig(scip);
+   gcg::DETPROBDATA* detprobdata = (transformed) ? GCGconshdlrDecompGetDetprobdataPresolved(gcg) : GCGconshdlrDecompGetDetprobdataOrig(gcg);
 
    for( int c = 0; c < nconss; ++c )
    {
@@ -396,7 +396,7 @@ SCIP_RETCODE calculateDualvalsOptimalOrigLP(
  */
 static
 SCIP_Real getDualvalOptimalLP(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    GCG_SCORE* score,       /**< score */
    int  consindex,         /**< consindex index of constraint the value is asked for */
    SCIP_Bool transformed   /**< is the problem transformed yet */
@@ -405,7 +405,7 @@ SCIP_Real getDualvalOptimalLP(
    GCG_SCOREDATA* scoredata = GCGscoreGetData(score);
 
    if( !scoredata->dualvalsoptimaloriglpcalculated )
-      calculateDualvalsOptimalOrigLP(scip, score, transformed);
+      calculateDualvalsOptimalOrigLP(gcg, score, transformed);
    scoredata->dualvalsoptimaloriglpcalculated = TRUE;
 
    return (*scoredata->dualvalsoptimaloriglp)[consindex];
@@ -526,7 +526,7 @@ GCG_DECL_SCOREFREE(scoreFreeStrong)
 {
    GCG_SCOREDATA* scoredata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
    scoredata = GCGscoreGetData(score);
    assert(scoredata != NULL);
@@ -535,7 +535,7 @@ GCG_DECL_SCOREFREE(scoreFreeStrong)
    delete scoredata->dualvalsoptimaloriglp;
    delete scoredata->dualvalsrandom;
 
-   SCIPfreeMemory(scip, &scoredata);
+   SCIPfreeMemory(GCGgetOrigprob(gcg), &scoredata);
 
    return SCIP_OKAY;
 }
@@ -550,6 +550,7 @@ GCG_DECL_SCORECALC(scoreCalcStrong)
    /* SCIP_Real gaplimitbeneficial; */
 
    GCG_SCOREDATA* scoredata = GCGscoreGetData(score);
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    SCIP_Bool hittimelimit;
    SCIP_Bool errorpricing;
@@ -570,7 +571,7 @@ GCG_DECL_SCORECALC(scoreCalcStrong)
    SCIP_Real dualvalmethodcoef;
 
    /* score works only on presolved  */
-   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
+   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(gcg, partialdecid);
    if( partialdec->isAssignedToOrigProb() )
    {
       *scorevalue = 0;
@@ -675,11 +676,11 @@ GCG_DECL_SCORECALC(scoreCalcStrong)
             if ( partialdec->isConsMastercons(consid) )
             {
                if( SCIPisEQ( scip, dualvalmethodcoef, 0.0) )
-                  dualval = getDualvalRandom(scip, score, consid, partialdec->isAssignedToOrigProb());
+                  dualval = getDualvalRandom(gcg, score, consid, partialdec->isAssignedToOrigProb());
                else if( SCIPisEQ( scip, dualvalmethodcoef, 1.0) )
-                  dualval = getDualvalOptimalLP(scip, score, consid, partialdec->isAssignedToOrigProb());
+                  dualval = getDualvalOptimalLP(gcg, score, consid, partialdec->isAssignedToOrigProb());
                else
-                  dualval = dualvalmethodcoef * getDualvalOptimalLP(scip, score, consid, partialdec->isAssignedToOrigProb()) + (1. - dualvalmethodcoef) * getDualvalRandom(scip, score, consid, partialdec->isAssignedToOrigProb());
+                  dualval = dualvalmethodcoef * getDualvalOptimalLP(gcg, score, consid, partialdec->isAssignedToOrigProb()) + (1. - dualvalmethodcoef) * getDualvalRandom(gcg, score, consid, partialdec->isAssignedToOrigProb());
                obj -= dualval * detprobdata->getVal(consid, varid);
             }
          }
@@ -777,11 +778,11 @@ GCG_DECL_SCORECALC(scoreCalcStrong)
 
 /** creates the strong decomposition score and includes it in SCIP */
 SCIP_RETCODE GCGincludeScoreStrongDecomp(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_SCOREDATA* scoredata = NULL;
-
+   SCIP* scip = GCGgetOrigprob(gcg);
    SCIP_CALL( SCIPallocMemory(scip, &scoredata) );
 
    scoredata->dualvalsrandom = new std::vector<SCIP_Real>();
@@ -792,7 +793,7 @@ SCIP_RETCODE GCGincludeScoreStrongDecomp(
    assert(scoredata != NULL);
 
    SCIP_CALL(
-      GCGincludeScore(scip, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata,
+      GCGincludeScore(gcg, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata,
          scoreFreeStrong, scoreCalcStrong) );
 
    SCIP_CALL( SCIPaddRealParam(scip, "detection/scores/strong/timelimit",

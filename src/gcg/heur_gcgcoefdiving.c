@@ -36,9 +36,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_gcgcoefdiving.h"
-#include "heur_origdiving.h"
-#include "gcg.h"
+#include "gcg/heur_gcgcoefdiving.h"
+#include "gcg/heur_origdiving.h"
+#include "gcg/gcg.h"
 
 
 #define HEUR_NAME             "gcgcoefdiving"
@@ -126,7 +126,7 @@ SCIP_Bool areVarsInSameBlock(
 /** get the number of down-locks for an original variable w.r.t. the master problem */
 static
 SCIP_RETCODE getNLocksDown(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             var,                /**< original variable to get locks for */
    int*                  nlocksdown          /**< pointer to store number of down-locks */
    )
@@ -138,11 +138,11 @@ SCIP_RETCODE getNLocksDown(
    int nmastervars;
    int norigmastervars;
    SCIP_Real roundval;
-
    int i;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(gcg);
    assert(masterprob != NULL);
 
    /* get master variable information */
@@ -153,7 +153,7 @@ SCIP_RETCODE getNLocksDown(
    origmastervals = GCGoriginalVarGetMastervals(var);
    norigmastervars = GCGoriginalVarGetNMastervars(var);
 
-   roundval = SCIPfeasFloor(scip, SCIPgetRelaxSolVal(scip, var));
+   roundval = SCIPfeasFloor(origprob, SCIPgetRelaxSolVal(origprob, var));
    *nlocksdown = 0;
 
    /* calculate locks = the sum of down-locks of all master variables
@@ -187,7 +187,7 @@ SCIP_RETCODE getNLocksDown(
 /** get the number of up-locks for an original variable w.r.t. the master problem */
 static
 SCIP_RETCODE getNLocksUp(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             var,                /**< original variable to get locks for */
    int*                  nlocksup            /**< pointer to store number of up-locks */
    )
@@ -199,11 +199,11 @@ SCIP_RETCODE getNLocksUp(
    int nmastervars;
    int norigmastervars;
    SCIP_Real roundval;
-
    int i;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(gcg);
    assert(masterprob != NULL);
 
    /* get master variable information */
@@ -214,7 +214,7 @@ SCIP_RETCODE getNLocksUp(
    origmastervals = GCGoriginalVarGetMastervals(var);
    norigmastervars = GCGoriginalVarGetNMastervars(var);
 
-   roundval = SCIPfeasCeil(scip, SCIPgetRelaxSolVal(scip, var));
+   roundval = SCIPfeasCeil(origprob, SCIPgetRelaxSolVal(origprob, var));
    *nlocksup = 0;
 
    /* calculate locks = the sum of down-locks of all master variables
@@ -257,12 +257,11 @@ GCG_DECL_DIVINGFREE(heurFreeGcgcoefdiving) /*lint --e{715}*/
    GCG_DIVINGDATA* divingdata;
 
    assert(heur != NULL);
-   assert(scip != NULL);
 
    /* free diving rule specific data */
    divingdata = GCGheurGetDivingDataOrig(heur);
    assert(divingdata != NULL);
-   SCIPfreeMemory(scip, &divingdata);
+   SCIPfreeMemory(GCGgetOrigprob(gcg), &divingdata);
    GCGheurSetDivingDataOrig(heur, NULL);
 
    return SCIP_OKAY;
@@ -289,9 +288,10 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgcoefdiving) /*lint --e{715}*/
    int bestnviolrows;             /* number of violated rows for best candidate */
    SCIP_Real bestcandfrac;        /* fractionality of best candidate */
    int c;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* check preconditions */
-   assert(scip != NULL);
+   assert(origprob != NULL);
    assert(heur != NULL);
    assert(bestcand != NULL);
    assert(bestcandmayround != NULL);
@@ -302,7 +302,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgcoefdiving) /*lint --e{715}*/
    assert(divingdata != NULL);
 
    /* get fractional variables that should be integral */
-   SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, NULL, &nlpcands, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetExternBranchCands(origprob, &lpcands, &lpcandssol, NULL, &nlpcands, NULL, NULL, NULL, NULL) );
    assert(lpcands != NULL);
    assert(lpcandssol != NULL);
 
@@ -328,7 +328,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgcoefdiving) /*lint --e{715}*/
       SCIP_Real frac;
 
       var = lpcands[c];
-      frac = lpcandssol[c] - SCIPfloor(scip, lpcandssol[c]);
+      frac = lpcandssol[c] - SCIPfloor(origprob, lpcandssol[c]);
 
       /* if the variable is on the tabu list, do not choose it */
       for( i = 0; i < tabulistsize; ++i )
@@ -339,8 +339,8 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgcoefdiving) /*lint --e{715}*/
 
       if( divingdata->usemasterlocks )
       {
-         SCIP_CALL( getNLocksDown(scip, var, &nlocksdown) );
-         SCIP_CALL( getNLocksUp(scip, var, &nlocksup) );
+         SCIP_CALL( getNLocksDown(gcg, var, &nlocksdown) );
+         SCIP_CALL( getNLocksUp(gcg, var, &nlocksup) );
          mayrounddown = nlocksdown == 0;
          mayroundup = nlocksup == 0;
       }
@@ -443,17 +443,18 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcgcoefdiving) /*lint --e{715}*/
 
 /** creates the gcgcoefdiving heuristic and includes it in GCG */
 SCIP_RETCODE GCGincludeHeurGcgcoefdiving(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_HEUR* heur;
    GCG_DIVINGDATA* divingdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* create gcgcoefdiving primal heuristic data */
-   SCIP_CALL( SCIPallocMemory(scip, &divingdata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &divingdata) );
 
    /* include diving heuristic */
-   SCIP_CALL( GCGincludeDivingHeurOrig(scip, &heur,
+   SCIP_CALL( GCGincludeDivingHeurOrig(gcg, &heur,
          HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, heurFreeGcgcoefdiving, NULL, NULL, NULL, NULL, NULL, NULL,
          heurSelectVarGcgcoefdiving, divingdata) );
@@ -461,7 +462,7 @@ SCIP_RETCODE GCGincludeHeurGcgcoefdiving(
    assert(heur != NULL);
 
    /* add gcgcoefdiving specific parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/usemasterlocks",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "heuristics/"HEUR_NAME"/usemasterlocks",
          "calculate the number of locks w.r.t. the master LP?",
          &divingdata->usemasterlocks, TRUE, DEFAULT_USEMASTERLOCKS, NULL, NULL) );
 

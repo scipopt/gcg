@@ -33,11 +33,11 @@
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include <string.h>
-#include "event_relaxsol.h"
-#include "relax_gcg.h"
-#include "pricer_gcg.h"
-#include "gcg.h"
-#include "event_mastersol.h"
+#include "gcg/event_relaxsol.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/gcg.h"
+#include "gcg/event_mastersol.h"
 
 #define EVENTHDLR_NAME         "relaxsol"
 #define EVENTHDLR_DESC         "eventhandler to update the relaxation solution in the original problem when the master LP has been solved"
@@ -50,6 +50,7 @@
 /** event handler data */
 struct SCIP_EventhdlrData
 {
+   GCG*                  gcg;                /**< GCG data structure */
    SCIP_Bool             triggered;          /**< flag to indicate whether event has been triggered */
 };
 
@@ -112,18 +113,18 @@ SCIP_DECL_EVENTEXEC(eventExecRelaxsol)
    SCIP_EVENTHDLRDATA* eventhdlrdata;
    SCIP_Bool violatesvarbnds;
 
-   /* get original problem */
-   origprob = GCGmasterGetOrigprob(scip);
-   assert(origprob != NULL);
-
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
+
+   /* get original problem */
+   origprob = GCGgetOrigprob(eventhdlrdata->gcg);
+   assert(origprob != NULL);
 
    /* Only transfer the master solution if it is an LP solution or if it is a feasible solution that
     * comes from a master heuristic; otherwise it is assumed to already come from the original problem
     */
    if( (SCIPeventGetType(event) & SCIP_EVENTTYPE_SOLFOUND) && SCIPsolGetHeur(SCIPeventGetSol(event)) == NULL
-      && GCGeventhdlrMastersolIsTriggered(origprob) )
+      && GCGeventhdlrMastersolIsTriggered(eventhdlrdata->gcg) )
       return SCIP_OKAY;
 
    eventhdlrdata->triggered = TRUE;
@@ -131,7 +132,7 @@ SCIP_DECL_EVENTEXEC(eventExecRelaxsol)
    if( SCIPeventGetType(event) & SCIP_EVENTTYPE_LPSOLVED )
    {
       SCIPdebugMessage("Transferring master LP solution to the original problem\n");
-      SCIP_CALL( GCGrelaxUpdateCurrentSol(origprob) );
+      SCIP_CALL( GCGrelaxUpdateCurrentSol(eventhdlrdata->gcg) );
    }
    else if( SCIPeventGetType(event) & SCIP_EVENTTYPE_SOLFOUND )
    {
@@ -144,8 +145,8 @@ SCIP_DECL_EVENTEXEC(eventExecRelaxsol)
          foundbyheur ? SCIPheurGetName(SCIPsolGetHeur(sol)) : "relaxation");
 
       /* transform the master solution to the original variable space */
-      SCIP_CALL( GCGtransformMastersolToOrigsol(origprob, sol, &origsol, foundbyheur, &violatesvarbnds) );
-      assert(!violatesvarbnds || !GCGmasterIsSolValid(scip, sol));
+      SCIP_CALL( GCGtransformMastersolToOrigsol(eventhdlrdata->gcg, sol, &origsol, foundbyheur, &violatesvarbnds) );
+      assert(!violatesvarbnds || !GCGmasterIsSolValid(eventhdlrdata->gcg, sol));
 
       SCIP_CALL( SCIPtrySolFree(origprob, &origsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
       SCIPdebugMessage("  ->%s stored\n", stored ? "" : " not");
@@ -157,50 +158,50 @@ SCIP_DECL_EVENTEXEC(eventExecRelaxsol)
 }
 
 /** creates event handler for relaxsol event */
-SCIP_RETCODE SCIPincludeEventHdlrRelaxsol(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeEventHdlrRelaxsol(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_EVENTHDLR* eventhdlr;
    SCIP_EVENTHDLRDATA* eventhdlrdata;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
    eventhdlr = NULL;
 
-   SCIP_CALL( SCIPallocMemory(scip, &eventhdlrdata) );
+   SCIP_CALL( SCIPallocMemory(masterprob, &eventhdlrdata) );
    assert(eventhdlrdata != NULL);
+   eventhdlrdata->gcg = gcg;
 
    /* include event handler into GCG */
-   SCIP_CALL( SCIPincludeEventhdlrBasic(scip, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC,
+   SCIP_CALL( SCIPincludeEventhdlrBasic(masterprob, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC,
          eventExecRelaxsol, eventhdlrdata) );
    assert(eventhdlr != NULL);
 
    /* set non fundamental callbacks via setter functions */
-   SCIP_CALL( SCIPsetEventhdlrFree(scip, eventhdlr, eventFreeRelaxsol) );
-   SCIP_CALL( SCIPsetEventhdlrInit(scip, eventhdlr, eventInitRelaxsol) );
-   SCIP_CALL( SCIPsetEventhdlrExit(scip, eventhdlr, eventExitRelaxsol) );
+   SCIP_CALL( SCIPsetEventhdlrFree(masterprob, eventhdlr, eventFreeRelaxsol) );
+   SCIP_CALL( SCIPsetEventhdlrInit(masterprob, eventhdlr, eventInitRelaxsol) );
+   SCIP_CALL( SCIPsetEventhdlrExit(masterprob, eventhdlr, eventExitRelaxsol) );
 
    return SCIP_OKAY;
 }
 
 /** return whether event has been triggered */
 SCIP_Bool GCGeventhdlrRelaxsolIsTriggered(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP*                 masterprob          /**< the SCIP data structure for the master problem */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_EVENTHDLR* eventhdlr;
    SCIP_EVENTHDLRDATA* eventhdlrdata;
 
-   assert(scip != NULL);
-   assert(masterprob != NULL);
+   assert(gcg != NULL);
 
    /* the relaxation solution event handler is not included if BENDERS or ORIGINAL mode is used. As such, it will
     * never be triggered. In this case, it will always return FALSE.
     */
-   if( GCGgetDecompositionMode(scip) == GCG_DECMODE_BENDERS || GCGgetDecompositionMode(scip) == GCG_DECMODE_ORIGINAL )
+   if( GCGgetDecompositionMode(gcg) == GCG_DECMODE_BENDERS || GCGgetDecompositionMode(gcg) == GCG_DECMODE_ORIGINAL )
       return FALSE;
 
-   eventhdlr = SCIPfindEventhdlr(masterprob, EVENTHDLR_NAME);
+   eventhdlr = SCIPfindEventhdlr(GCGgetMasterprob(gcg), EVENTHDLR_NAME);
    assert(eventhdlr != NULL);
 
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);

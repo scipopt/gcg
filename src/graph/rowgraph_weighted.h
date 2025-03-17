@@ -36,8 +36,8 @@
 #ifndef GCG_ROWGRAPH_WEIGHTED_H_
 #define GCG_ROWGRAPH_WEIGHTED_H_
 
-#include "graph.h"
-#include "rowgraph.h"
+#include "graph/graph.h"
+#include "graph/rowgraph.h"
 
 namespace gcg {
 
@@ -83,7 +83,7 @@ private:
 
 public:
    RowGraphWeighted(
-         SCIP*                 scip,              /**< SCIP data structure */
+         GCG*                  gcg,               /**< GCG data structure */
          Weights               w                  /**< weights for the given graph */
       );
    virtual ~RowGraphWeighted();

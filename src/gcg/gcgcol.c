@@ -35,15 +35,15 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "pub_gcgcol.h"
+#include "gcg/pub_gcgcol.h"
 
-#include "gcg.h"
+#include "gcg/gcg.h"
 #include "scip/def.h"
 #include "scip/scip.h"
 #include "scip/cons_linear.h"
-#include "pricer_gcg.h"
-#include "sepa_original.h"
-#include "type_gcgcol.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/sepa_original.h"
+#include "gcg/struct_gcgcol.h"
 
 #include <assert.h>
 
@@ -457,16 +457,18 @@ void GCGcolSetNorm(
 
 /** get norm of column */
 void GCGcolComputeNorm(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    GCG_COL*             gcgcol              /**< gcg column structure */
    )
 {
+   SCIP* scip;
    int i;
    SCIP_Real norm;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(gcgcol != NULL);
 
+   scip = GCGgetMasterprob(gcg);
    norm = 0.0;
    /* compute scalar of master values of gcg columns */
    for( i = 0; i < gcgcol->nmastercoefs; ++i )
@@ -672,7 +674,6 @@ SCIP_RETCODE GCGcolSetExtendedmasterconss(
 
 /** return solution value of variable in gcg column */
 SCIP_Real GCGcolGetSolVal(
-   SCIP*                scip,               /**< SCIP data structure */
    GCG_COL*             gcgcol,             /**< gcg column */
    SCIP_VAR*            var                 /**< variable */
    )
@@ -700,7 +701,6 @@ SCIP_Real GCGcolGetSolVal(
 /** returns true if the gcg column knows the solution value of the variable */
 GCG_EXPORT
 SCIP_Bool GCGcolKnowsSolVar(
-   SCIP*                scip,               /**< SCIP data structure */
    GCG_COL*             gcgcol,             /**< gcg column */
    SCIP_VAR*            var                 /**< variable */
    )
@@ -728,7 +728,7 @@ SCIP_Bool GCGcolIsAged(
 
 /** compute parallelism of column to dual objective */
 SCIP_Real GCGcolComputeDualObjPara(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    GCG_COL*             gcgcol              /**< gcg column */
    )
 {
@@ -738,12 +738,16 @@ SCIP_Real GCGcolComputeDualObjPara(
    SCIP_ROW** originalsepamastercuts;
    SCIP_Real* extendedmasterconsbounds;
    SCIP_Real dualobjnorm;
+   SCIP* masterprob;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
+   
+   masterprob = GCGgetMasterprob(gcg);
+
    assert(gcgcol != NULL);
 
-   masterconss = GCGgetMasterConss(GCGmasterGetOrigprob(scip));
-   originalsepamastercuts = GCGsepaGetOriginalSepaMastercuts(scip);
+   masterconss = GCGgetMasterConss(gcg);
+   originalsepamastercuts = GCGsepaGetOriginalSepaMastercuts(gcg);
    extendedmasterconsbounds = colGetExtendedmasterconsBounds(gcgcol);
 
    para = 0.0;
@@ -756,21 +760,21 @@ SCIP_Real GCGcolComputeDualObjPara(
       SCIP_Real lhs;
       SCIP_Real rhs;
 
-      lhs = SCIPgetLhsLinear(scip, masterconss[i]);
-      rhs = SCIPgetRhsLinear(scip, masterconss[i]);
+      lhs = SCIPgetLhsLinear(masterprob, masterconss[i]);
+      rhs = SCIPgetRhsLinear(masterprob, masterconss[i]);
 
-      if( !SCIPisInfinity(scip, -lhs) )
+      if( !SCIPisInfinity(masterprob, -lhs) )
       {
          dualobjnorm += SQR(lhs);
 
-         if( SCIPisPositive(scip, gcgcol->mastercoefs[i]) )
+         if( SCIPisPositive(masterprob, gcgcol->mastercoefs[i]) )
             para += gcgcol->mastercoefs[i] * lhs;
       }
-      else if( !SCIPisInfinity(scip, rhs) )
+      else if( !SCIPisInfinity(masterprob, rhs) )
       {
          dualobjnorm += SQR(rhs);
 
-         if(SCIPisNegative(scip, gcgcol->mastercoefs[i] ) )
+         if(SCIPisNegative(masterprob, gcgcol->mastercoefs[i] ) )
             para += gcgcol->mastercoefs[i] * rhs;
       }
    }
@@ -786,18 +790,18 @@ SCIP_Real GCGcolComputeDualObjPara(
       lhs = SCIProwGetLhs(originalsepamastercuts[i]);
       rhs = SCIProwGetRhs(originalsepamastercuts[i]);
 
-      if( !SCIPisInfinity(scip, -lhs))
+      if( !SCIPisInfinity(masterprob, -lhs))
       {
          dualobjnorm += SQR(lhs);
 
-         if( SCIPisPositive(scip, gcgcol->originalsepamastercuts[i]) )
+         if( SCIPisPositive(masterprob, gcgcol->originalsepamastercuts[i]) )
             para += gcgcol->originalsepamastercuts[i] * lhs;
       }
-      else if( !SCIPisInfinity(scip, rhs) )
+      else if( !SCIPisInfinity(masterprob, rhs) )
       {
          dualobjnorm += SQR(rhs);
 
-         if(SCIPisNegative(scip, gcgcol->originalsepamastercuts[i] ) )
+         if(SCIPisNegative(masterprob, gcgcol->originalsepamastercuts[i] ) )
             para += gcgcol->originalsepamastercuts[i] * rhs;
       }
    }
@@ -806,28 +810,28 @@ SCIP_Real GCGcolComputeDualObjPara(
    {
       SCIP_Real bound = extendedmasterconsbounds[i];
 
-      if( SCIPisInfinity(scip, ABS(bound)) )
+      if( SCIPisInfinity(masterprob, ABS(bound)) )
       {
          return SCIP_ERROR;
       }
 
       dualobjnorm += SQR(bound);
 
-      if( SCIPisPositive(scip, gcgcol->extendedmasterconscoefs[i]) )
+      if( SCIPisPositive(masterprob, gcgcol->extendedmasterconscoefs[i]) )
          para += gcgcol->extendedmasterconscoefs[i] * bound;
    }
 
-   for( i = 0; i < GCGgetNPricingprobs(GCGmasterGetOrigprob(scip)); ++i )
-      dualobjnorm += SQR(GCGgetNIdenticalBlocks(GCGmasterGetOrigprob(scip), i));
+   for( i = 0; i < GCGgetNPricingprobs(gcg); ++i )
+      dualobjnorm += SQR(GCGgetNIdenticalBlocks(gcg, i));
 
-   para += SQR(GCGgetNIdenticalBlocks(GCGmasterGetOrigprob(scip), gcgcol->probnr));
+   para += SQR(GCGgetNIdenticalBlocks(gcg, gcgcol->probnr));
 
-   assert(!SCIPisInfinity(scip, ABS(para)));
+   assert(!SCIPisInfinity(masterprob, ABS(para)));
 
    dualobjnorm = sqrt(dualobjnorm);
-   assert(!SCIPisInfinity(scip, dualobjnorm));
-   assert(SCIPisPositive(scip, dualobjnorm));
-   assert(SCIPisPositive(scip, gcgcol->norm));
+   assert(!SCIPisInfinity(masterprob, dualobjnorm));
+   assert(SCIPisPositive(masterprob, dualobjnorm));
+   assert(SCIPisPositive(masterprob, gcgcol->norm));
 
    para = para / (dualobjnorm * gcgcol->norm);
 
@@ -836,20 +840,23 @@ SCIP_Real GCGcolComputeDualObjPara(
 
 /** compute orthogonality of two gcg columns */
 SCIP_Real GCGcolComputeOrth(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    GCG_COL*             gcgcol1,            /**< first gcg column */
    GCG_COL*             gcgcol2             /**< second gcg column */
    )
 {
+   SCIP* scip;
    int i;
    int j;
    SCIP_Real para = 0.0;
    SCIP_Real norm1 = 0.0;
    SCIP_Real norm2 = 0.0;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(gcgcol1 != NULL);
    assert(gcgcol2 != NULL);
+
+   scip = GCGgetMasterprob(gcg);
 
    /* compute scalar of master values of gcg columns */
    for( i = 0; i < gcgcol1->nmastercoefs; ++i )

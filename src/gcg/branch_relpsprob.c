@@ -45,11 +45,11 @@
 #include <assert.h>
 #include <string.h>
 
-#include "branch_relpsprob.h"
-#include "relax_gcg.h"
-#include "cons_integralorig.h"
-#include "pricer_gcg.h"
-#include "gcg.h"
+#include "gcg/branch_relpsprob.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/cons_integralorig.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/gcg.h"
 
 #include "scip/nodesel_estimate.h"
 #include "scip/nodesel_hybridestim.h"
@@ -472,7 +472,7 @@ SCIP_RETCODE calculateBounds(
 /** applies probing of a single variable in the given direction, and stores evaluation in given arrays */
 static
 SCIP_RETCODE applyProbing(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR**            vars,               /**< problem variables */
    int                   nvars,              /**< number of problem variables */
    SCIP_VAR*             probingvar,         /**< variable to perform probing on */
@@ -488,13 +488,16 @@ SCIP_RETCODE applyProbing(
    SCIP_Bool*            cutoff              /**< pointer to store whether the probing direction is infeasible */
    )
 {
-   SCIP* masterscip;
-
+   SCIP* origprob;
+   SCIP* masterprob;
    /* SCIP_Real varsol; */
    SCIP_Real leftlbprobing;
    SCIP_Real leftubprobing;
    SCIP_Real rightlbprobing;
    SCIP_Real rightubprobing;
+
+   origprob = GCGgetOrigprob(gcg);
+   masterprob = GCGgetMasterprob(gcg);
 
    leftubprobing = -1.0;
    leftlbprobing = -1.0;
@@ -505,26 +508,22 @@ SCIP_RETCODE applyProbing(
    assert(propubs != NULL);
    assert(cutoff != NULL);
    assert(SCIPvarGetLbLocal(probingvar) - 0.5 < SCIPvarGetUbLocal(probingvar));
-   assert(SCIPisFeasIntegral(scip, SCIPvarGetLbLocal(probingvar)));
-   assert(SCIPisFeasIntegral(scip, SCIPvarGetUbLocal(probingvar)));
+   assert(SCIPisFeasIntegral(origprob, SCIPvarGetLbLocal(probingvar)));
+   assert(SCIPisFeasIntegral(origprob, SCIPvarGetUbLocal(probingvar)));
 
    assert(!solvelp || (lpsolved!=NULL && lpobjvalue!=NULL && lperror!=NULL));
-
-   /* get SCIP data structure of master problem */
-   masterscip = GCGgetMasterprob(scip);
-   assert(masterscip != NULL);
 
    /* varsol = SCIPgetRelaxSolVal(scip, probingvar); */
 
    if( probingdir == FALSE )
    {
 
-      SCIP_CALL( calculateBounds(scip, probingvar,
+      SCIP_CALL( calculateBounds(origprob, probingvar,
             &leftlbprobing, &leftubprobing, NULL, NULL) );
    }
    else
    {
-      SCIP_CALL( calculateBounds(scip, probingvar,
+      SCIP_CALL( calculateBounds(origprob, probingvar,
             NULL, NULL, &rightlbprobing, &rightubprobing) );
    }
 
@@ -536,8 +535,8 @@ SCIP_RETCODE applyProbing(
       SCIPvarGetNCliques(probingvar, FALSE), SCIPvarGetNCliques(probingvar, TRUE));
 
    /* start probing mode */
-   SCIP_CALL( GCGrelaxStartProbing(scip, NULL) );
-   SCIP_CALL( GCGrelaxNewProbingnodeOrig(scip) );
+   SCIP_CALL( GCGrelaxStartProbing(gcg, NULL) );
+   SCIP_CALL( GCGrelaxNewProbingnodeOrig(gcg) );
 
    *lpsolved = FALSE;
    *lperror = FALSE;
@@ -545,17 +544,17 @@ SCIP_RETCODE applyProbing(
    /* change variable bounds for the probing directions*/
    if( probingdir == FALSE )
    {
-      SCIP_CALL( SCIPchgVarUbProbing(scip, probingvar, leftubprobing) );
+      SCIP_CALL( SCIPchgVarUbProbing(origprob, probingvar, leftubprobing) );
    }
    else
    {
-      SCIP_CALL( SCIPchgVarLbProbing(scip, probingvar, rightlbprobing) );
+      SCIP_CALL( SCIPchgVarLbProbing(origprob, probingvar, rightlbprobing) );
    }
 
    /* apply propagation */
    if( !(*cutoff) )
    {
-      SCIP_CALL( SCIPpropagateProbing(scip, -1, cutoff, NULL) ); /** @todo use maxproprounds */
+      SCIP_CALL( SCIPpropagateProbing(origprob, -1, cutoff, NULL) ); /** @todo use maxproprounds */
    }
 
    /* evaluate propagation */
@@ -573,16 +572,16 @@ SCIP_RETCODE applyProbing(
    /* if parameter is set, we want to use the outcome of the LP relaxation */
    if( !(*cutoff) && solvelp )
    {
-      *nlpiterations -= SCIPgetNLPIterations(masterscip);
+      *nlpiterations -= SCIPgetNLPIterations(masterprob);
 
       /** @todo handle the feasible result */
-      SCIP_CALL( GCGrelaxNewProbingnodeMaster(scip) );
-      SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, -1, nlpiterations, NULL,
+      SCIP_CALL( GCGrelaxNewProbingnodeMaster(gcg) );
+      SCIP_CALL( GCGrelaxPerformProbingWithPricing(gcg, -1, nlpiterations, NULL,
             lpobjvalue, lpsolved, lperror, cutoff) );
    }
 
    /* exit probing mode */
-   SCIP_CALL( GCGrelaxEndProbing(scip) );
+   SCIP_CALL( GCGrelaxEndProbing(gcg) );
 
    SCIPdebugMessage("probing results in cutoff/lpsolved/lpobj: %s / %s / %g\n",
       *cutoff?"cutoff":"no cutoff", *lpsolved?"lpsolved":"lp not solved", *lpobjvalue);
@@ -594,7 +593,7 @@ SCIP_RETCODE applyProbing(
 /** gets generalized strong branching information on problem variable */
 static
 SCIP_RETCODE getVarProbingbranch(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             probingvar,         /**< variable to get strong probing branching values for */
    BDCHGDATA*            bdchgdata,          /**< structure containing bound changes for almost all variables */
    SCIP_Bool             solvelp,            /**< value to decide whether pricing loop shall be performed */
@@ -612,6 +611,7 @@ SCIP_RETCODE getVarProbingbranch(
    int*                  nbdchgs             /**< pointer to store number of total bound changes */
    )
 {
+   SCIP* origprob;
    /* data for variables and bdchg arrays */
    SCIP_VAR** probvars;
    SCIP_VAR** vars;
@@ -636,6 +636,8 @@ SCIP_RETCODE getVarProbingbranch(
    int i;
    int j;
 
+   origprob = GCGgetOrigprob(gcg);
+
    assert(lperror != NULL);
 
    if( downvalid != NULL )
@@ -647,31 +649,31 @@ SCIP_RETCODE getVarProbingbranch(
    if( upinf != NULL )
       *upinf = FALSE;
 
-   if( SCIPisStopped(scip) )
+   if( SCIPisStopped(origprob) )
    {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL,
-         "   (%.1fs) probing aborted: solving stopped\n", SCIPgetSolvingTime(scip));
+      SCIPverbMessage(origprob, SCIP_VERBLEVEL_HIGH, NULL,
+         "   (%.1fs) probing aborted: solving stopped\n", SCIPgetSolvingTime(origprob));
       return SCIP_OKAY;
    }
 
    /* get all variables to store branching deductions of variable bounds */
    /* get all variables and store them in array 'vars' */
-   SCIP_CALL( SCIPgetVarsData(scip, &probvars, NULL, &nbinvars, &nintvars, NULL, NULL) );
+   SCIP_CALL( SCIPgetVarsData(origprob, &probvars, NULL, &nbinvars, &nintvars, NULL, NULL) );
    nvars = nbinvars + nintvars; /* continuous variables are not considered here */
 
-   SCIP_CALL( SCIPduplicateBufferArray(scip, &vars, probvars, nvars) );
+   SCIP_CALL( SCIPduplicateBufferArray(origprob, &vars, probvars, nvars) );
 
    /* capture variables to make sure the variables are not deleted */
    for( i = 0; i < nvars; ++i )
    {
-      SCIP_CALL( SCIPcaptureVar(scip, vars[i]) );
+      SCIP_CALL( SCIPcaptureVar(origprob, vars[i]) );
    }
 
    /* get temporary memory for storing probing results */
-   SCIP_CALL( SCIPallocBufferArray(scip, &leftproplbs, nvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &leftpropubs, nvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &rightproplbs, nvars) );
-   SCIP_CALL( SCIPallocBufferArray(scip, &rightpropubs, nvars) );
+   SCIP_CALL( SCIPallocBufferArray(origprob, &leftproplbs, nvars) );
+   SCIP_CALL( SCIPallocBufferArray(origprob, &leftpropubs, nvars) );
+   SCIP_CALL( SCIPallocBufferArray(origprob, &rightproplbs, nvars) );
+   SCIP_CALL( SCIPallocBufferArray(origprob, &rightpropubs, nvars) );
 
    /* for each binary variable, probe fixing the variable to left and right */
    cutoff = FALSE;
@@ -688,7 +690,7 @@ SCIP_RETCODE getVarProbingbranch(
 
 
    /* left branch: apply probing for setting ub to LP solution value  */
-   SCIP_CALL( applyProbing(scip, vars, nvars, probingvar, FALSE, solvelp, nlpiterations,
+   SCIP_CALL( applyProbing(gcg, vars, nvars, probingvar, FALSE, solvelp, nlpiterations,
          leftproplbs, leftpropubs,
          &leftlpbound, &leftlpsolved, &leftlperror, &leftcutoff) );
 
@@ -696,20 +698,20 @@ SCIP_RETCODE getVarProbingbranch(
    {
       SCIP_Real newbound;
 
-      SCIP_CALL( calculateBounds(scip, probingvar, NULL, NULL, &newbound, NULL) );
+      SCIP_CALL( calculateBounds(origprob, probingvar, NULL, NULL, &newbound, NULL) );
 
       /* lower bound can be updated */
       SCIPdebugMessage("change lower bound of probing variable <%s> from %g to %g, nlocks=(%d/%d)\n",
          SCIPvarGetName(probingvar), SCIPvarGetLbLocal(probingvar), newbound,
          SCIPvarGetNLocksDown(probingvar), SCIPvarGetNLocksUp(probingvar));
 
-      SCIP_CALL( addBdchg(scip, bdchgdata, probingvar, newbound, SCIP_BOUNDTYPE_LOWER, TRUE, nbdchgs, &cutoff) );
+      SCIP_CALL( addBdchg(origprob, bdchgdata, probingvar, newbound, SCIP_BOUNDTYPE_LOWER, TRUE, nbdchgs, &cutoff) );
    }
 
    if( !cutoff )
    {
       /* right branch: apply probing for setting lb to LP solution value  */
-      SCIP_CALL( applyProbing(scip, vars, nvars, probingvar, TRUE, solvelp, nlpiterations,
+      SCIP_CALL( applyProbing(gcg, vars, nvars, probingvar, TRUE, solvelp, nlpiterations,
             rightproplbs, rightpropubs,
             &rightlpbound, &rightlpsolved, &rightlperror, &rightcutoff) );
 
@@ -717,14 +719,14 @@ SCIP_RETCODE getVarProbingbranch(
       {
          SCIP_Real newbound;
 
-         SCIP_CALL( calculateBounds(scip, probingvar, NULL, &newbound, NULL, NULL) );
+         SCIP_CALL( calculateBounds(origprob, probingvar, NULL, &newbound, NULL, NULL) );
 
          /* upper bound can be updated */
          SCIPdebugMessage("change probing variable <%s> upper bound from %g to %g, nlocks=(%d/%d)\n",
             SCIPvarGetName(probingvar), SCIPvarGetUbLocal(probingvar), newbound,
             SCIPvarGetNLocksDown(probingvar), SCIPvarGetNLocksUp(probingvar));
 
-         SCIP_CALL( addBdchg(scip, bdchgdata, probingvar, newbound, SCIP_BOUNDTYPE_UPPER, TRUE, nbdchgs, &cutoff) );
+         SCIP_CALL( addBdchg(origprob, bdchgdata, probingvar, newbound, SCIP_BOUNDTYPE_UPPER, TRUE, nbdchgs, &cutoff) );
       }
    }
 
@@ -755,11 +757,11 @@ SCIP_RETCODE getVarProbingbranch(
       newub = MAX(leftpropubs[j], rightpropubs[j]);
 
       /* check for fixed variables */
-      if( SCIPisFeasEQ(scip, newlb, newub) )
+      if( SCIPisFeasEQ(origprob, newlb, newub) )
       {
          /* in both probings, variable j is deduced to a fixed value */
-         SCIP_CALL( addBdchg(scip, bdchgdata, vars[j], newlb, SCIP_BOUNDTYPE_LOWER, FALSE, nbdchgs, &cutoff) );
-         SCIP_CALL( addBdchg(scip, bdchgdata, vars[j], newub, SCIP_BOUNDTYPE_UPPER, FALSE, nbdchgs, &cutoff) );
+         SCIP_CALL( addBdchg(origprob, bdchgdata, vars[j], newlb, SCIP_BOUNDTYPE_LOWER, FALSE, nbdchgs, &cutoff) );
+         SCIP_CALL( addBdchg(origprob, bdchgdata, vars[j], newub, SCIP_BOUNDTYPE_UPPER, FALSE, nbdchgs, &cutoff) );
          continue;
       }
       else
@@ -772,15 +774,15 @@ SCIP_RETCODE getVarProbingbranch(
          /* check for bound tightenings */
          oldlb = SCIPvarGetLbLocal(vars[j]);
          oldub = SCIPvarGetUbLocal(vars[j]);
-         if( SCIPisLbBetter(scip, newlb, oldlb, oldub) )
+         if( SCIPisLbBetter(origprob, newlb, oldlb, oldub) )
          {
             /* in both probings, variable j is deduced to be at least newlb: tighten lower bound */
-            SCIP_CALL( addBdchg(scip, bdchgdata, vars[j], newlb, SCIP_BOUNDTYPE_LOWER, FALSE, nbdchgs, &cutoff) );
+            SCIP_CALL( addBdchg(origprob, bdchgdata, vars[j], newlb, SCIP_BOUNDTYPE_LOWER, FALSE, nbdchgs, &cutoff) );
          }
-         if( SCIPisUbBetter(scip, newub, oldlb, oldub) && !cutoff )
+         if( SCIPisUbBetter(origprob, newub, oldlb, oldub) && !cutoff )
          {
             /* in both probings, variable j is deduced to be at most newub: tighten upper bound */
-            SCIP_CALL( addBdchg(scip, bdchgdata, vars[j], newub, SCIP_BOUNDTYPE_UPPER, FALSE, nbdchgs, &cutoff) );
+            SCIP_CALL( addBdchg(origprob, bdchgdata, vars[j], newub, SCIP_BOUNDTYPE_UPPER, FALSE, nbdchgs, &cutoff) );
          }
 
       }
@@ -814,17 +816,17 @@ SCIP_RETCODE getVarProbingbranch(
    }
 
    /* free temporary memory */
-   SCIPfreeBufferArray(scip, &rightpropubs);
-   SCIPfreeBufferArray(scip, &rightproplbs);
-   SCIPfreeBufferArray(scip, &leftpropubs);
-   SCIPfreeBufferArray(scip, &leftproplbs);
+   SCIPfreeBufferArray(origprob, &rightpropubs);
+   SCIPfreeBufferArray(origprob, &rightproplbs);
+   SCIPfreeBufferArray(origprob, &leftpropubs);
+   SCIPfreeBufferArray(origprob, &leftproplbs);
 
    /* release variables */
    for( i = 0; i < nvars; ++i )
    {
-      SCIP_CALL( SCIPreleaseVar(scip, &vars[i]) );
+      SCIP_CALL( SCIPreleaseVar(origprob, &vars[i]) );
    }
-   SCIPfreeBufferArray(scip, &vars);
+   SCIPfreeBufferArray(origprob, &vars);
 
 
    return SCIP_OKAY;
@@ -972,7 +974,7 @@ SCIP_RETCODE incNVarProbings(
 /** execute generalized reliability pseudo cost probing branching */
 static
 SCIP_RETCODE execRelpsprob(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
    SCIP_VAR**            branchcands,        /**< branching candidates */
    SCIP_Real*            branchcandssol,     /**< solution value for the branching candidates */
@@ -982,7 +984,8 @@ SCIP_RETCODE execRelpsprob(
    SCIP_VAR**            branchvar           /**< pointer to the variable to branch on */
    )
 {
-   SCIP* masterscip;
+   SCIP* origprob;
+   SCIP* masterprob;
    SCIP_BRANCHRULEDATA* branchruledata;
    BDCHGDATA* bdchgdata;
    SCIP_Real lpobjval;
@@ -996,29 +999,27 @@ SCIP_RETCODE execRelpsprob(
    int bestcand = -1;
 
    *result = SCIP_DIDNOTRUN;
+   origprob = GCGgetOrigprob(gcg);
+   masterprob = GCGgetMasterprob(gcg);
 
    SCIPdebugMessage("execrelpsprob method called\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n relpsprob\n");
-
-   /* get SCIP pointer of master problem */
-   masterscip = GCGgetMasterprob(scip);
-   assert(masterscip != NULL);
 
    /* get branching rule data */
    branchruledata = SCIPbranchruleGetData(branchrule);
    assert(branchruledata != NULL);
 
    /* add all branching candidates into branchruledata if not yet inserted */
-   SCIP_CALL( addBranchcandsToData(scip, branchrule, branchcands, nbranchcands) );
+   SCIP_CALL( addBranchcandsToData(origprob, branchrule, branchcands, nbranchcands) );
 
    bdchgdata = NULL;
    /* create data structure for bound change infos */
-   SCIP_CALL( createBdchgData(scip, &bdchgdata, branchcands, nvars) );
+   SCIP_CALL( createBdchgData(origprob, &bdchgdata, branchcands, nvars) );
    assert(bdchgdata != NULL);
 
    /* get current LP objective bound of the local sub problem and global cutoff bound */
-   lpobjval = SCIPgetLocalLowerbound(scip);
+   lpobjval = SCIPgetLocalLowerbound(origprob);
 #ifndef NDEBUG
-   cutoffbound = SCIPgetCutoffbound(scip);
+   cutoffbound = SCIPgetCutoffbound(origprob);
 #endif
    provedbound = lpobjval;
 
@@ -1053,15 +1054,15 @@ SCIP_RETCODE execRelpsprob(
       int ninitcands = 0;
 
       /* get average conflict, inference, and pseudocost scores */
-      avgconflictscore = SCIPgetAvgConflictScore(scip);
+      avgconflictscore = SCIPgetAvgConflictScore(origprob);
       avgconflictscore = MAX(avgconflictscore, 0.1);
-      avgconflengthscore = SCIPgetAvgConflictlengthScore(scip);
+      avgconflengthscore = SCIPgetAvgConflictlengthScore(origprob);
       avgconflengthscore = MAX(avgconflengthscore, 0.1);
-      avginferencescore = SCIPgetAvgInferenceScore(scip);
+      avginferencescore = SCIPgetAvgInferenceScore(origprob);
       avginferencescore = MAX(avginferencescore, 0.1);
-      avgcutoffscore = SCIPgetAvgCutoffScore(scip);
+      avgcutoffscore = SCIPgetAvgCutoffScore(origprob);
       avgcutoffscore = MAX(avgcutoffscore, 0.1);
-      avgpscostscore = SCIPgetAvgPseudocostScore(scip);
+      avgpscostscore = SCIPgetAvgPseudocostScore(origprob);
       avgpscostscore = MAX(avgpscostscore, 0.1);
 
       /* get maximal number of candidates to initialize with strong branching; if the current solutions is not basic,
@@ -1069,7 +1070,7 @@ SCIP_RETCODE execRelpsprob(
        */
       maxninitcands = MIN(nbranchcands, branchruledata->initcand);
 
-      if( !SCIPisLPSolBasic(masterscip) )
+      if( !SCIPisLPSolBasic(masterprob) )
       {
          maxninitcands = 0;
          SCIPdebugMessage("solution is not basic\n");
@@ -1078,8 +1079,8 @@ SCIP_RETCODE execRelpsprob(
       SCIPdebugMessage("maxninitcands = %d\n", maxninitcands);
 
       /* get buffer for storing the unreliable candidates */
-      SCIP_CALL( SCIPallocBufferArray(scip, &initcands, maxninitcands+1) ); /* allocate one additional slot for convenience */
-      SCIP_CALL( SCIPallocBufferArray(scip, &initcandscores, maxninitcands+1) );
+      SCIP_CALL( SCIPallocBufferArray(origprob, &initcands, maxninitcands+1) ); /* allocate one additional slot for convenience */
+      SCIP_CALL( SCIPallocBufferArray(origprob, &initcandscores, maxninitcands+1) );
 
       /* initialize bound change arrays */
       nbdchgs = 0;
@@ -1090,7 +1091,7 @@ SCIP_RETCODE execRelpsprob(
 
       /* search for the best pseudo cost candidate, while remembering unreliable candidates in a sorted buffer */
       bestpscand = -1;
-      bestpsscore = -SCIPinfinity(scip);
+      bestpsscore = -SCIPinfinity(origprob);
       for( c = 0; c < nbranchcands; ++c )
       {
          SCIP_Real conflictscore;
@@ -1103,17 +1104,17 @@ SCIP_RETCODE execRelpsprob(
          assert(branchcands[c] != NULL);
 
          /* get conflict, inference, cutoff, and pseudo cost scores for candidate */
-         conflictscore = SCIPgetVarConflictScore(scip, branchcands[c]);
-         conflengthscore = SCIPgetVarConflictlengthScore(scip, branchcands[c]);
-         inferencescore = SCIPgetVarAvgInferenceScore(scip, branchcands[c]);
-         cutoffscore = SCIPgetVarAvgCutoffScore(scip, branchcands[c]);
-         pscostscore = SCIPgetVarPseudocostScore(scip, branchcands[c], branchcandssol[c]);
+         conflictscore = SCIPgetVarConflictScore(origprob, branchcands[c]);
+         conflengthscore = SCIPgetVarConflictlengthScore(origprob, branchcands[c]);
+         inferencescore = SCIPgetVarAvgInferenceScore(origprob, branchcands[c]);
+         cutoffscore = SCIPgetVarAvgCutoffScore(origprob, branchcands[c]);
+         pscostscore = SCIPgetVarPseudocostScore(origprob, branchcands[c], branchcandssol[c]);
 
 
          /* combine the four score values */
-         score = calcScore(scip, branchruledata, conflictscore, avgconflictscore, conflengthscore, avgconflengthscore,
+         score = calcScore(origprob, branchruledata, conflictscore, avgconflictscore, conflengthscore, avgconflengthscore,
             inferencescore, avginferencescore, cutoffscore, avgcutoffscore, pscostscore, avgpscostscore,
-            branchcandssol[c] - SCIPfloor(scip, branchcandssol[c]));
+            branchcandssol[c] - SCIPfloor(origprob, branchcandssol[c]));
 
          /* pseudo cost of variable is not reliable: insert candidate in initcands buffer */
          for( j = ninitcands; j > 0 && score > initcandscores[j-1]; --j )
@@ -1134,9 +1135,9 @@ SCIP_RETCODE execRelpsprob(
       SCIPdebugMessage("ninitcands = %d\n", ninitcands);
 
       bestsbcand = -1;
-      bestsbscore = -SCIPinfinity(scip);
-      bestsbfracscore = -SCIPinfinity(scip);
-      bestsbdomainscore = -SCIPinfinity(scip);
+      bestsbscore = -SCIPinfinity(origprob);
+      bestsbfracscore = -SCIPinfinity(origprob);
+      bestsbdomainscore = -SCIPinfinity(origprob);
       for( i = 0; i < ninitcands; ++i )
       {
          SCIP_Real down;
@@ -1157,33 +1158,33 @@ SCIP_RETCODE execRelpsprob(
          c = initcands[i];
 
          SCIPdebugMessage("init pseudo cost (%g/%g) of <%s> with bounds [%g,%g] at %g (score:%g)\n",
-            SCIPgetVarPseudocostCountCurrentRun(scip, branchcands[c], SCIP_BRANCHDIR_DOWNWARDS),
-            SCIPgetVarPseudocostCountCurrentRun(scip, branchcands[c], SCIP_BRANCHDIR_UPWARDS),
+            SCIPgetVarPseudocostCountCurrentRun(origprob, branchcands[c], SCIP_BRANCHDIR_DOWNWARDS),
+            SCIPgetVarPseudocostCountCurrentRun(origprob, branchcands[c], SCIP_BRANCHDIR_UPWARDS),
             SCIPvarGetName(branchcands[c]), SCIPvarGetLbLocal(branchcands[c]), SCIPvarGetUbLocal(branchcands[c]),
             branchcandssol[c], initcandscores[i]);
 
          /* try branching on this variable (propagation + lp solving (pricing) ) */
-         SCIP_CALL( getVarProbingbranch(scip, branchcands[c], bdchgdata, branchruledata->uselp, &branchruledata->nlpiterations,
+         SCIP_CALL( getVarProbingbranch(gcg, branchcands[c], bdchgdata, branchruledata->uselp, &branchruledata->nlpiterations,
                &down, &up, &downvalid, &upvalid, &downinf, &upinf, &lperror, &nbdchgs) );
 
          branchruledata->nprobingnodes++;
          branchruledata->nprobingnodes++;
-         SCIP_CALL( incNVarProbings(scip, branchrule, branchcands[c]) );
+         SCIP_CALL( incNVarProbings(origprob, branchrule, branchcands[c]) );
 
          /* check for an error in strong branching */
          if( lperror )
          {
-            if( !SCIPisStopped(scip) )
+            if( !SCIPisStopped(origprob) )
             {
-               SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL,
+               SCIPverbMessage(origprob, SCIP_VERBLEVEL_HIGH, NULL,
                   "(node %"SCIP_LONGINT_FORMAT") error in strong branching call for variable <%s> with solution %g\n",
-                  SCIPgetNNodes(scip), SCIPvarGetName(branchcands[c]), branchcandssol[c]);
+                  SCIPgetNNodes(origprob), SCIPvarGetName(branchcands[c]), branchcandssol[c]);
             }
             break;
          }
 
 
-         if( SCIPisStopped(scip) )
+         if( SCIPisStopped(origprob) )
          {
             break;
          }
@@ -1205,8 +1206,8 @@ SCIP_RETCODE execRelpsprob(
          up = MAX(up, lpobjval);
          downgain = down - lpobjval;
          upgain = up - lpobjval;
-         assert(!downvalid || downinf == SCIPisGE(scip, down, cutoffbound));
-         assert(!upvalid || upinf == SCIPisGE(scip, up, cutoffbound));
+         assert(!downvalid || downinf == SCIPisGE(origprob, down, cutoffbound));
+         assert(!upvalid || upinf == SCIPisGE(origprob, up, cutoffbound));
 
          /* the minimal lower bound of both children is a proved lower bound of the current subtree */
          if( downvalid && upvalid )
@@ -1240,27 +1241,27 @@ SCIP_RETCODE execRelpsprob(
             SCIP_Real pscostscore;
             SCIP_Real score;
 
-            frac = branchcandssol[c] - SCIPfloor(scip, branchcandssol[c]);
+            frac = branchcandssol[c] - SCIPfloor(origprob, branchcandssol[c]);
 
             /* check for a better score */
-            conflictscore = SCIPgetVarConflictScore(scip, branchcands[c]);
-            conflengthscore = SCIPgetVarConflictlengthScore(scip, branchcands[c]);
-            inferencescore = SCIPgetVarAvgInferenceScore(scip, branchcands[c]);
-            cutoffscore = SCIPgetVarAvgCutoffScore(scip, branchcands[c]);
-            pscostscore = SCIPgetBranchScore(scip, branchcands[c], downgain, upgain);
-            score = calcScore(scip, branchruledata, conflictscore, avgconflictscore, conflengthscore, avgconflengthscore,
+            conflictscore = SCIPgetVarConflictScore(origprob, branchcands[c]);
+            conflengthscore = SCIPgetVarConflictlengthScore(origprob, branchcands[c]);
+            inferencescore = SCIPgetVarAvgInferenceScore(origprob, branchcands[c]);
+            cutoffscore = SCIPgetVarAvgCutoffScore(origprob, branchcands[c]);
+            pscostscore = SCIPgetBranchScore(origprob, branchcands[c], downgain, upgain);
+            score = calcScore(origprob, branchruledata, conflictscore, avgconflictscore, conflengthscore, avgconflengthscore,
                inferencescore, avginferencescore, cutoffscore, avgcutoffscore, pscostscore, avgpscostscore, frac);
 
-            if( SCIPisSumGE(scip, score, bestsbscore) )
+            if( SCIPisSumGE(origprob, score, bestsbscore) )
             {
                SCIP_Real fracscore;
                SCIP_Real domainscore;
 
                fracscore = MIN(frac, 1.0 - frac);
                domainscore = -(SCIPvarGetUbLocal(branchcands[c]) - SCIPvarGetLbLocal(branchcands[c]));
-               if( SCIPisSumGT(scip, score, bestsbscore )
-                  || SCIPisSumGT(scip, fracscore, bestsbfracscore)
-                  || (SCIPisSumGE(scip, fracscore, bestsbfracscore) && domainscore > bestsbdomainscore) )
+               if( SCIPisSumGT(origprob, score, bestsbscore )
+                  || SCIPisSumGT(origprob, fracscore, bestsbfracscore)
+                  || (SCIPisSumGE(origprob, fracscore, bestsbfracscore) && domainscore > bestsbdomainscore) )
                {
                   bestsbcand = c;
                   bestsbscore = score;
@@ -1270,9 +1271,9 @@ SCIP_RETCODE execRelpsprob(
             }
 
             /* update pseudo cost values */
-            assert(!SCIPisFeasNegative(scip, frac));
-            SCIP_CALL( SCIPupdateVarPseudocost(scip, branchcands[c], 0.0-frac, downgain, 1.0) );
-            SCIP_CALL( SCIPupdateVarPseudocost(scip, branchcands[c], 1.0-frac, upgain, 1.0) );
+            assert(!SCIPisFeasNegative(origprob, frac));
+            SCIP_CALL( SCIPupdateVarPseudocost(origprob, branchcands[c], 0.0-frac, downgain, 1.0) );
+            SCIP_CALL( SCIPupdateVarPseudocost(origprob, branchcands[c], 1.0-frac, upgain, 1.0) );
 
             SCIPdebugMessage(" -> variable <%s> (solval=%g, down=%g (%+g), up=%g (%+g), score=%g/ %g/%g %g/%g -> %g)\n",
                SCIPvarGetName(branchcands[c]), branchcandssol[c], down, downgain, up, upgain,
@@ -1297,12 +1298,12 @@ SCIP_RETCODE execRelpsprob(
       if( i < ninitcands )
          bestuninitsbscore = initcandscores[i];
       else
-         bestuninitsbscore = -SCIPinfinity(scip);
+         bestuninitsbscore = -SCIPinfinity(origprob);
 
       /* if the best pseudo cost candidate is better than the best uninitialized strong branching candidate,
        * compare it to the best initialized strong branching candidate
        */
-      if( bestpsscore > bestuninitsbscore && SCIPisSumGT(scip, bestpsscore, bestsbscore) )
+      if( bestpsscore > bestuninitsbscore && SCIPisSumGT(origprob, bestpsscore, bestsbscore) )
       {
          bestcand = bestpscand;
 #ifdef SCIP_DEBUG
@@ -1330,35 +1331,35 @@ SCIP_RETCODE execRelpsprob(
 
       /* apply domain reductions */
       if( (nbdchgs >= branchruledata->minbdchgs || ninfprobings >= 5 )
-         && *result != SCIP_CUTOFF && !SCIPisStopped(scip) )
+         && *result != SCIP_CUTOFF && !SCIPisStopped(origprob) )
       {
-         SCIP_CALL( applyBdchgs(scip, bdchgdata, SCIPgetCurrentNode(scip)) );
+         SCIP_CALL( applyBdchgs(origprob, bdchgdata, SCIPgetCurrentNode(origprob)) );
          branchruledata->nresolvesminbdchgs++;
          *result = SCIP_REDUCEDDOM; /* why was this commented out?? */
       }
 
       /* free buffer for the unreliable candidates */
-      SCIPfreeBufferArray(scip, &initcandscores);
-      SCIPfreeBufferArray(scip, &initcands);
+      SCIPfreeBufferArray(origprob, &initcandscores);
+      SCIPfreeBufferArray(origprob, &initcands);
    }
 
    /* if no domain could be reduced, create the branching */
    if( *result != SCIP_CUTOFF && *result != SCIP_REDUCEDDOM
-      && *result != SCIP_CONSADDED && !SCIPisStopped(scip) )
+      && *result != SCIP_CONSADDED && !SCIPisStopped(origprob) )
    {
       assert(*result == SCIP_DIDNOTRUN);
       assert(0 <= bestcand && bestcand < nbranchcands);
-      assert(SCIPisLT(scip, provedbound, cutoffbound));
+      assert(SCIPisLT(origprob, provedbound, cutoffbound));
 
 #ifdef SCIP_DEBUG
       SCIPdebugMessage(" -> best: <%s> (strongbranch = %ud)\n", SCIPvarGetName(branchcands[bestcand]), bestisstrongbranch);
 #endif
       *branchvar = branchcands[bestcand];
-      SCIP_CALL( incNVarBranchings(scip, branchrule, *branchvar) );
+      SCIP_CALL( incNVarBranchings(origprob, branchrule, *branchvar) );
    }
 
    /* free data structure for bound change infos */
-   SCIP_CALL( freeBdchgData(scip, bdchgdata) );
+   SCIP_CALL( freeBdchgData(origprob, bdchgdata) );
 
    return SCIP_OKAY;
 }
@@ -1448,102 +1449,105 @@ SCIP_DECL_BRANCHEXITSOL(branchExitsolRelpsprob)
  */
 
 /** creates the reliable pseudo cost braching rule and includes it in SCIP */
-SCIP_RETCODE SCIPincludeBranchruleRelpsprob(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeBranchruleRelpsprob(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
-   SCIP* origscip;
+   SCIP* origprob;
+   SCIP* masterprob;
    SCIP_BRANCHRULE* branchrule;
    SCIP_BRANCHRULEDATA* branchruledata;
 
-   /* get original problem */
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
+   /* get original and master problem */
+   origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
+   masterprob = GCGgetMasterprob(gcg);
+   assert(masterprob != NULL);
 
    /* create relpsprob branching rule data */
-   SCIP_CALL( SCIPallocMemory(scip, &branchruledata) );
+   SCIP_CALL( SCIPallocMemory(masterprob, &branchruledata) );
 
    /* include branching rule */
-   SCIP_CALL( SCIPincludeBranchruleBasic(scip, &branchrule, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
+   SCIP_CALL( SCIPincludeBranchruleBasic(masterprob, &branchrule, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
             BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata) );
    assert(branchrule != NULL);
 
    /* set non fundamental callbacks via setter functions */
-   SCIP_CALL( SCIPsetBranchruleFree(scip, branchrule, branchFreeRelpsprob) );
-   SCIP_CALL( SCIPsetBranchruleInitsol(scip, branchrule, branchInitsolRelpsprob) );
-   SCIP_CALL( SCIPsetBranchruleExitsol(scip, branchrule, branchExitsolRelpsprob) );
+   SCIP_CALL( SCIPsetBranchruleFree(masterprob, branchrule, branchFreeRelpsprob) );
+   SCIP_CALL( SCIPsetBranchruleInitsol(masterprob, branchrule, branchInitsolRelpsprob) );
+   SCIP_CALL( SCIPsetBranchruleExitsol(masterprob, branchrule, branchExitsolRelpsprob) );
 
    /* relpsprob branching rule parameters */
-   SCIP_CALL( SCIPaddRealParam(origscip,
+   SCIP_CALL( SCIPaddRealParam(origprob,
          "branching/relpsprob/conflictweight",
          "weight in score calculations for conflict score",
          &branchruledata->conflictweight, TRUE, DEFAULT_CONFLICTWEIGHT, SCIP_REAL_MIN, SCIP_REAL_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(origscip,
+   SCIP_CALL( SCIPaddRealParam(origprob,
          "branching/relpsprob/conflictlengthweight",
          "weight in score calculations for conflict length score",
          &branchruledata->conflengthweight, TRUE, DEFAULT_CONFLENGTHWEIGHT, SCIP_REAL_MIN, SCIP_REAL_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(origscip,
+   SCIP_CALL( SCIPaddRealParam(origprob,
          "branching/relpsprob/inferenceweight",
          "weight in score calculations for inference score",
          &branchruledata->inferenceweight, TRUE, DEFAULT_INFERENCEWEIGHT, SCIP_REAL_MIN, SCIP_REAL_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(origscip,
+   SCIP_CALL( SCIPaddRealParam(origprob,
          "branching/relpsprob/cutoffweight",
          "weight in score calculations for cutoff score",
          &branchruledata->cutoffweight, TRUE, DEFAULT_CUTOFFWEIGHT, SCIP_REAL_MIN, SCIP_REAL_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(origscip,
+   SCIP_CALL( SCIPaddRealParam(origprob,
          "branching/relpsprob/pscostweight",
          "weight in score calculations for pseudo cost score",
          &branchruledata->pscostweight, TRUE, DEFAULT_PSCOSTWEIGHT, SCIP_REAL_MIN, SCIP_REAL_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(origscip,
+   SCIP_CALL( SCIPaddRealParam(origprob,
          "branching/relpsprob/minreliable",
          "minimal value for minimum pseudo cost size to regard pseudo cost value as reliable",
          &branchruledata->minreliable, TRUE, DEFAULT_MINRELIABLE, 0.0, SCIP_REAL_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(origscip,
+   SCIP_CALL( SCIPaddRealParam(origprob,
          "branching/relpsprob/maxreliable",
          "maximal value for minimum pseudo cost size to regard pseudo cost value as reliable",
          &branchruledata->maxreliable, TRUE, DEFAULT_MAXRELIABLE, 0.0, SCIP_REAL_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(origscip,
+   SCIP_CALL( SCIPaddRealParam(origprob,
          "branching/relpsprob/iterquot",
          "maximal fraction of branching LP iterations compared to node relaxation LP iterations",
          &branchruledata->iterquot, FALSE, DEFAULT_ITERQUOT, 0.0, SCIP_REAL_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(origscip,
+   SCIP_CALL( SCIPaddIntParam(origprob,
          "branching/relpsprob/iterofs",
          "additional number of allowed LP iterations",
          &branchruledata->iterofs, FALSE, DEFAULT_ITEROFS, 0, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(origscip,
+   SCIP_CALL( SCIPaddIntParam(origprob,
          "branching/relpsprob/maxlookahead",
          "maximal number of further variables evaluated without better score",
          &branchruledata->maxlookahead, TRUE, DEFAULT_MAXLOOKAHEAD, 1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(origscip,
+   SCIP_CALL( SCIPaddIntParam(origprob,
          "branching/relpsprob/initcand",
          "maximal number of candidates initialized with strong branching per node",
          &branchruledata->initcand, FALSE, DEFAULT_INITCAND, 0, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(origscip,
+   SCIP_CALL( SCIPaddIntParam(origprob,
          "branching/relpsprob/maxbdchgs",
          "maximal number of bound tightenings before the node is immediately reevaluated (-1: unlimited)",
          &branchruledata->maxbdchgs, TRUE, DEFAULT_MAXBDCHGS, -1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(origscip,
+   SCIP_CALL( SCIPaddIntParam(origprob,
          "branching/relpsprob/minbdchgs",
          "minimal number of bound tightenings before bound changes are applied",
          &branchruledata->minbdchgs, TRUE, DEFAULT_MINBDCHGS, 1, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(origscip,
+   SCIP_CALL( SCIPaddBoolParam(origprob,
          "branching/relpsprob/uselp",
          "shall the LP be solved during probing? (TRUE)",
          &branchruledata->uselp, FALSE, DEFAULT_USELP, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(origscip,
+   SCIP_CALL( SCIPaddRealParam(origprob,
          "branching/relpsprob/reliability",
          "reliability value for probing",
          &branchruledata->reliability, FALSE, DEFAULT_RELIABILITY, 0.0, 1.0, NULL, NULL) );
 
    /* notify cons_integralorig about the original variable branching rule */
-   SCIP_CALL( GCGconsIntegralorigAddBranchrule(scip, branchrule) );
+   SCIP_CALL( GCGconsIntegralorigAddBranchrule(gcg, branchrule) );
 
    return SCIP_OKAY;
 }
 
 /** execution reliability pseudo cost probing branching with the given branching candidates */
-SCIP_RETCODE SCIPgetRelpsprobBranchVar(
-   SCIP*                 scip,               /**< SCIP data structure */
+SCIP_RETCODE GCGgetRelpsprobBranchVar(
+   GCG*                  gcg,                /**< SCIP data structure */
    SCIP_VAR**            branchcands,        /**< brancing candidates */
    SCIP_Real*            branchcandssol,     /**< solution value for the branching candidates */
    int                   nbranchcands,       /**< number of branching candidates */
@@ -1553,19 +1557,20 @@ SCIP_RETCODE SCIPgetRelpsprobBranchVar(
    )
 {
    SCIP_BRANCHRULE* branchrule;
-   SCIP* origscip;
+   SCIP* masterprob;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(result != NULL);
 
+   masterprob = GCGgetMasterprob(gcg);
+   assert(masterprob != NULL);
+
    /* find branching rule */
-   branchrule = SCIPfindBranchrule(scip, BRANCHRULE_NAME);
+   branchrule = SCIPfindBranchrule(masterprob, BRANCHRULE_NAME);
    assert(branchrule != NULL);
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
 
    /* execute branching rule */
-   SCIP_CALL( execRelpsprob(origscip, branchrule, branchcands, branchcandssol, nbranchcands, nvars, result, branchvar) );
+   SCIP_CALL( execRelpsprob(gcg, branchrule, branchcands, branchcandssol, nbranchcands, nvars, result, branchvar) );
 
    return SCIP_OKAY;
 }

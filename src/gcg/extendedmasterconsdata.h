@@ -36,11 +36,10 @@
 #ifndef GCG_EXTENDEDMASTERCONSDATA_H_
 #define GCG_EXTENDEDMASTERCONSDATA_H_
 
-#include "def.h"
 
-#include "pricer_gcg.h"
-#include "struct_extendedmasterconsdata.h"
-#include "type_extendedmasterconsdata.h"
+
+#include "gcg/pricer_gcg.h"
+#include "gcg/type_extendedmasterconsdata.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,7 +52,7 @@ extern "C" {
 
 /** update the extended master cons with the new dual value */
 SCIP_RETCODE GCGextendedmasterconsUpdateDualValue(
-   SCIP*                         masterscip,             /**< master scip */
+   GCG*                          gcg,                    /**< master scip */
    GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata, /**< extended master cons data */
    SCIP_Real                     dualvalue               /**< dual value */
    );
@@ -61,24 +60,24 @@ SCIP_RETCODE GCGextendedmasterconsUpdateDualValue(
 /** apply a pricing modification */
 SCIP_RETCODE GCGpricingmodificationApply(
    SCIP*                         pricingscip,            /**< pricing scip */
-   GCG_PRICINGMODIFICATION       pricingmodification     /**< pricing modification */
+   GCG_PRICINGMODIFICATION*      pricingmodification     /**< pricing modification */
    );
 
 /** apply all pricing modifications */
 SCIP_RETCODE GCGextendedmasterconsApplyPricingModifications(
-   SCIP*                         masterscip,             /**< master scip */
+   GCG*                          gcg,                    /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata  /**< extended master cons data */
    );
 
 /** undo a pricing modification */
 SCIP_RETCODE GCGpricingmodificationUndo(
    SCIP*                         pricingscip,            /**< pricing scip */
-   GCG_PRICINGMODIFICATION       pricingmodification     /**< pricing modification */
+   GCG_PRICINGMODIFICATION*      pricingmodification     /**< pricing modification */
    );
 
 /** undo all pricing modifications */
 SCIP_RETCODE GCGextendedmasterconsUndoPricingModifications(
-   SCIP*                         masterscip,             /**< master scip */
+   GCG*                          gcg,                    /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata  /**< extended master cons data */
    );
 

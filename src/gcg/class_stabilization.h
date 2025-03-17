@@ -36,9 +36,8 @@
 #ifndef CLASS_STABILIZATION_H_
 #define CLASS_STABILIZATION_H_
 
-#include "objscip/objscip.h"
-#include "class_pricingtype.h"
-#include "type_extendedmasterconsdata.h"
+#include "gcg/class_pricingtype.h"
+#include "gcg/type_extendedmasterconsdata.h"
 #include <scip/type_misc.h>
 #include <scip/type_retcode.h>
 
@@ -52,7 +51,8 @@ namespace gcg {
 class Stabilization
 {
 private:
-   SCIP* scip_;
+   GCG* gcg;
+   SCIP* masterprob;
    SCIP_Real* stabcenterconsvals;
    int stabcenterconsvalssize;
    int nstabcenterconsvals;
@@ -99,7 +99,7 @@ private:
 public:
    /** constructor */
    Stabilization(
-      SCIP*              scip,               /**< SCIP data structure */
+      GCG*               gcgstruct,          /**< SCIP data structure */
       PricingType*       pricingtype,        /**< the pricing type when the stabilization should run */
       SCIP_Bool          hybridascent        /**< enable hybridization of smoothing with an ascent method? */
    );

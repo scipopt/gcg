@@ -35,24 +35,24 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include "scip/scip.h"
-#include "stat.h"
-#include "scip_misc.h"
-#include "pub_decomp.h"
-#include "cons_decomp.h"
-#include "struct_detector.h"
-#include "pub_gcgvar.h"
-#include "pricer_gcg.h"
-#include "gcg.h"
-#include "relax_gcg.h"
+#include "gcg/stat.h"
+#include "gcg/scip_misc.h"
+#include "gcg/pub_decomp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/struct_detector.h"
+#include "gcg/pub_gcgvar.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/gcg.h"
+#include "gcg/relax_gcg.h"
 
 
 /** prints information about the best decomposition*/
 SCIP_RETCODE GCGwriteDecompositionData(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_DECOMP* decomposition;
-
+   SCIP* scip;
    GCG_DETECTOR* detector;
    GCG_DECTYPE type;
    const char* typeName;
@@ -64,9 +64,10 @@ SCIP_RETCODE GCGwriteDecompositionData(
    int* nvarsinblocks;
    int* nconssinblocks;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   decomposition = GCGgetBestDecomp(scip, TRUE);
+   scip = GCGgetOrigprob(gcg);
+   decomposition = GCGgetBestDecomp(gcg, TRUE);
    type = GCGdecompGetType(decomposition);
    typeName = GCGdecompGetStrType(type);
 
@@ -97,21 +98,23 @@ SCIP_RETCODE GCGwriteDecompositionData(
       SCIPinfoMessage(scip, NULL, "%d:\t\t%d\t\t%d\n", i, nvarsinblocks[i], nconssinblocks[i]);
    }
 
-   GCGdecompFree(scip, &decomposition);
+   GCGdecompFree(gcg, &decomposition);
 
    return SCIP_OKAY;
 }
 
 /** prints additional solving statistics */
 SCIP_RETCODE GCGwriteSolvingDetails(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_CLOCK* rootnodetime;
+   SCIP* scip;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   rootnodetime = GCGgetRootNodeTime(scip);
+   scip = GCGgetOrigprob(gcg);
+   rootnodetime = GCGgetRootNodeTime(gcg);
    SCIPinfoMessage(scip, NULL, "Solving Details    :\n");
    SCIPinfoMessage(scip, NULL, "  time in root node: %10.2f\n", SCIPgetClockTime(scip, rootnodetime));
 
@@ -120,9 +123,10 @@ SCIP_RETCODE GCGwriteSolvingDetails(
 
 /** prints information about the creation of the Vars*/
 SCIP_RETCODE GCGwriteVarCreationDetails(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
+   SCIP* masterprob;
    SCIP_VAR** vars;
    SCIP_SOL* sol;
    SCIP_Real solvingtime;
@@ -135,18 +139,19 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
    int createiterstat[10];
    int m;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   vars = SCIPgetVars(scip);
-   nvars = SCIPgetNVars(scip);
-   nnodes = SCIPgetNNodes(scip);
-   sol = SCIPgetBestSol(scip);
+   masterprob = GCGgetMasterprob(gcg);
+   vars = SCIPgetVars(masterprob);
+   nvars = SCIPgetNVars(masterprob);
+   nnodes = SCIPgetNNodes(masterprob);
+   sol = SCIPgetBestSol(masterprob);
 
-   solvingtime = SCIPgetSolvingTime(scip);
+   solvingtime = SCIPgetSolvingTime(masterprob);
    assert(nnodes < INT_MAX);
-   SCIP_CALL( SCIPallocBufferArray(scip, &createnodestat, (int)nnodes) ); /* lld doesn't work here */
+   SCIP_CALL( SCIPallocBufferArray(masterprob, &createnodestat, (int)nnodes) ); /* lld doesn't work here */
 
-   SCIPinfoMessage(scip, NULL, "AddedVarDetails:\n");
+   SCIPinfoMessage(masterprob, NULL, "AddedVarDetails:\n");
 
    for( i = 0; i < 10; i++ )
    {
@@ -157,7 +162,7 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
    nodes[0] = 0;
    nodes[1] = 0;
 
-   SCIPinfoMessage(scip, NULL, "VAR: name\tnode\ttime\titer\trootredcostcall\tredcost\tgap\tsolval\trootlpsolval\n");
+   SCIPinfoMessage(masterprob, NULL, "VAR: name\tnode\ttime\titer\trootredcostcall\tredcost\tgap\tsolval\trootlpsolval\n");
    for( i = 0; i < nvars; i++ )
    {
       SCIP_Real redcost;
@@ -178,23 +183,23 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
       rootlpsolval = NAN;
 
 #ifdef SCIP_STATISTIC
-      rootlpsolval = SCIPgetSolVal(scip, GCGmasterGetRootLPSol(scip), vars[i]);
+      rootlpsolval = SCIPgetSolVal(masterprob, GCGmasterGetRootLPSol(gcg), vars[i]);
 #endif
-      SCIPinfoMessage(scip, NULL, "VAR: <%s>\t%lld\t%f\t%lld\t%lld\t%f\t%f\t%f\t%f\n", SCIPvarGetName(vars[i]), node, time,
-         iteration, rootredcostcall, redcost, gap, SCIPgetSolVal(scip, sol, vars[i]), rootlpsolval);
+      SCIPinfoMessage(masterprob, NULL, "VAR: <%s>\t%lld\t%f\t%lld\t%lld\t%f\t%f\t%f\t%f\n", SCIPvarGetName(vars[i]), node, time,
+         iteration, rootredcostcall, redcost, gap, SCIPgetSolVal(masterprob, sol, vars[i]), rootlpsolval);
 
-      if( SCIPisEQ(scip, SCIPgetSolVal(scip, sol, vars[i]), 0.0) )
+      if( SCIPisEQ(masterprob, SCIPgetSolVal(masterprob, sol, vars[i]), 0.0) )
       {
          continue;
       }
       else
       {
          SCIPdebugMessage("var <%s> has sol value %f (%lld, %f)\n", SCIPvarGetName(vars[i]),
-            SCIPgetSolVal(scip, sol, vars[i]), node, time);
+            SCIPgetSolVal(masterprob, sol, vars[i]), node, time);
       }
 
       n = (int)(100 * time / solvingtime) % 10;
-      m = (int)(100 * iteration / SCIPgetNLPIterations(scip)) % 10;
+      m = (int)(100 * iteration / SCIPgetNLPIterations(masterprob)) % 10;
       createiterstat[n]++;
       createtimestat[m]++;
 
@@ -208,20 +213,20 @@ SCIP_RETCODE GCGwriteVarCreationDetails(
       }
    }
 
-   SCIPinfoMessage(scip, NULL, "Root node:\tAdded Vars %d\n", nodes[0]);
-   SCIPinfoMessage(scip, NULL, "Leftover nodes:\tAdded Vars %d\n", nodes[1]);
+   SCIPinfoMessage(masterprob, NULL, "Root node:\tAdded Vars %d\n", nodes[0]);
+   SCIPinfoMessage(masterprob, NULL, "Leftover nodes:\tAdded Vars %d\n", nodes[1]);
 
    for( i = 0; i < 10; i++ )
    {
-      SCIPinfoMessage(scip, NULL, "Time %d-%d%%: Vars: %lld \n", 10 * i, 10 * (i + 1), createtimestat[i]);
+      SCIPinfoMessage(masterprob, NULL, "Time %d-%d%%: Vars: %lld \n", 10 * i, 10 * (i + 1), createtimestat[i]);
    }
 
    for( i = 0; i < 10; i++ )
    {
-      SCIPinfoMessage(scip, NULL, "Iter %d-%d%%: Vars: %d \n", 10 * i, 10 * (i + 1), createiterstat[i]);
+      SCIPinfoMessage(masterprob, NULL, "Iter %d-%d%%: Vars: %d \n", 10 * i, 10 * (i + 1), createiterstat[i]);
    }
 
-   SCIPfreeBufferArray(scip, &createnodestat);
+   SCIPfreeBufferArray(masterprob, &createnodestat);
 
    return SCIP_OKAY;
 }

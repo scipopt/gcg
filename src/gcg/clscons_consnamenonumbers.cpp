@@ -33,17 +33,17 @@ ould have received a copy of the GNU Lesser General Public License  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "clscons_consnamenonumbers.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
+#include "gcg/clscons_consnamenonumbers.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
 #include <vector>
 #include <stdio.h>
 #include <sstream>
 
-#include "class_detprobdata.h"
+#include "gcg/class_detprobdata.h"
 
-#include "class_conspartition.h"
-#include "scip_misc.h"
+#include "gcg/class_conspartition.h"
+#include "gcg/scip_misc.h"
 
 /* classifier properties */
 #define CLSCONS_NAME                  "consnamenonumbers"       /**< name of classifier */
@@ -110,13 +110,15 @@ void removeDigits(
 static
 GCG_DECL_CONSCLASSIFY(classifierClassify) {
    gcg::DETPROBDATA* detprobdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+
    if( transformed )
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(gcg);
    }
    else
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
    }
 
    std::vector < std::string > consnamesToCompare( detprobdata->getNConss(), "" );
@@ -161,7 +163,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
    }
 
    /* secondly, use these information to create a ConsPartition */
-   classifier = new gcg::ConsPartition(scip, "consnames", (int) nameClasses.size(), detprobdata->getNConss());
+   classifier = new gcg::ConsPartition(gcg, "consnames", (int) nameClasses.size(), detprobdata->getNConss());
 
    /* set all class names and descriptions */
    for( int c = 0; c < classifier->getNClasses(); ++ c )
@@ -178,7 +180,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
       classifier->assignConsToClass(i, classForCons[i]);
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d different constraint classes \n", classifier->getName(), classifier->getNClasses());
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier \"%s\" yields a classification with %d different constraint classes \n", classifier->getName(), classifier->getNClasses());
 
    detprobdata->addConsPartition(classifier);
    return SCIP_OKAY;
@@ -188,13 +190,13 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
  * classifier specific interface methods
  */
 
-SCIP_RETCODE SCIPincludeConsClassifierForConsnamesDigitFreeIdentical(
-   SCIP *scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeConsClassifierForConsnamesDigitFreeIdentical(
+   GCG*                 gcg                /**< GCG data structure */
 ) {
    GCG_CLASSIFIERDATA* classifierdata = NULL;
 
    SCIP_CALL(
-      GCGincludeConsClassifier(scip, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
+      GCGincludeConsClassifier(gcg, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
                                classifierFree, classifierClassify));
 
    return SCIP_OKAY;

@@ -37,9 +37,9 @@
 #define GCG_HEUR_ORIGDIVING_H__
 
 
-#include "def.h"
+
 #include "scip/scip.h"
-#include "type_origdiving.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,7 +61,7 @@ void GCGheurSetDivingDataOrig(
 /** creates an original diving heuristic and includes it in GCG */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeDivingHeurOrig(
-   SCIP*                    scip,                   /**< SCIP data structure */
+   GCG*                     gcg,                    /**< GCG data structure */
    SCIP_HEUR**              heur,                   /**< pointer to diving heuristic */
    const char*              name,                   /**< name of primal heuristic */
    const char*              desc,                   /**< description of primal heuristic */
@@ -83,8 +83,8 @@ SCIP_RETCODE GCGincludeDivingHeurOrig(
 
 /** creates event handler for origdiving event */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeEventHdlrOrigdiving(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeEventHdlrOrigdiving(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

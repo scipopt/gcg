@@ -38,7 +38,7 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,7 +58,7 @@ extern "C" {
  */
 GCG_EXPORT
 SCIP_RETCODE GCGsetHeuristics(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_PARAMSETTING     paramsetting        /**< parameter settings */
    );
 

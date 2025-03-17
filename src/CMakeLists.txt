@@ -80,6 +80,7 @@ set(gcgsources
     gcg/event_mastersol.c
     gcg/event_relaxsol.c
     gcg/event_solvingstats.c
+    gcg/gcg.cpp
     gcg/gcg_general.c
     gcg/gcgcol.c
     gcg/gcggithash.c
@@ -89,6 +90,7 @@ set(gcgsources
     gcg/gcgsepa.c
     gcg/gcgsort.c
     gcg/gcgvar.c
+    gcg/gcgvarhistory.c
     gcg/heur_gcgcoefdiving.c
     gcg/heur_gcgdins.c
     gcg/heur_gcgfeaspump.c
@@ -117,7 +119,6 @@ set(gcgsources
     gcg/heur_xprins.c
     gcg/extendedmasterconsdata.c
     gcg/masterplugins.c
-    gcg/gcgvarhistory.c
     gcg/misc.c
     gcg/miscvisualization.cpp
     gcg/nodesel_master.c
@@ -267,6 +268,8 @@ set(gcgheaders
     gcg/pub_clsvar.h
     gcg/pub_colpool.h
     gcg/pub_decomp.h
+    gcg/pub_gcg.h
+    gcg/pub_gcg.hpp
     gcg/pub_gcgcol.h
     gcg/pub_gcgheur.h
     gcg/pub_gcgsepa.h
@@ -308,6 +311,7 @@ set(gcgheaders
     gcg/struct_colpool.h
     gcg/struct_decomp.h
     gcg/struct_detector.h
+    gcg/struct_gcg.h
     gcg/struct_gcgcol.h
     gcg/struct_gcgpqueue.h
     gcg/struct_extendedmasterconsdata.h
@@ -324,8 +328,10 @@ set(gcgheaders
     gcg/type_consclassifier.h
     gcg/type_decomp.h
     gcg/type_detector.h
+    gcg/type_gcg.h
     gcg/type_gcgcol.h
     gcg/type_gcgpqueue.h
+    gcg/type_gcgpricer.h
     gcg/type_locks.h
     gcg/type_extendedmasterconsdata.h
     gcg/type_masterdiving.h
@@ -418,22 +424,21 @@ if(HIGHS_FOUND)
    )
 endif()
 
-if(HMETIS_FOUND)
-   if(NOT WIN32)
-      set(gcgsources ${gcgsources}
-         gcg/dec_hcgpartition.cpp
-         gcg/dec_hrcgpartition.cpp
-         gcg/dec_hrgpartition.cpp
-      )
-      set(gcgheaders ${gcgheaders}
-         gcg/dec_hcgpartition.h
-         gcg/dec_hrcgpartition.h
-         gcg/dec_hrgpartition.h
-      )
-      include_directories(${CMAKE_CURRENT_BINARY_DIR})
-      add_definitions(-DHMETIS_HEADER)
-      configure_file(hmetis.h.in hmetis.h)
-   endif()
+if(HMETIS_FOUND AND NOT WIN32)
+    add_definitions(-DHMETIS_HEADER)
+    configure_file(hmetis.h.in gcg/hmetis.h)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR})
+    set(gcgsources ${gcgsources}
+        gcg/dec_hcgpartition.cpp
+        gcg/dec_hrcgpartition.cpp
+        gcg/dec_hrgpartition.cpp
+    )
+    set(gcgheaders ${gcgheaders}
+        gcg/dec_hcgpartition.h
+        gcg/dec_hrcgpartition.h
+        gcg/dec_hrgpartition.h
+        ${CMAKE_CURRENT_BINARY_DIR}/gcg/hmetis.h
+    )
 endif()
 
 if(JANSSON_FOUND)
@@ -497,6 +502,9 @@ endif()
 add_executable(GCG::GCG ALIAS gcg)
 add_library(GCG::libgcg ALIAS libgcg)
 
+target_compile_options(gcg PRIVATE ${GCG_COMP_OPTIONS})
+target_compile_options(libgcg PRIVATE ${GCG_COMP_OPTIONS})
+
 include(GenerateExportHeader)
 generate_export_header(libgcg BASE_NAME gcg EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/gcg/gcg_export.h)
 target_compile_definitions(gcg PRIVATE GCG_STATIC_DEFINE)
@@ -535,11 +543,6 @@ install(FILES ${gcgheaders} DESTINATION include/gcg)
 # separate installation of graph headers to preserve the folder structure
 # see e.g. here: https://stackoverflow.com/a/11097012
 install(FILES ${gcggraphheaders} DESTINATION include/graph)
-if(NOT WIN32)
-   if(HMETIS_FOUND)
-      install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hmetis.h DESTINATION include/gcg)
-   endif()
-endif()
 
 # install the binary and the library to appropriate locations and add them to an export group
 install(TARGETS gcg libgcg EXPORT gcg-targets

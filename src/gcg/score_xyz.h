@@ -38,7 +38,7 @@
 
 
 #include "scip/scip.h"
-#include "gcg.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +47,7 @@ extern "C" {
 /** creates the xyz score type and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeScoreXyz(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

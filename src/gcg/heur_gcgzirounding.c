@@ -35,9 +35,9 @@
 
 #include <string.h>
 
-#include "heur_gcgzirounding.h"
-#include "gcg.h"
-#include "relax_gcg.h"
+#include "gcg/heur_gcgzirounding.h"
+#include "gcg/gcg.h"
+#include "gcg/relax_gcg.h"
 
 #define HEUR_NAME             "gcgzirounding"
 #define HEUR_DESC             "rounding heuristic on original variables as suggested by C. Wallace taking row slacks and bounds into account"
@@ -64,6 +64,7 @@
 /** primal heuristic data */
 struct SCIP_HeurData
 {
+   GCG*                  gcg;                /**< GCG data structure */
    SCIP_SOL*             sol;                /**< working solution */
    SCIP_Longint          lastlp;             /**< the number of the last LP for which ZIRounding was called */
    int                   maxroundingloops;   /**< limits rounding loops in execution */
@@ -468,8 +469,12 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
    assert(result != NULL);
 
+   /* get heuristic data */
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(heurdata->gcg);
    assert(masterprob != NULL);
 
    *result = SCIP_DIDNOTRUN;
@@ -490,10 +495,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
    /* only call heuristic if an optimal LP-solution is at hand */
    if( SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
       return SCIP_OKAY;
-
-   /* get heuristic data */
-   heurdata = SCIPheurGetData(heur);
-   assert(heurdata != NULL);
 
    /* Do not call heuristic if deactivation check is enabled and percentage of found solutions in relation
     * to number of calls falls below heurdata->stoppercentage */
@@ -875,40 +876,42 @@ SCIP_DECL_HEUREXEC(heurExecGcgzirounding)
  */
 
 /** creates the GCG zirounding primal heuristic and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurGcgzirounding(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeHeurGcgzirounding(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_HEURDATA* heurdata;
    SCIP_HEUR* heur;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* create GCG zirounding primal heuristic data */
-   SCIP_CALL( SCIPallocBlockMemory(scip, &heurdata) );
+   SCIP_CALL( SCIPallocBlockMemory(origprob, &heurdata) );
+   heurdata->gcg = gcg;
 
    /* include primal heuristic */
-   SCIP_CALL( SCIPincludeHeurBasic(scip, &heur,
+   SCIP_CALL( SCIPincludeHeurBasic(origprob, &heur,
          HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, HEUR_TIMING, HEUR_USESSUBSCIP, heurExecGcgzirounding, heurdata) );
 
    assert(heur != NULL);
 
    /* set non-NULL pointers to callback methods */
-   SCIP_CALL( SCIPsetHeurFree(scip, heur, heurFreeGcgzirounding) );
-   SCIP_CALL( SCIPsetHeurInit(scip, heur, heurInitGcgzirounding) );
-   SCIP_CALL( SCIPsetHeurExit(scip, heur, heurExitGcgzirounding) );
-   SCIP_CALL( SCIPsetHeurInitsol(scip, heur, heurInitsolGcgzirounding) );
+   SCIP_CALL( SCIPsetHeurFree(origprob, heur, heurFreeGcgzirounding) );
+   SCIP_CALL( SCIPsetHeurInit(origprob, heur, heurInitGcgzirounding) );
+   SCIP_CALL( SCIPsetHeurExit(origprob, heur, heurExitGcgzirounding) );
+   SCIP_CALL( SCIPsetHeurInitsol(origprob, heur, heurInitsolGcgzirounding) );
 
    /* add GCG zirounding primal heuristic parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/gcgzirounding/maxroundingloops",
+   SCIP_CALL( SCIPaddIntParam(origprob, "heuristics/gcgzirounding/maxroundingloops",
          "determines maximum number of rounding loops",
          &heurdata->maxroundingloops, TRUE, DEFAULT_MAXROUNDINGLOOPS, 0, INT_MAX, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/gcgzirounding/stopziround",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "heuristics/gcgzirounding/stopziround",
          "flag to determine if Zirounding is deactivated after a certain percentage of unsuccessful calls",
          &heurdata->stopziround, TRUE, DEFAULT_STOPZIROUND, NULL, NULL) );
-   SCIP_CALL( SCIPaddRealParam(scip,"heuristics/gcgzirounding/stoppercentage",
+   SCIP_CALL( SCIPaddRealParam(origprob,"heuristics/gcgzirounding/stoppercentage",
          "if percentage of found solutions falls below this parameter, Zirounding will be deactivated",
          &heurdata->stoppercentage, TRUE, DEFAULT_STOPPERCENTAGE, 0.0, 1.0, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/gcgzirounding/minstopncalls",
+   SCIP_CALL( SCIPaddIntParam(origprob, "heuristics/gcgzirounding/minstopncalls",
          "determines the minimum number of calls before percentage-based deactivation of"
          " Zirounding is applied", &heurdata->minstopncalls, TRUE, DEFAULT_MINSTOPNCALLS, 1, INT_MAX, NULL, NULL) );
 

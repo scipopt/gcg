@@ -36,10 +36,10 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_gcglinesdiving.h"
-#include "heur_origdiving.h"
-#include "gcg.h"
-#include "pricer_gcg.h"
+#include "gcg/heur_gcglinesdiving.h"
+#include "gcg/heur_origdiving.h"
+#include "gcg/gcg.h"
+#include "gcg/pricer_gcg.h"
 
 
 #define HEUR_NAME             "gcglinesdiving"
@@ -72,7 +72,7 @@ struct GCG_DivingData
 /** get relaxation solution of root node (in original variables) */
 static
 SCIP_RETCODE getRootRelaxSol(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_SOL**            rootsol             /**< pointer to store root relaxation solution */
    )
 {
@@ -83,7 +83,7 @@ SCIP_RETCODE getRootRelaxSol(
    int i;
 
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(gcg);
    assert(masterprob != NULL);
 
    /* allocate memory for master root LP solution */
@@ -99,7 +99,7 @@ SCIP_RETCODE getRootRelaxSol(
       SCIP_CALL( SCIPsetSolVal(masterprob, masterrootsol, mastervars[i], SCIPvarGetRootSol(mastervars[i])) );
 
    /* calculate original root LP solution */
-   SCIP_CALL( GCGtransformMastersolToOrigsol(scip, masterrootsol, rootsol, TRUE, NULL) );
+   SCIP_CALL( GCGtransformMastersolToOrigsol(gcg, masterrootsol, rootsol, TRUE, NULL) );
 
    /* free memory */
    SCIP_CALL( SCIPfreeSol(masterprob, &masterrootsol) );
@@ -119,12 +119,11 @@ GCG_DECL_DIVINGFREE(heurFreeGcglinesdiving) /*lint --e{715}*/
    GCG_DIVINGDATA* divingdata;
 
    assert(heur != NULL);
-   assert(scip != NULL);
 
    /* free diving rule specific data */
    divingdata = GCGheurGetDivingDataOrig(heur);
    assert(divingdata != NULL);
-   SCIPfreeMemory(scip, &divingdata);
+   SCIPfreeMemory(GCGgetOrigprob(gcg), &divingdata);
    GCGheurSetDivingDataOrig(heur, NULL);
 
    return SCIP_OKAY;
@@ -156,6 +155,7 @@ static
 GCG_DECL_DIVINGEXIT(heurExitGcglinesdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    GCG_DIVINGDATA* divingdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    assert(heur != NULL);
 
@@ -167,7 +167,7 @@ GCG_DECL_DIVINGEXIT(heurExitGcglinesdiving) /*lint --e{715}*/
 
    /* free root relaxation solution */
    if( divingdata->rootsol != NULL )
-      SCIP_CALL( SCIPfreeSol(scip, &divingdata->rootsol) );
+      SCIP_CALL( SCIPfreeSol(origprob, &divingdata->rootsol) );
 
    return SCIP_OKAY;
 }
@@ -189,7 +189,7 @@ GCG_DECL_DIVINGINITEXEC(heurInitexecGcglinesdiving) /*lint --e{715}*/
    if( divingdata->firstrun )
    {
       assert(divingdata->rootsol == NULL);
-      SCIP_CALL( getRootRelaxSol(scip, &divingdata->rootsol) );
+      SCIP_CALL( getRootRelaxSol(gcg, &divingdata->rootsol) );
       assert(divingdata->rootsol != NULL);
       divingdata->firstrun = FALSE;
    }
@@ -213,9 +213,10 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcglinesdiving) /*lint --e{715}*/
    int nlpcands;
    SCIP_Real bestdistquot;
    int c;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* check preconditions */
-   assert(scip != NULL);
+   assert(origprob != NULL);
    assert(heur != NULL);
    assert(bestcand != NULL);
    assert(bestcandmayround != NULL);
@@ -227,12 +228,12 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcglinesdiving) /*lint --e{715}*/
    assert(divingdata->rootsol != NULL);
 
    /* get fractional variables that should be integral */
-   SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, NULL, &nlpcands, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetExternBranchCands(origprob, &lpcands, &lpcandssol, NULL, &nlpcands, NULL, NULL, NULL, NULL) );
    assert(lpcands != NULL);
    assert(lpcandssol != NULL);
 
    *bestcandmayround = TRUE;
-   bestdistquot = SCIPinfinity(scip);
+   bestdistquot = SCIPinfinity(origprob);
 
    /* get best candidate */
    for( c = 0; c < nlpcands; ++c )
@@ -255,22 +256,22 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcglinesdiving) /*lint --e{715}*/
           continue;
 
       solval = lpcandssol[c];
-      rootsolval = SCIPgetSolVal(scip, divingdata->rootsol, var);
+      rootsolval = SCIPgetSolVal(origprob, divingdata->rootsol, var);
 
       /* calculate distance to integral value divided by distance to root solution */
-      if( SCIPisLT(scip, solval, rootsolval) )
+      if( SCIPisLT(origprob, solval, rootsolval) )
       {
          roundup = FALSE;
-         distquot = (solval - SCIPfeasFloor(scip, solval)) / (rootsolval - solval);
+         distquot = (solval - SCIPfeasFloor(origprob, solval)) / (rootsolval - solval);
 
          /* avoid roundable candidates */
          if( SCIPvarMayRoundDown(var) )
             distquot *= 1000.0;
       }
-      else if( SCIPisGT(scip, solval, rootsolval) )
+      else if( SCIPisGT(origprob, solval, rootsolval) )
       {
          roundup = TRUE;
-         distquot = (SCIPfeasCeil(scip, solval) - solval) / (solval - rootsolval);
+         distquot = (SCIPfeasCeil(origprob, solval) - solval) / (solval - rootsolval);
 
          /* avoid roundable candidates */
          if( SCIPvarMayRoundUp(var) )
@@ -279,7 +280,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcglinesdiving) /*lint --e{715}*/
       else
       {
          roundup = FALSE;
-         distquot = SCIPinfinity(scip);
+         distquot = SCIPinfinity(origprob);
       }
 
       /* check, if candidate is new best candidate */
@@ -302,17 +303,17 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcglinesdiving) /*lint --e{715}*/
 
 /** creates the gcglinesdiving heuristic and includes it in GCG */
 SCIP_RETCODE GCGincludeHeurGcglinesdiving(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_HEUR* heur;
    GCG_DIVINGDATA* divingdata;
 
    /* create gcglinesdiving primal heuristic data */
-   SCIP_CALL( SCIPallocMemory(scip, &divingdata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &divingdata) );
 
    /* include diving heuristic */
-   SCIP_CALL( GCGincludeDivingHeurOrig(scip, &heur,
+   SCIP_CALL( GCGincludeDivingHeurOrig(gcg, &heur,
          HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, heurFreeGcglinesdiving, heurInitGcglinesdiving, heurExitGcglinesdiving, NULL, NULL,
          heurInitexecGcglinesdiving, NULL, heurSelectVarGcglinesdiving, divingdata) );

@@ -37,9 +37,8 @@
 #define GCG_SOLVER_MIP_H__
 
 #include "scip/scip.h"
-#include "type_pricingstatus.h"
-#include "type_gcgcol.h"
-#include "def.h"
+#include "gcg/gcg.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,7 +47,7 @@ extern "C" {
 /** creates the mip solver for pricing problems and includes it in GCG */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeSolverMip(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
 );
 
 /** get the status of the pricing problem */
@@ -70,7 +69,7 @@ SCIP_RETCODE createColumnFromRay(
 /** transforms feasible solutions of a subproblem used to solve a pricing problem pricing problem into columns (or directly of the pricing problem if no subproblem is specified) */
 GCG_EXPORT
 SCIP_RETCODE getColumnsFromPricingprob(
-   SCIP*                 scip,               /**< master problem SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
    SCIP*                 subproblem,         /**< SCIP data structure that contains the actual solution (if NULL pricingprob will be used) */
    SCIP_HASHMAP*         varmap,             /**< mapping of pricingprob vars to subproblem vars (can be NULL if subproblem is NULL) */

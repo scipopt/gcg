@@ -37,16 +37,16 @@
 #ifndef GCG_ROWGRAPH_DEF_H_
 #define GCG_ROWGRAPH_DEF_H_
 
-#include "rowgraph.h"
+#include "graph/rowgraph.h"
 #include <algorithm>
 
 namespace gcg {
 
 template <class T>
 RowGraph<T>::RowGraph(
-   SCIP*                 scip,              /**< SCIP data structure */
+   GCG*                  gcgstruct,         /**< GCG data structure */
    Weights               w                  /**< weights for the given graph */
-   ) : MatrixGraph<T>(scip,w), graph(scip)
+   ) : MatrixGraph<T>(gcgstruct,w), graph(gcgstruct)
 {
    this->graphiface = &graph;
    this->name = std::string("rowgraph");
@@ -65,19 +65,19 @@ SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
 {
    int nblocks;
    SCIP_HASHMAP* constoblock = NULL;
-
+   SCIP* scip = GCGgetOrigprob(this->gcg);
    int* nsubscipconss = NULL;
    int i;
    SCIP_CONS** conss = NULL;
    SCIP_Bool emptyblocks = FALSE;
    std::vector<int> partition = graph.getPartition();
-   conss = SCIPgetConss(this->scip_);
+   conss = SCIPgetConss(scip);
    nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
 
-   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
 
-   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), this->nconss) );
 
    /* assign constraints to partition */
    for( i = 0; i < this->nconss; i++ )
@@ -116,8 +116,8 @@ SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
 
    if( !emptyblocks )
    {
-      SCIP_CALL( GCGdecompCreate(this->scip_, decomp) );
-      SCIP_CALL( GCGfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
+      SCIP_CALL( GCGdecompCreate(this->gcg, decomp) );
+      SCIP_CALL( GCGfilloutDecompFromConstoblock(this->gcg, *decomp, constoblock, nblocks, FALSE) );
    }
    else
    {
@@ -125,7 +125,7 @@ SCIP_RETCODE RowGraph<T>::createDecompFromPartition(
       *decomp = NULL;
    }
 
-   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   SCIPfreeBufferArray(scip, &nsubscipconss);
    return SCIP_OKAY;
 }
 
@@ -143,6 +143,7 @@ SCIP_RETCODE RowGraph<T>::createPartialdecFromPartition(
    int* nsubscipconss = NULL;
    int i;
    SCIP_Bool emptyblocks = FALSE;
+   SCIP* scip = GCGgetOrigprob(this->gcg);
 
    assert(oldpartialdec != NULL);
 
@@ -181,10 +182,10 @@ SCIP_RETCODE RowGraph<T>::createPartialdecFromPartition(
    std::vector<int> partition = graph.getPartition();
    nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
 
-   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
 
-   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), this->nconss) );
 
    /* assign constraints to partition */
    for( i = 0; i < this->nconss; i++ )
@@ -242,7 +243,7 @@ SCIP_RETCODE RowGraph<T>::createPartialdecFromPartition(
       }
    }
 
-   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   SCIPfreeBufferArray(scip, &nsubscipconss);
    return SCIP_OKAY;
 }
 
@@ -262,6 +263,7 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
 
    std::pair< int, int> edge;
    std::vector< std::pair< int, int> > edges;
+   SCIP* scip = GCGgetOrigprob(this->gcg);
 
    assert(conss != NULL);
    assert(vars != NULL);
@@ -288,7 +290,7 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
       SCIP_VAR** curvars1 = NULL;
 
       int ncurvars1;
-      SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars1, &success) );
+      SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &ncurvars1, &success) );
       assert(success);
       if( ncurvars1 == 0 )
          continue;
@@ -297,8 +299,8 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
        * may work as is, as we are copying the constraint later regardless
        * if there are variables in it or not
        */
-      SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars1, ncurvars1) );
-      SCIP_CALL( SCIPgetConsVars(this->scip_, conss[i], curvars1, ncurvars1, &success) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvars1, ncurvars1) );
+      SCIP_CALL( SCIPgetConsVars(scip, conss[i], curvars1, ncurvars1, &success) );
       assert(success);
 
       /* go through all constraints */
@@ -307,7 +309,7 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
          SCIP_VAR** curvars2 = NULL;
          SCIP_Bool continueloop;
          int ncurvars2;
-         SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[j], &ncurvars2, &success) );
+         SCIP_CALL( SCIPgetConsNVars(scip, conss[j], &ncurvars2, &success) );
          assert(success);
          if( ncurvars2 == 0 )
             continue;
@@ -326,8 +328,8 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
           * may work as is, as we are copying the constraint later regardless
           * if there are variables in it or not
           */
-         SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars2, ncurvars2) );
-         SCIP_CALL( SCIPgetConsVars(this->scip_, conss[j], curvars2, ncurvars2, &success) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars2, ncurvars2) );
+         SCIP_CALL( SCIPgetConsVars(scip, conss[j], curvars2, ncurvars2, &success) );
          assert(success);
 
 
@@ -339,7 +341,7 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
             SCIP_VAR* var1 = NULL;
             int varIndex1;
 
-            if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+            if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
                var1 = SCIPvarGetProbvar(curvars1[k]);
             else
                var1 = curvars1[k];
@@ -357,7 +359,7 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
                SCIP_VAR* var2;
                int varIndex2;
 
-               if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+               if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
                   var2 = SCIPvarGetProbvar(curvars2[l]);
                else
                   var2 = curvars2[l];
@@ -388,9 +390,9 @@ SCIP_RETCODE RowGraph<T>::createFromMatrix(
             if(continueloop)
                break;
          }
-         SCIPfreeBufferArray(this->scip_, &curvars2);
+         SCIPfreeBufferArray(scip, &curvars2);
       }
-      SCIPfreeBufferArray(this->scip_, &curvars1);
+      SCIPfreeBufferArray(scip, &curvars1);
    }
    this->graph.flush();
 

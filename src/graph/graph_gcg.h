@@ -36,7 +36,7 @@
 #define GCG_GRAPH_GCG_H_
 
 #include <map>
-#include "bridge.h"
+#include "graph/bridge.h"
 
 #ifdef WITH_GSL
    #include <gsl/gsl_spmatrix.h>

@@ -37,19 +37,19 @@
 
 /*#define SCIP_DEBUG*/
 
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
-#include "scip_misc.h"
-#include "struct_detector.h"
-#include "struct_score.h"
-#include "struct_decomp.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "params_visu.h"
-#include "miscvisualization.h"
-#include "reader_gp.h"
+#include "gcg/scip_misc.h"
+#include "gcg/struct_detector.h"
+#include "gcg/struct_score.h"
+#include "gcg/struct_decomp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/params_visu.h"
+#include "gcg/miscvisualization.h"
+#include "gcg/reader_gp.h"
 
 #include <sstream>
 #include <iostream>
@@ -101,7 +101,7 @@ PARTIALDECOMP* BLOCK_STRUCTURE::createPartialdec(
    int probnr
    )
 {
-   PARTIALDECOMP* partialdec = new PARTIALDECOMP(newdetprobdata->getScip(), newdetprobdata->isAssignedToOrigProb());
+   PARTIALDECOMP* partialdec = new PARTIALDECOMP(newdetprobdata->getGcg(), newdetprobdata->isAssignedToOrigProb());
    int nblocks = (int) blockconss.size();
    char buffer[SCIP_MAXSTRLEN];
    std::vector<int> rowmapping(parentdetprobdata->getNConss(), -1);
@@ -156,7 +156,7 @@ PARTIALDECOMP* BLOCK_STRUCTURE::createPartialdec(
       }
    }
 
-   GCGconshdlrDecompAddPreexisitingPartialDec(newdetprobdata->getScip(), partialdec);
+   GCGconshdlrDecompAddPreexisitingPartialDec(newdetprobdata->getGcg(), partialdec);
 
    if( !symmetryvardata.empty() )
    {
@@ -241,10 +241,10 @@ BLOCK_STRUCTURE* BLOCK_STRUCTURE::translateStructure(
 }
 
 PARTIALDECOMP::PARTIALDECOMP(
-   SCIP* _scip,
+   GCG* gcgstruct,
    bool originalProblem
    ) :
-   scip( _scip ), nblocks( 0 ), masterconss( 0 ),
+   gcg(gcgstruct), scip(GCGgetOrigprob(gcg)), nblocks( 0 ), masterconss( 0 ),
    mastervars( 0 ), conssforblocks( 0 ), varsforblocks( 0 ), linkingvars( 0 ), linkingvarsforblocks(0), stairlinkingvars( 0 ),
    ncoeffsforblock(std::vector<int>(0)), ncoeffsforblockformastercons(0),
    varsforblocksorted(true), stairlinkingvarsforblocksorted(true),
@@ -257,7 +257,7 @@ PARTIALDECOMP::PARTIALDECOMP(
    usergiven( USERGIVEN::NOT ), stemsfromorig( false ), original( originalProblem ), translatedpartialdecid( -1 )
 {
    // unique id
-   id = GCGconshdlrDecompGetNextPartialdecID(scip);
+   id = GCGconshdlrDecompGetNextPartialdecID(gcg);
 
    DETPROBDATA* detprobdata = getDetprobdata();
 
@@ -279,16 +279,16 @@ PARTIALDECOMP::PARTIALDECOMP(
       openconss.push_back(i);
    }
 
-   SCIPhashmapCreate(&maptoscores, SCIPblkmem(scip), GCGconshdlrDecompGetNScores(scip));
+   SCIPhashmapCreate(&maptoscores, SCIPblkmem(scip), GCGconshdlrDecompGetNScores(gcg));
 
-   for( int i = 0; i < GCGconshdlrDecompGetNScores(scip); i++ )
+   for( int i = 0; i < GCGconshdlrDecompGetNScores(gcg); i++ )
    {
-      assert(!SCIPhashmapExists(maptoscores, (void*)GCGconshdlrDecompGetScores(scip)[i]));
+      assert(!SCIPhashmapExists(maptoscores, (void*)GCGconshdlrDecompGetScores(gcg)[i]));
 
-      SCIP_CALL_EXC( SCIPhashmapSetImageReal(maptoscores, (void*)GCGconshdlrDecompGetScores(scip)[i], SCIP_INVALID) );
+      SCIP_CALL_EXC( SCIPhashmapSetImageReal(maptoscores, (void*)GCGconshdlrDecompGetScores(gcg)[i], SCIP_INVALID) );
    }
 
-   GCGconshdlrDecompRegisterPartialdec(scip, this);
+   GCGconshdlrDecompRegisterPartialdec(gcg, this);
 }
 
 
@@ -296,10 +296,11 @@ PARTIALDECOMP::PARTIALDECOMP(
    const PARTIALDECOMP *partialdectocopy
    )
 {
-   scip = ( partialdectocopy->scip );
+   gcg = partialdectocopy->gcg;
+   scip = partialdectocopy->scip;
 
    // unique id
-   id = GCGconshdlrDecompGetNextPartialdecID(scip);
+   id = GCGconshdlrDecompGetNextPartialdecID(gcg);
 
    // rest is copied
    nblocks = partialdectocopy->nblocks;
@@ -360,24 +361,24 @@ PARTIALDECOMP::PARTIALDECOMP(
    ncoeffsforblock = partialdectocopy->ncoeffsforblock;
    translatedpartialdecid = partialdectocopy->getTranslatedpartialdecid();
 
-   SCIPhashmapCreate(&maptoscores, SCIPblkmem(scip), GCGconshdlrDecompGetNScores(scip));
+   SCIPhashmapCreate(&maptoscores, SCIPblkmem(scip), GCGconshdlrDecompGetNScores(gcg));
 
-   for( int i = 0; i < GCGconshdlrDecompGetNScores(scip); i++ )
+   for( int i = 0; i < GCGconshdlrDecompGetNScores(gcg); i++ )
    {
-      assert(!SCIPhashmapExists(maptoscores, (void*)GCGconshdlrDecompGetScores(scip)[i]));
+      assert(!SCIPhashmapExists(maptoscores, (void*)GCGconshdlrDecompGetScores(gcg)[i]));
 
-      SCIP_CALL_EXC( SCIPhashmapSetImageReal(maptoscores, (void*)GCGconshdlrDecompGetScores(scip)[i], SCIP_INVALID) );
+      SCIP_CALL_EXC( SCIPhashmapSetImageReal(maptoscores, (void*)GCGconshdlrDecompGetScores(gcg)[i], SCIP_INVALID) );
    }
 
    isagginfoalreadytoexpensive = partialdectocopy->isagginfoalreadytoexpensive;
 
-   GCGconshdlrDecompRegisterPartialdec(scip, this);
+   GCGconshdlrDecompRegisterPartialdec(gcg, this);
 }
 
 
 PARTIALDECOMP::~PARTIALDECOMP()
 {
-   GCGconshdlrDecompDeregisterPartialdec(scip, this);
+   GCGconshdlrDecompDeregisterPartialdec(gcg, this);
    for( auto block : blockstructures )
       delete block;
    SCIPhashmapFree(&maptoscores);
@@ -3173,9 +3174,9 @@ void PARTIALDECOMP::displayInfo(
    std::cout << " Hashvalue: " << hashvalue << std::endl;
    if( getNOpenconss() + getNOpenconss() == 0 )
    {
-      for( int i = 0; i < GCGconshdlrDecompGetNScores(scip); ++i )
+      for( int i = 0; i < GCGconshdlrDecompGetNScores(gcg); ++i )
       {
-         GCG_SCORE* score = GCGconshdlrDecompGetScores(scip)[i];
+         GCG_SCORE* score = GCGconshdlrDecompGetScores(gcg)[i];
          std::cout << " " << GCGscoreGetName(score) << ": " << getScore(score) << std::endl;
       }
    }
@@ -4365,9 +4366,9 @@ SCIP_Real PARTIALDECOMP::getScore(
             return 0.;
          }
       }
-      SCIP_CLOCK* clock = GCGconshdlrDecompGetScoreClock(scip);
+      SCIP_CLOCK* clock = GCGconshdlrDecompGetScoreClock(gcg);
       SCIPstartClock(scip, clock);
-      score->scorecalc(scip, score, this->id, &scorevalue);
+      score->scorecalc(gcg, score, this->id, &scorevalue);
       SCIPstopClock(scip, clock);
       setScore(score, scorevalue);
    }
@@ -4379,7 +4380,7 @@ SCIP_Real PARTIALDECOMP::getScore(
 SCIP_Real PARTIALDECOMP::getScore(
    )
 {
-   return getScore(GCGgetCurrentScore(scip));
+   return getScore(GCGgetCurrentScore(gcg));
 }
 
 
@@ -4724,9 +4725,9 @@ DETPROBDATA* PARTIALDECOMP::getDetprobdata()
 {
    DETPROBDATA* detprobdata;
    if( original )
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
    else
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(gcg);
 
    assert(detprobdata != NULL);
 
@@ -5090,7 +5091,6 @@ bool PARTIALDECOMP::isVarStairlinkingvarOfBlock(
 
 
 void PARTIALDECOMP::printPartitionInformation(
-   SCIP*                givenscip,
    FILE*                file
    )
 {
@@ -5324,7 +5324,6 @@ void PARTIALDECOMP::setDetectorFinished(
 
 
 void PARTIALDECOMP::setDetectorFinishedOrig(
-   GCG_DETECTOR* detectorID
    )
 {
    isfinishedbyfinisherorig = true;
@@ -5719,16 +5718,16 @@ void PARTIALDECOMP::showVisualization()
    /* get names for gp file and output file */
    char filename[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
-   GCGgetVisualizationFilename(scip, this, ".gp", filename);
-   GCGgetVisualizationFilename(scip, this, ".pdf", outname);
+   GCGgetVisualizationFilename(gcg, this, ".gp", filename);
+   GCGgetVisualizationFilename(gcg, this, ".pdf", outname);
 
    this->generateVisualization(filename, outname);
 
    /* open outputfile */
    char command[SCIP_MAXSTRLEN];
    /* command: e.g. evince "outname" && rm "filename" */
-   strcpy(command, GCGVisuGetPdfReader(scip));
-   if( strcmp(GCGVisuGetPdfReader(scip), "start") == 0 )
+   strcpy(command, GCGVisuGetPdfReader(gcg));
+   if( strcmp(GCGVisuGetPdfReader(gcg), "start") == 0 )
       strcat(command, " \"\"");
    strcat(command, " \"");
    strcat(command, outname);
@@ -5782,7 +5781,7 @@ void PARTIALDECOMP::writeVisualizationFile(
    )
 {
    /* generate gp file */
-   GCGwriteGpVisualizationFormat( scip, filename, outname, getID(), outputformat );
+   GCGwriteGpVisualizationFormat(gcg, filename, outname, getID(), outputformat);
 }
 
 
@@ -5791,11 +5790,11 @@ void PARTIALDECOMP::exportVisualization()
    /* get names for gp file and output file */
    char filename[SCIP_MAXSTRLEN];
    char outname[SCIP_MAXSTRLEN];
-   GCGgetVisualizationFilename(scip, this, ".gp", filename);
-   GCGgetVisualizationFilename(scip, this, ".pdf", outname);
+   GCGgetVisualizationFilename(gcg, this, ".gp", filename);
+   GCGgetVisualizationFilename(gcg, this, ".pdf", outname);
 
    /* generate gp file */
-   GCGwriteGpVisualization( scip, filename, outname, getID() );
+   GCGwriteGpVisualization(gcg, filename, outname, getID());
 }
 
 SCIP_Bool PARTIALDECOMP::shouldCompletedByConsToMaster()
@@ -5873,7 +5872,7 @@ std::string PARTIALDECOMP::buildDecChainString(
 
 SCIP_Real PARTIALDECOMP::getMaxWhiteScore()
 {
-   GCG_SCORE* score = GCGconshdlrDecompFindScore(this->scip, "max white");
+   GCG_SCORE* score = GCGconshdlrDecompFindScore(gcg, "max white");
    assert(score != NULL);
    return getScore(score);
 }

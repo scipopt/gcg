@@ -33,18 +33,18 @@ ould have received a copy of the GNU Lesser General Public License  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "clscons_consnamelevenshtein.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
+#include "gcg/clscons_consnamelevenshtein.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
 #include <vector>
 #include <stdio.h>
 #include <sstream>
 #include <queue>
 
-#include "class_detprobdata.h"
+#include "gcg/class_detprobdata.h"
 
-#include "class_conspartition.h"
-#include "scip_misc.h"
+#include "gcg/class_conspartition.h"
+#include "gcg/scip_misc.h"
 
 /* classifier properties */
 #define CLSCONS_NAME              "consnamelevenshtein"       /**< name of classifier */
@@ -127,13 +127,14 @@ int calcLevenshteinDistance(
 static
 GCG_DECL_CONSCLASSIFY(classifierClassify) {
    gcg::DETPROBDATA* detprobdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
    if( transformed )
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(gcg);
    }
    else
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
    }
 
    std::vector < std::string > consnamesToCompare(detprobdata->getNConss(), "");
@@ -148,13 +149,13 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
 
    std::stringstream classifierName;
    classifierName << "lev-dist-" << connectivity;
-   gcg::ConsPartition* classifier = new gcg::ConsPartition(scip, classifierName.str().c_str(), 0, detprobdata->getNConss());
+   gcg::ConsPartition* classifier = new gcg::ConsPartition(gcg, classifierName.str().c_str(), 0, detprobdata->getNConss());
 
    /* if number of conss exceeds this number, skip calculating such a classifier */
    if( detprobdata->getNConss() > nmaxconss )
    {
 
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " skipped levenshtein distance based constraint classes calculating since number of constraints  %d  exceeds limit %d \n", detprobdata->getNConss(), nmaxconss );
+      SCIPverbMessage(origprob, SCIP_VERBLEVEL_HIGH, NULL, " skipped levenshtein distance based constraint classes calculating since number of constraints  %d  exceeds limit %d \n", detprobdata->getNConss(), nmaxconss );
       delete classifier;
       return SCIP_ERROR;
    }
@@ -233,7 +234,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
       classifier->assignConsToClass(i, classForCons[i]);
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier levenshtein: connectivity of %d yields a classification with %d different constraint classes. \n", connectivity, currentClass + 1);
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_HIGH, NULL, " Consclassifier levenshtein: connectivity of %d yields a classification with %d different constraint classes. \n", connectivity, currentClass + 1);
 
    detprobdata->addConsPartition(classifier);
    return SCIP_OKAY;
@@ -243,14 +244,14 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
  * classifier specific interface methods
  */
 
-SCIP_RETCODE SCIPincludeConsClassifierConsnameLevenshtein(
-   SCIP *scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeConsClassifierConsnameLevenshtein(
+   GCG* gcg                /**< GCG data structure */
    )
 {
    GCG_CLASSIFIERDATA* classifierdata = NULL;
 
    SCIP_CALL(
-      GCGincludeConsClassifier(scip, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
+      GCGincludeConsClassifier(gcg, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
                                classifierFree, classifierClassify));
 
    return SCIP_OKAY;

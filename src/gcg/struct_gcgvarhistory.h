@@ -39,7 +39,7 @@
 #include <scip/type_cons.h>
 #include <scip/type_lp.h>
 #include <scip/type_var.h>
-#include "type_gcgvarhistory.h"
+#include "gcg/type_gcgvarhistory.h"
 
 #ifdef __cplusplus
 extern "C" {

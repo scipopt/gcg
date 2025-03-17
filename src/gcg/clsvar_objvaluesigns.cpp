@@ -32,17 +32,17 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "clsvar_objvaluesigns.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
+#include "gcg/clsvar_objvaluesigns.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
 #include <vector>
 #include <stdio.h>
 #include <sstream>
 
-#include "class_detprobdata.h"
+#include "gcg/class_detprobdata.h"
 
-#include "class_varpartition.h"
-#include "scip_misc.h"
+#include "gcg/class_varpartition.h"
+#include "gcg/scip_misc.h"
 
 /* classifier properties */
 #define CLSVAR_NAME        "objectivevaluesigns"       /**< name of classifier */
@@ -80,17 +80,19 @@ static
 GCG_DECL_VARCLASSIFY(classifierClassify)
 {
    gcg::DETPROBDATA* detprobdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
    if( transformed )
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(gcg);
    }
    else
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
    }
 
    // CLASSIFICATION
-   gcg::VarPartition* classifier= new gcg::VarPartition(scip, "varobjvalsigns", 3, detprobdata->getNVars() ); /* new VarPartition */
+   gcg::VarPartition* classifier= new gcg::VarPartition(gcg, "varobjvalsigns", 3, detprobdata->getNVars() ); /* new VarPartition */
    SCIP_Real curobjval;
 
    /* set up class information */
@@ -110,11 +112,11 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
       assert( detprobdata->getVar(v) != NULL );
       curobjval = SCIPvarGetObj(detprobdata->getVar(v));
 
-      if( SCIPisZero(scip, curobjval) )
+      if( SCIPisZero(origprob, curobjval) )
       {
          classifier->assignVarToClass(v, 0);
       }
-      else if ( SCIPisPositive(scip, curobjval) )
+      else if ( SCIPisPositive(origprob, curobjval) )
       {
          classifier->assignVarToClass(v, 1);
       }
@@ -127,7 +129,7 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
    /* remove a class if there is no variable with the respective sign */
    classifier->removeEmptyClasses();
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes\n", classifier->getName(), classifier->getNClasses()) ;
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes\n", classifier->getName(), classifier->getNClasses()) ;
 
 
    detprobdata->addVarPartition(classifier);
@@ -138,13 +140,13 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
  * classifier specific interface methods
  */
 
-SCIP_RETCODE SCIPincludeVarClassifierObjValueSigns(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeVarClassifierObjValueSigns(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_CLASSIFIERDATA* classifierdata = NULL;
 
-   SCIP_CALL( GCGincludeVarClassifier(scip, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( GCGincludeVarClassifier(gcg, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

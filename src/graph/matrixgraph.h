@@ -38,10 +38,10 @@
 #define GCG_MATRIXGRAPH_H_
 #include "objscip/objscip.h"
 #include "tclique/tclique.h"
-#include "weights.h"
+#include "graph/weights.h"
 #include "gcg/pub_decomp.h"
-#include "bridge.h"
-#include "graph_interface.h"
+#include "graph/bridge.h"
+#include "graph/graph_interface.h"
 #include "gcg/class_partialdecomp.h"
 #include "gcg/class_detprobdata.h"
 #include <exception>
@@ -55,7 +55,7 @@ class MatrixGraph {
 public:
    std::string name;
 protected:
-   SCIP* scip_;
+   GCG* gcg;
    int nconss;
    int nvars;
    int dummynodes;
@@ -66,7 +66,7 @@ protected:
 public:
    /** Constructor */
    MatrixGraph(
-      SCIP*                 scip,              /**< SCIP data structure */
+      GCG*                  gcgstruct,         /**< GCG data structure */
       Weights               w                  /**< weights for the given graph */
       );
 

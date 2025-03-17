@@ -33,17 +33,17 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "clscons_xyz.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
+#include "gcg/clscons_xyz.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
 #include <vector>
 #include <stdio.h>
 #include <sstream>
 
-#include "class_detprobdata.h"
+#include "gcg/class_detprobdata.h"
 
-#include "class_conspartition.h"
-#include "scip_misc.h"
+#include "gcg/class_conspartition.h"
+#include "gcg/scip_misc.h"
 
 /* classifier properties */
 #define CLSCONS_NAME                  "xyz constraint classifier"           /**< name of classifier */
@@ -118,8 +118,8 @@ GCG_DECL_CONSCLASSIFY(classifierClassify)
  */
 
 /** creates the handler for XYZ classifier and includes it in SCIP */
-SCIP_RETCODE SCIPincludeConsClassifierXyz(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeConsClassifierXyz(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_CLASSIFIERDATA* classifierdata;
@@ -128,7 +128,7 @@ SCIP_RETCODE SCIPincludeConsClassifierXyz(
    classifierdata = NULL;
 
    SCIP_CALL(
-      GCGincludeConsClassifier(scip, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
+      GCGincludeConsClassifier(gcg, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
          classifierFree, classifierClassify));
 
    return SCIP_OKAY;

@@ -45,8 +45,8 @@ extern "C" {
 
 /** includes the ndec file reader into SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeReaderJDec(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeReaderJDec(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

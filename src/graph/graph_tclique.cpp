@@ -34,7 +34,7 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /*lint -e39*/
 #include <cassert>
-#include "graph_tclique.h"
+#include "graph/graph_tclique.h"
 
 #define TCLIQUE_CALL_EXC(x)   do                                                                              \
                        {                                                                                      \

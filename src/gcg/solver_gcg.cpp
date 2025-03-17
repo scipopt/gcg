@@ -40,22 +40,23 @@
 #define SUBGCG_DEBUG_ITER -1
 
 #include "scip/scip.h"
-#include "gcg.h"
-#include "objpricer_gcg.h"
-#include "solver_gcg.h"
-#include "gcgplugins.h"
-#include "struct_solver.h"
-#include "solver_mip.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "pub_solver.h"
-#include "pricer_gcg.h"
-#include "relax_gcg.h"
-#include "cons_origbranch.h"
-#include "class_partialdecomp.h"
+#include "gcg/gcg.h"
+#include "gcg/objpricer_gcg.h"
+#include "gcg/solver_gcg.h"
+#include "gcg/gcgplugins.h"
+#include "gcg/struct_solver.h"
+#include "gcg/solver_mip.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/pub_solver.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/cons_origbranch.h"
+#include "gcg/class_partialdecomp.h"
 #include "scip/scip_timing.h"
-#include "struct_decomp.h"
-#include "class_detprobdata.h"
+#include "gcg/struct_decomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/pub_gcg.hpp"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -91,7 +92,7 @@ struct GCG_SolverData
 {
    SCIP*                   origprob;            /**< original problem SCIP instance */
    SCIP*                   masterprob;          /**< master problem SCIP instance */
-   SCIP**                  subgcgs;             /**< array storing the GCG instances for all pricing problems */
+   GCG**                   subgcgs;             /**< array storing the GCG instances for all pricing problems */
    SCIP_HASHMAP**          varmaps;             /**< array of variable mappings (pricingprob -> subgcg) */
    int                     depth;               /**< current depth of the solver */
    int                     maxdepth;            /**< maximum depth the solver should be enabled */
@@ -171,7 +172,8 @@ static
 SCIP_RETCODE adjustSettings(
    GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
    SCIP*                 pricingprob,        /**< pricing problem */
-   SCIP*                 subgcg              /**< subgcg data structure */
+   GCG*                  subgcg,             /**< subgcg data structure */
+   SCIP*                 subgcgorig          /**< subgcg origprob */
    )
 {
    SCIP_Real infinity;
@@ -181,40 +183,40 @@ SCIP_RETCODE adjustSettings(
    SCIP_Real lpfeastolfactor;
    SCIP_Real dualfeastol;
 
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "conflict/useprop", FALSE) );
-   SCIP_CALL( SCIPsetCharParam(subgcg, "conflict/useinflp", 'o') );
-   SCIP_CALL( SCIPsetCharParam(subgcg, "conflict/useboundlp", 'o') );
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "conflict/usesb", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "conflict/usepseudo", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(subgcgorig, "conflict/useprop", FALSE) );
+   SCIP_CALL( SCIPsetCharParam(subgcgorig, "conflict/useinflp", 'o') );
+   SCIP_CALL( SCIPsetCharParam(subgcgorig, "conflict/useboundlp", 'o') );
+   SCIP_CALL( SCIPsetBoolParam(subgcgorig, "conflict/usesb", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(subgcgorig, "conflict/usepseudo", FALSE) );
 
-   //SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/usevartable", FALSE) );
-   //SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/useconstable", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/usesmalltables", TRUE) );
+   //SCIP_CALL( SCIPsetBoolParam(subgcgorig, "misc/usevartable", FALSE) );
+   //SCIP_CALL( SCIPsetBoolParam(subgcgorig, "misc/useconstable", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(subgcgorig, "misc/usesmalltables", TRUE) );
 
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "constraints/linear/presolpairwise", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "constraints/setppc/presolpairwise", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "constraints/logicor/presolpairwise", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "constraints/linear/presolusehashing", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "constraints/setppc/presolusehashing", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "constraints/logicor/presolusehashing", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(subgcgorig, "constraints/linear/presolpairwise", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(subgcgorig, "constraints/setppc/presolpairwise", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(subgcgorig, "constraints/logicor/presolpairwise", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(subgcgorig, "constraints/linear/presolusehashing", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(subgcgorig, "constraints/setppc/presolusehashing", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(subgcgorig, "constraints/logicor/presolusehashing", FALSE) );
 
-   SCIP_CALL( SCIPsetIntParam(subgcg, "propagating/dualfix/maxprerounds", 0) );
-   SCIP_CALL( SCIPfixParam(subgcg, "propagating/dualfix/maxprerounds") );
+   SCIP_CALL( SCIPsetIntParam(subgcgorig, "propagating/dualfix/maxprerounds", 0) );
+   SCIP_CALL( SCIPfixParam(subgcgorig, "propagating/dualfix/maxprerounds") );
 
-   SCIP_CALL( SCIPsetIntParam(subgcg, "limits/maxorigsol", 0) );
-   SCIP_CALL( SCIPfixParam(subgcg, "limits/maxorigsol") );
+   SCIP_CALL( SCIPsetIntParam(subgcgorig, "limits/maxorigsol", 0) );
+   SCIP_CALL( SCIPfixParam(subgcgorig, "limits/maxorigsol") );
 
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "presolving/donotmultaggr", TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(subgcgorig, "presolving/donotmultaggr", TRUE) );
 
    /* do not abort subproblem on CTRL-C */
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/catchctrlc", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(subgcgorig, "misc/catchctrlc", FALSE) );
 
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/calcintegral", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/finitesolutionstore", TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(subgcgorig, "misc/calcintegral", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(subgcgorig, "misc/finitesolutionstore", TRUE) );
 
    // TODO: disable dualreds?
-   //SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/allowstrongdualreds", FALSE) );
-   //SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/allowweakdualreds", FALSE) );
+   //SCIP_CALL( SCIPsetBoolParam(subgcgorig, "misc/allowstrongdualreds", FALSE) );
+   //SCIP_CALL( SCIPsetBoolParam(subgcgorig, "misc/allowweakdualreds", FALSE) );
 
    SCIP_CALL( SCIPgetRealParam(pricingprob, "numerics/infinity", &infinity) );
    SCIP_CALL( SCIPgetRealParam(pricingprob, "numerics/epsilon", &epsilon) );
@@ -223,18 +225,18 @@ SCIP_RETCODE adjustSettings(
    SCIP_CALL( SCIPgetRealParam(pricingprob, "numerics/lpfeastolfactor", &lpfeastolfactor) );
    SCIP_CALL( SCIPgetRealParam(pricingprob, "numerics/dualfeastol", &dualfeastol) );
 
-   SCIP_CALL( SCIPsetRealParam(subgcg, "numerics/infinity", infinity) );
-   SCIP_CALL( SCIPsetRealParam(subgcg, "numerics/epsilon", epsilon) );
-   SCIP_CALL( SCIPsetRealParam(subgcg, "numerics/sumepsilon", sumepsilon) );
-   SCIP_CALL( SCIPsetRealParam(subgcg, "numerics/feastol", feastol) );
-   SCIP_CALL( SCIPsetRealParam(subgcg, "numerics/lpfeastolfactor", lpfeastolfactor) );
-   SCIP_CALL( SCIPsetRealParam(subgcg, "numerics/dualfeastol", dualfeastol) );
+   SCIP_CALL( SCIPsetRealParam(subgcgorig, "numerics/infinity", infinity) );
+   SCIP_CALL( SCIPsetRealParam(subgcgorig, "numerics/epsilon", epsilon) );
+   SCIP_CALL( SCIPsetRealParam(subgcgorig, "numerics/sumepsilon", sumepsilon) );
+   SCIP_CALL( SCIPsetRealParam(subgcgorig, "numerics/feastol", feastol) );
+   SCIP_CALL( SCIPsetRealParam(subgcgorig, "numerics/lpfeastolfactor", lpfeastolfactor) );
+   SCIP_CALL( SCIPsetRealParam(subgcgorig, "numerics/dualfeastol", dualfeastol) );
 
    // set presolving param according to settings
-   SCIP_CALL( SCIPsetIntParam(subgcg, "presolving/maxrounds", solverdata->presolmaxrounds) );
+   SCIP_CALL( SCIPsetIntParam(subgcgorig, "presolving/maxrounds", solverdata->presolmaxrounds) );
 
 #ifndef NO_AUT_LIB
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "relaxing/gcg/aggregation/usesymmetrylib", FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(subgcgorig, "relaxing/gcg/aggregation/usesymmetrylib", FALSE) );
 #endif
 
    return SCIP_OKAY;
@@ -245,12 +247,14 @@ SCIP_RETCODE adjustSettings(
  */
 static
 SCIP_RETCODE buildProblem(
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
    SCIP*                 pricingprob,        /**< pricing problem */
    int                   probnr              /**< problem number */
    )
 {
-   SCIP* subgcg = NULL;
+   GCG* subgcg = NULL;
+   SCIP* subgcgorig;
    SCIP_Bool valid;
    ObjPricerGcg* pricer;
    int nsolvers;
@@ -268,9 +272,9 @@ SCIP_RETCODE buildProblem(
    SCIP_CALL_ABORT( SCIPstartClock(solverdata->origprob, solverdata->inittime) );
 #endif
 
-   decomp = GCGgetStructDecomp(solverdata->origprob);
+   decomp = GCGgetStructDecomp(gcg);
    assert(decomp);
-   partialdec = GCGconshdlrDecompGetPartialdecFromID(solverdata->origprob, decomp->partialdecid);
+   partialdec = GCGconshdlrDecompGetPartialdecFromID(gcg, decomp->partialdecid);
 
    if( partialdec && partialdec->isNested() )
    {
@@ -286,47 +290,47 @@ SCIP_RETCODE buildProblem(
       }
    }
 
-   SCIP_CALL( SCIPcreate(&subgcg) );
+   SCIP_CALL( GCGcreate(&subgcg) );
    solverdata->subgcgs[probnr] = subgcg;
+   subgcgorig = GCGgetOrigprob(subgcg);
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
-   SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/printreason", FALSE) );
+   SCIP_CALL( SCIPsetIntParam(subgcgorig, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
+   SCIP_CALL( SCIPsetBoolParam(subgcgorig, "misc/printreason", FALSE) );
 #else
    if( solverdata->enablewarnings )
    {
-      SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
-      SCIP_CALL( SCIPsetBoolParam(subgcg, "misc/printreason", FALSE) );
+      SCIP_CALL( SCIPsetIntParam(subgcgorig, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
+      SCIP_CALL( SCIPsetBoolParam(subgcgorig, "misc/printreason", FALSE) );
    }
    else
    {
-      SCIPsetMessagehdlrQuiet(subgcg, TRUE);
+      SCIPsetMessagehdlrQuiet(subgcgorig, TRUE);
    }
 #endif
 
-   SCIP_CALL( SCIPincludeGcgPlugins(subgcg) );
    (void)SCIPsnprintf(name, SCIP_MAXSTRLEN, "%s_subgcg", SCIPgetProbName(pricingprob) );
 
-   SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(subgcg), SCIPgetNOrigVars(pricingprob)) );
+   SCIP_CALL( SCIPhashmapCreate(&varmap, SCIPblkmem(subgcgorig), SCIPgetNOrigVars(pricingprob)) );
    solverdata->varmaps[probnr] = varmap;
    solverdata->nbasicpricingconss[probnr] = SCIPgetNOrigConss(pricingprob);
 
-   SCIP_CALL( adjustSettings(solverdata, pricingprob, subgcg) );
+   SCIP_CALL( adjustSettings(solverdata, pricingprob, subgcg, subgcgorig) );
 
    if( strcmp(solverdata->settingsfile, "-") != 0 )
    {
-      SCIP_CALL( SCIPreadParams(subgcg, solverdata->settingsfile) );
+      SCIP_CALL( SCIPreadParams(subgcgorig, solverdata->settingsfile) );
    }
-   SCIP_CALL( SCIPgetIntParam(subgcg, "presolving/maxrounds", &npresolvrounds) );
+   SCIP_CALL( SCIPgetIntParam(subgcgorig, "presolving/maxrounds", &npresolvrounds) );
    if( npresolvrounds != 0 )
       solverdata->translatesymmetry[probnr] = FALSE;
 
-   SCIPcreateProb(subgcg, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-   SCIP_CALL( SCIPcopyOrigVars(pricingprob, subgcg, varmap, NULL, NULL, NULL, 0) );
-   SCIP_CALL( SCIPcopyOrigConss(pricingprob, subgcg, varmap, NULL, TRUE, &valid) );
+   SCIPcreateProb(subgcgorig, name, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+   SCIP_CALL( SCIPcopyOrigVars(pricingprob, subgcgorig, varmap, NULL, NULL, NULL, 0) );
+   SCIP_CALL( SCIPcopyOrigConss(pricingprob, subgcgorig, varmap, NULL, TRUE, &valid) );
    assert(valid);
 
-   pricer = dynamic_cast<ObjPricerGcg*>(SCIPfindObjPricer(GCGgetMasterprob(subgcg), "gcg"));
+   pricer = GCGgetObjPricer(subgcg);
    assert(pricer != NULL);
 
    nsolvers = pricer->getNumSolvers();
@@ -345,12 +349,12 @@ SCIP_RETCODE buildProblem(
    SCIP_CALL_ABORT( SCIPstopClock(solverdata->origprob, solverdata->inittime) );
 #endif
 
-   SCIPdebugMessage("Problem %d built, stage: %d\n", probnr, SCIPgetStage(subgcg));
+   SCIPdebugMessage("Problem %d built, stage: %d\n", probnr, SCIPgetStage(subgcgorig));
 
    SCIPdebugMessage("Detecting structure of problem %d\n", probnr);
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
+   SCIP_CALL( SCIPsetIntParam(subgcgorig, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
 #endif
 
 #ifdef SUBGCG_DETAILED_CLOCKS
@@ -360,7 +364,7 @@ SCIP_RETCODE buildProblem(
    if( blockstructure )
    {
       gcg::DETPROBDATA* detprobdata = GCGconshdlrDecompGetDetprobdataOrig(subgcg);
-      assert(subgcg == detprobdata->getScip());
+      assert(subgcgorig == detprobdata->getScip());
       (void) blockstructure->createPartialdec(partialdec->getDetprobdata(), detprobdata, probnr);
    }
    else
@@ -369,7 +373,7 @@ SCIP_RETCODE buildProblem(
       if( decompresult != SCIP_SUCCESS )
       {
          SCIPinfoMessage(solverdata->origprob, NULL, "No decomposition found for pricing problem %d.\n", probnr);
-         SCIP_CALL( SCIPfree(&subgcg) );
+         SCIP_CALL( GCGfree(&subgcg) );
          solverdata->subgcgs[probnr] = NULL;
 #ifdef SUBGCG_DETAILED_CLOCKS
          SCIP_CALL_ABORT( SCIPstopClock(solverdata->origprob, solverdata->inittime) );
@@ -383,10 +387,10 @@ SCIP_RETCODE buildProblem(
 #endif
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_NONE) );
+   SCIP_CALL( SCIPsetIntParam(subgcgorig, "display/verblevel", SCIP_VERBLEVEL_NONE) );
 #endif
 
-   SCIPdebugMessage("Problem %d structure detected, stage: %d\n", probnr, SCIPgetStage(subgcg));
+   SCIPdebugMessage("Problem %d structure detected, stage: %d\n", probnr, SCIPgetStage(subgcgorig));
 
    return SCIP_OKAY;
 }
@@ -404,17 +408,19 @@ SCIP_RETCODE updateVars(
 {
    SCIP_VAR** vars;
    int nvars;
-   SCIP* subgcg;
+   GCG* subgcg;
+   SCIP* subgcgorig;
    SCIP_HASHMAP* varmap;
    SCIP_RETCODE retval;
    int i;
 
    subgcg = solverdata->subgcgs[probnr];
+   subgcgorig = GCGgetOrigprob(subgcg);
    varmap = solverdata->varmaps[probnr];
    vars = SCIPgetOrigVars(pricingprob);
    nvars = SCIPgetNOrigVars(pricingprob);
 
-   assert(SCIPgetNOrigVars(subgcg) == nvars);
+   assert(SCIPgetNOrigVars(subgcgorig) == nvars);
 
    retval = SCIP_OKAY;
 
@@ -441,21 +447,21 @@ SCIP_RETCODE updateVars(
 
       if( varbndschanged )
       {
-         if( !SCIPisEQ(subgcg, SCIPvarGetLbGlobal(var), SCIPvarGetLbGlobal(subvar)) )
+         if( !SCIPisEQ(subgcgorig, SCIPvarGetLbGlobal(var), SCIPvarGetLbGlobal(subvar)) )
          {
-            SCIPchgVarLb(subgcg, subvar, SCIPvarGetLbGlobal(var));
+            SCIPchgVarLb(subgcgorig, subvar, SCIPvarGetLbGlobal(var));
             solverdata->translatesymmetry[probnr] = FALSE;
          }
-         if( !SCIPisEQ(subgcg, SCIPvarGetUbGlobal(var), SCIPvarGetUbGlobal(subvar)) )
+         if( !SCIPisEQ(subgcgorig, SCIPvarGetUbGlobal(var), SCIPvarGetUbGlobal(subvar)) )
          {
-            SCIPchgVarUb(subgcg, subvar, SCIPvarGetUbGlobal(var));
+            SCIPchgVarUb(subgcgorig, subvar, SCIPvarGetUbGlobal(var));
             solverdata->translatesymmetry[probnr] = FALSE;
          }
-         assert(SCIPisFeasLE(subgcg, SCIPvarGetLbGlobal(var), SCIPvarGetUbGlobal(var)));
+         assert(SCIPisFeasLE(subgcgorig, SCIPvarGetLbGlobal(var), SCIPvarGetUbGlobal(var)));
       }
 
       if( varobjschanged )
-         SCIPchgVarObj(subgcg, suborigvar, SCIPvarGetObj(origvar));
+         SCIPchgVarObj(subgcgorig, suborigvar, SCIPvarGetObj(origvar));
    }
 
    return retval;
@@ -476,21 +482,23 @@ SCIP_RETCODE updateBranchingConss(
    int nbasicpricingconss;
    int nsubconss;
    int nnewconss = 0;
-   SCIP* subgcg;
+   GCG* subgcg;
+   SCIP* subgcgorig;
    SCIP_HASHMAP* varmap;
    int c;
 
    subgcg = solverdata->subgcgs[probnr];
+   subgcgorig = GCGgetOrigprob(subgcg);
    varmap = solverdata->varmaps[probnr];
    conss = SCIPgetOrigConss(pricingprob);
-   sconss = SCIPgetOrigConss(subgcg);
+   sconss = SCIPgetOrigConss(subgcgorig);
    nconss = SCIPgetNOrigConss(pricingprob);
    nbasicpricingconss = solverdata->nbasicpricingconss[probnr];
-   nsubconss = SCIPgetNOrigConss(subgcg);
+   nsubconss = SCIPgetNOrigConss(subgcgorig);
 
    for( c = nbasicpricingconss; c < nsubconss; ++c )
    {
-      SCIPdelCons(subgcg, sconss[c]);
+      SCIPdelCons(subgcgorig, sconss[c]);
    }
 
    nnewconss = nconss - nbasicpricingconss;
@@ -504,7 +512,7 @@ SCIP_RETCODE updateBranchingConss(
       SCIP_CONS* newcons;
       SCIP_CONS* cons = conss[c];
 
-      SCIP_CALL( SCIPgetConsCopy(pricingprob, subgcg, cons, &newcons, SCIPconsGetHdlr(cons), varmap, NULL, NULL,
+      SCIP_CALL( SCIPgetConsCopy(pricingprob, subgcgorig, cons, &newcons, SCIPconsGetHdlr(cons), varmap, NULL, NULL,
          SCIPconsIsInitial(cons), SCIPconsIsSeparated(cons),
          SCIPconsIsEnforced(cons), SCIPconsIsChecked(cons),
          SCIPconsIsPropagated(cons), FALSE, SCIPconsIsModifiable(cons),
@@ -512,11 +520,11 @@ SCIP_RETCODE updateBranchingConss(
 
       if( newcons != NULL && valid )
       {
-         SCIP_CALL( SCIPaddCons(subgcg, newcons) );
+         SCIP_CALL( SCIPaddCons(subgcgorig, newcons) );
 
          // TODO: SCIPconsIsConflict(cons) ?
 
-         SCIP_CALL( SCIPreleaseCons(subgcg, &newcons) );
+         SCIP_CALL( SCIPreleaseCons(subgcgorig, &newcons) );
       }
       else
       {
@@ -533,8 +541,9 @@ SCIP_RETCODE updateBranchingConss(
  */
 static
 SCIP_RETCODE solveProblem(
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
-   SCIP*                 subgcg,             /**< nested gcg pricing problem SCIP data structure */
+   GCG*                  subgcg,             /**< nested gcg pricing problem SCIP data structure */
    int                   probnr,             /**< problem number */
    GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
    SCIP_Real*            lowerbound,         /**< pointer to store lower bound */
@@ -544,13 +553,14 @@ SCIP_RETCODE solveProblem(
    GCG_COL* col;
    SCIP_RETCODE retcode;
    SCIP_Real timelimit;
+   SCIP* subgcgorig = GCGgetOrigprob(subgcg);
    SCIP_HASHMAP* varmap = solverdata->varmaps[probnr];
 
    #pragma omp atomic update
    solverdata->count++;
 
 #ifdef _OPENMP
-   int nthreads = GCGpricerGetMaxNThreads(solverdata->masterprob);
+   int nthreads = GCGpricerGetMaxNThreads(gcg);
    if( nthreads == 0 )
       nthreads = omp_get_max_threads();
    else
@@ -562,25 +572,25 @@ SCIP_RETCODE solveProblem(
    if( solverdata->relpricingprobidxs[probnr] + 1 <= (nthreads % solverdata->nrelpricingprobs) )
       nthreads++;
 
-   if( GCGpricerGetMaxNThreads(GCGgetMasterprob(subgcg)) != nthreads )
+   if( GCGpricerGetMaxNThreads(subgcg) != nthreads )
    {
-      SCIP_CALL( SCIPsetIntParam(subgcg, "pricing/masterpricer/nthreads", nthreads) );
+      SCIP_CALL( SCIPsetIntParam(subgcgorig, "pricing/masterpricer/nthreads", nthreads) );
    }
 #endif
 
    // set time limit
    SCIP_CALL( SCIPgetRealParam(pricingprob, "limits/time", &timelimit) );
-   SCIP_CALL( SCIPsetRealParam(subgcg, "limits/time", timelimit) );
+   SCIP_CALL( SCIPsetRealParam(subgcgorig, "limits/time", timelimit) );
 
-   if( SCIPgetStage(subgcg) == SCIP_STAGE_PROBLEM )
+   if( SCIPgetStage(subgcgorig) == SCIP_STAGE_PROBLEM )
    {
 #ifdef DEBUG_PRICING_WRITE_PROBS
       if( SUBGCG_DEBUG_ITER >= 0 && solverdata->count == SUBGCG_DEBUG_ITER )
       {
          SCIPwriteOrigProblem(pricingprob, "pricingprob.lp", NULL, FALSE);
-         SCIPwriteOrigProblem(subgcg, "subgcg.lp", NULL, FALSE);
-         SCIPwriteOrigProblem(subgcg, "subgcg.dec", NULL, FALSE);
-         SCIPwriteParams(subgcg, "params.txt", FALSE, FALSE);
+         SCIPwriteOrigProblem(subgcgorig, "subgcg.lp", NULL, FALSE);
+         SCIPwriteOrigProblem(subgcgorig, "subgcg.dec", NULL, FALSE);
+         SCIPwriteParams(subgcgorig, "params.txt", FALSE, FALSE);
       }
 #endif
 
@@ -593,8 +603,8 @@ SCIP_RETCODE solveProblem(
 #endif
 #endif
 
-      SCIP_CALL( GCGstashLimitSettings(subgcg, GCGgetMasterprob(subgcg)) );
-      SCIP_CALL( SCIPpresolve(subgcg) );
+      SCIP_CALL( GCGstashLimitSettings(subgcg) );
+      SCIP_CALL( GCGpresolve(subgcg) );
       GCGconshdlrDecompTranslateNBestOrigPartialdecs(subgcg, 1, TRUE, solverdata->translatesymmetry[probnr]);
 
 #ifdef SUBGCG_DETAILED_CLOCKS
@@ -609,8 +619,8 @@ SCIP_RETCODE solveProblem(
 #ifdef DEBUG_PRICING_WRITE_PROBS
       if( SUBGCG_DEBUG_ITER >= 0 && solverdata->count == SUBGCG_DEBUG_ITER )
       {
-         SCIPwriteTransProblem(subgcg, "subgcg_p.lp", NULL, FALSE);
-         SCIPwriteTransProblem(subgcg, "subgcg_p.dec", NULL, FALSE);
+         SCIPwriteTransProblem(subgcgorig, "subgcg_p.lp", NULL, FALSE);
+         SCIPwriteTransProblem(subgcgorig, "subgcg_p.dec", NULL, FALSE);
          SCIPdebugMessage("Wrote lp, dec, and param files.\n");
       }
 #endif
@@ -625,7 +635,7 @@ SCIP_RETCODE solveProblem(
 #endif
 #endif
 
-   retcode = SCIPsolve(subgcg);
+   retcode = GCGsolve(subgcg);
 
 #ifdef SUBGCG_DETAILED_CLOCKS
 #ifdef _OPENMP
@@ -638,7 +648,7 @@ SCIP_RETCODE solveProblem(
 
    SCIPdebugMessage("Problem %d solved\n", probnr);
 
-   //solverdata->iters += GCGmasterGetPricingSimplexIters(GCGgetMasterprob(subgcg));
+   //solverdata->iters += GCGmasterGetPricingSimplexIters(subgcg);
    //solverdata->iters += SCIPgetNLPIterations(GCGgetMasterprob(subgcg));
 
 #ifdef SUBGCG_DETAILED_CLOCKS
@@ -655,10 +665,10 @@ SCIP_RETCODE solveProblem(
       SCIPwarningMessage(pricingprob, "Pricing problem %d terminated with retcode = %d, ignoring\n", probnr, retcode);
       return SCIP_OKAY;
    }
-   SCIPdebugMessage("  -> status = %d\n", SCIPgetStatus(subgcg));
-   SCIPdebugMessage("  -> nsols = %d\n", SCIPgetNSols(subgcg));
+   SCIPdebugMessage("  -> status = %d\n", SCIPgetStatus(subgcgorig));
+   SCIPdebugMessage("  -> nsols = %d\n", SCIPgetNSols(subgcgorig));
 
-   *status = getPricingstatus(subgcg);
+   *status = getPricingstatus(subgcgorig);
    SCIPdebugMessage("GCG Solver: Pricingstatus after solve: %u\n", *status);
 
    switch( *status )
@@ -671,42 +681,42 @@ SCIP_RETCODE solveProblem(
       * so copy the primal ray into the solution structure and mark it to be a primal ray
       */
    case GCG_PRICINGSTATUS_UNBOUNDED:
-      if( !SCIPhasPrimalRay(subgcg) )
+      if( !SCIPhasPrimalRay(subgcgorig) )
       {
          GCGconshdlrDecompFreeOrigOnExit(subgcg, FALSE);
-         SCIP_CALL( SCIPfreeTransform(subgcg));
+         SCIP_CALL( SCIPfreeTransform(subgcgorig));
          GCGconshdlrDecompFreeOrigOnExit(subgcg, TRUE);
 
-         SCIP_CALL( SCIPsetIntParam(subgcg, "presolving/maxrounds", 0) );
-         SCIP_CALL( SCIPtransformProb(subgcg) );
-         SCIP_CALL( SCIPsolve(subgcg) );
-         SCIP_CALL( SCIPsetIntParam(subgcg, "presolving/maxrounds", -1) );
+         SCIP_CALL( SCIPsetIntParam(subgcgorig, "presolving/maxrounds", 0) );
+         SCIP_CALL( SCIPtransformProb(subgcgorig) );
+         SCIP_CALL( SCIPsolve(subgcgorig) );
+         SCIP_CALL( SCIPsetIntParam(subgcgorig, "presolving/maxrounds", -1) );
       }
 
       SCIPdebugMessage("  -> unbounded, creating column from ray\n");
-      SCIP_CALL( createColumnFromRay(pricingprob, subgcg, varmap, probnr, &col) );
-      SCIP_CALL( GCGpricerAddCol(solverdata->masterprob, col) );
+      SCIP_CALL( createColumnFromRay(pricingprob, subgcgorig, varmap, probnr, &col) );
+      SCIP_CALL( GCGpricerAddCol(gcg, col) );
       break;
 
       /* If the pricing problem is neither infeasible nor unbounded, try to extract feasible columns */
    case GCG_PRICINGSTATUS_UNKNOWN:
    case GCG_PRICINGSTATUS_SOLVERLIMIT:
    case GCG_PRICINGSTATUS_OPTIMAL:
-      assert(SCIPgetNSols(subgcg) > 0
-         || (SCIPgetStatus(subgcg) != SCIP_STATUS_OPTIMAL
-            && SCIPgetStatus(subgcg) != SCIP_STATUS_GAPLIMIT
-            && SCIPgetStatus(subgcg) != SCIP_STATUS_SOLLIMIT));
+      assert(SCIPgetNSols(subgcgorig) > 0
+         || (SCIPgetStatus(subgcgorig) != SCIP_STATUS_OPTIMAL
+            && SCIPgetStatus(subgcgorig) != SCIP_STATUS_GAPLIMIT
+            && SCIPgetStatus(subgcgorig) != SCIP_STATUS_SOLLIMIT));
 
       /* Transform at most maxcols many solutions from the pricing problem into columns */
-      SCIP_CALL( getColumnsFromPricingprob(solverdata->masterprob, pricingprob, subgcg, varmap, probnr, solverdata->checksols) );
+      SCIP_CALL( getColumnsFromPricingprob(gcg, pricingprob, subgcgorig, varmap, probnr, solverdata->checksols) );
 
-      *lowerbound = SCIPgetDualbound(subgcg);
+      *lowerbound = SCIPgetDualbound(subgcgorig);
 
       SCIPdebugMessage("  -> lowerbound = %.4g\n", *lowerbound);
       break;
 
    default:
-      SCIPerrorMessage("Pricing problem %d has invalid status: %d\n", probnr, SCIPgetStatus(subgcg));
+      SCIPerrorMessage("Pricing problem %d has invalid status: %d\n", probnr, SCIPgetStatus(subgcgorig));
       break;
    }
 
@@ -734,13 +744,13 @@ GCG_DECL_SOLVERFREE(solverFreeGcg)
 {  /*lint --e{715}*/
    GCG_SOLVERDATA* solverdata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
 
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
-   SCIPfreeMemory(scip, &solverdata);
+   SCIPfreeMemory(GCGgetMasterprob(gcg), &solverdata);
 
    GCGsolverSetData(solver, NULL);
 
@@ -749,25 +759,26 @@ GCG_DECL_SOLVERFREE(solverFreeGcg)
 
 static
 SCIP_RETCODE freeBlockMemory(
-   SCIP* scip,
+   GCG* gcg,
    GCG_SOLVERDATA* solverdata
    )
 {
    int i;
    int npricingprobs = solverdata->npricingprobs;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
    if( solverdata->subgcgs == NULL )
       return SCIP_OKAY;
 
    for( i = 0; i < npricingprobs; ++i )
    {
-      if( GCGisPricingprobRelevant(solverdata->origprob, i) )
+      if( GCGisPricingprobRelevant(gcg, i) )
       {
          if( solverdata->subgcgs[i] != NULL )
          {
             GCGconshdlrDecompFreeDetprobdata(solverdata->subgcgs[i]);
             SCIPhashmapFree(&(solverdata->varmaps[i]));
-            SCIP_CALL( SCIPfree(&(solverdata->subgcgs[i])) );
+            SCIP_CALL( GCGfree(&(solverdata->subgcgs[i])) );
             solverdata->subgcgs[i] = NULL;
          }
          else
@@ -775,23 +786,23 @@ SCIP_RETCODE freeBlockMemory(
       }
    }
 
-   SCIPfreeBlockMemoryArray(scip, &(solverdata->subgcgs), npricingprobs);
+   SCIPfreeBlockMemoryArray(masterprob, &(solverdata->subgcgs), npricingprobs);
    solverdata->subgcgs = NULL;
-   SCIPfreeBlockMemoryArray(scip, &(solverdata->varmaps), npricingprobs);
+   SCIPfreeBlockMemoryArray(masterprob, &(solverdata->varmaps), npricingprobs);
    solverdata->varmaps = NULL;
-   SCIPfreeBlockMemoryArray(scip, &(solverdata->nbasicpricingconss), npricingprobs);
+   SCIPfreeBlockMemoryArray(masterprob, &(solverdata->nbasicpricingconss), npricingprobs);
    solverdata->nbasicpricingconss = NULL;
-   SCIPfreeBlockMemoryArray(scip, &(solverdata->curnodelimit), npricingprobs);
+   SCIPfreeBlockMemoryArray(masterprob, &(solverdata->curnodelimit), npricingprobs);
    solverdata->curnodelimit = NULL;
-   SCIPfreeBlockMemoryArray(scip, &(solverdata->curgaplimit), npricingprobs);
+   SCIPfreeBlockMemoryArray(masterprob, &(solverdata->curgaplimit), npricingprobs);
    solverdata->curgaplimit = NULL;
-   SCIPfreeBlockMemoryArray(scip, &(solverdata->cursollimit), npricingprobs);
+   SCIPfreeBlockMemoryArray(masterprob, &(solverdata->cursollimit), npricingprobs);
    solverdata->cursollimit = NULL;
-   SCIPfreeBlockMemoryArray(scip, &(solverdata->curstallnodelimit), npricingprobs);
+   SCIPfreeBlockMemoryArray(masterprob, &(solverdata->curstallnodelimit), npricingprobs);
    solverdata->curstallnodelimit = NULL;
-   SCIPfreeBlockMemoryArray(scip, &(solverdata->translatesymmetry), npricingprobs);
+   SCIPfreeBlockMemoryArray(masterprob, &(solverdata->translatesymmetry), npricingprobs);
    solverdata->translatesymmetry = NULL;
-   SCIPfreeBlockMemoryArray(scip, &(solverdata->relpricingprobidxs), npricingprobs);
+   SCIPfreeBlockMemoryArray(masterprob, &(solverdata->relpricingprobidxs), npricingprobs);
    solverdata->relpricingprobidxs = NULL;
 
 #ifdef SUBGCG_DETAILED_CLOCKS
@@ -812,12 +823,14 @@ GCG_DECL_SOLVERINITSOL(solverInitsolGcg)
    int npricingprobs;
    int i;
    int j;
+   SCIP* masterprob;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
 
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
+   masterprob = GCGgetMasterprob(gcg);
 
    if( solverdata->depth >= solverdata->maxdepth )
    {
@@ -828,18 +841,18 @@ GCG_DECL_SOLVERINITSOL(solverInitsolGcg)
       return SCIP_OKAY;
    }
 
-   solverdata->npricingprobs = GCGgetNPricingprobs(solverdata->origprob);
+   solverdata->npricingprobs = GCGgetNPricingprobs(gcg);
    npricingprobs = solverdata->npricingprobs;
 
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->subgcgs), npricingprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->varmaps), npricingprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->nbasicpricingconss), npricingprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->curnodelimit), npricingprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->curgaplimit), npricingprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->cursollimit), npricingprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->curstallnodelimit), npricingprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->translatesymmetry), npricingprobs) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->relpricingprobidxs), npricingprobs));
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(solverdata->subgcgs), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(solverdata->varmaps), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(solverdata->nbasicpricingconss), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(solverdata->curnodelimit), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(solverdata->curgaplimit), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(solverdata->cursollimit), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(solverdata->curstallnodelimit), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(solverdata->translatesymmetry), npricingprobs) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(solverdata->relpricingprobidxs), npricingprobs));
 
 #ifdef SUBGCG_DETAILED_CLOCKS
    SCIPcreateClock(scip, &solverdata->inittime);
@@ -856,14 +869,14 @@ GCG_DECL_SOLVERINITSOL(solverInitsolGcg)
       solverdata->varmaps[i] = NULL;
       solverdata->translatesymmetry[i] = TRUE;
 
-      if( GCGisPricingprobRelevant(solverdata->origprob, i) )
+      if( GCGisPricingprobRelevant(gcg, i) )
       {
          solverdata->relpricingprobidxs[i] = j++;
          solverdata->curnodelimit[i] = solverdata->startnodelimit;
          solverdata->curgaplimit[i] = solverdata->startgaplimit;
          solverdata->cursollimit[i] = solverdata->startsollimit;
          solverdata->curstallnodelimit[i] = solverdata->startstallnodelimit;
-         SCIP_CALL( buildProblem(solverdata, GCGgetPricingprob(solverdata->origprob, i), i) );
+         SCIP_CALL( buildProblem(gcg, solverdata, GCGgetPricingprob(gcg, i), i) );
       }
       else
       {
@@ -881,7 +894,7 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolGcg)
 {
    GCG_SOLVERDATA* solverdata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
 
    solverdata = GCGsolverGetData(solver);
@@ -891,7 +904,7 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolGcg)
    if( solverdata->depth == 0 && solverdata->inittime )
    {
       SCIPinfoMessage(
-         GCGgetOriginalprob(scip),
+         GCGgetOrigprob(gcg),
          NULL,
          "GCG Solver: Init: %.2f, Update: %.2f, Solving: %.2f, Postprocessing: %.2f, Iters: %li\n",
          SCIPgetClockTime(solverdata->origprob, solverdata->inittime),
@@ -903,7 +916,7 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolGcg)
    }
 #endif
 
-   SCIP_CALL( freeBlockMemory(scip, solverdata) );
+   SCIP_CALL( freeBlockMemory(gcg, solverdata) );
    return SCIP_OKAY;
 }
 
@@ -918,8 +931,9 @@ GCG_DECL_SOLVEREXITSOL(solverExitsolGcg)
 static
 GCG_DECL_SOLVERSOLVE(solverSolveGcg)
 {  /*lint --e{715}*/
-   SCIP* subgcg = NULL;
+   GCG* subgcg = NULL;
    GCG_SOLVERDATA* solverdata;
+   SCIP* subgcgorig;
 
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
@@ -936,28 +950,29 @@ GCG_DECL_SOLVERSOLVE(solverSolveGcg)
    SCIPdebugMessage("GCG Solver %" PRId64 ": solve start, probnr: %d, status: %u\n", solverdata->count+1, probnr, *status);
 
    subgcg = solverdata->subgcgs[probnr];
+   subgcgorig = GCGgetOrigprob(subgcg);
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
 #endif
 
-   SCIP_CALL( SCIPsetLongintParam(subgcg, "limits/stallnodes", -1LL) );
-   SCIP_CALL( SCIPsetLongintParam(subgcg, "limits/nodes", -1LL) );
-   SCIP_CALL( SCIPsetRealParam(subgcg, "limits/gap", 0.0) );
-   SCIP_CALL( SCIPsetIntParam(subgcg, "limits/solutions", -1) );
+   SCIP_CALL( SCIPsetLongintParam(subgcgorig, "limits/stallnodes", -1LL) );
+   SCIP_CALL( SCIPsetLongintParam(subgcgorig, "limits/nodes", -1LL) );
+   SCIP_CALL( SCIPsetRealParam(subgcgorig, "limits/gap", 0.0) );
+   SCIP_CALL( SCIPsetIntParam(subgcgorig, "limits/solutions", -1) );
 
    SCIPdebugMessage("Solving pricing problem %d (pointer: %p)\n", probnr, (void*)pricingprob);
 
-   SCIP_CALL( solveProblem(pricingprob, subgcg, probnr, solverdata, lowerbound, status) );
+   SCIP_CALL( solveProblem(gcg, pricingprob, subgcg, probnr, solverdata, lowerbound, status) );
 
 #ifdef SUBGCG_DEBUG_OBJECTIVE_VALUE
-   if( SCIPgetStatus(subgcg) == SCIP_STATUS_OPTIMAL )
+   if( SCIPgetStatus(subgcgorig) == SCIP_STATUS_OPTIMAL )
    {
       SCIPsolve(pricingprob);
-      assert(SCIPisEQ(solverdata->origprob, SCIPgetDualbound(pricingprob), SCIPgetDualbound(subgcg)));
-      if( !SCIPisEQ(solverdata->origprob, SCIPgetDualbound(pricingprob), SCIPgetDualbound(subgcg)) )
+      assert(SCIPisEQ(solverdata->origprob, SCIPgetDualbound(pricingprob), SCIPgetDualbound(subgcgorig)));
+      if( !SCIPisEQ(solverdata->origprob, SCIPgetDualbound(pricingprob), SCIPgetDualbound(subgcgorig)) )
       {
-         SCIPerrorMessage("GCG Solver: optimal dualbound (gcg: %f, scip: %f) does not match: prob %d, iter %ld\n", SCIPgetDualbound(subgcg), SCIPgetDualbound(pricingprob), probnr, solverdata->count);
+         SCIPerrorMessage("GCG Solver: optimal dualbound (gcg: %f, scip: %f) does not match: prob %d, iter %ld\n", SCIPgetDualbound(subgcgorig), SCIPgetDualbound(pricingprob), probnr, solverdata->count);
          return SCIP_ERROR;
       }
    }
@@ -965,7 +980,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveGcg)
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
    SCIP_CALL( GCGprintStatistics(subgcg, NULL) );
-   SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_NONE) );
+   SCIP_CALL( SCIPsetIntParam(subgcgorig, "display/verblevel", SCIP_VERBLEVEL_NONE) );
 #endif
 
    SCIPdebugMessage("GCG Solver: solve finished, probnr: %d, status: %u\n", probnr, *status);
@@ -977,7 +992,8 @@ GCG_DECL_SOLVERSOLVE(solverSolveGcg)
 static
 GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurGcg)
 {  /*lint --e{715}*/
-   SCIP* subgcg = NULL;
+   GCG* subgcg = NULL;
+   SCIP* subgcgorig;
    GCG_SOLVERDATA* solverdata;
    int heurpricingiters;
 
@@ -996,14 +1012,15 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurGcg)
    SCIPdebugMessage("GCG Solver %" PRId64 ": solveHeur start, probnr: %d, status: %u\n", solverdata->count+1, probnr, *status);
 
    subgcg = solverdata->subgcgs[probnr];
+   subgcgorig = GCGgetOrigprob(subgcg);
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
+   SCIP_CALL( SCIPsetIntParam(subgcgorig, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
 #endif
 
 
    /* setup heuristic solver parameters */
-   if( SCIPgetStage(subgcg) == SCIP_STAGE_PROBLEM )
+   if( SCIPgetStage(subgcgorig) == SCIP_STAGE_PROBLEM )
    {
       solverdata->curnodelimit[probnr] = solverdata->startnodelimit;
       solverdata->curstallnodelimit[probnr] = solverdata->startstallnodelimit;
@@ -1012,7 +1029,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurGcg)
    }
    else
    {
-      switch( SCIPgetStatus(subgcg) )
+      switch( SCIPgetStatus(subgcgorig) )
       {
       case SCIP_STATUS_NODELIMIT:
          if( solverdata->nodelimitfac > 1.0 )
@@ -1040,38 +1057,38 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurGcg)
          break;
       default:
          *status = GCG_PRICINGSTATUS_UNKNOWN;
-         SCIPwarningMessage(pricingprob, "GCG solver: cancelled with status %u\n", SCIPgetStatus(subgcg));
+         SCIPwarningMessage(pricingprob, "GCG solver: cancelled with status %u\n", SCIPgetStatus(subgcgorig));
          return SCIP_OKAY;
       }
    }
-   SCIP_CALL( SCIPsetLongintParam(subgcg, "limits/nodes", solverdata->curnodelimit[probnr]) );
-   SCIP_CALL( SCIPsetLongintParam(subgcg, "limits/stallnodes", solverdata->curstallnodelimit[probnr]) );
-   SCIP_CALL( SCIPsetRealParam(subgcg, "limits/gap", solverdata->curgaplimit[probnr]) );
-   SCIP_CALL( SCIPsetIntParam(subgcg, "limits/solutions", solverdata->cursollimit[probnr]) );
+   SCIP_CALL( SCIPsetLongintParam(subgcgorig, "limits/nodes", solverdata->curnodelimit[probnr]) );
+   SCIP_CALL( SCIPsetLongintParam(subgcgorig, "limits/stallnodes", solverdata->curstallnodelimit[probnr]) );
+   SCIP_CALL( SCIPsetRealParam(subgcgorig, "limits/gap", solverdata->curgaplimit[probnr]) );
+   SCIP_CALL( SCIPsetIntParam(subgcgorig, "limits/solutions", solverdata->cursollimit[probnr]) );
 
    SCIP_CALL( SCIPgetIntParam(solverdata->origprob, "pricing/masterpricer/heurpricingiters", &heurpricingiters) );
-   SCIP_CALL( SCIPsetIntParam(subgcg, "pricing/masterpricer/heurpricingiters", heurpricingiters) );
+   SCIP_CALL( SCIPsetIntParam(subgcgorig, "pricing/masterpricer/heurpricingiters", heurpricingiters) );
 
    /* solve the pricing problem */
    SCIPdebugMessage("Solving pricing problem %d heuristically (pointer: %p)\n", probnr, (void*)pricingprob);
 
-   SCIP_CALL( solveProblem(pricingprob, subgcg, probnr, solverdata, lowerbound, status) );
+   SCIP_CALL( solveProblem(gcg, pricingprob, subgcg, probnr, solverdata, lowerbound, status) );
 
 #ifdef SUBGCG_DEBUG_OBJECTIVE_VALUE
-   if( SCIPgetStatus(subgcg) == SCIP_STATUS_OPTIMAL )
+   if( SCIPgetStatus(subgcgorig) == SCIP_STATUS_OPTIMAL )
    {
       SCIPsolve(pricingprob);
-      assert(SCIPisEQ(solverdata->origprob, SCIPgetDualbound(pricingprob), SCIPgetDualbound(subgcg)));
-      if( !SCIPisEQ(solverdata->origprob, SCIPgetDualbound(pricingprob), SCIPgetDualbound(subgcg)) )
+      assert(SCIPisEQ(solverdata->origprob, SCIPgetDualbound(pricingprob), SCIPgetDualbound(subgcgorig)));
+      if( !SCIPisEQ(solverdata->origprob, SCIPgetDualbound(pricingprob), SCIPgetDualbound(subgcgorig)) )
       {
-         SCIPerrorMessage("GCG Solver: optimal dualbound (gcg: %f, scip: %f) does not match: prob %d, iter %ld\n", SCIPgetDualbound(subgcg), SCIPgetDualbound(pricingprob), probnr, solverdata->count);
+         SCIPerrorMessage("GCG Solver: optimal dualbound (gcg: %f, scip: %f) does not match: prob %d, iter %ld\n", SCIPgetDualbound(subgcgorig), SCIPgetDualbound(pricingprob), probnr, solverdata->count);
          return SCIP_ERROR;
       }
    }
 #endif
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_NONE) );
+   SCIP_CALL( SCIPsetIntParam(subgcgorig, "display/verblevel", SCIP_VERBLEVEL_NONE) );
 #endif
 
    SCIPdebugMessage("GCG Solver: solveHeur finished, probnr: %d, status: %u\n", probnr, *status);
@@ -1099,7 +1116,7 @@ GCG_DECL_SOLVERUPDATE(solverUpdateGcg)
 #endif
 
    GCGconshdlrDecompFreeOrigOnExit(solverdata->subgcgs[probnr], FALSE);
-   SCIPfreeTransform(solverdata->subgcgs[probnr]);
+   SCIPfreeTransform(GCGgetOrigprob(solverdata->subgcgs[probnr]));
    GCGconshdlrDecompFreeOrigOnExit(solverdata->subgcgs[probnr], TRUE);
 
    /* update pricing problem information */
@@ -1126,14 +1143,15 @@ GCG_DECL_SOLVERUPDATE(solverUpdateGcg)
 
 /** creates the most infeasible LP braching rule and includes it in SCIP */
 SCIP_RETCODE GCGincludeSolverGcg(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_SOLVERDATA* solverdata = NULL;
-   SCIP* origprob = GCGmasterGetOrigprob(scip);
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
    /* create gcg solver data */
-   SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
+   SCIP_CALL( SCIPallocMemory(masterprob, &solverdata) );
    solverdata->depth = 0;
    solverdata->npricingprobs = 0;
    solverdata->nrelpricingprobs = 0;
@@ -1145,7 +1163,7 @@ SCIP_RETCODE GCGincludeSolverGcg(
 #endif
    solverdata->count = 0;
    solverdata->origprob = origprob;
-   solverdata->masterprob = scip;
+   solverdata->masterprob = masterprob;
    solverdata->subgcgs = NULL;
    solverdata->varmaps = NULL;
    solverdata->nbasicpricingconss = NULL;
@@ -1154,7 +1172,7 @@ SCIP_RETCODE GCGincludeSolverGcg(
    solverdata->relpricingprobidxs = NULL;
 
    /* include pricing problem solver */
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_HEU_ENABLED, SOLVER_ENABLED,
+   SCIP_CALL( GCGpricerIncludeSolver(gcg, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY, SOLVER_HEU_ENABLED, SOLVER_ENABLED,
       solverUpdateGcg, solverSolveGcg, solverSolveHeurGcg, solverFreeGcg, solverInitGcg, solverExitGcg,
          solverInitsolGcg, solverExitsolGcg, solverdata) );
 

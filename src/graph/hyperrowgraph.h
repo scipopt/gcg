@@ -37,8 +37,8 @@
 #ifndef GCG_HYPERROWGRAPH_H_
 #define GCG_HYPERROWGRAPH_H_
 
-#include "matrixgraph.h"
-#include "hypergraph.h"
+#include "graph/matrixgraph.h"
+#include "graph/hypergraph.h"
 #include "gcg/class_partialdecomp.h"
 #include "gcg/class_detprobdata.h"
 
@@ -51,7 +51,7 @@ private:
    Hypergraph<T> graph;
 public:
    HyperrowGraph(
-      SCIP*                 scip,              /**< SCIP data structure */
+      GCG*                  gcg,               /**< GCG data structure */
       Weights               w                  /**< weights for the given graph */
       );
 

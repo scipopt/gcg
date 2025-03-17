@@ -39,7 +39,8 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,7 +49,7 @@ extern "C" {
 /** creates the gcgguideddiving heuristic and includes it in GCG */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeHeurGcgguideddiving(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

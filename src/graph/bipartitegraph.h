@@ -35,8 +35,8 @@
 #ifndef GCG_BIPARTITEGRAPH_H_
 #define GCG_BIPARTITEGRAPH_H_
 
-#include "matrixgraph.h"
-#include "graph.h"
+#include "graph/matrixgraph.h"
+#include "graph/graph.h"
 
 namespace gcg {
 
@@ -47,7 +47,7 @@ private:
    Graph<T> graph;
 public:
    BipartiteGraph(
-         SCIP*                 scip,              /**< SCIP data structure */
+         GCG*                  gcgstruct,         /**< GCG data structure */
          Weights               w                  /**< weights for the given graph */
       );
    virtual ~BipartiteGraph();

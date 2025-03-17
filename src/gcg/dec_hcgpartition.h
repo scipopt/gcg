@@ -37,8 +37,7 @@
 #define GCG_DEC_HCGPARTITION_H__
 
 #include "scip/scip.h"
-#include "def.h"
-#include "type_decomp.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,8 +47,8 @@ extern "C" {
 /** creates the arrowheur detector and includes it in SCIP */
 /** creates the hcgpartition presolver and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorHcgpartition(
-   SCIP* scip                 /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorHcgpartition(
+   GCG*  gcg                  /**< GCG data structure */
    );
 
 #ifdef __cplusplus

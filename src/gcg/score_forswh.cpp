@@ -32,11 +32,11 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "score_forswh.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/score_forswh.h"
 
 
 /* score properties */
@@ -78,7 +78,7 @@ GCG_DECL_SCORECALC(scoreCalcForswh)
    unsigned long newmasterarea;
    unsigned long newblockarea;
 
-   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
+   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(gcg, partialdecid);
    gcg::DETPROBDATA* detprobdata = partialdec->getDetprobdata();
 
    std::vector<int> blockforconss(partialdec->getNConss(), -1);
@@ -182,13 +182,13 @@ GCG_DECL_SCORECALC(scoreCalcForswh)
 
 /** creates the max foreseeing white score and includes it in SCIP */
 SCIP_RETCODE GCGincludeScoreForswh(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_SCOREDATA* scoredata = NULL;
 
    SCIP_CALL(
-      GCGincludeScore(scip, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata,
+      GCGincludeScore(gcg, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata,
          scoreFreeForswh, scoreCalcForswh) );
 
    return SCIP_OKAY;

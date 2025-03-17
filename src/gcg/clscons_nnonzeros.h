@@ -38,7 +38,7 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,8 +46,8 @@ extern "C" {
 
 /** creates the classifier for NNonzeros and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeConsClassifierNNonzeros(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeConsClassifierNNonzeros(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

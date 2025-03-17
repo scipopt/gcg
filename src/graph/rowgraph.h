@@ -36,9 +36,9 @@
 #ifndef GCG_ROWGRAPH_H_
 #define GCG_ROWGRAPH_H_
 
-#include "graph.h"
-#include "bipartitegraph.h"
-#include "matrixgraph.h"
+#include "graph/graph.h"
+#include "graph/bipartitegraph.h"
+#include "graph/matrixgraph.h"
 
 namespace gcg {
 template <class T>
@@ -49,7 +49,7 @@ protected:
 
 public:
    RowGraph(
-      SCIP*                 scip,              /**< SCIP data structure */
+      GCG*                  gcg,               /**< GCG data structure */
       Weights               w                  /**< weights for the given graph */
       );
    virtual ~RowGraph();

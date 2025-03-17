@@ -35,7 +35,7 @@
 #include <iostream>
 #include <cmath>
 #include <set>
-#include "graph_gcg.h"
+#include "graph/graph_gcg.h"
 
 #ifdef WITH_GSL
 #include <gsl/gsl_errno.h>

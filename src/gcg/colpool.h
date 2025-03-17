@@ -36,9 +36,9 @@
 #ifndef __GCG_COLPOOL_H__
 #define __GCG_COLPOOL_H__
 
-#include "type_colpool.h"
-#include "pub_colpool.h"
-#include "type_pricestore_gcg.h"
+#include "gcg/type_colpool.h"
+#include "gcg/pub_colpool.h"
+#include "gcg/type_pricestore_gcg.h"
 
 #ifdef __cplusplus
 extern "C" {

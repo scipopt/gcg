@@ -37,8 +37,8 @@
 
 #include "scip/scip.h"
 
-#include "struct_consclassifier.h"
-#include "pub_clscons.h"
+#include "gcg/struct_consclassifier.h"
+#include "gcg/pub_clscons.h"
 
 
 /** gets user data of constraint classifier */

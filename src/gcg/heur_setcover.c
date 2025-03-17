@@ -35,11 +35,11 @@
 
 #include <assert.h>
 #include <string.h>
-#include "gcg.h"
-#include "pricer_gcg.h"
+#include "gcg/gcg.h"
+#include "gcg/pricer_gcg.h"
 #include "scip/clock.h"
 #include "scip/cons_linear.h"
-#include "heur_setcover.h"
+#include "gcg/heur_setcover.h"
 
 
 #define HEUR_NAME             "setcover"
@@ -132,6 +132,7 @@ typedef struct
 
 struct SCIP_HeurData
 {
+   GCG*                  gcg;                 /** GCG data structure */
    int                   param_core_tent_size; /**< number of columns covering each row that are added to the tentative core at the beginning           */
    SCIP_Bool             param_lambda_adjustments; /**< adjust step size during the subgradient phase                                                       */
    int                   param_lambda_p;     /**< number of iterations after which lambda is adjusted                                                 */
@@ -3119,7 +3120,6 @@ SCIP_DECL_HEUREXIT(heurExitSetcover)
 static
 SCIP_DECL_HEUREXEC(heurExecSetcover)
 { /*lint --e{715}*/
-   SCIP* origprob;
    SCIP_HEURDATA* heurdata;
 
    assert(heur != NULL);
@@ -3128,9 +3128,6 @@ SCIP_DECL_HEUREXEC(heurExecSetcover)
 
    heurdata = SCIPheurGetData(heur);
    assert(heurdata != NULL);
-
-   origprob = GCGmasterGetOrigprob(scip);
-   assert(origprob != NULL);
 
    *result = SCIP_DIDNOTRUN;
 
@@ -3142,7 +3139,7 @@ SCIP_DECL_HEUREXEC(heurExecSetcover)
    }
 
    /* only run on set covering problems */
-   if( GCGisMasterSetCovering(origprob) == FALSE )
+   if( GCGisMasterSetCovering(heurdata->gcg) == FALSE )
       return SCIP_OKAY;
 
    if( SCIPgetNVars(scip) == 0 )
@@ -3160,88 +3157,90 @@ SCIP_DECL_HEUREXEC(heurExecSetcover)
  */
 
 /** creates the setcover primal heuristic and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurSetcover(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeHeurSetcover(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_HEURDATA* heurdata = NULL;
    SCIP_HEUR* heur;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
    heur = NULL;
-   SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
+   SCIP_CALL( SCIPallocMemory(masterprob, &heurdata) );
+   heurdata->gcg = gcg;
 
    /* include primal heuristic */
 
-   SCIP_CALL( SCIPincludeHeurBasic(scip, &heur,
+   SCIP_CALL( SCIPincludeHeurBasic(masterprob, &heur,
          HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, HEUR_TIMING, HEUR_USESSUBSCIP, heurExecSetcover, heurdata) );
 
    assert(heur != NULL);
 
    /* set non fundamental callbacks via setter functions */
-   SCIP_CALL( SCIPsetHeurFree(scip, heur, heurFreeSetcover) );
-   SCIP_CALL( SCIPsetHeurInit(scip, heur, heurInitSetcover) );
-   SCIP_CALL( SCIPsetHeurExit(scip, heur, heurExitSetcover) );
+   SCIP_CALL( SCIPsetHeurFree(masterprob, heur, heurFreeSetcover) );
+   SCIP_CALL( SCIPsetHeurInit(masterprob, heur, heurInitSetcover) );
+   SCIP_CALL( SCIPsetHeurExit(masterprob, heur, heurExitSetcover) );
 
    /* add setcover primal heuristic parameters */
 
-   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/tentcoresize",
+   SCIP_CALL( SCIPaddIntParam(masterprob, "heuristics/"HEUR_NAME"/tentcoresize",
       "how many columns are added to the tentative core for each row",
       &heurdata->param_core_tent_size, FALSE, DEF_CORE_TENT_SIZE, 1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/lambdaadjustments",
+   SCIP_CALL( SCIPaddBoolParam(masterprob, "heuristics/"HEUR_NAME"/lambdaadjustments",
       "should the step size during the subgradient phase be adjusted?",
       &heurdata->param_lambda_adjustments, FALSE, DEF_LAMBDA_ADJUSTMENTS, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/lambda",
+   SCIP_CALL( SCIPaddRealParam(masterprob, "heuristics/"HEUR_NAME"/lambda",
       "default step size",
       &heurdata->param_lambda, FALSE, DEF_LAMBDA, 0.001, SCIP_REAL_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/lambdap",
+   SCIP_CALL( SCIPaddIntParam(masterprob, "heuristics/"HEUR_NAME"/lambdap",
       "number of iterations after which lambda is adjusted",
       &heurdata->param_lambda_p, FALSE, DEF_LAMBDA_P, 1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/beta",
+   SCIP_CALL( SCIPaddRealParam(masterprob, "heuristics/"HEUR_NAME"/beta",
       "greatest gap between lower and upper bounds that is allowed",
       &heurdata->param_beta, FALSE, DEF_BETA, 1.0, SCIP_REAL_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/sciter",
+   SCIP_CALL( SCIPaddIntParam(masterprob, "heuristics/"HEUR_NAME"/sciter",
       "number of subgradient iterations after which the stopping criterion is tested again",
       &heurdata->param_stop_crit_iter, FALSE, DEF_STOP_CRIT_ITER, 1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/scdiff",
+   SCIP_CALL( SCIPaddRealParam(masterprob, "heuristics/"HEUR_NAME"/scdiff",
       "maximum absolute difference between lower and upper bound that is allowed for the stopping criterion",
       &heurdata->param_stop_crit_diff, FALSE, DEF_STOP_CRIT_DIFF, 0.0, SCIP_REAL_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/scratio",
+   SCIP_CALL( SCIPaddRealParam(masterprob, "heuristics/"HEUR_NAME"/scratio",
       "minimum ratio between lower and upper bound that is allowed that is allowed for the stopping criterion",
       &heurdata->param_stop_crit_ratio, FALSE, DEF_STOP_CRIT_RATIO, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/pimin",
+   SCIP_CALL( SCIPaddRealParam(masterprob, "heuristics/"HEUR_NAME"/pimin",
       "percentage of rows to be removed after column fixing",
       &heurdata->param_pi_min, FALSE, DEF_PI_MIN, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/pialpha",
+   SCIP_CALL( SCIPaddRealParam(masterprob, "heuristics/"HEUR_NAME"/pialpha",
       "increase of pi when no improvement was made",
       &heurdata->param_pi_alpha, FALSE, DEF_PI_ALPHA, 0.0, SCIP_REAL_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/tpmaxiter",
+   SCIP_CALL( SCIPaddIntParam(masterprob, "heuristics/"HEUR_NAME"/tpmaxiter",
       "maximum iterations of the three-phase procedure",
       &heurdata->param_max_iter, FALSE, DEF_MAX_ITER, 1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/tpmaxiternoimp",
+   SCIP_CALL( SCIPaddIntParam(masterprob, "heuristics/"HEUR_NAME"/tpmaxiternoimp",
       "maximum allowed number of iterations of the three-phase procedure without improvements",
       &heurdata->param_max_iter_no_imp, FALSE, DEF_MAX_ITER_NO_IMP, 1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/threephasemaxiter",
+   SCIP_CALL( SCIPaddIntParam(masterprob, "heuristics/"HEUR_NAME"/threephasemaxiter",
       "maximum number of iterations inside three-phase",
       &heurdata->param_threephase_max_iter, FALSE, DEF_THREEPHASE_MAX_ITER, 1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/greedymaxiter",
+   SCIP_CALL( SCIPaddIntParam(masterprob, "heuristics/"HEUR_NAME"/greedymaxiter",
       "maximum number of iterations of the greedy algorithm",
       &heurdata->param_greedy_max_iter, FALSE, DEF_GREEDY_MAX_ITER, 1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/minprobsize",
+   SCIP_CALL( SCIPaddIntParam(masterprob, "heuristics/"HEUR_NAME"/minprobsize",
          "minimum number of variables in the problem for the heuristic to start",
          &heurdata->param_min_prob_size, FALSE, DEF_MIN_PROB_SIZE, 1, INT_MAX, NULL, NULL) );
 

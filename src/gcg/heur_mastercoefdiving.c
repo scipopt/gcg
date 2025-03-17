@@ -37,8 +37,8 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_mastercoefdiving.h"
-#include "heur_masterdiving.h"
+#include "gcg/heur_mastercoefdiving.h"
+#include "gcg/heur_masterdiving.h"
 
 
 #define HEUR_NAME             "mastercoefdiving"
@@ -63,7 +63,7 @@
  * - binary variables are preferred
  */
 static
-GCG_DECL_DIVINGSELECTVAR(heurSelectVarMastercoefdiving) /*lint --e{715}*/
+GCG_DECL_MASTER_DIVINGSELECTVAR(heurSelectVarMastercoefdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    SCIP_VAR** lpcands;
    SCIP_Real* lpcandssol;
@@ -74,15 +74,16 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarMastercoefdiving) /*lint --e{715}*/
    int bestnviolrows;             /* number of violated rows for best candidate */
    SCIP_Real bestcandfrac;        /* fractionality of best candidate */
    int c;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
    /* check preconditions */
-   assert(scip != NULL);
+   assert(masterprob != NULL);
    assert(heur != NULL);
    assert(bestcand != NULL);
    assert(bestcandmayround != NULL);
 
    /* get fractional variables that should be integral */
-   SCIP_CALL( SCIPgetLPBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL) );
+   SCIP_CALL( SCIPgetLPBranchCands(masterprob, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL) );
    assert(lpcands != NULL);
    assert(lpcandsfrac != NULL);
    assert(lpcandssol != NULL);
@@ -185,13 +186,13 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarMastercoefdiving) /*lint --e{715}*/
 
 /** creates the mastercoefdiving heuristic and includes it in GCG */
 SCIP_RETCODE GCGincludeHeurMastercoefdiving(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_HEUR* heur;
 
    /* include diving heuristic */
-   SCIP_CALL( GCGincludeDivingHeurMaster(scip, &heur,
+   SCIP_CALL( GCGincludeDivingHeurMaster(gcg, &heur,
          HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, NULL, NULL, NULL, NULL, NULL, NULL, NULL, heurSelectVarMastercoefdiving, NULL) );
 

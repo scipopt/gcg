@@ -36,7 +36,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include "presol_roundbound.h"
+#include "gcg/presol_roundbound.h"
 
 
 #define PRESOL_NAME            "roundbound"
@@ -63,7 +63,7 @@ SCIP_DECL_PRESOLCOPY(presolCopyRoundbound)
    assert(strcmp(SCIPpresolGetName(presol), PRESOL_NAME) == 0);
 
    /* call inclusion method of presolver */
-   SCIP_CALL( SCIPincludePresolRoundbound(scip) );
+   SCIP_CALL( GCGincludePresolRoundbound(scip) );
 
    return SCIP_OKAY;
 }
@@ -157,20 +157,16 @@ SCIP_DECL_PRESOLEXEC(presolExecRoundbound)
  */
 
 /** creates the roundbound presolver and includes it in SCIP */
-SCIP_RETCODE SCIPincludePresolRoundbound(
+SCIP_RETCODE GCGincludePresolRoundbound(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
-   SCIP_PRESOLDATA* presoldata;
+   SCIP_PRESOLDATA* presoldata = NULL;
    SCIP_PRESOL* presolptr;
-
-   /* create roundbound presolver data */
-   presoldata = NULL;
 
    /* include presolver */
    SCIP_CALL( SCIPincludePresolBasic(scip, &presolptr, PRESOL_NAME, PRESOL_DESC, PRESOL_PRIORITY, PRESOL_MAXROUNDS, PRESOL_TIMING,
-         presolExecRoundbound,
-         presoldata) );
+         presolExecRoundbound, presoldata) );
 
    assert(presolptr != NULL);
 

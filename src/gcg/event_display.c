@@ -32,8 +32,8 @@
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "event_display.h"
-#include "gcg.h"
+#include "gcg/event_display.h"
+#include "gcg/gcg.h"
 #include <string.h>
 
 #define EVENTHDLR_NAME         "display"
@@ -61,13 +61,15 @@ SCIP_DECL_EVENTEXEC(eventExecDisplay)
 }
 
 /** activates the eventhandler in SCIP */
-SCIP_RETCODE SCIPactivateEventHdlrDisplay(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGactivateEventHdlrDisplay(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
+   SCIP* scip;
    SCIP_EVENTHDLR* eventhdlr;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
+   scip = GCGgetMasterprob(gcg);
    assert(GCGisMaster(scip));
 
    eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
@@ -79,17 +81,18 @@ SCIP_RETCODE SCIPactivateEventHdlrDisplay(
 }
 
 /** creates event handler for display event */
-SCIP_RETCODE SCIPincludeEventHdlrDisplay(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeEventHdlrDisplay(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_EVENTHDLR* eventhdlr = NULL;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
-   assert(scip != NULL);
-   assert(GCGisMaster(scip));
+   assert(masterprob != NULL);
+   assert(GCGisMaster(masterprob));
 
    /* include event handler into SCIP */
-   SCIP_CALL( SCIPincludeEventhdlrBasic(scip, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC,
+   SCIP_CALL( SCIPincludeEventhdlrBasic(masterprob, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC,
          eventExecDisplay, NULL) );
    assert(eventhdlr != NULL);
 

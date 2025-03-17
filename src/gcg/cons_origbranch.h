@@ -37,8 +37,8 @@
 #define GCG_CONS_ORIGBRANCH_H__
 
 #include "scip/scip.h"
-#include "type_branchgcg.h"
-#include "gcg.h"
+#include "gcg/type_branchgcg.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,14 +46,14 @@ extern "C" {
 
 /** creates the handler for origbranch constraints and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeConshdlrOrigbranch(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** creates and captures a origbranch constraint */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateConsOrigbranch(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
    const char*           name,               /**< name of constraint */
    SCIP_NODE*            node,               /**< the node to which this origbranch constraint belongs */
@@ -66,13 +66,13 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
 /** returns the branch orig constraint of the current node, only needs the pointer to scip */
 GCG_EXPORT
 SCIP_CONS* GCGconsOrigbranchGetActiveCons(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** returns the stack and the number of elements on it */
 GCG_EXPORT
 void GCGconsOrigbranchGetStack(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_CONS***          stack,              /**< return value: pointer to the stack */
    int*                  nstackelements      /**< return value: pointer to int, for number of elements on the stack */
    );
@@ -150,13 +150,13 @@ SCIP_CONS* GCGconsOrigbranchGetMastercons(
 /** adds initial constraint to root node */
 GCG_EXPORT
 SCIP_RETCODE GCGconsOrigbranchAddRootCons(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** checks the consistency of the origbranch constraints in the problem */
 GCG_EXPORT
 void GCGconsOrigbranchCheckConsistency(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus
