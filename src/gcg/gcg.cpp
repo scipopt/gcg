@@ -25,7 +25,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   gcg.c
+/**@file   gcg.cpp
  * @brief  methods for working with gcg structure
  * @author Erik Muehmer
  */
@@ -53,6 +53,9 @@ SCIP_RETCODE GCGcreate(
    (*gcg)->masterprob = NULL;
    (*gcg)->bendersmasterprob = NULL;
    (*gcg)->dwmasterprob = NULL;
+   (*gcg)->relax = NULL;
+   (*gcg)->pricer = NULL;
+   (*gcg)->sepaorig = NULL;
 
    /* include gcg plugins */
    SCIP_CALL( GCGincludeGcgPlugins(*gcg) );
