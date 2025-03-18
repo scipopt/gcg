@@ -187,7 +187,7 @@ SCIP_RETCODE GCGincludeSolverXyz(
    /* TODO: (optional) create pricing problem solver specific data here */
 
    /* include pricing problem solver */
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
+   SCIP_CALL( GCGpricerIncludeSolver(gcg, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
          SOLVER_HEURENABLED, SOLVER_EXACTENABLED,
          solverUpdateXyz, solverSolveXyz, solverSolveHeurXyz,
          solverFreeXyz, solverInitXyz, solverExitXyz,

@@ -308,7 +308,7 @@ GCG_DECL_SOLVERFREE(solverFreeMip)
    assert(gcg != NULL);
    assert(solver != NULL);
 
-   scip = GCGgetMasterprob(gcg);
+   scip = GCGgetDwMasterprob(gcg);
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
@@ -719,7 +719,7 @@ SCIP_RETCODE GCGincludeSolverMip(
    GCG_SOLVERDATA* solverdata;
 
    origprob = GCGgetOrigprob(gcg);
-   masterprob = GCGgetMasterprob(gcg);
+   masterprob = GCGgetDwMasterprob(gcg);
 
    SCIP_CALL( SCIPallocBlockMemory(masterprob, &solverdata) );
    solverdata->settingsfile = NULL;
