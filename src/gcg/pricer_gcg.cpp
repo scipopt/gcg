@@ -1708,7 +1708,7 @@ SCIP_RETCODE ObjPricerGcg::addRootBounds(
 
    SCIPdebugMessage("Add new bounds: \n pb = %f\n db = %f\n", primalbound, dualbound);
 
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &pricerdata->dualvalues[pricerdata->nrootbounds], pricerdata->npricingprobs) );
+   SCIP_CALL( SCIPallocClearBlockMemoryArray(scip_, &pricerdata->dualvalues[pricerdata->nrootbounds], pricerdata->npricingprobs) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &pricerdata->dualsolconvs[pricerdata->nrootbounds], pricerdata->npricingprobs) );
 
    for( i = 0; i < pricerdata->npricingprobs; i++ )
@@ -1717,8 +1717,7 @@ SCIP_RETCODE ObjPricerGcg::addRootBounds(
          continue;
 
       probvars = SCIPgetOrigVars(pricerdata->pricingprobs[i]);
-      nprobvars = SCIPgetNOrigVars(pricerdata->pricingprobs[i]);
-      nprobvars -= GCGcountInferredPricingVars(probvars, nprobvars);
+      nprobvars = pricerdata->nrealdualvalues[i];
 
       pricerdata->dualsolconvs[pricerdata->nrootbounds][i] = pricerdata->dualsolconv[i];
       SCIP_CALL( SCIPallocBlockMemoryArray(scip_, &(pricerdata->dualvalues[pricerdata->nrootbounds][i]), nprobvars) );
@@ -1726,7 +1725,7 @@ SCIP_RETCODE ObjPricerGcg::addRootBounds(
       for( j = 0; j < nprobvars; j++ )
       {
          idx = SCIPvarGetIndex(probvars[j]);
-         assert(idx >= 0 && idx < pricerdata->nrealdualvalues[blocknr]);
+         assert(idx >= 0 && idx < pricerdata->nrealdualvalues[i]);
          pricerdata->dualvalues[pricerdata->nrootbounds][i][idx] = pricerdata->realdualvalues[i][idx];
       }
    }
@@ -4062,7 +4061,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
          npricingvars = SCIPgetNOrigVars(pricerdata->pricingprobs[i]);
          assert(GCGcountInferredPricingVars(SCIPgetOrigVars(pricerdata->pricingprobs[i]), npricingvars) == 0);
          pricerdata->nrealdualvalues[i] = npricingvars;
-         SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(pricerdata->realdualvalues[i]), pricerdata->nrealdualvalues[i]) ); /*lint !e666 !e866*/
+         SCIP_CALL( SCIPallocClearBlockMemoryArray(scip, &(pricerdata->realdualvalues[i]), pricerdata->nrealdualvalues[i]) ); /*lint !e666 !e866*/
       }
       else
       {
@@ -4208,6 +4207,9 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
 {
    int i;
+#ifdef SCIP_STATISTIC
+   int j;
+#endif
 
    assert(scip == scip_);
    assert(pricer != NULL);
@@ -4228,6 +4230,38 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    SCIP_CALL( GCGpricestoreFree(&pricestore) );
 
    SCIPhashmapFree(&(pricerdata->mapcons2idx));
+
+#ifdef SCIP_STATISTIC
+   for( i = 0; i < pricerdata->nrootbounds; ++i )
+   {
+      for( j = 0; j < pricerdata->npricingprobs; ++j )
+      {
+         if( pricerdata->dualvalues[i][j] != NULL )
+         {
+            SCIPfreeBlockMemoryArray(scip, &pricerdata->dualvalues[i][j], pricerdata->nrealdualvalues[i]);
+         }
+      }
+      SCIPfreeBlockMemoryArray(scip, &pricerdata->dualvalues[i], pricerdata->npricingprobs);
+      SCIPfreeBlockMemoryArray(scip, &pricerdata->dualsolconvs[i], pricerdata->npricingprobs);
+   }
+   SCIPfreeBlockMemoryArray(scip, &pricerdata->rootpbs, pricerdata->maxrootbounds);
+   SCIPfreeBlockMemoryArray(scip, &pricerdata->rootdbs, pricerdata->maxrootbounds);
+   SCIPfreeBlockMemoryArray(scip, &pricerdata->roottimes, pricerdata->maxrootbounds);
+   SCIPfreeBlockMemoryArray(scip, &pricerdata->rootdualdiffs, pricerdata->maxrootbounds);
+   SCIPfreeBlockMemoryArray(scip, &pricerdata->dualvalues, pricerdata->maxrootbounds);
+   SCIPfreeBlockMemoryArray(scip, &pricerdata->dualsolconvs, pricerdata->maxrootbounds);
+   SCIPfreeSol(scip, &pricerdata->rootlpsol);
+   pricerdata->rootlpsol = NULL;
+   pricerdata->maxrootbounds = 0;
+   pricerdata->nrootbounds = 0;
+   pricerdata->rootfarkastime = 0.0;
+   pricerdata->dualdiff = 0.0;
+   SCIPfreeMemoryArrayNull(scip, &(pricerdata->nodetimehist));
+   SCIPfreeMemoryArrayNull(scip, &(pricerdata->foundvarshist));
+
+   pricerdata->nodetimehist = NULL;
+   pricerdata->foundvarshist = NULL;
+#endif
 
    SCIPfreeBlockMemoryArray(scip, &(pricerdata->pricingprobs), pricerdata->npricingprobs);
    SCIPfreeBlockMemoryArray(scip, &(pricerdata->npointsprob), pricerdata->npricingprobs);
@@ -4270,26 +4304,6 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
 
    assert(pricerdata->varhistory != NULL);
    SCIP_CALL( GCGvarhistoryFreeReference(scip, &(pricerdata->varhistory)) );
-
-#ifdef SCIP_STATISTIC
-   SCIPfreeBlockMemoryArray(scip, &pricerdata->rootpbs, pricerdata->maxrootbounds);
-   SCIPfreeBlockMemoryArray(scip, &pricerdata->rootdbs, pricerdata->maxrootbounds);
-   SCIPfreeBlockMemoryArray(scip, &pricerdata->roottimes, pricerdata->maxrootbounds);
-   SCIPfreeBlockMemoryArray(scip, &pricerdata->rootdualdiffs, pricerdata->maxrootbounds);
-   SCIPfreeBlockMemoryArray(scip, &pricerdata->dualvalues, pricerdata->maxrootbounds);
-   SCIPfreeBlockMemoryArray(scip, &pricerdata->dualsolconvs, pricerdata->maxrootbounds);
-   SCIPfreeSol(scip, &pricerdata->rootlpsol);
-   pricerdata->rootlpsol = NULL;
-   pricerdata->maxrootbounds = 0;
-   pricerdata->nrootbounds = 0;
-   pricerdata->rootfarkastime = 0.0;
-   pricerdata->dualdiff = 0.0;
-   SCIPfreeMemoryArrayNull(scip, &(pricerdata->nodetimehist));
-   SCIPfreeMemoryArrayNull(scip, &(pricerdata->foundvarshist));
-
-   pricerdata->nodetimehist = NULL;
-   pricerdata->foundvarshist = NULL;
-#endif
 
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->freeclock)) );
    SCIP_CALL( SCIPfreeClock(scip, &(pricerdata->transformclock)) );

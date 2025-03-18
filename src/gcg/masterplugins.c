@@ -362,7 +362,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    /* include masterbranch constraint handler */
    SCIP_CALL( GCGincludeConshdlrMasterbranch(gcg) );
 
-   SCIP_CALL( GCGincludeEventHdlrBestsol(gcg) );
+   SCIP_CALL( GCGincludeEventHdlrBestsol(masterprob) );
    SCIP_CALL( GCGincludeEventHdlrRelaxsol(gcg) );
    SCIP_CALL( GCGincludeEventHdlrSolvingstats(gcg) );
    SCIP_CALL( GCGincludeEventHdlrDisplay(gcg) );

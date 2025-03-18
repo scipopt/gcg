@@ -485,7 +485,7 @@ SCIP_RETCODE GCGincludeGcgPlugins(
    SCIP_CALL( GCGincludeBranchruleEmpty(gcg) );
 
    SCIP_CALL( GCGincludeConshdlrOrigbranch(gcg) );
-   SCIP_CALL( GCGincludeEventHdlrBestsol(gcg) );
+   SCIP_CALL( GCGincludeEventHdlrBestsol(scip) );
    SCIP_CALL( GCGincludeEventHdlrMastersol(gcg) );
 
    /* Visualizations */

@@ -47,7 +47,7 @@ extern "C" {
 /** creates event handler for best event */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeEventHdlrBestsol(
-   GCG*                  gcg                 /**< GCG data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    );
 
 #ifdef __cplusplus

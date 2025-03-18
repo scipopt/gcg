@@ -207,32 +207,31 @@ SCIP_DECL_EVENTEXEC(eventExecBestsol)
 
 /** creates event handler for bestsol event */
 SCIP_RETCODE GCGincludeEventHdlrBestsol(
-   GCG*                  gcg                 /**< GCG data structure */
+   SCIP*                 scip                /**< SCIP data structure */
    )
 {
 #ifdef SCIP_STATISTIC
    SCIP_EVENTHDLRDATA* eventhdlrdata;
    SCIP_EVENTHDLR* eventhdlr;
-   SCIP* origprob = GCGgetOrigprob(gcg);
-   assert(origprob != NULL);
+   assert(scip != NULL);
 
    /* create bestsol event handler data */
    eventhdlrdata = NULL;
-   SCIP_CALL( SCIPallocMemory(origprob, &eventhdlrdata) );
+   SCIP_CALL( SCIPallocMemory(scip, &eventhdlrdata) );
    assert(eventhdlrdata != NULL);
 
    eventhdlr = NULL;
 
    /* include event handler into SCIP */
-   SCIP_CALL( SCIPincludeEventhdlrBasic(origprob, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC,
+   SCIP_CALL( SCIPincludeEventhdlrBasic(scip, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC,
          eventExecBestsol, eventhdlrdata) );
    assert(eventhdlr != NULL);
 
    /* set non fundamental callbacks via setter functions */
-   SCIP_CALL( SCIPsetEventhdlrFree(origprob, eventhdlr, eventFreeBestsol) );
-   SCIP_CALL( SCIPsetEventhdlrInit(origprob, eventhdlr, eventInitBestsol) );
-   SCIP_CALL( SCIPsetEventhdlrExit(origprob, eventhdlr, eventExitBestsol) );
-   SCIP_CALL( SCIPsetEventhdlrExitsol(origprob, eventhdlr, eventExitsolBestsol) );
+   SCIP_CALL( SCIPsetEventhdlrFree(scip, eventhdlr, eventFreeBestsol) );
+   SCIP_CALL( SCIPsetEventhdlrInit(scip, eventhdlr, eventInitBestsol) );
+   SCIP_CALL( SCIPsetEventhdlrExit(scip, eventhdlr, eventExitBestsol) );
+   SCIP_CALL( SCIPsetEventhdlrExitsol(scip, eventhdlr, eventExitsolBestsol) );
 #endif
 
    return SCIP_OKAY;
