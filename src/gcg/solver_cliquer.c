@@ -46,7 +46,6 @@
 #include "gcg/pub_gcgcol.h"
 #include "gcg/pub_gcgvar.h"
 #include "gcg/gcg.h"
-#include "gcg/sepa_master.h"
 
 #include "cliquer/cliquer.h"
 
@@ -681,12 +680,16 @@ SCIP_Real scaleRelativeToMax(
 /** Set isnotapplicable to true for given problem number if solver is applied at root node and no cuts are applied. */
 static
 void setProblemNotApplicable(
-   SCIP*                 scip,               /**< master problem SCIP data structure */
+   GCG*                  gcg,                /**< master problem SCIP data structure */
    int                   probnr,             /**< pricing problem number */
    SCIP_Bool*            isnotapplicable     /**< array storing if solver is applicable to problems */
    )
 {
-   if( SCIPgetFocusDepth(scip) == 0 && GCGsepaGetNCuts(scip) == 0 )
+   SCIP* masterprob;
+
+   masterprob = GCGgetMasterprob(gcg);
+
+   if( SCIPgetFocusDepth(masterprob) == 0 && SCIPgetNCutsApplied(masterprob) == 0 )
       isnotapplicable[probnr] = TRUE;
 }
 
@@ -2085,7 +2088,7 @@ SCIP_RETCODE solveCliquer(
    {
       SCIPdebugMessage("Exit: Nonbinary variables.\n");
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
-      setProblemNotApplicable(scip, probnr, solver->isnotapplicable);
+      setProblemNotApplicable(gcg, probnr, solver->isnotapplicable);
       return SCIP_OKAY;
    }
 
@@ -2173,7 +2176,7 @@ SCIP_RETCODE solveCliquer(
    {
       /* Encountered constraint that can not be handled. */
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
-      setProblemNotApplicable(scip, probnr, solver->isnotapplicable);
+      setProblemNotApplicable(gcg, probnr, solver->isnotapplicable);
       goto TERMINATE;
    }
 
@@ -2532,7 +2535,7 @@ SCIP_RETCODE solveCliquer(
    density = (SCIP_Real)nedges / ((SCIP_Real)(g->n - 1) * (g->n) / 2);
 
    SCIPdebugMessage("Problem number: %i ; Tree depth: %i ; Graph size: %d ; Graph density: %g\n",
-                    probnr, SCIPgetFocusDepth(scip), indexcount, density);
+                    probnr, SCIPgetFocusDepth(GCGgetMasterprob(gcg)), indexcount, density);
 
    /* Test if the node threshold is respected */
    if( SCIPisGT(pricingprob, indexcount, solver->nodelimit) )
@@ -2752,18 +2755,25 @@ GCG_DECL_SOLVERFREE(solverFreeCliquer)
 static
 GCG_DECL_SOLVERINITSOL(solverInitsolCliquer)
 {
+   SCIP* masterprob;
    GCG_SOLVERDATA* solverdata;
    int npricingprobs;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
+
+   masterprob = GCGgetMasterprob(gcg);
+   assert(masterprob != NULL);
+
+   // Solver can only be applied in case of Dantzig-Wolfe master problem.
+   assert(masterprob == GCGgetDwMasterprob(gcg));
 
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
    /* allocate and initialize isnotapplicable array */
-   npricingprobs = GCGgetNPricingprobs(GCGmasterGetOrigprob(scip));
-   SCIP_CALL( SCIPallocClearBlockMemoryArray(scip, &solverdata->isnotapplicable, npricingprobs) );
+   npricingprobs = GCGgetNPricingprobs(gcg);
+   SCIP_CALL( SCIPallocClearBlockMemoryArray(masterprob, &solverdata->isnotapplicable, npricingprobs) );
 
    return SCIP_OKAY;
 }
@@ -2772,18 +2782,22 @@ GCG_DECL_SOLVERINITSOL(solverInitsolCliquer)
 static
 GCG_DECL_SOLVEREXITSOL(solverExitsolCliquer)
 {
+   SCIP* masterprob;
    GCG_SOLVERDATA* solverdata;
    int npricingprobs;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
+
+   masterprob = GCGgetMasterprob(gcg);
+   assert(masterprob != NULL);
 
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
    /* free isnotapplicable array */
-   npricingprobs = GCGgetNPricingprobs(GCGmasterGetOrigprob(scip));
-   SCIPfreeBlockMemoryArray(scip, &solverdata->isnotapplicable, npricingprobs);
+   npricingprobs = GCGgetNPricingprobs(gcg);
+   SCIPfreeBlockMemoryArray(masterprob, &solverdata->isnotapplicable, npricingprobs);
 
    return SCIP_OKAY;
 }
