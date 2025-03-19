@@ -49,9 +49,9 @@
 #include "scip/type_reopt.h"
 #include "scip/type_branch.h"
 
-#include "pub_colpool.h"
-#include "pub_gcgcol.h"
-#include "type_pricestore_gcg.h"
+#include "gcg/pub_colpool.h"
+#include "gcg/pub_gcgcol.h"
+#include "gcg/type_pricestore_gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,8 +60,7 @@ extern "C" {
 /** creates price storage */
 GCG_EXPORT
 SCIP_RETCODE GCGpricestoreCreate(
-   SCIP*                 scip,                /**< SCIP data structure (master problem) */
-   SCIP*                 origscip,            /**< SCIP data structure (original problem) */
+   GCG*                  gcg,                 /**< GCG data structure */
    GCG_PRICESTORE**      pricestore,          /**< pointer to store price storage */
    SCIP_Real             redcostfac,          /**< factor of -redcost/norm in score function */
    SCIP_Real             objparalfac,         /**< factor of objective parallelism in score function */
@@ -75,7 +74,6 @@ SCIP_RETCODE GCGpricestoreCreate(
 /** frees price storage */
 GCG_EXPORT
 SCIP_RETCODE GCGpricestoreFree(
-   SCIP*                 scip,                /**< SCIP data structure */
    GCG_PRICESTORE**      pricestore           /**< pointer to store price storage */
    );
 
@@ -108,10 +106,10 @@ void GCGpricestoreEndForceCols(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGpricestoreAddCol(
-   SCIP*                 scip,               /**< SCIP data structure */
    GCG_PRICESTORE*       pricestore,         /**< price storage */
    GCG_COL*              col,                /**< priced col */
    SCIP_Bool             forcecol,           /**< should the col be forced to enter the LP? */
+   SCIP_Bool             fromcolpool,        /**< is column from colpool */
    SCIP_Bool*            added               /**< pointer to var that indicates whether the col was added */
    );
 

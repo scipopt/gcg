@@ -37,7 +37,7 @@
 #define GCG_DEC_CONNECTED_NONEWLINKINGVARS_H__
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,8 +45,8 @@ extern "C" {
 
 /** creates the handler for connected_noNewLinkingVars detector and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorConnected_noNewLinkingVars(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorConnected_noNewLinkingVars(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

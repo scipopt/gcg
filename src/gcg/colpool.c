@@ -37,13 +37,14 @@
 
 #include "scip/clock.h"
 
-#include "gcg.h"
-#include "pub_gcgcol.h"
-#include "colpool.h"
-#include "struct_colpool.h"
-#include "pricestore_gcg.h"
-#include "struct_pricestore_gcg.h"
-#include "pricer_gcg.h"
+#include "gcg/gcg.h"
+#include "gcg/pub_gcgcol.h"
+#include "gcg/colpool.h"
+#include "gcg/struct_colpool.h"
+#include "gcg/pricestore_gcg.h"
+#include "gcg/struct_pricestore_gcg.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/struct_gcgcol.h"
 
 #define GCG_USESMALLTABLES FALSE
 #define GCG_HASHSIZE_COLPOOLS_SMALL 100 /**< size of hash table in col pools for small problems */
@@ -85,11 +86,12 @@ SCIP_RETCODE colpoolEnsureColsMem(
 
 /** creates col pool */
 SCIP_RETCODE GCGcolpoolCreate(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_COLPOOL**         colpool,            /**< pointer to store col pool */
    int                   agelimit            /**< maximum age a col can reach before it is deleted from the pool (-1 fpr no limit) */
    )
 {
+   SCIP* scip = GCGgetMasterprob(gcg);
    assert(colpool != NULL);
    assert(agelimit >= -1);
 
@@ -101,6 +103,7 @@ SCIP_RETCODE GCGcolpoolCreate(
          (GCG_USESMALLTABLES ? GCG_HASHSIZE_COLPOOLS_SMALL :  GCG_HASHSIZE_COLPOOLS),
          GCGhashGetKeyCol, GCGhashKeyEqCol, GCGhashKeyValCol, (void*) scip) );
 
+   (*colpool)->gcg = gcg;
    (*colpool)->scip = scip;
    (*colpool)->nodenr = -1;
    (*colpool)->infarkas = FALSE;
@@ -121,13 +124,14 @@ SCIP_RETCODE GCGcolpoolCreate(
 
 /** frees col pool */
 SCIP_RETCODE GCGcolpoolFree(
-   SCIP*                scip,               /**< SCIP data structure */
    GCG_COLPOOL**        colpool             /**< pointer to store col pool */
    )
 {
-   assert(scip == (*colpool)->scip);
+   SCIP* scip;
    assert(colpool != NULL);
    assert(*colpool != NULL);
+
+   scip = (*colpool)->scip;
 
    /* remove all cols from the pool */
    SCIP_CALL( GCGcolpoolClear(*colpool) );
@@ -324,7 +328,7 @@ SCIP_RETCODE GCGcolpoolPrice(
             (void*)col, redcost );
 
          SCIP_CALL( colpoolDelCol(colpool, col, FALSE) );
-         SCIP_CALL( GCGpricerAddColResult(colpool->scip, col, &added) );
+         SCIP_CALL( GCGpricerAddColResult(colpool->gcg, col, &added) );
 
          if( added )
             *nfoundvars = *nfoundvars + 1;
@@ -392,9 +396,9 @@ SCIP_RETCODE GCGcolpoolUpdateRedcost(
 
       col = cols[i];
 
-      SCIP_CALL( GCGcomputeColMastercoefs(colpool->scip, col) );
+      SCIP_CALL( GCGcomputeColMastercoefs(colpool->gcg, col) );
 
-      redcost = GCGcomputeRedCostGcgCol(colpool->scip, colpool->infarkas, col, NULL);
+      redcost = GCGcomputeRedCostGcgCol(colpool->gcg, colpool->infarkas, col, NULL);
 
       GCGcolUpdateRedcost(col, redcost, FALSE);
    }
@@ -495,6 +499,9 @@ SCIP_RETCODE GCGcolpoolPropagateGlobalBounds(
 
       for( i = 0; i < col->nvars; ++i )
       {
+         if( GCGvarIsInferredPricing(col->vars[i]) )
+            continue;
+
          assert(GCGvarIsPricing(col->vars[i]) && GCGpricingVarGetNOrigvars(col->vars[i]) > 0 && GCGpricingVarGetOrigvars(col->vars[i])[0] != NULL);
          if( SCIPisFeasLT(col->pricingprob, col->vals[i], SCIPvarGetLbGlobal(GCGpricingVarGetOrigvars(col->vars[i])[0])) ||
              SCIPisFeasGT(col->pricingprob, col->vals[i], SCIPvarGetUbGlobal(GCGpricingVarGetOrigvars(col->vars[i])[0])) )

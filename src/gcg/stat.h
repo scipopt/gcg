@@ -35,9 +35,9 @@
 #ifndef GCG_STAT_H__
 #define GCG_STAT_H__
 
-#include "scip/type_scip.h"
-#include "scip/type_retcode.h"
-#include "def.h"
+#include "scip/scip.h"
+#include "gcg/gcg.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,19 +46,19 @@ extern "C" {
 /** prints information about the best decomposition*/
 GCG_EXPORT
 SCIP_RETCODE GCGwriteDecompositionData(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** prints additional information about the solving process */
 GCG_EXPORT
 SCIP_RETCODE GCGwriteSolvingDetails(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                 gcg                 /**< GCG data structure */
 );
 
 /** prints information about the creation of the Vars*/
 GCG_EXPORT
 SCIP_RETCODE GCGwriteVarCreationDetails(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
 );
 
 

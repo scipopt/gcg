@@ -36,9 +36,11 @@
 #ifndef GCG_PUB_SOLVER_H_
 #define GCG_PUB_SOLVER_H_
 
-#include "def.h"
-#include "type_solver.h"
+
+#include "gcg/type_solver.h"
 #include "scip/scip.h"
+#include "gcg/def.h"
+#include "gcg/type_gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -123,28 +125,28 @@ int GCGsolverGetHeurRedcostCalls(
 /** gets exact Farkas pricing time of pricing solver */
 GCG_EXPORT
 SCIP_Real GCGsolverGetOptFarkasTime(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** gets exact reduced cost pricing time of pricing solver */
 GCG_EXPORT
 SCIP_Real GCGsolverGetOptRedcostTime(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** gets heuristic Farkas pricing time of pricing solver */
 GCG_EXPORT
 SCIP_Real GCGsolverGetHeurFarkasTime(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** gets heuristic reduced cost pricing time of pricing solver */
 GCG_EXPORT
 SCIP_Real GCGsolverGetHeurRedcostTime(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 

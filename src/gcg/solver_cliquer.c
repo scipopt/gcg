@@ -37,16 +37,16 @@
 
 #include <assert.h>
 
-#include "solver_cliquer.h"
+#include "gcg/solver_cliquer.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_varbound.h"
-#include "pub_solver.h"
-#include "pricer_gcg.h"
-#include "relax_gcg.h"
-#include "pub_gcgcol.h"
-#include "pub_gcgvar.h"
-#include "gcg.h"
-#include "sepa_master.h"
+#include "gcg/pub_solver.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/pub_gcgcol.h"
+#include "gcg/pub_gcgvar.h"
+#include "gcg/gcg.h"
+#include "gcg/sepa_master.h"
 
 #include "cliquer/cliquer.h"
 
@@ -2010,7 +2010,7 @@ SCIP_Bool propagateVariablefixings(
 static
 SCIP_RETCODE solveCliquer(
    SCIP_Bool             exactly,            /**< should the pricing problem be solved to optimality or heuristically? */
-   SCIP*                 scip,               /**< master problem SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
    GCG_SOLVERDATA*       solver,             /**< solver data structure */
    int                   probnr,             /**< problem number */
@@ -2060,7 +2060,7 @@ SCIP_RETCODE solveCliquer(
    int               j;
    int               k;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(pricingprob != NULL);
    assert(solver != NULL);
    assert(lowerbound != NULL);
@@ -2690,7 +2690,7 @@ SCIP_RETCODE solveCliquer(
    /* Create a column corresponding to our clique result */
  CREATECOLUMN:
    SCIP_CALL( GCGcreateGcgCol(pricingprob, &col, probnr, pricingprobvars, solvals, npricingprobvars, FALSE, SCIPinfinity(pricingprob)) );
-   SCIP_CALL( GCGpricerAddCol(scip, col) );
+   SCIP_CALL( GCGpricerAddCol(gcg, col) );
    *status = GCG_PRICINGSTATUS_UNKNOWN;
    if( indexcount > 0 )
       set_free(clique); /* clique can only be freed if non-empty */
@@ -2735,13 +2735,13 @@ GCG_DECL_SOLVERFREE(solverFreeCliquer)
 {
    GCG_SOLVERDATA* solverdata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
 
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
-   SCIPfreeMemory(scip, &solverdata);
+   SCIPfreeMemory(GCGgetDwMasterprob(gcg), &solverdata);
 
    GCGsolverSetData(solver, NULL);
 
@@ -2803,25 +2803,24 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurCliquer)
    assert(solverdata != NULL);
 
    /* solve the independent set problem approximately */
-   SCIP_CALL( solveCliquer(FALSE, scip, pricingprob, solverdata, probnr, lowerbound, status) );
+   SCIP_CALL( solveCliquer(FALSE, gcg, pricingprob, solverdata, probnr, lowerbound, status) );
 
    return SCIP_OKAY;
 }
 
 /** creates the cliquer solver for pricing problems and includes it in GCG */
 SCIP_RETCODE GCGincludeSolverCliquer(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
-   SCIP* origprob;
    GCG_SOLVERDATA* solverdata;
+   SCIP* origprob;
 
-   origprob = GCGmasterGetOrigprob(scip);
-   assert(origprob != NULL);
+   origprob = GCGgetOrigprob(gcg);
 
-   SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
+   SCIP_CALL( SCIPallocMemory(GCGgetDwMasterprob(gcg), &solverdata) );
 
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
+   SCIP_CALL( GCGpricerIncludeSolver(gcg, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
          SOLVER_HEURENABLED, SOLVER_EXACTENABLED,
          solverUpdateCliquer, solverSolveCliquer, solverSolveHeurCliquer,
          solverFreeCliquer, solverInitCliquer, solverExitCliquer,

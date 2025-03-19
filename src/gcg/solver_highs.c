@@ -38,13 +38,13 @@
 #include <stdint.h>
 
 #include "scip/scip.h"
-#include "gcg.h"
-#include "solver_highs.h"
-#include "pub_solver.h"
-#include "pub_gcgcol.h"
+#include "gcg/gcg.h"
+#include "gcg/solver_highs.h"
+#include "gcg/pub_solver.h"
+#include "gcg/pub_gcgcol.h"
 
-#include "pricer_gcg.h"
-#include "scip_misc.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/scip_misc.h"
 
 #include "interfaces/highs_c_api.h"
 
@@ -86,8 +86,7 @@
 /** pricing solver data */
 struct GCG_SolverData
 {
-   SCIP*                 origprob;           /**< original problem SCIP instance */
-   SCIP*                 masterprob;         /**< master problem SCIP instance */
+   GCG*                  gcg;                /**< GCG instance */
    SCIP**                pricingprobs;       /**< array storing the SCIP instances for all pricing problems */
    int                   npricingprobs;      /**< number of pricing problems */
    void**                highsptr;            /**< array of pointers to Highs instances */
@@ -125,12 +124,13 @@ struct GCG_SolverData
 /** creates a HIGHS environment and builds the pricing problem */
 static
 SCIP_RETCODE buildProblem(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
    SCIP*                 pricingprob,        /**< pricing problem */
    int                   probnr              /**< problem number */
    )
 {
+   SCIP* scip;
    SCIP_CONS** conss;
    SCIP_VAR** vars;
    SCIP_VAR** consvars;
@@ -162,6 +162,8 @@ SCIP_RETCODE buildProblem(
    int c;
    int i;
    int v;
+
+   scip = GCGgetMasterprob(gcg);
 
    /* open HIGHS environment and create problem */
    solverdata->highsptr[probnr] = Highs_create();
@@ -416,10 +418,9 @@ SCIP_RETCODE updateVars(
       else
          var = origvar;
 
-      updatevaridx[(size_t)varidx] = varidx;
-
       if( varbndschanged )
       {
+         updatevaridx[(size_t)varidx] = varidx;
          collower[(size_t)varidx] = (double) SCIPvarGetLbGlobal(var);
          colupper[(size_t)varidx] = (double) SCIPvarGetUbGlobal(var);
       }
@@ -616,7 +617,7 @@ TERMINATE:
 /** solves the pricing problem with HIGHS */
 static
 SCIP_RETCODE solveHighs(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVERDATA*       solverdata,         /**< solver data structure */
    SCIP*                 pricingprob,        /**< pricing problem */
    int                   probnr,             /**< problem number */
@@ -626,6 +627,7 @@ SCIP_RETCODE solveHighs(
    GCG_PRICINGSTATUS*    status              /**< pointer to store the pricing status */
    )
 { /*lint -e715*/
+   SCIP* scip;
    GCG_COL* col;
    SCIP_RETCODE retval;
    SCIP_Bool predisabled = FALSE;
@@ -639,6 +641,7 @@ SCIP_RETCODE solveHighs(
    SCIP_SOL* sol;
    SCIP_Bool feasible;
 
+   scip = GCGgetMasterprob(gcg);
    *ncols = 0;
    *status = GCG_PRICINGSTATUS_UNKNOWN;
    upperbound = SCIPinfinity(pricingprob);
@@ -752,7 +755,7 @@ SCIP_RETCODE solveHighs(
 
 
          SCIP_CALL( GCGcreateGcgCol(pricingprob, &col, probnr, solverdata->pricingvars[probnr], highssolvals, numcols, TRUE, SCIPinfinity(pricingprob)) );
-         SCIP_CALL( GCGpricerAddCol(scip, col) );
+         SCIP_CALL( GCGpricerAddCol(gcg, col) );
          ++(*ncols);
 
          *status = GCG_PRICINGSTATUS_UNBOUNDED;
@@ -897,8 +900,8 @@ SCIP_RETCODE solveHighs(
 
    if( feasible )
    {
-      SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, &col, probnr, sol, FALSE, SCIPinfinity(pricingprob)) );
-      SCIP_CALL( GCGpricerAddCol(scip, col) );
+      SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, NULL, NULL, &col, probnr, sol, FALSE, SCIPinfinity(pricingprob)) );
+      SCIP_CALL( GCGpricerAddCol(gcg, col) );
       ++(*ncols);
    }
 
@@ -927,13 +930,13 @@ GCG_DECL_SOLVERFREE(solverFreeHighs)
 {
    GCG_SOLVERDATA* solverdata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
 
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
-   SCIPfreeMemory(scip, &solverdata);
+   SCIPfreeMemory(GCGgetDwMasterprob(gcg), &solverdata);
    GCGsolverSetData(solver, NULL);
 
    return SCIP_OKAY;
@@ -943,18 +946,20 @@ GCG_DECL_SOLVERFREE(solverFreeHighs)
 static
 GCG_DECL_SOLVERINITSOL(solverInitsolHighs)
 {
+   SCIP* scip;
    GCG_SOLVERDATA* solverdata;
    int npricingprobs;
 
    int i;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
 
+   scip = GCGgetMasterprob(gcg);
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
-   solverdata->npricingprobs = GCGgetNPricingprobs(solverdata->origprob);
+   solverdata->npricingprobs = GCGgetNPricingprobs(gcg);
    npricingprobs = solverdata->npricingprobs;
 
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &(solverdata->highsptr), npricingprobs) );
@@ -979,9 +984,9 @@ GCG_DECL_SOLVERINITSOL(solverInitsolHighs)
 
    for( i = 0; i < npricingprobs; ++i )
    {
-      if( GCGisPricingprobRelevant(solverdata->origprob, i) )
+      if( GCGisPricingprobRelevant(gcg, i) )
       {
-         SCIP_CALL( buildProblem(solverdata->masterprob, solverdata, GCGgetPricingprob(solverdata->origprob, i), i) );
+         SCIP_CALL( buildProblem(gcg, solverdata, GCGgetPricingprob(gcg, i), i) );
       }
 
       solverdata->curnodelimit[i] = solverdata->startnodelimit;
@@ -996,26 +1001,28 @@ GCG_DECL_SOLVERINITSOL(solverInitsolHighs)
 static
 GCG_DECL_SOLVEREXITSOL(solverExitsolHighs)
 {
+   SCIP* scip;
    GCG_SOLVERDATA* solverdata;
    SCIP_RETCODE retval;
    int npricingprobs;
    int i;
    int j;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(solver != NULL);
 
+   scip = GCGgetMasterprob(gcg);
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
    retval = SCIP_OKAY;
 
-   npricingprobs = GCGgetNPricingprobs(solverdata->origprob);
+   npricingprobs = GCGgetNPricingprobs(gcg);
 
    /* free pricing problems */
    for( i = 0; i < npricingprobs; ++i )
    {
-      if( GCGisPricingprobRelevant(solverdata->origprob, i) )
+      if( GCGisPricingprobRelevant(gcg, i) )
       {
          /* free the HiGHS instance */
          Highs_destroy(solverdata->highsptr[i]);
@@ -1078,10 +1085,10 @@ GCG_DECL_SOLVERUPDATE(solverUpdateHighs)
       probnr, varobjschanged, varbndschanged, consschanged);
 
    /* update pricing problem information */
-   SCIP_CALL( updateVars(solverdata->masterprob, solverdata, pricingprob, probnr, varobjschanged, varbndschanged) );
+   SCIP_CALL( updateVars(GCGgetMasterprob(gcg), solverdata, pricingprob, probnr, varobjschanged, varbndschanged) );
    if( consschanged )
    {
-      SCIP_CALL( updateBranchingConss(solverdata->masterprob, solverdata, pricingprob, probnr) );
+      SCIP_CALL( updateBranchingConss(GCGgetMasterprob(gcg), solverdata, pricingprob, probnr) );
    }
 
    solverdata->curnodelimit[probnr] = solverdata->startnodelimit;
@@ -1132,7 +1139,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurHighs)
          (int) solverdata->cursollimit[probnr]) );
 
    /* solve the pricing problem and evaluate solution */
-   SCIP_CALL( solveHighs(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, &ncols, status) );
+   SCIP_CALL( solveHighs(gcg, solverdata, pricingprob, probnr, dualsolconv, lowerbound, &ncols, status) );
    assert(*status != GCG_PRICINGSTATUS_OPTIMAL || ncols > 0);
 
  TERMINATE:
@@ -1162,7 +1169,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveHighs)
    CHECK_ZERO( Highs_setIntOptionValue(solverdata->highsptr[probnr], "mip_max_improving_sols", INT_MAX) );
 
    /* solve the pricing problem and evaluate solution */
-   SCIP_CALL( solveHighs(solverdata->masterprob, solverdata, pricingprob, probnr, dualsolconv, lowerbound, &ncols, status) );
+   SCIP_CALL( solveHighs(gcg, solverdata, pricingprob, probnr, dualsolconv, lowerbound, &ncols, status) );
    assert(*status != GCG_PRICINGSTATUS_OPTIMAL || ncols > 0);
 
  TERMINATE:
@@ -1171,51 +1178,51 @@ GCG_DECL_SOLVERSOLVE(solverSolveHighs)
 
 /** creates the HIGHS pricing solver and includes it in GCG */
 SCIP_RETCODE GCGincludeSolverHighs(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
+   SCIP* origprob;
    GCG_SOLVERDATA* solverdata;
 
-   SCIP_CALL( SCIPallocMemory(scip, &solverdata) );
-   solverdata->origprob = GCGmasterGetOrigprob(scip);
-   solverdata->masterprob = scip;
+   SCIP_CALL( SCIPallocMemory(GCGgetDwMasterprob(gcg), &solverdata) );
+   origprob = GCGgetOrigprob(gcg);
 
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
+   SCIP_CALL( GCGpricerIncludeSolver(gcg, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
          SOLVER_HEURENABLED, SOLVER_EXACTENABLED,
          solverUpdateHighs, solverSolveHighs, solverSolveHeurHighs, solverFreeHighs, solverInitHighs,
          solverExitHighs, solverInitsolHighs, solverExitsolHighs, solverdata));
 
-   SCIP_CALL( SCIPaddBoolParam(solverdata->origprob, "pricingsolver/highs/checksols",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "pricingsolver/highs/checksols",
          "should solutions of the pricing MIPs be checked for duplicity?",
          &solverdata->checksols, TRUE, DEFAULT_CHECKSOLS, NULL, NULL));
 
-   SCIP_CALL( SCIPaddIntParam(solverdata->origprob, "pricingsolver/highs/threads",
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/highs/threads",
          "number of threads the HiGHS pricing solver is allowed to use (0: automatic)",
          &solverdata->threads, TRUE, DEFAULT_THREADS, 0, INT_MAX, NULL, NULL));
 
-   SCIP_CALL( SCIPaddLongintParam(solverdata->origprob, "pricingsolver/highs/startnodelimit",
+   SCIP_CALL( SCIPaddLongintParam(origprob, "pricingsolver/highs/startnodelimit",
          "start node limit for heuristic pricing",
          &solverdata->startnodelimit, TRUE, DEFAULT_STARTNODELIMIT, 0, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(solverdata->origprob, "pricingsolver/highs/startgaplimit",
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/highs/startgaplimit",
          "start gap limit for heuristic pricing",
          &solverdata->startgaplimit, TRUE, DEFAULT_STARTGAPLIMIT, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddLongintParam(solverdata->origprob, "pricingsolver/highs/startsollimit",
+   SCIP_CALL( SCIPaddLongintParam(origprob, "pricingsolver/highs/startsollimit",
          "start solution limit for heuristic pricing",
          &solverdata->startsollimit, TRUE, DEFAULT_STARTSOLLIMIT, 0, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(solverdata->origprob, "pricingsolver/highs/nodelimitfac",
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/highs/nodelimitfac",
          "factor by which to increase node limit for heuristic pricing (1.0: add start limit)",
-         &solverdata->nodelimitfac, TRUE, DEFAULT_NODELIMITFAC, 1.0, SCIPinfinity(solverdata->origprob), NULL, NULL) );
+         &solverdata->nodelimitfac, TRUE, DEFAULT_NODELIMITFAC, 1.0, SCIPinfinity(origprob), NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(solverdata->origprob, "pricingsolver/highs/gaplimitfac",
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/highs/gaplimitfac",
          "factor by which to decrease gap limit for heuristic pricing (1.0: subtract start limit)",
          &solverdata->gaplimitfac, TRUE, DEFAULT_GAPLIMITFAC, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(solverdata->origprob, "pricingsolver/highs/sollimitfac",
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/highs/sollimitfac",
          "factor by which to increase solution limit for heuristic pricing (1.0: add start limit)",
-         &solverdata->sollimitfac, TRUE, DEFAULT_SOLLIMITFAC, 1.0, SCIPinfinity(solverdata->origprob), NULL, NULL) );
+         &solverdata->sollimitfac, TRUE, DEFAULT_SOLLIMITFAC, 1.0, SCIPinfinity(origprob), NULL, NULL) );
 
    return SCIP_OKAY;
 }

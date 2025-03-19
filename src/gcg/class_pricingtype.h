@@ -36,7 +36,8 @@
 #define GCG_CLASS_PRICINGTYPE_H__
 
 #include "objscip/objscip.h"
-#include "pricer_gcg.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/type_extendedmasterconsdata.h"
 
 /**
  * @ingroup PRICING_PRIV
@@ -46,7 +47,8 @@
 class PricingType
 {
 protected:
-   SCIP*                 scip_;                 /**< SCIP instance (master problem) */
+   GCG*                  gcg;                   /**< GCG data structure */
+   SCIP*                 masterprob;            /**< SCIP instance (master problem) */
    GCG_PRICETYPE         type;                  /**< type of pricing */
    SCIP_CLOCK*           clock;                 /**< CPU clock */
 
@@ -66,10 +68,10 @@ protected:
 
 public:
    /** constructor */
-   PricingType();
+   PricingType() = delete;
 
    PricingType(
-      SCIP*                  p_scip
+      GCG*                   gcgstruct
       );
 
    /** destructor */
@@ -77,13 +79,17 @@ public:
 
    /** get dual value of a constraint */
    virtual SCIP_Real consGetDual(
-      SCIP*                 scip,               /**< SCIP data structure */
       SCIP_CONS*            cons                /**< constraint to get dual for */
       ) const = 0;
 
    /** get dual value of a row */
    virtual SCIP_Real rowGetDual(
       SCIP_ROW*             row                 /**< row to get dual value for */
+      ) const = 0;
+
+   /** get dual value of an extended master cons */
+   virtual SCIP_Real extendedmasterconsGetDual(
+      GCG_EXTENDEDMASTERCONSDATA*    extendedmasterconsdata       /**< extended master cons data */
       ) const = 0;
 
    /** get objective value of variable */
@@ -152,7 +158,7 @@ public:
    SCIP_RETCODE resetCalls()
    {
       calls = 0;
-      SCIP_CALL( SCIPresetClock(scip_, clock) );
+      SCIP_CALL( SCIPresetClock(masterprob, clock) );
       return SCIP_OKAY;
    }
 
@@ -162,10 +168,10 @@ class ReducedCostPricing : public PricingType
 {
 public:
    /** constructor */
-   ReducedCostPricing();
+   ReducedCostPricing() = delete;
 
    ReducedCostPricing(
-      SCIP*                 p_scip
+      GCG*                  gcgstruct
       );
 
    /** destructor */
@@ -174,12 +180,15 @@ public:
    virtual SCIP_RETCODE addParameters();
 
    virtual SCIP_Real consGetDual(
-     SCIP*                 scip,
      SCIP_CONS*            cons
      ) const;
 
    virtual SCIP_Real rowGetDual(
      SCIP_ROW*             row
+     ) const;
+
+   virtual SCIP_Real extendedmasterconsGetDual(
+     GCG_EXTENDEDMASTERCONSDATA*    extendedmasterconsdata
      ) const;
 
    virtual SCIP_Real varGetObj(
@@ -200,10 +209,10 @@ class FarkasPricing : public PricingType
 {
 public:
    /** constructor */
-   FarkasPricing();
+   FarkasPricing() = delete;
 
    FarkasPricing(
-      SCIP*                 p_scip
+      GCG*                  gcgstruct
       );
 
    /** destructor */
@@ -212,12 +221,15 @@ public:
    virtual SCIP_RETCODE addParameters();
 
    virtual SCIP_Real consGetDual(
-      SCIP*                 scip, 
       SCIP_CONS*            cons
       ) const;
 
    virtual SCIP_Real rowGetDual(
       SCIP_ROW*             row
+      ) const;
+
+   virtual SCIP_Real extendedmasterconsGetDual(
+      GCG_EXTENDEDMASTERCONSDATA*    extendedmasterconsdata
       ) const;
 
    virtual SCIP_Real varGetObj(

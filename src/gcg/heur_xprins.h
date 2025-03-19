@@ -38,7 +38,7 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,8 +46,8 @@ extern "C" {
 
 /** creates the Extreme Point RINS primal heuristic and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeHeurXprins(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeHeurXprins(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

@@ -41,9 +41,9 @@
 #define GCG_READER_TEX_H__
 
 #include "scip/scip.h"
-#include "def.h"
-#include "type_decomp.h"
-#include "cons_decomp.h"
+
+#include "gcg/type_decomp.h"
+#include "gcg/cons_decomp.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,8 +54,8 @@ extern "C" {
  *
  * @returns SCIP status */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeReaderTex(
-   SCIP* scip     /**< SCIP data structure */
+SCIP_RETCODE GCGincludeReaderTex(
+   GCG*  gcg      /**< GCG data structure */
    );
 
 /** Writes visualization LaTeX code for the given partialdec
@@ -63,7 +63,7 @@ SCIP_RETCODE SCIPincludeReaderTex(
  * @returns SCIP status */
 GCG_EXPORT
 SCIP_RETCODE GCGwriteTexVisualization(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    FILE* file,             /**< file in which to write the LaTeX code */
    int partialdecid,            /**< id of partialdec to visualize */
    SCIP_Bool statistics,   /**< additionally to picture show statistics */
@@ -76,7 +76,7 @@ SCIP_RETCODE GCGwriteTexVisualization(
  * @returns SCIP status */
 GCG_EXPORT
 SCIP_RETCODE GCGwriteTexReport(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    FILE* file,             /**< file in which to put the LaTeX code */
    int* partialdecids,     /**< ids of partialdecs to visualize */
    int* npartialdecs,      /**< number of partialdecs to visualize */
@@ -91,7 +91,7 @@ SCIP_RETCODE GCGwriteTexReport(
  * @returns SCIP status */
 GCG_EXPORT
 SCIP_RETCODE GCGtexWriteMakefileAndReadme(
-   SCIP* scip,          /**< SCIP data structure */
+   GCG* gcg,            /**< SCIP data structure */
    FILE* file,          /**< tex file for which the makefile & readme are generated */
    SCIP_Bool usegp,     /**< true if the gp reader was used for creation of images */
    SCIP_Bool compiletex /**< true if there are tex files to be compiled before main document */

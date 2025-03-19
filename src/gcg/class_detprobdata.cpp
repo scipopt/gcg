@@ -48,18 +48,18 @@
 // #define SCIP_DEBUG
 
 #include "scip/scipdefplugins.h"
-#include "gcg.h"
+#include "gcg/gcg.h"
 #include "objscip/objscip.h"
 #include "scip/scip.h"
-#include "class_detprobdata.h"
-#include "struct_detector.h"
-#include "pub_decomp.h"
-#include "struct_decomp.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "decomp.h"
-#include "miscvisualization.h"
-#include "scip_misc.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/struct_detector.h"
+#include "gcg/pub_decomp.h"
+#include "gcg/struct_decomp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/decomp.h"
+#include "gcg/miscvisualization.h"
+#include "gcg/scip_misc.h"
 #include "scip/clock.h"
 #include "scip/cons.h"
 #include "scip/scip.h"
@@ -75,7 +75,7 @@
 #include <random> /* needed for exponential distributed random dual variables */
 #include <set>
 
-#include "reader_gp.h"
+#include "gcg/reader_gp.h"
 
 
 #ifdef _OPENMP
@@ -233,11 +233,12 @@ void DETPROBDATA::getTranslatedPartialdecs(
    )
 {
    DETPROBDATA* origdetprobdata = NULL;
+
    if( translatesymmetry )
    {
       // even if presolving is disabled some vars might be fixed to 0
       // @todo: we could check if symmetry is still valid
-      origdetprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      origdetprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
       if( origdetprobdata->getNConss() != getNConss() || origdetprobdata->getNVars() != getNVars() )
          translatesymmetry = FALSE;
    }
@@ -247,7 +248,7 @@ void DETPROBDATA::getTranslatedPartialdecs(
 
       SCIPverbMessage(this->scip, SCIP_VERBLEVEL_FULL, NULL, " transform partialdec %d \n", otherpartialdec->getID());
 
-      newpartialdec = new PARTIALDECOMP(scip, original);
+      newpartialdec = new PARTIALDECOMP(gcg, original);
 
       /* prepare new partialdec */
       newpartialdec->setNBlocks(otherpartialdec->getNBlocks());
@@ -312,7 +313,7 @@ void DETPROBDATA::getTranslatedPartialdecs(
       otherpartialdec->setTranslatedpartialdecid(newpartialdec->getID());
 
       if( otherpartialdec->getFinishedByFinisher() )
-         newpartialdec->setDetectorFinishedOrig(otherpartialdec->getDetectorchain()[otherpartialdec->getNDetectors() - 1]);
+         newpartialdec->setDetectorFinishedOrig();
 
       newpartialdec->setFinishedByFinisher(otherpartialdec->getFinishedByFinisher());
       newpartialdec->prepare();
@@ -343,7 +344,7 @@ void DETPROBDATA::getTranslatedPartialdecs(
          );
       }
 
-      newpartialdec->getScore(GCGgetCurrentScore(scip)) ;
+      newpartialdec->getScore(GCGgetCurrentScore(gcg)) ;
 
       translatedpartialdecs.push_back(newpartialdec);
    }
@@ -351,11 +352,11 @@ void DETPROBDATA::getTranslatedPartialdecs(
 
 
 DETPROBDATA::DETPROBDATA(
-   SCIP* givenScip,
+   GCG* gcgstruct,
    SCIP_Bool _originalProblem
    ) :
-      scip(givenScip), openpartialdecs(0), ancestorpartialdecs( 0 ), origfixedtozerovars(0),
-      nvars(SCIPgetNVars(givenScip)), nconss(SCIPgetNConss(givenScip)), nnonzeros(0), original(_originalProblem), candidatesNBlocks(0),
+      gcg(gcgstruct), scip(GCGgetOrigprob(gcg)), openpartialdecs(0), ancestorpartialdecs( 0 ), origfixedtozerovars(0),
+      nvars(SCIPgetNVars(GCGgetOrigprob(gcg))), nconss(SCIPgetNConss(GCGgetOrigprob(gcg))), nnonzeros(0), original(_originalProblem), candidatesNBlocks(0),
       classificationtime(0.), nblockscandidatescalctime(0.), postprocessingtime(0.), translatingtime(0.)
 {
    SCIP_CONS** conss;
@@ -503,7 +504,7 @@ DETPROBDATA::~DETPROBDATA()
    }
 
    // Delete all partialdecs
-   GCGconshdlrDecompDeregisterPartialdecs(scip, original);
+   GCGconshdlrDecompDeregisterPartialdecs(gcg, original);
 
    for( size_t i = 0; i < conspartitioncollection.size(); ++ i )
    {
@@ -935,16 +936,22 @@ SCIP* DETPROBDATA::getScip()
 }
 
 
+GCG* DETPROBDATA::getGcg()
+{
+   return gcg;
+}
+
+
 void DETPROBDATA::getSortedCandidatesNBlocks(
    std::vector<int>& candidates
    )
 {
-   int nusercandidates = GCGconshdlrDecompGetNBlockNumberCandidates(scip);
+   int nusercandidates = GCGconshdlrDecompGetNBlockNumberCandidates(gcg);
    /* get the block number candidates directly given by the user */
    SCIPdebugMessage("number of user block number candidates: %d\n", nusercandidates);
    for( int i = 0; i < nusercandidates; ++i )
    {
-      int candidate = GCGconshdlrDecompGetBlockNumberCandidate(scip, i);
+      int candidate = GCGconshdlrDecompGetBlockNumberCandidate(gcg, i);
       candidates.push_back(candidate);
       SCIPdebugMessage("  %d\n", candidate);
    }
@@ -1129,13 +1136,10 @@ bool DETPROBDATA::isConsSetpp(
 
 
 SCIP_Bool DETPROBDATA::isFiniteNonnegativeIntegral(
-   SCIP*                 givenScip,          /**< SCIP data structure */
    SCIP_Real             x                   /**< value */
    )
 {
-   assert(scip != NULL);
-
-   return (!SCIPisInfinity(givenScip, x) && !SCIPisNegative(givenScip, x) && SCIPisIntegral(givenScip, x));
+   return (!SCIPisInfinity(scip, x) && !SCIPisNegative(scip, x) && SCIPisIntegral(scip, x));
 }
 
 
@@ -1154,15 +1158,14 @@ SCIP_Bool DETPROBDATA::isAssignedToOrigProb()
 
 
 SCIP_Bool DETPROBDATA::isRangedRow(
-   SCIP*                 givenScip,               /**< SCIP data structure */
    SCIP_Real             lhs,
    SCIP_Real             rhs
    )
 {
    assert(scip != NULL);
 
-   return !(SCIPisEQ(givenScip, lhs, rhs)
-      || SCIPisInfinity(givenScip, -lhs) || SCIPisInfinity(givenScip, rhs) );
+   return !(SCIPisEQ(scip, lhs, rhs)
+      || SCIPisInfinity(scip, -lhs) || SCIPisInfinity(scip, rhs) );
 }
 
 
@@ -1188,20 +1191,19 @@ SCIP_Bool DETPROBDATA::partialdecIsNoDuplicateOfPartialdecs(
 
 
 void DETPROBDATA::printBlockcandidateInformation(
- SCIP*                 givenscip,               /**< SCIP data structure */
  FILE*                 file                /**< output file or NULL for standard output */
    )
 {
 
    std::sort( candidatesNBlocks.begin(), candidatesNBlocks.end(), sort_decr() );
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "NBLOCKCANDIDATES   \n" );
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "The following %d candidates for the number of blocks are known: (candidate : number of votes)   \n", (int) candidatesNBlocks.size() );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "NBLOCKCANDIDATES   \n" );
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "The following %d candidates for the number of blocks are known: (candidate : number of votes)   \n", (int) candidatesNBlocks.size() );
    for( size_t i  = 0; i  < candidatesNBlocks.size(); ++i )
    {
       if( candidatesNBlocks[i].second != INT_MAX )
-         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d : %d  \n", candidatesNBlocks[i].first, candidatesNBlocks[i].second );
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d : %d  \n", candidatesNBlocks[i].first, candidatesNBlocks[i].second );
       else
-         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(givenscip), file, "%d : %s  \n", candidatesNBlocks[i].first, "user given" );
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "%d : %s  \n", candidatesNBlocks[i].first, "user given" );
    }
 }
 
@@ -1267,7 +1269,7 @@ void DETPROBDATA::printPartitionInformation(
  void DETPROBDATA::sortFinishedForScore()
 {
    /* get scoretype once, no need to call it twice for every comparison */
-   GCG_SCORE* score = GCGgetCurrentScore(scip);
+   GCG_SCORE* score = GCGgetCurrentScore(gcg);
    
    /* sort by score in descending order */
    std::sort(finishedpartialdecs.begin(), finishedpartialdecs.end(), [&](PARTIALDECOMP* a, PARTIALDECOMP* b) {return (a->getScore(score) > b->getScore(score)); });

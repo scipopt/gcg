@@ -36,12 +36,13 @@
 #define GCG_OBJPRICER_GCG_H_
 
 #include "objscip/objscip.h"
-#include "class_pricingtype.h"
-#include "class_pricingcontroller.h"
-#include "class_stabilization.h"
-#include "pub_gcgcol.h"
-#include "pub_colpool.h"
-#include "pricestore_gcg.h"
+#include "gcg/class_pricingtype.h"
+#include "gcg/class_pricingcontroller.h"
+#include "gcg/class_stabilization.h"
+#include "gcg/pub_gcgcol.h"
+#include "gcg/pub_colpool.h"
+#include "gcg/pricestore_gcg.h"
+#include "gcg/type_branchgcg.h"
 
 using gcg::Pricingcontroller;
 using gcg::Stabilization;
@@ -55,6 +56,7 @@ class ObjPricerGcg : public scip::ObjPricer
 public:
    /*lint --e{1540}*/
 
+   GCG*                   gcg;                /**< GCG data structure */
    SCIP*                  origprob;           /**< the original program */
    SCIP_PRICERDATA*       pricerdata;         /**< pricerdata data structure */
    GCG_COLPOOL*           colpool;            /**< column pool */
@@ -62,13 +64,12 @@ public:
 
    /** default constructor */
    ObjPricerGcg(
-         SCIP* scip, /**< SCIP data structure */
-         SCIP*              origscip,           /**< SCIP data structure of original problem */
+         GCG* gcgstruct, /**< GCG data structure */
          const char* name, /**< name of variable pricer */
          const char* desc, /**< description of variable pricer */
          int priority, /**< priority of the variable pricer */
          unsigned int delay, /**< should the pricer be delayed until no other pricers or already existing*/
-         SCIP_PRICERDATA *pricerdata /**< pricerdata data structure */
+         SCIP_PRICERDATA* p_pricerdata /**< pricerdata data structure */
    );
    /** destructor */
    virtual ~ObjPricerGcg()
@@ -88,7 +89,7 @@ public:
    virtual SCIP_DECL_PRICERREDCOST(scip_redcost);
    /** farkas pricing method of variable pricer for infeasible LPs */
    virtual SCIP_DECL_PRICERFARKAS(scip_farkas);
-   inline SCIP_PRICERDATA *getPricerdata()
+   inline SCIP_PRICERDATA* getPricerdata()
    {
       return pricerdata;
    }
@@ -124,7 +125,6 @@ public:
 
    /** creates a new master variable corresponding to the given solution and problem */
    SCIP_RETCODE createNewMasterVar(
-      SCIP*              scip,               /**< SCIP data structure */
       PricingType*       pricetype,          /**< type of the pricing */
       SCIP_SOL*          sol,                /**< solution to compute reduced cost for */
       SCIP_VAR**         solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
@@ -139,7 +139,6 @@ public:
 
    /** creates a new master variable corresponding to the given gcg column */
    SCIP_RETCODE createNewMasterVarFromGcgCol(
-      SCIP*                 scip,               /**< SCIP data structure */
       PricingType*          pricetype,          /**< type of pricing */
       GCG_COL*              gcgcol,             /**< GCG column data structure */
       SCIP_Bool             force,              /**< should the given variable be added also if it has non-negative reduced cost? */
@@ -186,9 +185,14 @@ public:
       return reducedcostpricing;
    }
 
-   SCIP* getOrigprob()
+   SCIP* getOrigprob() const
    {
       return origprob;
+   }
+
+   GCG* getGcg() const
+   {
+      return gcg;
    }
 
    /** get the number of columns to be added to the master LP in the current pricing round */
@@ -260,8 +264,13 @@ public:
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
-   /** compute master cut coefficients of column */
-   SCIP_RETCODE computeColMastercuts(
+   /** compute original separator master cut coefficients of column */
+   SCIP_RETCODE computeColOriginalSepaCuts(
+      GCG_COL*              gcgcol              /**< GCG column data structure */
+      );
+
+   /** compute generic extended master cons coefficients of column */
+   SCIP_RETCODE computeColExtendedMasterconss(
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
@@ -333,8 +342,8 @@ private:
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
-   /** add variable with computed coefficients to the master cuts */
-   SCIP_RETCODE addVariableToMastercuts(
+   /** add variable with computed coefficients to the original separator master cuts */
+   SCIP_RETCODE addVariableToOriginalSepaCuts(
       SCIP_VAR*             newvar,             /**< The new variable to add */
       int                   prob,               /**< number of the pricing problem the solution belongs to */
       SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
@@ -342,10 +351,15 @@ private:
       int                   nsolvars            /**< number of variables in array solvars */
       );
 
-   /** add variable with computed coefficients to the master cuts */
-   SCIP_RETCODE addVariableToMastercutsFromGCGCol(
+   /** add variable with computed coefficients to the original separator master cuts */
+   SCIP_RETCODE addVariableToOriginalSepaCutsFromGCGCol(
       SCIP_VAR*             newvar,             /**< The new variable to add */
       GCG_COL*              gcgcol              /**< GCG column data structure */
+      );
+
+   /** add variable to the extended master conss */
+   SCIP_RETCODE addVariableToExtendedmastercons(
+      SCIP_VAR*             newvar              /**< The new variable to add */
       );
 
    /**

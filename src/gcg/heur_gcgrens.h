@@ -38,7 +38,8 @@
 #define GCG_HEUR_GCGRENS_H__
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,21 +47,8 @@ extern "C" {
 
 /** creates RENS primal heuristic and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeHeurGcgrens(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** main procedure of the GCG RENS heuristic, creates and solves a sub-SCIP */
-SCIP_RETCODE GCGapplyGcgrens(
-   SCIP*                 scip,               /**< original SCIP data structure                                   */
-   SCIP_HEUR*            heur,               /**< heuristic data structure                                       */
-   SCIP_RESULT*          result,             /**< result data structure                                          */
-   SCIP_Real             minfixingrate,      /**< minimum percentage of integer variables that have to be fixed  */
-   SCIP_Real             minimprove,         /**< factor by which RENS should at least improve the incumbent     */
-   SCIP_Longint          maxnodes,           /**< maximum number of  nodes for the subproblem                    */
-   SCIP_Longint          nstallnodes,        /**< number of stalling nodes for the subproblem                    */
-   SCIP_Bool             binarybounds,       /**< should general integers get binary bounds [floor(.),ceil(.)]?  */
-   SCIP_Bool             uselprows           /**< should subproblem be created out of the rows in the LP rows?   */
+SCIP_RETCODE GCGincludeHeurGcgrens(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

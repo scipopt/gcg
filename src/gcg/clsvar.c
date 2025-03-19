@@ -37,8 +37,8 @@
 
 #include "scip/scip.h"
 
-#include "struct_varclassifier.h"
-#include "pub_clsvar.h"
+#include "gcg/struct_varclassifier.h"
+#include "gcg/pub_clsvar.h"
 
 
 /** gets user data of variable classifier */

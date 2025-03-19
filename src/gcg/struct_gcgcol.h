@@ -40,7 +40,7 @@
 #include "scip/type_misc.h"
 #include "scip/scip.h"
 
-#include "type_gcgcol.h"
+#include "gcg/type_gcgcol.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,9 +63,12 @@ struct GCG_Col
    SCIP_Real*           mastercoefs;        /**< array of master coefficients */
    int                  nmastercoefs;       /**< number of master coefficients */
    int                  maxmastercoefs;     /**< capacity of mastercoefs */
-   SCIP_Real*           mastercuts;         /**< array of master cut coefficients */
-   int                  nmastercuts;        /**< number of master cut coefficients */
-   int                  maxmastercuts;      /**< capacity of mastercuts */
+   SCIP_Real*           originalsepamastercuts;/**< array of original seperator cut coefficients in the master problem */
+   int                  noriginalsepamastercuts;/**< number of original seperator cut coefficients in the master problem */
+   int                  maxoriginalsepamastercuts;/**< capacity of originalsepamastercuts */
+   SCIP_Real*           extendedmasterconscoefs;/**< array of extended master cons coefficient values */
+   SCIP_Real*           extendedmasterconsbounds;/**< array of extended master cons bounds */
+   int                  nextendedmasterconss; /**< number of extended master conss */
    SCIP_Real            norm;               /**< norm of the coefficients in the master */
    int*                 linkvars;           /**< array of indices of variables in var-array which are linking variables */
    int                  nlinkvars;          /**< number of variables in var-array which are linking variables */

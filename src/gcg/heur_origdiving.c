@@ -36,9 +36,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_origdiving.h"
-#include "relax_gcg.h"
-#include "gcg.h"
+#include "gcg/heur_origdiving.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/gcg.h"
 
 
 #define HEUR_TIMING           SCIP_HEURTIMING_AFTERPLUNGE
@@ -77,6 +77,7 @@
 /* locally defined heuristic data for all diving heuristics */
 struct SCIP_HeurData
 {
+   GCG*                  gcg;                /**< GCG data structure */
    GCG_DECL_DIVINGFREE   ((*divingfree));    /**< destructor of diving heuristic */
    GCG_DECL_DIVINGINIT   ((*divinginit));    /**< initialize diving heuristic */
    GCG_DECL_DIVINGEXIT   ((*divingexit));    /**< deinitialize diving heuristic */
@@ -161,7 +162,7 @@ SCIP_DECL_HEURFREE(heurFreeOrigdiving) /*lint --e{715}*/
 
    if( heurdata->divingfree != NULL )
    {
-      SCIP_CALL( heurdata->divingfree(scip, heur) );
+      SCIP_CALL( heurdata->divingfree(heurdata->gcg, heur) );
    }
 
    /* free heuristic data */
@@ -195,7 +196,7 @@ SCIP_DECL_HEURINIT(heurInitOrigdiving) /*lint --e{715}*/
    /* diving rule specific initialization */
    if( heurdata->divinginit != NULL )
    {
-      SCIP_CALL( heurdata->divinginit(scip, heur) );
+      SCIP_CALL( heurdata->divinginit(heurdata->gcg, heur) );
    }
 
    return SCIP_OKAY;
@@ -236,7 +237,7 @@ SCIP_DECL_HEURINITSOL(heurInitsolOrigdiving)
    /* diving rule specific initialization */
    if( heurdata->divinginitsol != NULL )
    {
-      SCIP_CALL( heurdata->divinginitsol(scip, heur) );
+      SCIP_CALL( heurdata->divinginitsol(heurdata->gcg, heur) );
    }
 
    return SCIP_OKAY;
@@ -259,7 +260,7 @@ SCIP_DECL_HEUREXITSOL(heurExitsolOrigdiving)
    /* diving rule specific deinitialization */
    if( heurdata->divingexitsol != NULL )
    {
-      SCIP_CALL( heurdata->divingexitsol(scip, heur) );
+      SCIP_CALL( heurdata->divingexitsol(heurdata->gcg, heur) );
    }
 
    return SCIP_OKAY;
@@ -281,7 +282,7 @@ SCIP_DECL_HEUREXIT(heurExitOrigdiving) /*lint --e{715}*/
    /* diving rule specific deinitialization */
    if( heurdata->divingexit != NULL )
    {
-      SCIP_CALL( heurdata->divingexit(scip, heur) );
+      SCIP_CALL( heurdata->divingexit(heurdata->gcg, heur) );
    }
 
    /* free working solution */
@@ -295,6 +296,7 @@ SCIP_DECL_HEUREXIT(heurExitOrigdiving) /*lint --e{715}*/
 static
 SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
+   GCG* gcg;
    SCIP* masterprob;
 #ifdef SCIP_STATISTIC
    SCIP_EVENTHDLR* eventhdlr;
@@ -350,8 +352,14 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
    assert(scip != NULL);
    assert(result != NULL);
 
+   /* get heuristic data */
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+
+   gcg = heurdata->gcg;
+
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(gcg);
    assert(masterprob != NULL);
 
 #ifdef SCIP_STATISTIC
@@ -386,12 +394,8 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
    *result = SCIP_DIDNOTRUN;
 
    /* diving heuristics on the original variables are only applicable if blocks have not been aggregated */
-   if( GCGgetNRelPricingprobs(scip) != GCGgetNPricingprobs(scip) )
+   if( GCGgetNRelPricingprobs(gcg) != GCGgetNPricingprobs(gcg) )
       return SCIP_OKAY;
-
-   /* get heuristic data */
-   heurdata = SCIPheurGetData(heur);
-   assert(heurdata != NULL);
 
    /* check if fundamental diving callbacks are present */
    assert(heurdata->divingselectvar != NULL);
@@ -479,7 +483,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
    /* diving rule specific initialization */
    if( heurdata->divinginitexec != NULL )
    {
-      SCIP_CALL( heurdata->divinginitexec(scip, heur) );
+      SCIP_CALL( heurdata->divinginitexec(gcg, heur) );
    }
 
 
@@ -492,7 +496,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
 #endif
 
    /* start diving */
-   SCIP_CALL( GCGrelaxStartProbing(scip, heur) );
+   SCIP_CALL( GCGrelaxStartProbing(gcg, heur) );
 
    /* enables collection of variable statistics during probing */
    SCIPenableVarHistory(scip);
@@ -559,7 +563,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
       bestcandroundup = FALSE;
 
       /* choose a variable to dive on */
-      SCIP_CALL( heurdata->divingselectvar(scip, heur, tabulist, heurdata->maxdiscrepancy, &bestcand, &bestcandmayround, &bestcandroundup) );
+      SCIP_CALL( heurdata->divingselectvar(gcg, heur, tabulist, heurdata->maxdiscrepancy, &bestcand, &bestcandmayround, &bestcandroundup) );
 
       /* if no variable could be chosen, abort diving */
       if( bestcand == NULL )
@@ -634,7 +638,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
          /* apply rounding of best candidate */
          if( !farkaspricing && !backtracked )
          {
-            SCIP_CALL( GCGrelaxNewProbingnodeOrig(scip) );
+            SCIP_CALL( GCGrelaxNewProbingnodeOrig(gcg) );
 
             if( bestcandroundup == !otherdirection )
             {
@@ -658,7 +662,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
             /* apply domain propagation */
             SCIP_CALL( SCIPpropagateProbing(scip, 0, &cutoff, NULL) );
 
-            SCIP_CALL( GCGrelaxNewProbingnodeMaster(scip) );
+            SCIP_CALL( GCGrelaxNewProbingnodeMaster(gcg) );
          }
 
          if( !cutoff || backtracked || farkaspricing )
@@ -673,12 +677,12 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
             if( (!heurdata->usefarkasonly || farkaspricing )
                && (heurdata->maxpricerounds == -1 || totalpricerounds < heurdata->maxpricerounds) )
             {
-               retstat = GCGrelaxPerformProbingWithPricing(scip, heurdata->maxpricerounds == -1 ? -1 : heurdata->maxpricerounds - totalpricerounds,
+               retstat = GCGrelaxPerformProbingWithPricing(gcg, heurdata->maxpricerounds == -1 ? -1 : heurdata->maxpricerounds - totalpricerounds,
                   &nlpiterations, &npricerounds, &lpobj, &lpsolved, &lperror, &cutoff);
             }
             else
             {
-               retstat = GCGrelaxPerformProbing(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &nlpiterations, &lpobj, &lpsolved, &lperror, &cutoff);
+               retstat = GCGrelaxPerformProbing(gcg, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &nlpiterations, &lpobj, &lpsolved, &lperror, &cutoff);
                npricerounds = 0;
             }
             if( retstat != SCIP_OKAY )
@@ -689,12 +693,12 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
             if( (!heurdata->usefarkasonly || farkaspricing )
                && (heurdata->maxpricerounds == -1 || totalpricerounds < heurdata->maxpricerounds) )
             {
-               SCIP_CALL( GCGrelaxPerformProbingWithPricing(scip, heurdata->maxpricerounds == -1 ? -1 : heurdata->maxpricerounds - totalpricerounds,
+               SCIP_CALL( GCGrelaxPerformProbingWithPricing(gcg, heurdata->maxpricerounds == -1 ? -1 : heurdata->maxpricerounds - totalpricerounds,
                   &nlpiterations, &npricerounds, &lpobj, &lpsolved, &lperror, &cutoff) );
             }
             else
             {
-               SCIP_CALL( GCGrelaxPerformProbing(scip, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &nlpiterations, &lpobj, &lpsolved, &lperror, &cutoff) );
+               SCIP_CALL( GCGrelaxPerformProbing(gcg, MAX((int)(maxnlpiterations - heurdata->nlpiterations), MINLPITER), &nlpiterations, &lpobj, &lpsolved, &lperror, &cutoff) );
                npricerounds = 0;
             }
 #endif
@@ -738,7 +742,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
             if( heurdata->otherdirection && !backtracked && !otherdirection )
             {
                SCIPdebugMessage("  *** cutoff detected at level %d - branch in other direction\n", SCIPgetProbingDepth(scip));
-               SCIP_CALL( GCGrelaxBacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
+               SCIP_CALL( GCGrelaxBacktrackProbing(gcg, SCIPgetProbingDepth(scip)-1) );
                assert(SCIPgetProbingDepth(scip) == SCIPgetProbingDepth(masterprob));
 #ifdef SCIP_STATISTIC
                ++ndivenodes;
@@ -756,7 +760,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
                if( heurdata->backtrack && divedepth > heurdata->maxdiscdepth && discrepancy < heurdata->maxdiscrepancy )
                {
                   SCIPdebugMessage("  *** cutoff detected at level %d - backtrack one node\n", SCIPgetProbingDepth(scip));
-                  SCIP_CALL( GCGrelaxBacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
+                  SCIP_CALL( GCGrelaxBacktrackProbing(gcg, SCIPgetProbingDepth(scip)-1) );
                   assert(SCIPgetProbingDepth(scip) == SCIPgetProbingDepth(masterprob));
                   --divedepth;
 
@@ -776,7 +780,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
                   /* go back until the search can differ from the previous search tree */
                   do
                   {
-                     SCIP_CALL( GCGrelaxBacktrackProbing(scip, SCIPgetProbingDepth(scip)-1) );
+                     SCIP_CALL( GCGrelaxBacktrackProbing(gcg, SCIPgetProbingDepth(scip)-1) );
                      --divedepth;
                   }
                   while( divedepth > 0 &&
@@ -893,7 +897,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
    }
 
    /* end diving */
-   SCIP_CALL( GCGrelaxEndProbing(scip) );
+   SCIP_CALL( GCGrelaxEndProbing(gcg) );
 
    if( *result == SCIP_FOUNDSOL )
       heurdata->nsuccess++;
@@ -916,7 +920,7 @@ SCIP_DECL_HEUREXEC(heurExecOrigdiving) /*lint --e{715}*/
    /* free memory */
    if( heurdata->divingexitexec != NULL )
    {
-      SCIP_CALL( heurdata->divingexitexec(scip, heur) );
+      SCIP_CALL( heurdata->divingexitexec(gcg, heur) );
    }
    SCIPstatistic( SCIP_CALL( SCIPfreeClock(scip, &lptime) ) );
    SCIPfreeBufferArray(scip, &selectedvars);
@@ -1118,7 +1122,7 @@ void GCGheurSetDivingDataOrig(
 
 /** creates an original diving heuristic and includes it in GCG */
 SCIP_RETCODE GCGincludeDivingHeurOrig(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_HEUR**           heur,               /**< pointer to diving heuristic */
    const char*           name,               /**< name of primal heuristic */
    const char*           desc,               /**< description of primal heuristic */
@@ -1145,10 +1149,13 @@ SCIP_RETCODE GCGincludeDivingHeurOrig(
 #endif
    SCIP_HEURDATA* heurdata;
    char paramname[SCIP_MAXSTRLEN];
+   SCIP* origprob;
+
+   origprob = GCGgetOrigprob(gcg);
 
 #ifdef SCIP_STATISTIC
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(gcg);
    assert(masterprob != NULL);
 
    /* get origdiving event handler and its data */
@@ -1159,9 +1166,10 @@ SCIP_RETCODE GCGincludeDivingHeurOrig(
 #endif
 
    /* create original diving primal heuristic data */
-   SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &heurdata) );
 
    /* set diving rule callbacks and data */
+   heurdata->gcg = gcg;
    heurdata->divingfree = divingfree;
    heurdata->divinginit = divinginit;
    heurdata->divingexit = divingexit;
@@ -1173,87 +1181,87 @@ SCIP_RETCODE GCGincludeDivingHeurOrig(
    heurdata->divingdata = divingdata;
 
    /* include primal heuristic */
-   SCIP_CALL( SCIPincludeHeurBasic(scip, heur,
+   SCIP_CALL( SCIPincludeHeurBasic(origprob, heur,
          name, desc, dispchar, priority, freq, freqofs,
          maxdepth, HEUR_TIMING, HEUR_USESSUBSCIP, heurExecOrigdiving, heurdata) );
 
    assert(*heur != NULL);
 
    /* set non-NULL pointers to callback methods */
-   SCIP_CALL( SCIPsetHeurFree(scip, *heur, heurFreeOrigdiving) );
-   SCIP_CALL( SCIPsetHeurInit(scip, *heur, heurInitOrigdiving) );
-   SCIP_CALL( SCIPsetHeurExit(scip, *heur, heurExitOrigdiving) );
-   SCIP_CALL( SCIPsetHeurInitsol(scip, *heur, heurInitsolOrigdiving) );
-   SCIP_CALL( SCIPsetHeurExitsol(scip, *heur, heurExitsolOrigdiving) );
+   SCIP_CALL( SCIPsetHeurFree(origprob, *heur, heurFreeOrigdiving) );
+   SCIP_CALL( SCIPsetHeurInit(origprob, *heur, heurInitOrigdiving) );
+   SCIP_CALL( SCIPsetHeurExit(origprob, *heur, heurExitOrigdiving) );
+   SCIP_CALL( SCIPsetHeurInitsol(origprob, *heur, heurInitsolOrigdiving) );
+   SCIP_CALL( SCIPsetHeurExitsol(origprob, *heur, heurExitsolOrigdiving) );
 
    /* origdiving heuristic parameters */
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/minreldepth", name);
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(origprob,
         paramname,
         "minimal relative depth to start diving",
         &heurdata->minreldepth, TRUE, DEFAULT_MINRELDEPTH, 0.0, 1.0, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxreldepth", name);
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(origprob,
         paramname,
         "maximal relative depth to start diving",
         &heurdata->maxreldepth, TRUE, DEFAULT_MAXRELDEPTH, 0.0, 1.0, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxlpiterquot", name);
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(origprob,
         paramname,
         "maximal fraction of diving LP iterations compared to node LP iterations",
         &heurdata->maxlpiterquot, FALSE, DEFAULT_MAXLPITERQUOT, 0.0, SCIP_REAL_MAX, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxlpiterofs", name);
-   SCIP_CALL( SCIPaddIntParam(scip,
+   SCIP_CALL( SCIPaddIntParam(origprob,
         paramname,
         "additional number of allowed LP iterations",
         &heurdata->maxlpiterofs, FALSE, DEFAULT_MAXLPITEROFS, 0, INT_MAX, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxpricerounds", name);
-   SCIP_CALL( SCIPaddIntParam(scip,
+   SCIP_CALL( SCIPaddIntParam(origprob,
         paramname,
         "maximal number of allowed pricing rounds (-1: no limit)",
         &heurdata->maxpricerounds, FALSE, DEFAULT_MAXPRICEROUNDS, -1, INT_MAX, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/usefarkasonly", name);
-   SCIP_CALL( SCIPaddBoolParam(scip,
+   SCIP_CALL( SCIPaddBoolParam(origprob,
         paramname,
         "perform pricing only if infeasibility is encountered",
         &heurdata->usefarkasonly, TRUE, DEFAULT_USEFARKASONLY, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiveubquot", name);
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(origprob,
         paramname,
         "maximal quotient (curlowerbound - lowerbound)/(cutoffbound - lowerbound) where diving is performed (0.0: no limit)",
         &heurdata->maxdiveubquot, TRUE, DEFAULT_MAXDIVEUBQUOT, 0.0, 1.0, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiveavgquot", name);
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(origprob,
         paramname,
         "maximal quotient (curlowerbound - lowerbound)/(avglowerbound - lowerbound) where diving is performed (0.0: no limit)",
         &heurdata->maxdiveavgquot, TRUE, DEFAULT_MAXDIVEAVGQUOT, 0.0, SCIP_REAL_MAX, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiveubquotnosol", name);
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(origprob,
         paramname,
         "maximal UBQUOT when no solution was found yet (0.0: no limit)",
         &heurdata->maxdiveubquotnosol, TRUE, DEFAULT_MAXDIVEUBQUOTNOSOL, 0.0, 1.0, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiveavgquotnosol", name);
-   SCIP_CALL( SCIPaddRealParam(scip,
+   SCIP_CALL( SCIPaddRealParam(origprob,
         paramname,
         "maximal AVGQUOT when no solution was found yet (0.0: no limit)",
         &heurdata->maxdiveavgquotnosol, TRUE, DEFAULT_MAXDIVEAVGQUOTNOSOL, 0.0, SCIP_REAL_MAX, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/otherdirection", name);
-   SCIP_CALL( SCIPaddBoolParam(scip,
+   SCIP_CALL( SCIPaddBoolParam(origprob,
         paramname,
         "try to branch the diving variable in the other direction in case of infeasibility",
         &heurdata->otherdirection, FALSE, DEFAULT_OTHERDIRECTION, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/backtrack", name);
-   SCIP_CALL( SCIPaddBoolParam(scip,
+   SCIP_CALL( SCIPaddBoolParam(origprob,
         paramname,
         "single backtracking by choosing another variable in case of infeasibility",
         &heurdata->backtrack, TRUE, DEFAULT_BACKTRACK, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiscdepth", name);
-   SCIP_CALL( SCIPaddIntParam(scip,
+   SCIP_CALL( SCIPaddIntParam(origprob,
         paramname,
         "maximal depth until which a limited discrepancy search is performed",
         &heurdata->maxdiscdepth, TRUE, DEFAULT_MAXDISCDEPTH, 0, INT_MAX, NULL, NULL) );
    (void) SCIPsnprintf(paramname, SCIP_MAXSTRLEN, "heuristics/%s/maxdiscrepancy", name);
-   SCIP_CALL( SCIPaddIntParam(scip,
+   SCIP_CALL( SCIPaddIntParam(origprob,
         paramname,
         "maximal discrepancy allowed in backtracking and limited discrepancy search",
         &heurdata->maxdiscrepancy, TRUE, DEFAULT_MAXDISCREPANCY, 0, INT_MAX, NULL, NULL) );
@@ -1277,8 +1285,8 @@ SCIP_RETCODE GCGincludeDivingHeurOrig(
 }
 
 /** creates event handler for origdiving event and includes it in the master problem */
-SCIP_RETCODE SCIPincludeEventHdlrOrigdiving(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeEventHdlrOrigdiving(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
 #ifdef SCIP_STATISTIC
@@ -1287,7 +1295,7 @@ SCIP_RETCODE SCIPincludeEventHdlrOrigdiving(
    SCIP_EVENTHDLR* eventhdlr;
 
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(gcg);
    assert(masterprob != NULL);
 
    /* create master event handler data */

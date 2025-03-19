@@ -36,8 +36,6 @@
 #ifndef GCG_TYPE_GCGCOL_H__
 #define GCG_TYPE_GCGCOL_H__
 
-#include "struct_gcgcol.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

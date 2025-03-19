@@ -55,7 +55,7 @@
         },
         {
             "name": "gcg-debug-nm",
-            "inherits": "gcg-default",
+            "inherits": "gcg-debug",
             "displayName": "GCG Default Debug Config (native memory)",
             "description": "Default GCG development debug build configuration with native memory handling",
             "hidden": true,

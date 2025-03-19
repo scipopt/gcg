@@ -39,7 +39,8 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,8 +48,8 @@ extern "C" {
 
 /** creates the GCG shifting heuristic with infeasibility recovering and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeHeurGcgshifting(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeHeurGcgshifting(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

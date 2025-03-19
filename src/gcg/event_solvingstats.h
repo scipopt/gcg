@@ -33,10 +33,11 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
+
 
 /** includes event handler for best solution found */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeEventHdlrSolvingstats(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeEventHdlrSolvingstats(
+   GCG*                  gcg                 /**< GCG data structure */
    );

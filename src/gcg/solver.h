@@ -37,8 +37,8 @@
 #ifndef GCG_SOLVER_H_
 #define GCG_SOLVER_H_
 
-#include "def.h"
-#include "type_solver.h"
+
+#include "gcg/type_solver.h"
 #include "scip/scip.h"
 
 #ifdef __cplusplus
@@ -54,7 +54,7 @@ extern "C" {
 /** creates a GCG pricing solver */
 GCG_EXPORT
 SCIP_RETCODE GCGsolverCreate(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER**          solver,             /**< pointer to pricing solver data structure */
    const char*           name,               /**< name of solver */
    const char*           desc,               /**< description of solver */
@@ -75,41 +75,42 @@ SCIP_RETCODE GCGsolverCreate(
 /** calls destructor and frees memory of GCG pricing solver */
 GCG_EXPORT
 SCIP_RETCODE GCGsolverFree(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER**          solver              /**< pointer to pricing solver data structure */
    );
 
 /** initializes GCG pricing solver */
 GCG_EXPORT
 SCIP_RETCODE GCGsolverInit(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** calls exit method of GCG pricing solver */
 GCG_EXPORT
 SCIP_RETCODE GCGsolverExit(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** calls solving process initialization method of GCG pricing solver */
 GCG_EXPORT
 SCIP_RETCODE GCGsolverInitsol(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** calls solving process deinitialization method of GCG pricing solver */
 GCG_EXPORT
 SCIP_RETCODE GCGsolverExitsol(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_SOLVER*           solver              /**< pricing solver */
    );
 
 /** calls update method of GCG pricing solver */
 GCG_EXPORT
 SCIP_RETCODE GCGsolverUpdate(
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP*                 pricingprob,        /**< the pricing problem that should be solved */
    GCG_SOLVER*           solver,             /**< pricing solver */
    int                   probnr,             /**< number of the pricing problem */
@@ -121,7 +122,7 @@ SCIP_RETCODE GCGsolverUpdate(
 /** calls heuristic or exact solving method of GCG pricing solver */
 GCG_EXPORT
 SCIP_RETCODE GCGsolverSolve(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP*                 pricingprob,        /**< the pricing problem that should be solved */
    GCG_SOLVER*           solver,             /**< pricing solver */
    SCIP_Bool             redcost,            /**< is reduced cost (TRUE) or Farkas (FALSE) pricing performed? */

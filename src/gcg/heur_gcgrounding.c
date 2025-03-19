@@ -36,9 +36,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_gcgrounding.h"
-#include "relax_gcg.h"
-#include "gcg.h"
+#include "gcg/heur_gcgrounding.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/gcg.h"
 
 
 #define HEUR_NAME             "gcgrounding"
@@ -59,6 +59,7 @@
 /* locally defined heuristic data */
 struct SCIP_HeurData
 {
+   GCG*                  gcg;                /**< GCG data structure */
    SCIP_SOL*             sol;                /**< working solution */
    SCIP_Longint          lastlp;             /**< last LP number where the heuristic was applied */
    int                   successfactor;      /**< number of calls per found solution that are considered as standard success,
@@ -538,8 +539,12 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
    assert(scip != NULL);
    assert(result != NULL);
 
+   /* get heuristic data */
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(heurdata->gcg);
    assert(masterprob != NULL);
 
    *result = SCIP_DIDNOTRUN;
@@ -556,10 +561,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
    /* only call heuristic, if an optimal LP solution is at hand */
    if( SCIPgetStage(masterprob) > SCIP_STAGE_SOLVING || SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
       return SCIP_OKAY;
-
-   /* get heuristic data */
-   heurdata = SCIPheurGetData(heur);
-   assert(heurdata != NULL);
 
    /* don't call heuristic, if we have already processed the current LP solution */
    nlps = SCIPgetNLPs(masterprob);
@@ -607,7 +608,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
 
       if( !SCIProwIsLocal(row) )
       {
-         activities[r] = SCIPgetRowSolActivity(scip, row, GCGrelaxGetCurrentOrigSol(scip));
+         activities[r] = SCIPgetRowSolActivity(scip, row, GCGrelaxGetCurrentOrigSol(heurdata->gcg));
          if( SCIPisFeasLT(scip, activities[r], SCIProwGetLhs(row) )
             || SCIPisFeasGT(scip, activities[r], SCIProwGetRhs(row)) )
          {
@@ -764,17 +765,19 @@ SCIP_DECL_HEUREXEC(heurExecGcgrounding) /*lint --e{715}*/
  */
 
 /** creates the GCG rounding heuristic with infeasibility recovering and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurGcgrounding(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeHeurGcgrounding(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_HEURDATA* heurdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* create heuristic data */
-   SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &heurdata) );
+   heurdata->gcg = gcg;
 
    /* include heuristic */
-   SCIP_CALL( SCIPincludeHeur(scip, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
+   SCIP_CALL( SCIPincludeHeur(origprob, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, HEUR_TIMING, HEUR_USESSUBSCIP,
          heurCopyGcgrounding,
          heurFreeGcgrounding, heurInitGcgrounding, heurExitGcgrounding,
@@ -782,7 +785,7 @@ SCIP_RETCODE SCIPincludeHeurGcgrounding(
          heurdata) );
 
    /* add rounding primal heuristic parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "heuristics/"HEUR_NAME"/successfactor",
+   SCIP_CALL( SCIPaddIntParam(origprob, "heuristics/"HEUR_NAME"/successfactor",
          "number of calls per found solution that are considered as standard success, a higher factor causes the heuristic to be called more often",
          &heurdata->successfactor, TRUE, DEFAULT_SUCCESSFACTOR, -1, INT_MAX, NULL, NULL) );
 

@@ -33,14 +33,14 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "dec_mastersetpack.h"
-#include "cons_decomp.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "gcg.h"
+#include "gcg/dec_mastersetpack.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/gcg.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
-#include "scip_misc.h"
+#include "gcg/scip_misc.h"
 #include "scip/clock.h"
 
 #include <iostream>
@@ -95,10 +95,10 @@ struct GCG_DetectorData
 static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetpack)
 {
    *result = SCIP_DIDNOTFIND;
-
+   SCIP* origprob = GCGgetOrigprob(gcg);
    SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+   SCIP_CALL_ABORT( SCIPcreateClock(origprob, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
 
    SCIP_CONS* cons;
 
@@ -109,7 +109,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetpack)
    for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
    {
       cons = partialdecdetectiondata->detprobdata->getCons(*itr);
-      if( GCGconsGetType(scip, cons) == setpacking )
+      if( GCGconsGetType(origprob, cons) == setpacking )
       {
           itr = partialdec->fixConsToMaster(itr);
       }
@@ -120,17 +120,17 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetpack)
    }
 
    partialdec->sort();
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock) );
 
-   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 1) );
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(origprob, temporaryClock);
+   SCIP_CALL( SCIPallocMemoryArray(origprob, &(partialdecdetectiondata->newpartialdecs), 1) );
    partialdecdetectiondata->newpartialdecs[0] = partialdec;
    partialdecdetectiondata->nnewpartialdecs = 1;
-   partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(scip, temporaryClock));
+   partialdecdetectiondata->newpartialdecs[0]->addClockTime(SCIPgetClockTime(origprob, temporaryClock));
    partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(DEC_NAME);
    // we used the provided partialdec -> prevent deletion
    partialdecdetectiondata->workonpartialdec = NULL;
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT(SCIPfreeClock(origprob, &temporaryClock) );
 
    *result = SCIP_SUCCESS;
 
@@ -150,8 +150,9 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecMastersetpack)
  */
 
 /** creates the handler for mastersetpack detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorMastersetpack(SCIP* scip /**< SCIP data structure */
-)
+SCIP_RETCODE GCGincludeDetectorMastersetpack(
+   GCG*              gcg                  /**< GCG data structure */
+   )
 {
    GCG_DETECTORDATA* detectordata;
 
@@ -159,7 +160,7 @@ SCIP_RETCODE SCIPincludeDetectorMastersetpack(SCIP* scip /**< SCIP data structur
    detectordata = NULL;
 
    SCIP_CALL(
-      GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeMastersetpack, initMastersetpack, exitMastersetpack, propagatePartialdecMastersetpack, finishPartialdecMastersetpack, detectorPostprocessPartialdecMastersetpack, setParamAggressiveMastersetpack, setParamDefaultMastersetpack, setParamFastMastersetpack));
+      GCGincludeDetector(gcg, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeMastersetpack, initMastersetpack, exitMastersetpack, propagatePartialdecMastersetpack, finishPartialdecMastersetpack, detectorPostprocessPartialdecMastersetpack, setParamAggressiveMastersetpack, setParamDefaultMastersetpack, setParamFastMastersetpack));
 
    /**@todo add mastersetpack detector parameters */
 

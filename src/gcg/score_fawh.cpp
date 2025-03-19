@@ -32,11 +32,11 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "score_fawh.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/score_fawh.h"
 
 
 /* score properties */
@@ -78,7 +78,8 @@ GCG_DECL_SCORECALC(scoreCalcFawh)
    unsigned long newmasterarea;
    unsigned long newblockareaagg;
 
-   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
+   SCIP* scip = GCGgetOrigprob(gcg);
+   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(gcg, partialdecid);
 
    std::vector<int> nlinkingvarsforblock(partialdec->getNBlocks(), 0);
    std::vector<int> nblocksforlinkingvar(partialdec->getNLinkingvars() + partialdec->getNTotalStairlinkingvars(), 0);
@@ -165,13 +166,13 @@ GCG_DECL_SCORECALC(scoreCalcFawh)
 
 /** creates the maximum foreseeing white area score with aggregation info score and includes it in SCIP */
 SCIP_RETCODE GCGincludeScoreFawh(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_SCOREDATA* scoredata = NULL;
 
    SCIP_CALL(
-      GCGincludeScore(scip, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata,
+      GCGincludeScore(gcg, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata,
          scoreFreeFawh, scoreCalcFawh) );
 
    return SCIP_OKAY;

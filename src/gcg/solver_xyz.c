@@ -35,9 +35,9 @@
 
 #include <assert.h>
 
-#include "solver_xyz.h"
-#include "pricer_gcg.h"
-#include "pub_solver.h"
+#include "gcg/solver_xyz.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/pub_solver.h"
 
 #define DEC_CLASSIFIERNAME   "xyz pricing problem solver"    /**< name of pricing solver */
 #define DEC_DESC             "pricing solver template"       /**< short description of classification */
@@ -177,7 +177,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurXyz)
 
 /** creates the Xyz pricing solver and includes it in GCG */
 SCIP_RETCODE GCGincludeSolverXyz(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_SOLVERDATA* solverdata;
@@ -187,7 +187,7 @@ SCIP_RETCODE GCGincludeSolverXyz(
    /* TODO: (optional) create pricing problem solver specific data here */
 
    /* include pricing problem solver */
-   SCIP_CALL( GCGpricerIncludeSolver(scip, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
+   SCIP_CALL( GCGpricerIncludeSolver(gcg, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
          SOLVER_HEURENABLED, SOLVER_EXACTENABLED,
          solverUpdateXyz, solverSolveXyz, solverSolveHeurXyz,
          solverFreeXyz, solverInitXyz, solverExitXyz,

@@ -36,7 +36,7 @@
 #ifndef GCG_GCGGITHASH_H__
 #define GCG_GCGGITHASH_H__
 
-#include "def.h"
+#include "gcg/def.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -40,8 +40,7 @@
 #include "scip/def.h"
 #include "scip/type_clock.h"
 #include "scip/type_misc.h"
-#include "scip/type_lp.h"
-#include "type_colpool.h"
+#include "gcg/type_gcgcol.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,6 +49,7 @@ extern "C" {
 /** storage for pooled cols */
 struct GCG_Colpool
 {
+   GCG*                  gcg;                /**< GCG data structure */
    SCIP*                 scip;               /**< SCIP data structure */
    SCIP_Longint          nodenr;             /**< node at which columns in colpool respect branching decisions */
    SCIP_Bool             infarkas;           /**< in Farkas pricing? */

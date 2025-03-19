@@ -53,7 +53,7 @@ extern "C" {
  */
 GCG_EXPORT
 SCIP_RETCODE GCGdialogExecExplore(
-   SCIP*                   scip,               /**< SCIP data structure */
+   GCG*                    gcg,                /**< GCG data structure */
    SCIP_DIALOGHDLR*        dialoghdlr,         /**< dialog handler for user input management */
    SCIP_DIALOG*            dialog              /**< dialog for user input management */
    );

@@ -33,35 +33,36 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "gcg.h"
-#include "def.h"
-#include "pub_gcgsepa.h"
+#include "gcg/gcg.h"
+
+#include "gcg/pub_gcgsepa.h"
 
 
 /** resets the parameters to disable separators */
 static
 SCIP_RETCODE setSeparatorsOff(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
-   assert(scip != NULL);
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    /* set specific parameters for GCG basis separator, if the separator is included */
 #ifndef NDEBUG
-   if( SCIPfindSepa(GCGgetMasterprob(scip), "basis") != NULL )
+   if( SCIPfindSepa(GCGgetMasterprob(gcg), "basis") != NULL )
 #endif
    {
-      SCIP_CALL( SCIPsetBoolParam(scip, "sepa/basis/enable", FALSE) );
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/basis/enable = FALSE\n");
+      SCIP_CALL( SCIPsetBoolParam(origprob, "sepa/basis/enable", FALSE) );
+      SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/basis/enable = FALSE\n");
    }
 
    /* set specific parameters for GCG master separator, if the separator is included */
 #ifndef NDEBUG
-   if( SCIPfindSepa(GCGgetMasterprob(scip), "master") != NULL )
+   if( SCIPfindSepa(GCGgetMasterprob(gcg), "master") != NULL )
 #endif
    {
-      SCIP_CALL( SCIPsetBoolParam(scip, "sepa/master/enable", FALSE) );
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/master/enable = FALSE\n");
+      SCIP_CALL( SCIPsetBoolParam(origprob, "sepa/master/enable", FALSE) );
+      SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/master/enable = FALSE\n");
    }
 
    return SCIP_OKAY;
@@ -70,33 +71,34 @@ SCIP_RETCODE setSeparatorsOff(
 /** resets the parameters to their default value */
 static
 SCIP_RETCODE setSeparatorsDefault(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
-   assert(scip != NULL);
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    /* set specific parameters for GCG basis separator, if the separator is included */
 #ifndef NDEBUG
-   if( SCIPfindSepa(GCGgetMasterprob(scip), "basis") != NULL )
+   if( SCIPfindSepa(GCGgetMasterprob(gcg), "basis") != NULL )
 #endif
    {
-      SCIP_CALL( SCIPsetBoolParam(scip, "sepa/basis/enable", TRUE) );
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/basis/enable = TRUE\n");
+      SCIP_CALL( SCIPsetBoolParam(origprob, "sepa/basis/enable", TRUE) );
+      SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/basis/enable = TRUE\n");
 
-      SCIP_CALL( SCIPsetIntParam(scip, "sepa/basis/paramsetting", 0) );
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/basis/paramsetting = %d\n", 0);
+      SCIP_CALL( SCIPsetIntParam(origprob, "sepa/basis/paramsetting", 0) );
+      SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/basis/paramsetting = %d\n", 0);
    }
 
    /* set specific parameters for GCG master separator, if the separator is included */
 #ifndef NDEBUG
-   if( SCIPfindSepa(GCGgetMasterprob(scip), "master") != NULL )
+   if( SCIPfindSepa(GCGgetMasterprob(gcg), "master") != NULL )
 #endif
    {
-      SCIP_CALL( SCIPsetBoolParam(scip, "sepa/master/enable", TRUE) );
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/master/enable = TRUE\n");
+      SCIP_CALL( SCIPsetBoolParam(origprob, "sepa/master/enable", TRUE) );
+      SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/master/enable = TRUE\n");
 
-      SCIP_CALL( SCIPsetIntParam(scip, "sepa/master/paramsetting", 0) );
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/master/paramsetting = %d\n", 0);
+      SCIP_CALL( SCIPsetIntParam(origprob, "sepa/master/paramsetting", 0) );
+      SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/master/paramsetting = %d\n", 0);
    }
 
    return SCIP_OKAY;
@@ -105,33 +107,34 @@ SCIP_RETCODE setSeparatorsDefault(
 /** sets the parameters to aggressive values */
 static
 SCIP_RETCODE setSeparatorsAggressive(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
-   assert(scip != NULL);
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    /* set specific parameters for GCG basis separator, if the separator is included */
 #ifndef NDEBUG
-   if( SCIPfindSepa(GCGgetMasterprob(scip), "basis") != NULL )
+   if( SCIPfindSepa(GCGgetMasterprob(gcg), "basis") != NULL )
 #endif
    {
-      SCIP_CALL( SCIPsetBoolParam(scip, "sepa/basis/enable", TRUE) );
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/basis/enable = TRUE\n");
+      SCIP_CALL( SCIPsetBoolParam(origprob, "sepa/basis/enable", TRUE) );
+      SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/basis/enable = TRUE\n");
 
-      SCIP_CALL( SCIPsetIntParam(scip, "sepa/basis/paramsetting", 1) );
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/basis/paramsetting = %d\n", 1);
+      SCIP_CALL( SCIPsetIntParam(origprob, "sepa/basis/paramsetting", 1) );
+      SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/basis/paramsetting = %d\n", 1);
    }
 
    /* set specific parameters for GCG master separator, if the separator is included */
 #ifndef NDEBUG
-   if( SCIPfindSepa(GCGgetMasterprob(scip), "master") != NULL )
+   if( SCIPfindSepa(GCGgetMasterprob(gcg), "master") != NULL )
 #endif
    {
-      SCIP_CALL( SCIPsetBoolParam(scip, "sepa/master/enable", TRUE) );
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/master/enable = TRUE\n");
+      SCIP_CALL( SCIPsetBoolParam(origprob, "sepa/master/enable", TRUE) );
+      SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/master/enable = TRUE\n");
 
-      SCIP_CALL( SCIPsetIntParam(scip, "sepa/master/paramsetting", 1) );
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/master/paramsetting = %d\n", 1);
+      SCIP_CALL( SCIPsetIntParam(origprob, "sepa/master/paramsetting", 1) );
+      SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/master/paramsetting = %d\n", 1);
    }
 
    return SCIP_OKAY;
@@ -140,31 +143,32 @@ SCIP_RETCODE setSeparatorsAggressive(
 /** sets the parameters to fast values */
 static
 SCIP_RETCODE setSeparatorsFast(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
+   SCIP* origprob = GCGgetOrigprob(gcg);
    /* set specific parameters for GCG basis separator, if the separator is included */
 #ifndef NDEBUG
-   if( SCIPfindSepa(GCGgetMasterprob(scip), "basis") != NULL )
+   if( SCIPfindSepa(GCGgetMasterprob(gcg), "basis") != NULL )
 #endif
    {
-      SCIP_CALL( SCIPsetBoolParam(scip, "sepa/basis/enable", TRUE) );
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/basis/enable = TRUE\n");
+      SCIP_CALL( SCIPsetBoolParam(origprob, "sepa/basis/enable", TRUE) );
+      SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/basis/enable = TRUE\n");
 
-      SCIP_CALL( SCIPsetIntParam(scip, "sepa/basis/paramsetting", 2) );
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/basis/paramsetting = %d\n", 2);
+      SCIP_CALL( SCIPsetIntParam(origprob, "sepa/basis/paramsetting", 2) );
+      SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/basis/paramsetting = %d\n", 2);
    }
 
    /* set specific parameters for GCG master separator, if the separator is included */
 #ifndef NDEBUG
-   if( SCIPfindSepa(GCGgetMasterprob(scip), "master") != NULL )
+   if( SCIPfindSepa(GCGgetMasterprob(gcg), "master") != NULL )
 #endif
    {
-      SCIP_CALL( SCIPsetBoolParam(scip, "sepa/master/enable", TRUE) );
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/master/enable = TRUE\n");
+      SCIP_CALL( SCIPsetBoolParam(origprob, "sepa/master/enable", TRUE) );
+      SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/master/enable = TRUE\n");
 
-      SCIP_CALL( SCIPsetIntParam(scip, "sepa/master/paramsetting", 2) );
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/master/paramsetting = %d\n", 2);
+      SCIP_CALL( SCIPsetIntParam(origprob, "sepa/master/paramsetting", 2) );
+      SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "sepa/master/paramsetting = %d\n", 2);
    }
 
    return SCIP_OKAY;
@@ -178,7 +182,7 @@ SCIP_RETCODE setSeparatorsFast(
  *  - SCIP_PARAMSETTING_OFF which turns off all separators
  */
 SCIP_RETCODE GCGsetSeparators(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_PARAMSETTING     paramsetting        /**< parameter settings */
    )
 {
@@ -188,16 +192,16 @@ SCIP_RETCODE GCGsetSeparators(
    switch( paramsetting )
    {
    case SCIP_PARAMSETTING_AGGRESSIVE:
-      SCIP_CALL( setSeparatorsAggressive(scip) );
+      SCIP_CALL( setSeparatorsAggressive(gcg) );
       break;
    case SCIP_PARAMSETTING_OFF:
-      SCIP_CALL(setSeparatorsOff(scip));
+      SCIP_CALL(setSeparatorsOff(gcg));
       break;
    case SCIP_PARAMSETTING_FAST:
-      SCIP_CALL( setSeparatorsFast(scip) );
+      SCIP_CALL( setSeparatorsFast(gcg) );
       break;
    case SCIP_PARAMSETTING_DEFAULT:
-      SCIP_CALL( setSeparatorsDefault(scip) );
+      SCIP_CALL( setSeparatorsDefault(gcg) );
       break;
    default:
       SCIPerrorMessage("The given paramsetting is invalid!\n");

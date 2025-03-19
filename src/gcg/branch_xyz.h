@@ -38,7 +38,7 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,8 +46,8 @@ extern "C" {
 
 /** creates the xyz branching rule and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeBranchruleXyz(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeBranchruleXyz(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

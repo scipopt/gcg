@@ -36,15 +36,15 @@
 #define GCG_MATRIXGRAPH_DEF_H_
 
 #include "scip/scip.h"
-#include "matrixgraph.h"
+#include "graph/matrixgraph.h"
 
 namespace gcg {
 
 template <class T>
 MatrixGraph<T>::MatrixGraph(
-      SCIP*                 scip,              /**< SCIP data structure */
+      GCG*                  gcgstruct,        /**< SCIP data structure */
       Weights               w                 /**< weights for the given graph */
-) : name("graph"),scip_(scip),nconss(0),nvars(0),dummynodes(0),weights(w),graphiface(NULL),nnonzeroes(0)
+) : name("graph"),gcg(gcgstruct),nconss(0),nvars(0),dummynodes(0),weights(w),graphiface(NULL),nnonzeroes(0)
 {
 
 }

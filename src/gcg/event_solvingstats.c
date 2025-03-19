@@ -43,8 +43,8 @@
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "event_solvingstats.h"
-#include "pricer_gcg.h"
+#include "gcg/event_solvingstats.h"
+#include "gcg/pricer_gcg.h"
 #include <string.h>
 
 #define EVENTHDLR_NAME         "solvingstats"
@@ -170,27 +170,28 @@ SCIP_DECL_EVENTEXEC(eventExecSolvingstats)
 }
 
 /** includes event handler for best solution found */
-SCIP_RETCODE SCIPincludeEventHdlrSolvingstats(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeEventHdlrSolvingstats(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_EVENTHDLRDATA* eventhdlrdata;
    SCIP_EVENTHDLR* eventhdlr;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
    /* create bounds reader data */
-   SCIP_CALL( SCIPallocMemory(scip, &eventhdlrdata) );
-   eventhdlrdata->origprob = GCGmasterGetOrigprob(scip);
+   SCIP_CALL( SCIPallocMemory(masterprob, &eventhdlrdata) );
+   eventhdlrdata->origprob = GCGgetOrigprob(gcg);
    eventhdlrdata->file = NULL;
    eventhdlrdata->filename = NULL;
    eventhdlr = NULL;
 
    /* create event handler for events on watched variables */
-   SCIP_CALL( SCIPincludeEventhdlrBasic(scip, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC, eventExecSolvingstats, eventhdlrdata) );
+   SCIP_CALL( SCIPincludeEventhdlrBasic(masterprob, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC, eventExecSolvingstats, eventhdlrdata) );
    assert(eventhdlr != NULL);
 
-   SCIP_CALL( SCIPsetEventhdlrFree(scip, eventhdlr, eventFreeSolvingstats) );
-   SCIP_CALL( SCIPsetEventhdlrInit(scip, eventhdlr, eventInitSolvingstats) );
-   SCIP_CALL( SCIPsetEventhdlrExit(scip, eventhdlr, eventExitSolvingstats) );
+   SCIP_CALL( SCIPsetEventhdlrFree(masterprob, eventhdlr, eventFreeSolvingstats) );
+   SCIP_CALL( SCIPsetEventhdlrInit(masterprob, eventhdlr, eventInitSolvingstats) );
+   SCIP_CALL( SCIPsetEventhdlrExit(masterprob, eventhdlr, eventExitSolvingstats) );
 
    /* add boundwriting parameters */
    SCIP_CALL( SCIPaddStringParam(eventhdlrdata->origprob,

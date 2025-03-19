@@ -41,8 +41,9 @@
 #define __SCIP_PRESOL_ROUNDBOUND_H__
 
 
-#include "def.h"
+
 #include "scip/scip.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,7 +51,7 @@ extern "C" {
 
 /** creates the roundbound presolver and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludePresolRoundbound(
+SCIP_RETCODE GCGincludePresolRoundbound(
    SCIP*                 scip                /**< SCIP data structure */
    );
 

@@ -36,7 +36,7 @@
 #ifndef GCG_COLUMNGRAPH_DEF_H_
 #define GCG_COLUMNGRAPH_DEF_H_
 
-#include "columngraph.h"
+#include "graph/columngraph.h"
 #include <algorithm>
 #include <utility>
 #include <vector>
@@ -45,9 +45,9 @@ namespace gcg {
 
 template <class T>
 ColumnGraph<T>::ColumnGraph(
-   SCIP*                 scip,              /**< SCIP data structure */
+   GCG*                  gcgstruct,         /**< GCG data structure */
    Weights               w                  /**< weights for the given graph */
-   ) : MatrixGraph<T>(scip, w), graph(scip)
+   ) : MatrixGraph<T>(gcgstruct, w), graph(gcgstruct)
 {
    this->graphiface = &graph;
    this->name = std::string("columngraph");
@@ -66,19 +66,19 @@ SCIP_RETCODE ColumnGraph<T>::createDecompFromPartition(
 {
    int nblocks;
    SCIP_HASHMAP* constoblock = NULL;
-
+   SCIP* scip = GCGgetOrigprob(this->gcg);
    int* nsubscipconss = NULL;
    int i;
    SCIP_CONS **conss;
    SCIP_Bool emptyblocks = FALSE;
    std::vector<int> partition = graph.getPartition();
-   conss = SCIPgetConss(this->scip_);
+   conss = SCIPgetConss(scip);
    nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
 
-   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
 
-   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), this->nconss) );
 
    /* assign constraints to partition */
    for( i = 0; i < this->nconss; i++ )
@@ -100,15 +100,15 @@ SCIP_RETCODE ColumnGraph<T>::createDecompFromPartition(
 
    if( !emptyblocks )
    {
-      SCIP_CALL( GCGdecompCreate(this->scip_, decomp) );
-      SCIP_CALL( GCGfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
+      SCIP_CALL( GCGdecompCreate(this->gcg, decomp) );
+      SCIP_CALL( GCGfilloutDecompFromConstoblock(this->gcg, *decomp, constoblock, nblocks, FALSE) );
    }
    else {
       SCIPhashmapFree(&constoblock);
       *decomp = NULL;
    }
 
-   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   SCIPfreeBufferArray(scip, &nsubscipconss);
    return SCIP_OKAY;
 }
 
@@ -127,6 +127,7 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
    SCIP_Bool success;
    std::pair< int, int> edge;
    std::vector< std::pair< int, int> > edges;
+   SCIP* scip = GCGgetOrigprob(this->gcg);
 
    assert(conss != NULL);
    assert(vars != NULL);
@@ -153,7 +154,7 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
       SCIP_VAR** curvars = NULL;
 
       int ncurvars;
-      SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars, &success) );
+      SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &ncurvars, &success) );
       assert(success);
       if( ncurvars == 0 )
          continue;
@@ -162,8 +163,8 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
        * may work as is, as we are copying the constraint later regardless
        * if there are variables in it or not
        */
-      SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars, ncurvars) );
-      SCIP_CALL( SCIPgetConsVars(this->scip_, conss[i], curvars, ncurvars, &success) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+      SCIP_CALL( SCIPgetConsVars(scip, conss[i], curvars, ncurvars, &success) );
       assert(success);
 
       /** @todo skip all variables that have a zero coeffient or where all coefficients add to zero */
@@ -174,7 +175,7 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
          SCIP_VAR* var1;
          int varIndex1;
 
-         if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+         if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
             var1 = SCIPvarGetProbvar(curvars[j]);
          else
             var1 = curvars[j];
@@ -192,7 +193,7 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
             SCIP_VAR* var2;
             int varIndex2;
 
-            if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+            if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
                var2 = SCIPvarGetProbvar(curvars[k]);
             else
                var2 = curvars[k];
@@ -217,7 +218,7 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
             }
          }
       }
-      SCIPfreeBufferArray(this->scip_, &curvars);
+      SCIPfreeBufferArray(scip, &curvars);
    }
 
    this->graph.flush();

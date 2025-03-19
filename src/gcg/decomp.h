@@ -35,10 +35,10 @@
 #ifndef GCG_DECOMP_H__
 #define GCG_DECOMP_H__
 
-#include "type_decomp.h"
-#include "type_detector.h"
+#include "gcg/type_decomp.h"
+#include "gcg/type_detector.h"
 #include "scip/scip.h"
-#include "gcg.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,7 +50,7 @@ extern "C" {
 */
 GCG_EXPORT
 SCIP_RETCODE GCGdecompSetDetectorChain(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    GCG_DETECTOR**        detectors,          /**< new detector chain */
    int                   ndetectors          /**< number of new detectors (i.e. length of the detector array) */

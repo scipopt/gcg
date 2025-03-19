@@ -37,10 +37,10 @@
 #ifndef GCG_PUB_GCGVAR_H__
 #define GCG_PUB_GCGVAR_H__
 
-#include "type_decomp.h"
+#include "gcg/type_decomp.h"
 #include "scip/scip.h"
-#include "def.h"
-#include "struct_vardata.h"
+
+#include "gcg/struct_vardata.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,11 +52,15 @@ extern "C" {
  * @{
  */
 
+#ifdef NDEBUG
+#define GCGvarIsPricing(var)                (SCIPvarGetData(var)->vartype == GCG_VARTYPE_PRICING)
+#else
 /** returns TRUE or FALSE whether variable is a pricing variable or not */
 GCG_EXPORT
 SCIP_Bool GCGvarIsPricing(
    SCIP_VAR*             var                 /**< SCIP variable structure */
    );
+#endif
 
 #ifdef NDEBUG
 #define GCGvarIsOriginal(var)                (SCIPvarGetData(var)->vartype == GCG_VARTYPE_ORIGINAL)
@@ -77,6 +81,24 @@ SCIP_Bool GCGvarIsMaster(
    SCIP_VAR*             var                 /**< SCIP variable structure */
    );
 #endif
+
+#ifdef NDEBUG
+#define GCGvarIsInferredPricing(var)         (SCIPvarGetData(var)->vartype == GCG_VARTYPE_INFERREDPRICING)
+#else
+/** returns TRUE or FALSE whether variable is a inferred pricing variable or not
+  *
+  * inferred pricing variables are auxilary variables that are required by specific extended master conss */
+GCG_EXPORT
+SCIP_Bool GCGvarIsInferredPricing(
+   SCIP_VAR*             var                 /**< SCIP variable structure */
+   );
+#endif
+
+/** count the number of inferred pricing variables in a array of variables */
+int GCGcountInferredPricingVars(
+   SCIP_VAR**             vars,               /**< array of variables */
+   int                    nvars               /**< number of variables */
+   );
 
 #ifdef NDEBUG
 #define GCGoriginalVarIsLinking(var)         (SCIPvarGetData(var)->blocknr == -2)
@@ -111,7 +133,7 @@ SCIP_VAR* GCGpricingVarGetOriginalVar(
 /** adds the original var to the pricing variable */
 GCG_EXPORT
 SCIP_RETCODE GCGpricingVarAddOrigVar(
-   SCIP*                 scip,               /**< SCIP variable structure */
+   SCIP*                 pricingprob,        /**< pricingprob SCIP data structure */
    SCIP_VAR*             pricingvar,         /**< pricing variable */
    SCIP_VAR*             origvar             /**< original pricing variable */
    );
@@ -138,7 +160,7 @@ void GCGoriginalVarSetPricingVar(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGcopyPricingvarDataToMastervar(
-   SCIP*                 scip,               /**< master SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             pricingvar,         /**< the pricing problem variable is copied from */
    SCIP_VAR*             mastervar           /**< the master variable that the vardata is copied to */
    );
@@ -214,7 +236,7 @@ SCIP_CONS** GCGoriginalVarGetMasterconss(
 /** adds a coefficient of the master variable to the coefs array for the resp. constraint */
 GCG_EXPORT
 SCIP_RETCODE GCGoriginalVarAddCoef(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             var,                /**< variable to add coef */
    SCIP_Real             val,                /**< coefficent to set */
    SCIP_CONS*            cons                /**< constraint the variable is in */
@@ -223,7 +245,7 @@ SCIP_RETCODE GCGoriginalVarAddCoef(
 /** adds variable to a new block, making a linkingvariable out of it, if necessary */
 GCG_EXPORT
 SCIP_RETCODE GCGoriginalVarAddBlock(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             var,                /**< var that is added to a block */
    int                   newblock,           /**< the new block the variable will be in */
    int                   nblocks,            /**< total number of pricing problems */
@@ -402,19 +424,19 @@ void GCGvarSetBlock(
 /** creates the data for all variables of the original program */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateOrigVarsData(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** frees the data for all variables of the original program */
 GCG_EXPORT
 SCIP_RETCODE GCGfreeOrigVarsData(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** creates the data for a variable of the original program */
 GCG_EXPORT
 SCIP_RETCODE GCGorigVarCreateData(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             var                 /**< pointer to variable object */
    );
 
@@ -442,7 +464,7 @@ SCIP_Bool GCGisMasterVarInBlock(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGoriginalVarAddMasterVar(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             origvar,            /**< original variable */
    SCIP_VAR*             var,                /**< master variable */
    SCIP_Real             val                 /**< fraction of the original variable */
@@ -454,7 +476,7 @@ SCIP_RETCODE GCGoriginalVarAddMasterVar(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGoriginalVarRemoveMasterVar(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             origvar,            /**< original variable */
    SCIP_VAR*             var                 /**< master variable */
    );
@@ -463,7 +485,7 @@ SCIP_RETCODE GCGoriginalVarRemoveMasterVar(
 /** creates the corresponding pricing variable for the given original variable */
 GCG_EXPORT
 SCIP_RETCODE GCGoriginalVarCreatePricingVar(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 pricingprob,        /**< pricingprob SCIP data structure */
    SCIP_VAR*             origvar,            /**< original variable */
    SCIP_VAR**            var                 /**< pricing variable */
    );
@@ -480,7 +502,7 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
 /** creates the corresponding constraint in the master problem for the linking variable */
 GCG_EXPORT
 SCIP_RETCODE GCGlinkingVarCreateMasterCons(
-   SCIP*                 masterscip,         /**< master problem SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    int                   pricingprobnr,      /**< number of the pricing problem */
    SCIP_VAR*             origvar,            /**< original variable */
    SCIP_CONS**           linkcons            /**< constraint linking pricing variables */
@@ -489,8 +511,7 @@ SCIP_RETCODE GCGlinkingVarCreateMasterCons(
 /** creates the master var and initializes the vardata */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateMasterVar(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP*                 origscip,           /**< original SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
    SCIP_VAR**            newvar,             /**< pointer to store new master variable */
    const char*           varname,            /**< new variable name */
@@ -507,7 +528,7 @@ SCIP_RETCODE GCGcreateMasterVar(
 /** creates initial master variables and the vardata */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateInitialMasterVar(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             var,                /**< original variable */
    SCIP_VAR**            newvar              /**< pointer to store new variable */
    );
@@ -515,16 +536,29 @@ SCIP_RETCODE GCGcreateInitialMasterVar(
 /** creates artificial variable and the vardata */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateArtificialVar(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR**            newvar,              /**< pointer to store new variable */
    const char*           name,               /**< name of variable, or NULL for automatic name creation */
    SCIP_Real             objcoef             /**< objective coefficient of artificial variable */
    );
 
+/** creates a pricing variable inferred from an extended master cons
+ * that does not correspond to any original variable and its vardata */
+SCIP_RETCODE GCGcreateInferredPricingVar(
+   SCIP*                 pricingscip,        /**< pricing problem SCIP data structure */
+   SCIP_VAR**            newvar,             /**< pointer to store new master variable */
+   const char*           varname,            /**< new variable name */
+   SCIP_Real             lb,                 /**< new variable lower bound */
+   SCIP_Real             ub,                 /**< new objective coefficient */
+   SCIP_Real             objcoeff,           /**< new objective coefficient */
+   SCIP_VARTYPE          vartype,            /**< new variable type */
+   int                   prob                /**< number of pricing problem that created this variable */
+   );
+
 /* adds the vardata to the auxiliary variable */
 GCG_EXPORT
 SCIP_RETCODE GCGaddDataAuxiliaryVar(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             auxiliaryvar,       /**< the auxiliary variable */
    int                   probnumber          /**< the subproblem number */
    );
@@ -617,7 +651,7 @@ SCIP_Real GCGgetVarGap(
 /** store reduced cost */
 GCG_EXPORT
 void GCGsetRedcost(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             var,                /**< variable data structure */
    SCIP_Real             redcost             /**< reduced cost of the variable at creation */
    );
@@ -635,8 +669,7 @@ SCIP_Real GCGgetRedcost(
 /** updates the statistics part of the variable */
 GCG_EXPORT
 void GCGupdateVarStatistics(
-    SCIP*                scip,               /**< master SCIP data structure */
-    SCIP*                origprob,           /**< original SCIP data structure */
+    GCG*                 gcg,                /**< GCG data structure */
     SCIP_VAR*            newvar,             /**< new variable for statistic update */
     SCIP_Real            redcost             /**< reduced cost of the variable */
    );
@@ -645,7 +678,7 @@ void GCGupdateVarStatistics(
  * and the list of all variables related to the given variable */
 GCG_EXPORT
 void GCGprintVar(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    FILE*                 file,               /**< File to write information to, or NULL for stdout */
    SCIP_VAR*             var                 /**< variable that should be printed */
    );

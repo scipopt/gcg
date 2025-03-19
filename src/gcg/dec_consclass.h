@@ -37,7 +37,7 @@
 #define DEC_CONSCLASS_H_
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,8 +45,8 @@ extern "C" {
 
 /** creates the handler for consclass detector and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorConsclass(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorConsclass(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

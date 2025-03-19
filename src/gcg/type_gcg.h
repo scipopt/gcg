@@ -25,62 +25,22 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   sepa_master.h
- * @ingroup SEPARATORS
- * @brief  master separator
- * @author Gerald Gamrath
+/**@file   type_gcgcol.h
+ * @ingroup TYPEDEFINITIONS
+ * @brief  type definitions for gcg column data structure
+ * @author Jonas Witt
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_SEPA_MASTER_H__
-#define GCG_SEPA_MASTER_H__
-
-
-#include "scip/scip.h"
-#include "def.h"
+#ifndef GCG_TYPE_GCG_H__
+#define GCG_TYPE_GCG_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** creates the master separator and includes it in SCIP */
-GCG_EXPORT
-SCIP_RETCODE SCIPincludeSepaMaster(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** returns the array of original cuts saved in the separator data */
-GCG_EXPORT
-SCIP_ROW** GCGsepaGetOrigcuts(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** returns the number of cuts saved in the separator data */
-GCG_EXPORT
-int GCGsepaGetNCuts(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** returns the array of master cuts saved in the separator data */
-GCG_EXPORT
-SCIP_ROW** GCGsepaGetMastercuts(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** adds given original and master cut to master separator data */
-GCG_EXPORT
-SCIP_RETCODE GCGsepaAddMastercuts(
-   SCIP*                scip,               /**< SCIP data structure */
-   SCIP_ROW*            origcut,            /**< pointer to orginal cut */
-   SCIP_ROW*            mastercut           /**< pointer to master cut */
-);
-
-/** checks whether a given original cut is already known */
-SCIP_Bool GCGsepaOrigcutExists(
-      SCIP*                scip,            /**< SCIP data structure */
-      SCIP_ROW*            origcut          /**< pointer to orginal cut */
-);
+typedef struct Gcg GCG; /**< data structure to store colums (solutions of a pricing problem) */
 
 #ifdef __cplusplus
 }

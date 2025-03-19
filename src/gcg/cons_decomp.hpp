@@ -36,20 +36,20 @@
 #ifndef GCG_CONS_DECOMP_HPP
 #define GCG_CONS_DECOMP_HPP
 
-#include "def.h"
-#include "class_partialdecomp.h"
+
+#include "gcg/class_partialdecomp.h"
 
 /** @brief gets vector of all partialdecs
  * @returns finished partialdecs
  */
 GCG_EXPORT
 std::vector<gcg::PARTIALDECOMP*>* GCGconshdlrDecompGetPartialdecs(
-   SCIP*          scip  /**< SCIP data structure */
+   GCG*           gcg  /**< GCG data structure */
    );
 
 GCG_EXPORT
 gcg::PARTIALDECOMP* GCGgetPartialdecToWrite(
-   SCIP*                         scip,
+   GCG*                          gcg,
    SCIP_Bool                     transformed
    );
 
@@ -58,7 +58,7 @@ gcg::PARTIALDECOMP* GCGgetPartialdecToWrite(
  * @note returns NULL if no partialdec by this id is known */
 GCG_EXPORT
 gcg::PARTIALDECOMP* GCGconshdlrDecompGetPartialdecFromID(
-   SCIP* scip,          /**< SCIP data structure */
+   GCG* scip,           /**< GCG data structure */
    int partialdecid     /**< partialdec id */
    );
 
@@ -69,7 +69,7 @@ gcg::PARTIALDECOMP* GCGconshdlrDecompGetPartialdecFromID(
 */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
-   SCIP* scip,                   /**< SCIP data structure */
+   GCG* gcg,                     /**< GCG data structure */
    gcg::PARTIALDECOMP* partialdec/**< partial dec to add */
    );
 
@@ -80,7 +80,7 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
 */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
-   SCIP* scip,                      /**< SCIP data structure */
+   GCG* gcg,                        /**< GCG data structure */
    gcg::PARTIALDECOMP* partialdec,  /**< partial dec to add */
    SCIP_Bool addpartialdec          /**< if completed, add partial dec as well */
    );
@@ -92,7 +92,7 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
  */
 GCG_EXPORT
 void GCGconshdlrDecompDeregisterPartialdec(
-   SCIP* scip,                       /**< SCIP data structure */
+   GCG* gcg,                         /**< GCG data structure */
    gcg::PARTIALDECOMP* partialdec    /**< the partialdec */
    );
 
@@ -103,7 +103,7 @@ void GCGconshdlrDecompDeregisterPartialdec(
  */
 GCG_EXPORT
 void GCGconshdlrDecompRegisterPartialdec(
-   SCIP* scip,                       /**< SCIP data structure */
+   GCG* gcg,                         /**< GCG data structure */
    gcg::PARTIALDECOMP* partialdec    /**< the partialdec to register */
    );
 
@@ -114,7 +114,7 @@ void GCGconshdlrDecompRegisterPartialdec(
  */
 GCG_EXPORT
 gcg::DETPROBDATA* GCGconshdlrDecompGetDetprobdataOrig(
-   SCIP*                 scip                 /**< SCIP data structure */
+   GCG*                  gcg                  /**< GCG data structure */
    );
 
 /**
@@ -124,7 +124,7 @@ gcg::DETPROBDATA* GCGconshdlrDecompGetDetprobdataOrig(
  */
 GCG_EXPORT
 gcg::DETPROBDATA* GCGconshdlrDecompGetDetprobdataPresolved(
-   SCIP*                 scip                 /**< SCIP data structure */
+   GCG*                  gcg                  /**< GCG data structure */
    );
 
 /**
@@ -132,7 +132,7 @@ gcg::DETPROBDATA* GCGconshdlrDecompGetDetprobdataPresolved(
  *
  * initializes it with all if there are no selected partialdecs,
  * sort them according to the current scoretype
- * @param scip SCIP data structure
+ * @param gcg GCG data structure
  * @param candidates tuples of partialdecs and scores will be added to this vector (sorted w.r.t. the scores).
  * @param original choose candidates for the original problem?
  * @param printwarnings should warnings be printed?
@@ -140,7 +140,7 @@ gcg::DETPROBDATA* GCGconshdlrDecompGetDetprobdataPresolved(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompChooseCandidatesFromSelected(
-   SCIP* scip,
+   GCG* gcg,
    std::vector<std::pair<gcg::PARTIALDECOMP*, SCIP_Real> >& candidates,
    SCIP_Bool original,
    SCIP_Bool printwarnings
@@ -151,7 +151,7 @@ SCIP_RETCODE GCGconshdlrDecompChooseCandidatesFromSelected(
  */
 GCG_EXPORT
 std::string GCGconshdlrDecompGetDetectorHistoryByPartialdecId(
-   SCIP* scip,    /**< SCIP data structure */
+   GCG* gcg,      /**< GCG data structure */
    int id         /**< id of partialdec */
    );
 

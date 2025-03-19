@@ -37,16 +37,17 @@
 #define GCG_SOLVER_HIGHS_H__
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** creates the HiGHS solver for pricing problems and includes it in GCG */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGincludeSolverHighs(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
 );
 
 #ifdef __cplusplus

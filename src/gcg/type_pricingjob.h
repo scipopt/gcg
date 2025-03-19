@@ -36,7 +36,7 @@
 #ifndef GCG_TYPE_PRICINGJOB_H__
 #define GCG_TYPE_PRICINGJOB_H__
 
-#include "struct_pricingjob.h"
+#include "gcg/struct_pricingjob.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -38,7 +38,7 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,8 +47,8 @@ extern "C" {
 
 /** creates the DBSCAN presolver and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeDetectorMST(
-      SCIP*              scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorMST(
+      GCG*               gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

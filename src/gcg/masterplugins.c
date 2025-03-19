@@ -32,11 +32,12 @@
  */
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+#include <scip/def.h>
 #define USEHEURS 1
 #define USESEPA 0
 #define USEPROP 1
 
-#include "masterplugins.h"
+#include "gcg/masterplugins.h"
 
 #include "scip/cons_and.h"
 #include "scip/cons_bounddisjunction.h"
@@ -117,7 +118,7 @@
 
 #include "scip/presol_implics.h"
 #include "scip/presol_inttobinary.h"
-#include "presol_roundbound.h"
+#include "gcg/presol_roundbound.h"
 #include "scip/presol_boundshift.h"
 
 #if USEPROP
@@ -143,225 +144,228 @@
 #endif
 
 /* Jonas' stuff */
-#include "sepa_basis.h"
+#include "gcg/sepa_basis.h"
 
 #include "scip/reader_cip.h"
 #include "scip/reader_lp.h"
 #include "scip/scipshell.h"
 
 /* GCG specific stuff */
-#include "pricer_gcg.h"
-#include "nodesel_master.h"
-#include "cons_masterbranch.h"
-#include "cons_integralorig.h"
-#include "sepa_master.h"
-#include "branch_ryanfoster.h"
-#include "branch_orig.h"
-#include "branch_relpsprob.h"
-#include "branch_generic.h"
-#include "branch_bpstrong.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/nodesel_master.h"
+#include "gcg/cons_masterbranch.h"
+#include "gcg/cons_integralorig.h"
+#include "gcg/sepa_original.h"
+#include "gcg/branch_ryanfoster.h"
+#include "gcg/branch_orig.h"
+#include "gcg/branch_relpsprob.h"
+#include "gcg/branch_generic.h"
+#include "gcg/branch_bpstrong.h"
+#include "gcg/branch_compbnd.h"
 #include "scip/debug.h"
-#include "dialog_master.h"
-#include "disp_master.h"
-#include "solver_knapsack.h"
-#include "solver_mip.h"
-#include "event_bestsol.h"
-#include "event_relaxsol.h"
-#include "event_solvingstats.h"
-#include "event_display.h"
+#include "gcg/dialog_master.h"
+#include "gcg/disp_master.h"
+#include "gcg/solver_knapsack.h"
+#include "gcg/solver_mip.h"
+#include "gcg/event_bestsol.h"
+#include "gcg/event_relaxsol.h"
+#include "gcg/event_solvingstats.h"
+#include "gcg/event_display.h"
 
 /* Erik's GCG solver */
-#include "solver_gcg.h"
+#include "gcg/solver_gcg.h"
 
 /* Christian's heuristics */
-#include "heur_greedycolsel.h"
-#include "heur_masterdiving.h"
-#include "heur_mastercoefdiving.h"
-#include "heur_masterfracdiving.h"
-#include "heur_masterlinesdiving.h"
-#include "heur_mastervecldiving.h"
-#include "heur_relaxcolsel.h"
-#include "heur_restmaster.h"
-#include "heur_setcover.h"
+#include "gcg/heur_greedycolsel.h"
+#include "gcg/heur_masterdiving.h"
+#include "gcg/heur_mastercoefdiving.h"
+#include "gcg/heur_masterfracdiving.h"
+#include "gcg/heur_masterlinesdiving.h"
+#include "gcg/heur_mastervecldiving.h"
+#include "gcg/heur_relaxcolsel.h"
+#include "gcg/heur_restmaster.h"
+#include "gcg/heur_setcover.h"
 
 #ifdef WITH_CLIQUER
-#include "solver_cliquer.h"
+#include "gcg/solver_cliquer.h"
 #endif
 
 #ifdef WITH_CPLEXSOLVER
-#include "solver_cplex.h"
+#include "gcg/solver_cplex.h"
 #endif
 
 #ifdef WITH_HIGHS
-#include "solver_highs.h"
+#include "gcg/solver_highs.h"
 #endif
 
 #include "scip/table_default.h"
 
 /** includes default GCG master plugins */
 SCIP_RETCODE GCGincludeMasterPlugins(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
-   SCIP_CALL( SCIPincludeDialogMaster(scip) );
-   SCIP_CALL( SCIPincludeConshdlrLinear(scip) ); /* linear must be first due to constraint upgrading */
-   SCIP_CALL( SCIPincludeConshdlrAnd(scip) );
-   SCIP_CALL( SCIPincludeConshdlrBounddisjunction(scip) );
-   SCIP_CALL( SCIPincludeConshdlrConjunction(scip) );
-   SCIP_CALL( SCIPincludeConshdlrIndicator(scip) );
-   SCIP_CALL( SCIPincludeConshdlrIntegral(scip) );
-   SCIP_CALL( SCIPincludeConshdlrKnapsack(scip) );
-   SCIP_CALL( SCIPincludeConshdlrLogicor(scip) );
-   SCIP_CALL( SCIPincludeConshdlrOr(scip) );
-   SCIP_CALL( SCIPincludeConshdlrSetppc(scip) );
-   SCIP_CALL( SCIPincludeConshdlrVarbound(scip) );
-   SCIP_CALL( SCIPincludeConshdlrXor(scip) );
+   SCIP* masterprob = GCGgetDwMasterprob(gcg);
+   SCIP_CALL( GCGincludeDialogMaster(gcg) );
+   SCIP_CALL( SCIPincludeConshdlrLinear(masterprob) ); /* linear must be first due to constraint upgrading */
+   SCIP_CALL( SCIPincludeConshdlrAnd(masterprob) );
+   SCIP_CALL( SCIPincludeConshdlrBounddisjunction(masterprob) );
+   SCIP_CALL( SCIPincludeConshdlrConjunction(masterprob) );
+   SCIP_CALL( SCIPincludeConshdlrIndicator(masterprob) );
+   SCIP_CALL( SCIPincludeConshdlrIntegral(masterprob) );
+   SCIP_CALL( SCIPincludeConshdlrKnapsack(masterprob) );
+   SCIP_CALL( SCIPincludeConshdlrLogicor(masterprob) );
+   SCIP_CALL( SCIPincludeConshdlrOr(masterprob) );
+   SCIP_CALL( SCIPincludeConshdlrSetppc(masterprob) );
+   SCIP_CALL( SCIPincludeConshdlrVarbound(masterprob) );
+   SCIP_CALL( SCIPincludeConshdlrXor(masterprob) );
 
-   SCIP_CALL( SCIPincludeReaderCip(scip) );
-   SCIP_CALL( SCIPincludeReaderLp(scip) );
+   SCIP_CALL( SCIPincludeReaderCip(masterprob) );
+   SCIP_CALL( SCIPincludeReaderLp(masterprob) );
 
-   SCIP_CALL( SCIPincludePresolBoundshift(scip) );
-   SCIP_CALL( SCIPincludePresolImplics(scip) );
-   SCIP_CALL( SCIPincludePresolInttobinary(scip) );
-   SCIP_CALL( SCIPincludePresolRoundbound(scip) );
+   SCIP_CALL( SCIPincludePresolBoundshift(masterprob) );
+   SCIP_CALL( SCIPincludePresolImplics(masterprob) );
+   SCIP_CALL( SCIPincludePresolInttobinary(masterprob) );
+   SCIP_CALL( GCGincludePresolRoundbound(masterprob) );
 
 #if USEPROP
-   SCIP_CALL( SCIPincludePropDualfix(scip) );
-   SCIP_CALL( SCIPincludePropGenvbounds(scip) );
-   SCIP_CALL( SCIPincludePropProbing(scip) );
-   SCIP_CALL( SCIPincludePropPseudoobj(scip) );
-   SCIP_CALL( SCIPincludePropRootredcost(scip) );
-   SCIP_CALL( SCIPincludePropRedcost(scip) );
-   SCIP_CALL( SCIPincludePropVbounds(scip) );
+   SCIP_CALL( SCIPincludePropDualfix(masterprob) );
+   SCIP_CALL( SCIPincludePropGenvbounds(masterprob) );
+   SCIP_CALL( SCIPincludePropProbing(masterprob) );
+   SCIP_CALL( SCIPincludePropPseudoobj(masterprob) );
+   SCIP_CALL( SCIPincludePropRootredcost(masterprob) );
+   SCIP_CALL( SCIPincludePropRedcost(masterprob) );
+   SCIP_CALL( SCIPincludePropVbounds(masterprob) );
 #endif
 
-   SCIP_CALL( SCIPincludeNodeselMaster(scip) );
-   SCIP_CALL( SCIPincludeConshdlrIntegralOrig(scip) );
-   SCIP_CALL( SCIPincludeBranchruleRyanfoster(scip) );
-   SCIP_CALL( SCIPincludeBranchruleOrig(scip) );
-   SCIP_CALL( SCIPincludeBranchruleRelpsprob(scip) );
-   SCIP_CALL( SCIPincludeBranchruleGeneric(scip) );
-   SCIP_CALL( SCIPincludeBranchruleBPStrong(scip) );
+   SCIP_CALL( GCGincludeNodeselMaster(gcg) );
+   SCIP_CALL( GCGincludeConshdlrIntegralOrig(gcg) );
+   SCIP_CALL( GCGincludeBranchruleRyanfoster(gcg) );
+   SCIP_CALL( GCGincludeBranchruleOrig(gcg) );
+   SCIP_CALL( GCGincludeBranchruleRelpsprob(gcg) );
+   SCIP_CALL( GCGincludeBranchruleGeneric(gcg) );
+   SCIP_CALL( GCGincludeBranchruleBPStrong(gcg) );
+   SCIP_CALL( GCGincludeBranchruleCompBnd(gcg) );
 
 #if USEHEURS
-   SCIP_CALL( SCIPincludeHeurActconsdiving(scip) );
-   SCIP_CALL( SCIPincludeHeurAdaptivediving(scip) );
-   SCIP_CALL( SCIPincludeHeurBound(scip) );
-   SCIP_CALL( SCIPincludeHeurClique(scip) );
-   SCIP_CALL( SCIPincludeHeurCoefdiving(scip) );
-   SCIP_CALL( SCIPincludeHeurCompletesol(scip) );
-   SCIP_CALL( SCIPincludeHeurConflictdiving(scip) );
-   SCIP_CALL( SCIPincludeHeurCrossover(scip) );
-   SCIP_CALL( SCIPincludeHeurDins(scip) );
-   SCIP_CALL( SCIPincludeHeurDistributiondiving(scip) );
-   SCIP_CALL( SCIPincludeHeurDps(scip) );
-   SCIP_CALL( SCIPincludeHeurDualval(scip) );
-   SCIP_CALL( SCIPincludeHeurFarkasdiving(scip) );
-   SCIP_CALL( SCIPincludeHeurFeaspump(scip) );
-   SCIP_CALL( SCIPincludeHeurFixandinfer(scip) );
-   SCIP_CALL( SCIPincludeHeurFracdiving(scip) );
-   SCIP_CALL( SCIPincludeHeurGins(scip) );
-   SCIP_CALL( SCIPincludeHeurGuideddiving(scip) );
-   SCIP_CALL( SCIPincludeHeurZeroobj(scip) );
-   SCIP_CALL( SCIPincludeHeurIndicator(scip) );
-   SCIP_CALL( SCIPincludeHeurIndicatordiving(scip) );
-   SCIP_CALL( SCIPincludeHeurIntdiving(scip) );
-   SCIP_CALL( SCIPincludeHeurIntshifting(scip) );
-   SCIP_CALL( SCIPincludeHeurLinesearchdiving(scip) );
-   SCIP_CALL( SCIPincludeHeurLocalbranching(scip) );
-   SCIP_CALL( SCIPincludeHeurLocks(scip) );
-   SCIP_CALL( SCIPincludeHeurLpface(scip) );
-   SCIP_CALL( SCIPincludeHeurAlns(scip) );
-   SCIP_CALL( SCIPincludeHeurNlpdiving(scip) );
-   SCIP_CALL( SCIPincludeHeurMutation(scip) );
-   SCIP_CALL( SCIPincludeHeurMultistart(scip) );
-   SCIP_CALL( SCIPincludeHeurMpec(scip) );
-   SCIP_CALL( SCIPincludeHeurObjpscostdiving(scip) );
-   SCIP_CALL( SCIPincludeHeurOctane(scip) );
-   SCIP_CALL( SCIPincludeHeurOfins(scip) );
-   SCIP_CALL( SCIPincludeHeurOneopt(scip) );
-   SCIP_CALL( SCIPincludeHeurPADM(scip) );
-   SCIP_CALL( SCIPincludeHeurProximity(scip) );
-   SCIP_CALL( SCIPincludeHeurPscostdiving(scip) );
-   SCIP_CALL( SCIPincludeHeurRandrounding(scip) );
-   SCIP_CALL( SCIPincludeHeurRens(scip) );
-   SCIP_CALL( SCIPincludeHeurReoptsols(scip) );
-   SCIP_CALL( SCIPincludeHeurRepair(scip) );
-   SCIP_CALL( SCIPincludeHeurRins(scip) );
-   SCIP_CALL( SCIPincludeHeurRootsoldiving(scip) );
-   SCIP_CALL( SCIPincludeHeurRounding(scip) );
-   SCIP_CALL( SCIPincludeHeurScheduler(scip) );
-   SCIP_CALL( SCIPincludeHeurShiftandpropagate(scip) );
-   SCIP_CALL( SCIPincludeHeurShifting(scip) );
-   SCIP_CALL( SCIPincludeHeurSubNlp(scip) );
-   SCIP_CALL( SCIPincludeHeurTrivial(scip) );
-   SCIP_CALL( SCIPincludeHeurTrivialnegation(scip) );
-   SCIP_CALL( SCIPincludeHeurTrustregion(scip) );
-   SCIP_CALL( SCIPincludeHeurTrySol(scip) );
-   SCIP_CALL( SCIPincludeHeurTwoopt(scip) );
-   SCIP_CALL( SCIPincludeHeurUndercover(scip) );
-   SCIP_CALL( SCIPincludeHeurVbounds(scip) );
-   SCIP_CALL( SCIPincludeHeurVeclendiving(scip) );
-   SCIP_CALL( SCIPincludeHeurZirounding(scip) );
+   SCIP_CALL( SCIPincludeHeurActconsdiving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurAdaptivediving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurBound(masterprob) );
+   SCIP_CALL( SCIPincludeHeurClique(masterprob) );
+   SCIP_CALL( SCIPincludeHeurCoefdiving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurCompletesol(masterprob) );
+   SCIP_CALL( SCIPincludeHeurConflictdiving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurCrossover(masterprob) );
+   SCIP_CALL( SCIPincludeHeurDins(masterprob) );
+   SCIP_CALL( SCIPincludeHeurDistributiondiving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurDps(masterprob) );
+   SCIP_CALL( SCIPincludeHeurDualval(masterprob) );
+   SCIP_CALL( SCIPincludeHeurFarkasdiving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurFeaspump(masterprob) );
+   SCIP_CALL( SCIPincludeHeurFixandinfer(masterprob) );
+   SCIP_CALL( SCIPincludeHeurFracdiving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurGins(masterprob) );
+   SCIP_CALL( SCIPincludeHeurGuideddiving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurZeroobj(masterprob) );
+   SCIP_CALL( SCIPincludeHeurIndicator(masterprob) );
+   SCIP_CALL( SCIPincludeHeurIndicatordiving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurIntdiving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurIntshifting(masterprob) );
+   SCIP_CALL( SCIPincludeHeurLinesearchdiving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurLocalbranching(masterprob) );
+   SCIP_CALL( SCIPincludeHeurLocks(masterprob) );
+   SCIP_CALL( SCIPincludeHeurLpface(masterprob) );
+   SCIP_CALL( SCIPincludeHeurAlns(masterprob) );
+   SCIP_CALL( SCIPincludeHeurNlpdiving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurMutation(masterprob) );
+   SCIP_CALL( SCIPincludeHeurMultistart(masterprob) );
+   SCIP_CALL( SCIPincludeHeurMpec(masterprob) );
+   SCIP_CALL( SCIPincludeHeurObjpscostdiving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurOctane(masterprob) );
+   SCIP_CALL( SCIPincludeHeurOfins(masterprob) );
+   SCIP_CALL( SCIPincludeHeurOneopt(masterprob) );
+   SCIP_CALL( SCIPincludeHeurPADM(masterprob) );
+   SCIP_CALL( SCIPincludeHeurProximity(masterprob) );
+   SCIP_CALL( SCIPincludeHeurPscostdiving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurRandrounding(masterprob) );
+   SCIP_CALL( SCIPincludeHeurRens(masterprob) );
+   SCIP_CALL( SCIPincludeHeurReoptsols(masterprob) );
+   SCIP_CALL( SCIPincludeHeurRepair(masterprob) );
+   SCIP_CALL( SCIPincludeHeurRins(masterprob) );
+   SCIP_CALL( SCIPincludeHeurRootsoldiving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurRounding(masterprob) );
+   SCIP_CALL( SCIPincludeHeurScheduler(masterprob) );
+   SCIP_CALL( SCIPincludeHeurShiftandpropagate(masterprob) );
+   SCIP_CALL( SCIPincludeHeurShifting(masterprob) );
+   SCIP_CALL( SCIPincludeHeurSubNlp(masterprob) );
+   SCIP_CALL( SCIPincludeHeurTrivial(masterprob) );
+   SCIP_CALL( SCIPincludeHeurTrivialnegation(masterprob) );
+   SCIP_CALL( SCIPincludeHeurTrustregion(masterprob) );
+   SCIP_CALL( SCIPincludeHeurTrySol(masterprob) );
+   SCIP_CALL( SCIPincludeHeurTwoopt(masterprob) );
+   SCIP_CALL( SCIPincludeHeurUndercover(masterprob) );
+   SCIP_CALL( SCIPincludeHeurVbounds(masterprob) );
+   SCIP_CALL( SCIPincludeHeurVeclendiving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurZirounding(masterprob) );
 
-   SCIP_CALL( SCIPincludeHeurSimplerounding(scip) );
+   SCIP_CALL( SCIPincludeHeurSimplerounding(masterprob) );
 
    /* Christian's heuristics */
-   SCIP_CALL( SCIPincludeHeurGreedycolsel(scip) );
-   SCIP_CALL( SCIPincludeEventHdlrMasterdiving(scip) );
-   SCIP_CALL( GCGincludeHeurMastercoefdiving(scip) );
-   SCIP_CALL( GCGincludeHeurMasterfracdiving(scip) );
-   SCIP_CALL( GCGincludeHeurMasterlinesdiving(scip) );
-   SCIP_CALL( GCGincludeHeurMastervecldiving(scip) );
-   SCIP_CALL( SCIPincludeHeurRelaxcolsel(scip) );
-   SCIP_CALL( SCIPincludeHeurRestmaster(scip) );
-   SCIP_CALL( SCIPincludeHeurSetcover(scip) );
+   SCIP_CALL( GCGincludeHeurGreedycolsel(gcg) );
+   SCIP_CALL( GCGincludeEventHdlrMasterdiving(gcg) );
+   SCIP_CALL( GCGincludeHeurMastercoefdiving(gcg) );
+   SCIP_CALL( GCGincludeHeurMasterfracdiving(gcg) );
+   SCIP_CALL( GCGincludeHeurMasterlinesdiving(gcg) );
+   SCIP_CALL( GCGincludeHeurMastervecldiving(gcg) );
+   SCIP_CALL( GCGincludeHeurRelaxcolsel(gcg) );
+   SCIP_CALL( GCGincludeHeurRestmaster(gcg) );
+   SCIP_CALL( GCGincludeHeurSetcover(gcg) );
 #endif
 
 #if USESEPA
-   SCIP_CALL( SCIPincludeSepaClique(scip) );
-   SCIP_CALL( SCIPincludeSepaCmir(scip) );
-   SCIP_CALL( SCIPincludeSepaFlowcover(scip) );
-   SCIP_CALL( SCIPincludeSepaGomory(scip) );
-   SCIP_CALL( SCIPincludeSepaImpliedbounds(scip) );
-   SCIP_CALL( SCIPincludeSepaIntobj(scip) );
-   SCIP_CALL( SCIPincludeSepaMcf(scip) );
-   SCIP_CALL( SCIPincludeSepaOddcycle(scip) );
-   SCIP_CALL( SCIPincludeSepaRedcost(scip) );
-   SCIP_CALL( SCIPincludeSepaZerohalf(scip) );
+   SCIP_CALL( SCIPincludeSepaClique(masterprob) );
+   SCIP_CALL( SCIPincludeSepaCmir(masterprob) );
+   SCIP_CALL( SCIPincludeSepaFlowcover(masterprob) );
+   SCIP_CALL( SCIPincludeSepaGomory(masterprob) );
+   SCIP_CALL( SCIPincludeSepaImpliedbounds(masterprob) );
+   SCIP_CALL( SCIPincludeSepaIntobj(masterprob) );
+   SCIP_CALL( SCIPincludeSepaMcf(masterprob) );
+   SCIP_CALL( SCIPincludeSepaOddcycle(masterprob) );
+   SCIP_CALL( SCIPincludeSepaRedcost(masterprob) );
+   SCIP_CALL( SCIPincludeSepaZerohalf(masterprob) );
 #endif
-   SCIP_CALL( SCIPincludeSepaMaster(scip) );
-   SCIP_CALL( SCIPincludeCutselHybrid(scip) );
-   SCIP_CALL( SCIPincludeDispMaster(scip) );
-   SCIP_CALL( SCIPdebugIncludeProp(scip) ); /*lint !e506 !e774*/
-   SCIP_CALL( SCIPincludeTableDefault(scip) );
+   SCIP_CALL( GCGincludeSepaOriginal(gcg) );
+   SCIP_CALL( SCIPincludeCutselHybrid(masterprob) );
+   SCIP_CALL( GCGincludeDispMaster(gcg, masterprob) );
+   SCIP_CALL( SCIPdebugIncludeProp(masterprob) ); /*lint !e506 !e774*/
+   SCIP_CALL( SCIPincludeTableDefault(masterprob) );
 
    /* Jonas' stuff */
-   SCIP_CALL( SCIPincludeSepaBasis(scip) );
+   SCIP_CALL( GCGincludeSepaBasis(gcg) );
 
-   SCIP_CALL( GCGincludeSolverKnapsack(scip) );
-   SCIP_CALL( GCGincludeSolverMip(scip) );
-   SCIP_CALL( GCGincludeSolverGcg(scip) );
+   SCIP_CALL( GCGincludeSolverKnapsack(gcg) );
+   SCIP_CALL( GCGincludeSolverMip(gcg) );
+   SCIP_CALL( GCGincludeSolverGcg(gcg) );
 
 #ifdef WITH_CLIQUER
-   SCIP_CALL( GCGincludeSolverCliquer(scip) );
+   SCIP_CALL( GCGincludeSolverCliquer(gcg) );
 #endif
 
 #ifdef WITH_CPLEXSOLVER
-   SCIP_CALL( GCGincludeSolverCplex(scip) );
+   SCIP_CALL( GCGincludeSolverCplex(gcg) );
 #endif
 
 #ifdef WITH_HIGHS
-   SCIP_CALL( GCGincludeSolverHighs(scip) );
+   SCIP_CALL( GCGincludeSolverHighs(gcg) );
 #endif
 
    /* include masterbranch constraint handler */
-   SCIP_CALL( SCIPincludeConshdlrMasterbranch(scip) );
+   SCIP_CALL( GCGincludeConshdlrMasterbranch(gcg) );
 
-   SCIP_CALL( SCIPincludeEventHdlrBestsol(scip) );
-   SCIP_CALL( SCIPincludeEventHdlrRelaxsol(scip) );
-   SCIP_CALL( SCIPincludeEventHdlrSolvingstats(scip) );
-   SCIP_CALL( SCIPincludeEventHdlrDisplay(scip) );
+   SCIP_CALL( GCGincludeEventHdlrBestsol(masterprob) );
+   SCIP_CALL( GCGincludeEventHdlrRelaxsol(gcg) );
+   SCIP_CALL( GCGincludeEventHdlrSolvingstats(gcg) );
+   SCIP_CALL( GCGincludeEventHdlrDisplay(gcg) );
 
    return SCIP_OKAY;
 }

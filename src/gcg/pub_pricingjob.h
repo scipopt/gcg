@@ -35,8 +35,8 @@
 #ifndef GCG_PUB_PRICINGJOB_H__
 #define GCG_PUB_PRICINGJOB_H__
 
-#include "def.h"
-#include "type_pricingjob.h"
+
+#include "gcg/type_pricingjob.h"
 #include "scip/type_scip.h"
 
 #ifdef __cplusplus
@@ -87,6 +87,18 @@ SCIP_Bool GCGpricingjobIsHeuristic(
 /** get the number of heuristic pricing iterations of the pricing job */
 GCG_EXPORT
 int GCGpricingjobGetNHeurIters(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** returns TRUE iff the solver was changed after the last solver call */
+GCG_EXPORT
+SCIP_Bool GCGpricingjobSolverChanged(
+   GCG_PRICINGJOB*       pricingjob          /**< pricing job */
+   );
+
+/** inform the pricing job that the current solver was called */
+GCG_EXPORT
+void GCGpricingjobSolverCalled(
    GCG_PRICINGJOB*       pricingjob          /**< pricing job */
    );
 

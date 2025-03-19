@@ -38,7 +38,7 @@
 
 
 #include "scip/scip.h"
-#include "gcg.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,14 +46,14 @@ extern "C" {
 
 /** creates the handler for the integrality constraint and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeConshdlrIntegralOrig(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** insert branchrule in constraint handler data */
 GCG_EXPORT
 SCIP_RETCODE GCGconsIntegralorigAddBranchrule(
-   SCIP*                 scip,
+   GCG*                  gcg,
    SCIP_BRANCHRULE*      branchrule
    );
 

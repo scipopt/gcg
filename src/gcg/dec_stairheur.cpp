@@ -44,16 +44,16 @@
 #include <vector>
 #include <iostream>
 
-#include "dec_stairheur.h"
-#include "cons_decomp.h"
-#include "struct_decomp.h"
-#include "pub_decomp.h"
-#include "scip_misc.h"
+#include "gcg/dec_stairheur.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/struct_decomp.h"
+#include "gcg/pub_decomp.h"
+#include "gcg/scip_misc.h"
 #include "scip/pub_misc.h"
 #include "scip/struct_var.h"
-#include "gcg.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/gcg.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include "scip/clock.h"
 
 #define DEC_NAME                  "stairheur"    /**< name of the detector */
@@ -1624,8 +1624,6 @@ GCG_DECL_FREEDETECTOR(detectorFreeStairheur)
 {
    GCG_DETECTORDATA* detectordata;
 
-   assert(scip != NULL);
-
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
 
@@ -1637,7 +1635,7 @@ GCG_DECL_FREEDETECTOR(detectorFreeStairheur)
 
    assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
-   SCIPfreeMemory(scip, &detectordata);
+   SCIPfreeMemory(GCGgetOrigprob(gcg), &detectordata);
    return SCIP_OKAY;
 }
 
@@ -1646,8 +1644,6 @@ static
 GCG_DECL_INITDETECTOR(detectorInitStairheur)
 {
    GCG_DETECTORDATA* detectordata;
-
-   assert(scip != NULL);
 
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
@@ -1680,10 +1676,11 @@ static GCG_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecStairheur)
    GCG_DETECTORDATA* detectordata = GCGdetectorGetData(detector);
    gcg::PARTIALDECOMP* partialdec;
    SCIP_Real temptime;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+   SCIP_CALL_ABORT( SCIPcreateClock(origprob, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
 
    partialdec = partialdecdetectiondata->workonpartialdec;
    partialdec->refineToMaster();
@@ -1696,26 +1693,26 @@ static GCG_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecStairheur)
    if( partialdec->getNOpenconss() == 0 || partialdec->getNOpenvars() == 0 )
    {
       partialdecdetectiondata->nnewpartialdecs = 0;
-      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+      SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock ) );
+      SCIP_CALL_ABORT(SCIPfreeClock(origprob, &temporaryClock) );
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;
    }
 
-   assert(scip != NULL);
+   assert(origprob != NULL);
    assert(detectordata != NULL);
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting stairheur structure:");
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting stairheur structure:");
 
-   SCIP_CALL( initData(scip, partialdec, detectordata) );
+   SCIP_CALL( initData(origprob, partialdec, detectordata) );
 
-   checkParameterConsistency(scip, detectordata, result);
+   checkParameterConsistency(origprob, detectordata, result);
    nPartialdecs = calculateNdecompositions(detectordata);
    SCIPdebugMessage("%i decompositions will be created\n", nPartialdecs);
    partialdecdetectiondata->nnewpartialdecs = 0;
 
    /* allocate space for output data */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), nPartialdecs) );
+   SCIP_CALL( SCIPallocMemoryArray(origprob, &(partialdecdetectiondata->newpartialdecs), nPartialdecs) );
 
    nconss = partialdec->getNOpenconss();
 
@@ -1730,9 +1727,9 @@ static GCG_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecStairheur)
 #endif
 
    /* initialize index arrays ibegin, iend, jbegin, jend */
-   SCIP_CALL( createRowindexList(scip, partialdec, partialdecdetectiondata->detprobdata, detectordata, detectordata->indexmap->indexcons, detectordata->indexmap->varindex, rowindices) );
+   SCIP_CALL( createRowindexList(origprob, partialdec, partialdecdetectiondata->detprobdata, detectordata, detectordata->indexmap->indexcons, detectordata->indexmap->varindex, rowindices) );
 
-   SCIP_CALL( createColumnindexList(scip, partialdec, rowindices, columnindices) );
+   SCIP_CALL( createColumnindexList(origprob, partialdec, rowindices, columnindices) );
 
    SCIP_CALL( formIndexArray(detectordata->ibegin, detectordata->iend, rowindices) );
    SCIP_CALL( formIndexArray(detectordata->jbegin, detectordata->jend, columnindices) );
@@ -1752,7 +1749,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecStairheur)
    //   checkConsistencyOfIndexarrays(detectordata, partialdec->getNOpenvars(), nconss);
    //}
 #else
-   SCIP_CALL( rankOrderClustering(scip, partialdec, partialdecdetectiondata->detprobdata, detectordata, detectordata->maxiterationsROC, NULL) );
+   SCIP_CALL( rankOrderClustering(origprob, partialdec, partialdecdetectiondata->detprobdata, detectordata, detectordata->maxiterationsROC, NULL) );
 #endif
    /* arrays jmin, jmax and minV */
    SCIPdebugMessage("calculating index arrays\n");
@@ -1770,14 +1767,14 @@ static GCG_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecStairheur)
    /* =====BLOCKING======= */
    /* ==================== */
 
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
-   temptime = SCIPgetClockTime(scip, temporaryClock);
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-   SCIP_CALL( blocking(scip, detectordata, partialdec, partialdecdetectiondata, temptime, nPartialdecs, result) );
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " found %d partialdecs.\n", partialdecdetectiondata->nnewpartialdecs);
+   SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock) );
+   temptime = SCIPgetClockTime(origprob, temporaryClock);
+   SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
+   SCIP_CALL( blocking(origprob, detectordata, partialdec, partialdecdetectiondata, temptime, nPartialdecs, result) );
+   SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock ) );
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(origprob, temporaryClock);
+   SCIP_CALL_ABORT(SCIPfreeClock(origprob, &temporaryClock) );
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, " found %d partialdecs.\n", partialdecdetectiondata->nnewpartialdecs);
    #ifdef WRITEALLOUTPUT
    {
       //char filename[256];
@@ -1786,9 +1783,9 @@ static GCG_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecStairheur)
    }
 #endif
 
-   SCIP_CALL( SCIPreallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), partialdecdetectiondata->nnewpartialdecs) );
+   SCIP_CALL( SCIPreallocMemoryArray(origprob, &(partialdecdetectiondata->newpartialdecs), partialdecdetectiondata->nnewpartialdecs) );
 
-   SCIP_CALL( freeData(scip, detectordata) );
+   SCIP_CALL( freeData(origprob, detectordata) );
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
@@ -1803,12 +1800,13 @@ GCG_DECL_SETPARAMFAST(setParamAggressiveStairheur)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, TRUE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE ) );
 
    return SCIP_OKAY;
 }
@@ -1819,12 +1817,13 @@ GCG_DECL_SETPARAMFAST(setParamDefaultStairheur)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLED) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLEDFINISHING ) );
 
    return SCIP_OKAY;
 }
@@ -1835,12 +1834,13 @@ GCG_DECL_SETPARAMFAST(setParamFastStairheur)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE ) );
 
    return SCIP_OKAY;
 }
@@ -1849,47 +1849,49 @@ GCG_DECL_SETPARAMFAST(setParamFastStairheur)
 /** creates the stairheur detector and includes it in SCIP */
 
 extern "C"
-SCIP_RETCODE SCIPincludeDetectorStairheur(
-   SCIP*                 scip              /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorStairheur(
+   GCG*                  gcg               /**< GCG data structure */
    )
 {
    GCG_DETECTORDATA *detectordata = NULL;
-   assert(scip != NULL);
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
+   assert(origprob != NULL);
 
-   SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &detectordata) );
    assert(detectordata != NULL);
 
    detectordata->constoblock  = NULL;
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+   SCIP_CALL( GCGincludeDetector(gcg, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
                                  detectordata, detectorFreeStairheur, detectorInitStairheur, detectorExitStairheur, detectorPropagatePartialdecStairheur, detectorFinishPartialdecStairheur, detectorPostprocessPartialdecStairheur, setParamAggressiveStairheur, setParamDefaultStairheur, setParamFastStairheur) );
 
 
    /* add stairheur detector parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/nconssperblock",
+   SCIP_CALL( SCIPaddIntParam(origprob, "detection/detectors/stairheur/nconssperblock",
       "The number of constraints per block (static blocking only)",
       &detectordata->nconssperblock, FALSE, DEFAULT_NCONSSPERBLOCK, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/maxblocks",
+   SCIP_CALL( SCIPaddIntParam(origprob, "detection/detectors/stairheur/maxblocks",
       "The maximal number of blocks",
       &detectordata->usermaxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/minblocks", "The minimal number of blocks",
+   SCIP_CALL( SCIPaddIntParam(origprob, "detection/detectors/stairheur/minblocks", "The minimal number of blocks",
       &detectordata->userminblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/desiredblocks",
+   SCIP_CALL( SCIPaddIntParam(origprob, "detection/detectors/stairheur/desiredblocks",
       "The desired number of blocks. 0 means automatic determination of the number of blocks.",
       &detectordata->desiredblocks, FALSE, DEFAULT_DESIREDBLOCKS, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/stairheur/dynamicblocking",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "detection/detectors/stairheur/dynamicblocking",
       "Enable blocking type 'dynamic'",
       &detectordata->dynamicblocking, FALSE, DEFAULT_DYNAMICBLOCKING, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/stairheur/staticblocking",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "detection/detectors/stairheur/staticblocking",
       "Enable blocking type 'static'",
       &detectordata->staticblocking, FALSE, DEFAULT_STATICBLOCKING, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/stairheur/blockingassoonaspossible",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "detection/detectors/stairheur/blockingassoonaspossible",
       "Enable blocking type 'as soon as possible", &detectordata->blockingassoonaspossible,
       FALSE, DEFAULT_BLOCKINGASSOONASPOSSIBLE, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/stairheur/multipledecomps",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "detection/detectors/stairheur/multipledecomps",
       "Enables multiple decompositions for all enabled blocking types. Ranging from minblocks to maxblocks",
       &detectordata->multipledecomps, FALSE, DEFAULT_MULTIPLEDECOMPS, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/stairheur/maxiterationsROC",
+   SCIP_CALL( SCIPaddIntParam(origprob, "detection/detectors/stairheur/maxiterationsROC",
       "The maximum number of iterations of the ROC-algorithm. -1 for no limit",
       &detectordata->maxiterationsROC, FALSE, DEFAULT_MAXITERATIONSROC, -1, 1000000, NULL, NULL) );
 

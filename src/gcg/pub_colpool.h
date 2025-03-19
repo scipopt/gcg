@@ -37,11 +37,16 @@
 #define __SCIP_PUB_COLPOOL_H__
 
 
-#include "def.h"
+
 #include "scip/def.h"
-#include "type_colpool.h"
-#include "type_gcgcol.h"
-#include "type_pricestore_gcg.h"
+#include "scip/type_scip.h"
+#include "scip/type_retcode.h"
+#include "scip/type_sol.h"
+#include "gcg/def.h"
+#include "gcg/type_gcgcol.h"
+#include "gcg/type_colpool.h"
+#include "gcg/type_pricestore_gcg.h"
+#include "gcg/type_gcg.h"
 
 
 #ifdef __cplusplus
@@ -92,7 +97,7 @@ SCIP_Longint GCGcolpoolGetNColsFound(
 /** creates col pool */
 GCG_EXPORT
 SCIP_RETCODE GCGcolpoolCreate(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_COLPOOL**         colpool,            /**< pointer to store col pool */
    int                   agelimit            /**< maximum age a col can reach before it is deleted from the pool */
    );
@@ -100,7 +105,6 @@ SCIP_RETCODE GCGcolpoolCreate(
 /** frees col pool */
 GCG_EXPORT
 SCIP_RETCODE GCGcolpoolFree(
-   SCIP*                scip,               /**< SCIP data structure */
    GCG_COLPOOL**        colpool             /**< pointer to store col pool */
    );
 

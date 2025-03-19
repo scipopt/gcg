@@ -37,10 +37,10 @@
 #ifndef GCG_ROWGRAPH_WEIGHTED_DEF_H_
 #define GCG_ROWGRAPH_WEIGHTED_DEF_H_
 
-#include "rowgraph_weighted.h"
-#include "graph_gcg.h"
-#include "graphalgorithms.h"
-#include "priority_graph.h"
+#include "graph/rowgraph_weighted.h"
+#include "graph/graph_gcg.h"
+#include "graph/graphalgorithms.h"
+#include "graph/priority_graph.h"
 #include <algorithm>
 #include <iostream>
 #include <vector>
@@ -55,9 +55,9 @@ namespace gcg {
 
 template <class T>
 RowGraphWeighted<T>::RowGraphWeighted(
-   SCIP*                 scip,              /**< SCIP data structure */
+   GCG*                  gcgstruct,         /**< GCG data structure */
    Weights               w                  /**< weights for the given graph */
-   ) : RowGraph<T>(scip,w)
+   ) : RowGraph<T>(gcgstruct,w)
 {
    this->name = string("rowgraph_weighted");
    n_blocks = -1;
@@ -86,6 +86,7 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromMatrix(
    int k;
    int l;
    SCIP_Bool success;
+   SCIP* scip = GCGgetOrigprob(this->gcg);
 
    assert(conss != NULL);
    assert(vars != NULL);
@@ -103,7 +104,7 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromMatrix(
       SCIP_VAR** curvars1 = NULL;
 
       int ncurvars1;
-      SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars1, &success) );
+      SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &ncurvars1, &success) );
       assert(success);
       if( ncurvars1 == 0 )
          continue;
@@ -112,8 +113,8 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromMatrix(
        * may work as is, as we are copying the constraint later regardless
        * if there are variables in it or not
        */
-      SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars1, ncurvars1) );
-      SCIP_CALL( SCIPgetConsVars(this->scip_, conss[i], curvars1, ncurvars1, &success) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvars1, ncurvars1) );
+      SCIP_CALL( SCIPgetConsVars(scip, conss[i], curvars1, ncurvars1, &success) );
       assert(success);
 
       /* go through all constraints again */
@@ -121,7 +122,7 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromMatrix(
       {
          SCIP_VAR** curvars2 = NULL;
          int ncurvars2;
-         SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[j], &ncurvars2, &success) );
+         SCIP_CALL( SCIPgetConsNVars(scip, conss[j], &ncurvars2, &success) );
          assert(success);
          if( ncurvars2 == 0 )
             continue;
@@ -131,8 +132,8 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromMatrix(
           * may work as is, as we are copying the constraint later regardless
           * if there are variables in it or not
           */
-         SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars2, ncurvars2) );
-         SCIP_CALL( SCIPgetConsVars(this->scip_, conss[j], curvars2, ncurvars2, &success) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars2, ncurvars2) );
+         SCIP_CALL( SCIPgetConsVars(scip, conss[j], curvars2, ncurvars2, &success) );
          assert(success);
 
 
@@ -150,7 +151,7 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromMatrix(
             if( !GCGisVarRelevant(curvars1[k]) )
                continue;
 
-            if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+            if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
                var1 = SCIPvarGetProbvar(curvars1[k]);
             else
                var1 = curvars1[k];
@@ -168,7 +169,7 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromMatrix(
                if( !GCGisVarRelevant(curvars2[l]) )
                   continue;
 
-               if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+               if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
                   var2 = SCIPvarGetProbvar(curvars2[l]);
                else
                   var2 = curvars2[l];
@@ -195,9 +196,9 @@ SCIP_RETCODE RowGraphWeighted<T>::createFromMatrix(
             this->graph.addEdge(i, j, edge_weight);
          }
 
-         SCIPfreeBufferArray(this->scip_, &curvars2);
+         SCIPfreeBufferArray(scip, &curvars2);
       }
-      SCIPfreeBufferArray(this->scip_, &curvars1);
+      SCIPfreeBufferArray(scip, &curvars1);
    }
 
    if(dist == INTERSECTION)
@@ -420,6 +421,7 @@ double RowGraphWeighted<T>::calculateSimilarity(int _a, int _b, int _c, DISTANCE
 template <>
 SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool enabled)
 {
+   SCIP* scip = GCGgetOrigprob(this->gcg);
    assert((int)labels.size() == graph.getNNodes());
    set<int> diff_blocks_beginning;
    for(auto curr_int = labels.begin(), end = labels.end(); curr_int != end; ++curr_int)
@@ -445,7 +447,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
       // item i saves number which appears most often in the all_labels_in_col[i]
       vector<int> col_labels(this->nvars, -1);
 
-      SCIP_CONS** conss = SCIPgetConss(this->scip_);
+      SCIP_CONS** conss = SCIPgetConss(scip);
       SCIP_Bool success;
 
       // For each var save the labels of all the constraints where this var appears.
@@ -453,7 +455,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
       {
          SCIP_VAR** curvars = NULL;
          int ncurvars;
-         SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars, &success) );
+         SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &ncurvars, &success) );
          assert(success);
          if( ncurvars == 0 )
             continue;
@@ -462,8 +464,8 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
           * may work as is, as we are copying the constraint later regardless
           * if there are variables in it or not
           */
-         SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars, ncurvars) );
-         SCIP_CALL( SCIPgetConsVars(this->scip_, conss[i], curvars, ncurvars, &success) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+         SCIP_CALL( SCIPgetConsVars(scip, conss[i], curvars, ncurvars, &success) );
          assert(success);
 
          for(auto j = 0; j < ncurvars; j++)
@@ -473,7 +475,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
             if( !GCGisVarRelevant(curvars[j]) )
                continue;
 
-            if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+            if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
                var = SCIPvarGetProbvar(curvars[j]);
             else
                var = curvars[j];
@@ -487,7 +489,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
             all_labels_in_col[varIndex].push_back(labels[i]);
             all_label_occ_in_col[varIndex][labels[i]]++;
          }
-         SCIPfreeBufferArray(this->scip_, &curvars);
+         SCIPfreeBufferArray(scip, &curvars);
       }
 
       // fill the col_labels
@@ -509,7 +511,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
       {
          SCIP_VAR** curvars1 = NULL;
          int ncurvars1;
-         SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars1, &success) );
+         SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &ncurvars1, &success) );
          assert(success);
          if( ncurvars1 == 0 )
             continue;
@@ -518,8 +520,8 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
           * may work as is, as we are copying the constraint later regardless
           * if there are variables in it or not
           */
-         SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars1, ncurvars1) );
-         SCIP_CALL( SCIPgetConsVars(this->scip_, conss[i], curvars1, ncurvars1, &success) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars1, ncurvars1) );
+         SCIP_CALL( SCIPgetConsVars(scip, conss[i], curvars1, ncurvars1, &success) );
          assert(success);
 
          for(auto j = 0; j < ncurvars1; j++)
@@ -529,7 +531,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
             if( !GCGisVarRelevant(curvars1[j]) )
                continue;
 
-            if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+            if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
                var1 = SCIPvarGetProbvar(curvars1[j]);
             else
                var1 = curvars1[j];
@@ -558,7 +560,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcess(vector<int>& labels, bool e
                col_labels[varIndex] = pr->first;
             }
          }
-         SCIPfreeBufferArray(this->scip_, &curvars1);
+         SCIPfreeBufferArray(scip, &curvars1);
 
       }
    }
@@ -821,6 +823,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessForPartialGraph(gcg::DETPROB
 template <>
 SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& labels, bool enabled)
 {
+   SCIP* scip = GCGgetOrigprob(this->gcg);
    assert((int)labels.size() == graph.getNNodes());
    set<int> diff_blocks_beginning;
    for(auto curr_int = labels.begin(), end = labels.end(); curr_int != end; ++curr_int)
@@ -844,7 +847,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& label
       vector< vector<int> > all_ind_in_col(this->nvars);
 
 
-      SCIP_CONS** conss = SCIPgetConss(this->scip_);
+      SCIP_CONS** conss = SCIPgetConss(scip);
       SCIP_Bool success;
 
       /* go through all constraints */
@@ -853,7 +856,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& label
          SCIP_VAR** curvars1 = NULL;
 
          int ncurvars1;
-         SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars1, &success) );
+         SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &ncurvars1, &success) );
          assert(success);
          if( ncurvars1 == 0 )
             continue;
@@ -862,8 +865,8 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& label
           * may work as is, as we are copying the constraint later regardless
           * if there are variables in it or not
           */
-         SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars1, ncurvars1) );
-         SCIP_CALL( SCIPgetConsVars(this->scip_, conss[i], curvars1, ncurvars1, &success) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &curvars1, ncurvars1) );
+         SCIP_CALL( SCIPgetConsVars(scip, conss[i], curvars1, ncurvars1, &success) );
          assert(success);
 
          /* go through all constraints */
@@ -873,7 +876,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& label
             SCIP_VAR** curvars2 = NULL;
             SCIP_Bool continueloop;
             int ncurvars2;
-            SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[j], &ncurvars2, &success) );
+            SCIP_CALL( SCIPgetConsNVars(scip, conss[j], &ncurvars2, &success) );
             assert(success);
             if( ncurvars2 == 0 )
                continue;
@@ -883,8 +886,8 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& label
              * may work as is, as we are copying the constraint later regardless
              * if there are variables in it or not
              */
-            SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars2, ncurvars2) );
-            SCIP_CALL( SCIPgetConsVars(this->scip_, conss[j], curvars2, ncurvars2, &success) );
+            SCIP_CALL( SCIPallocBufferArray(scip, &curvars2, ncurvars2) );
+            SCIP_CALL( SCIPgetConsVars(scip, conss[j], curvars2, ncurvars2, &success) );
             assert(success);
 
 
@@ -899,7 +902,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& label
                if( !GCGisVarRelevant(curvars1[k]) )
                   continue;
 
-               if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+               if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
                   var1 = SCIPvarGetProbvar(curvars1[k]);
                else
                   var1 = curvars1[k];
@@ -917,7 +920,7 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& label
                   if( !GCGisVarRelevant(curvars2[l]) )
                      continue;
 
-                  if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+                  if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
                      var2 = SCIPvarGetProbvar(curvars2[l]);
                   else
                      var2 = curvars2[l];
@@ -944,9 +947,9 @@ SCIP_RETCODE RowGraphWeighted<GraphGCG>::postProcessStableSet(vector<int>& label
                if(continueloop)
                   break;
             }
-            SCIPfreeBufferArray(this->scip_, &curvars2);
+            SCIPfreeBufferArray(scip, &curvars2);
          }
-         SCIPfreeBufferArray(this->scip_, &curvars1);
+         SCIPfreeBufferArray(scip, &curvars1);
       }
 
       // run greedy heuristic for stable set

@@ -52,12 +52,12 @@ using std::tr1::unordered_map;
 #include <functional>
 #include <string>
 #include <utility>
-#include "gcg.h"
+#include "gcg/gcg.h"
 
-#include "def.h"
-#include "class_partialdecomp.h"
-#include "class_conspartition.h"
-#include "class_varpartition.h"
+
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_conspartition.h"
+#include "gcg/class_varpartition.h"
 
 /** constraint type */
 enum SCIP_Constype_orig
@@ -109,6 +109,7 @@ class DETPROBDATA
 { /*lint -esym(1712,DETPROBDATA)*/
 
 private:
+   GCG* gcg;                                             /**< GCG data structure */
    SCIP* scip;                                           /**< SCIP data structure */
    std::vector<PARTIALDECOMP*> openpartialdecs;          /**< vector of open partialdecs */
    std::vector<PARTIALDECOMP*> finishedpartialdecs;      /**< vector of finished partialdecs */
@@ -189,7 +190,7 @@ public:
     */
    GCG_EXPORT
    DETPROBDATA(
-      SCIP* scip,
+      GCG* gcgstruct,
       SCIP_Bool _originalProblem
       );
 
@@ -345,6 +346,13 @@ public:
    std::vector<int>& getConssForVar(
       int varIndex /**< index of the variable to be considered */
       );
+
+   /**
+    * @brief returns the corresponding gcg data structure
+    * @return the corresponding gcg data structure
+    */
+   GCG_EXPORT
+   GCG* getGcg();
 
    /**
     * @brief determines all partialdecs from current (open) partialdec data structure
@@ -634,7 +642,6 @@ public:
     */
    GCG_EXPORT
    SCIP_Bool isFiniteNonnegativeIntegral(
-      SCIP*                 scip,               /**< SCIP data structure */
       SCIP_Real             x                   /**< value */
       );
 
@@ -660,7 +667,6 @@ public:
    */
    GCG_EXPORT
    SCIP_Bool isRangedRow(
-      SCIP*                 scip,   /**< SCIP data structure */
       SCIP_Real             lhs,    /**< left hand side */
       SCIP_Real             rhs     /**< right hand side */
       );
@@ -686,7 +692,6 @@ public:
     */
    GCG_EXPORT
    void printBlockcandidateInformation(
-      SCIP*                 scip,                /**< SCIP data structure */
       FILE*                 file                 /**< output file or NULL for standard output */
       );
 

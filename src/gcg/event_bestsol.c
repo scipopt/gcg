@@ -33,7 +33,7 @@
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include <string.h>
-#include "event_bestsol.h"
+#include "gcg/event_bestsol.h"
 
 #ifdef SCIP_STATISTIC
 #define EVENTHDLR_NAME         "bestsol"
@@ -206,13 +206,14 @@ SCIP_DECL_EVENTEXEC(eventExecBestsol)
 #endif
 
 /** creates event handler for bestsol event */
-SCIP_RETCODE SCIPincludeEventHdlrBestsol(
+SCIP_RETCODE GCGincludeEventHdlrBestsol(
    SCIP*                 scip                /**< SCIP data structure */
    )
 {
 #ifdef SCIP_STATISTIC
    SCIP_EVENTHDLRDATA* eventhdlrdata;
    SCIP_EVENTHDLR* eventhdlr;
+   assert(scip != NULL);
 
    /* create bestsol event handler data */
    eventhdlrdata = NULL;

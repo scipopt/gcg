@@ -38,7 +38,7 @@
 #ifndef GCG_STRUCT_DETECTOR_H__
 #define GCG_STRUCT_DETECTOR_H__
 
-#include "type_detector.h"
+#include "gcg/type_detector.h"
 
 
 

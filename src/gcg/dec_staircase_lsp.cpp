@@ -43,13 +43,13 @@
 #include <iostream>
 
 
-#include "dec_staircase_lsp.h"
-#include "cons_decomp.h"
-#include "scip_misc.h"
-#include "pub_decomp.h"
+#include "gcg/dec_staircase_lsp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/scip_misc.h"
+#include "gcg/pub_decomp.h"
 #include "tclique/tclique.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include "scip/clock.h"
 
 
@@ -450,7 +450,6 @@ GCG_DECL_FREEDETECTOR(detectorFreeStaircaseLsp)
 {  /*lint --e{715}*/
    GCG_DETECTORDATA *detectordata;
 
-   assert(scip != NULL);
    assert(detector != NULL);
 
    assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
@@ -461,7 +460,7 @@ GCG_DECL_FREEDETECTOR(detectorFreeStaircaseLsp)
    delete detectordata->newToOld;
    delete detectordata->oldToNew;
 
-   SCIPfreeMemory(scip, &detectordata);
+   SCIPfreeMemory(GCGgetOrigprob(gcg), &detectordata);
 
    return SCIP_OKAY;
 }
@@ -473,7 +472,6 @@ GCG_DECL_INITDETECTOR(detectorInitStaircaseLsp)
 
    GCG_DETECTORDATA *detectordata;
 
-   assert(scip != NULL);
    assert(detector != NULL);
 
    assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
@@ -497,7 +495,6 @@ GCG_DECL_EXITDETECTOR(detectorExitStaircaseLsp)
 {  /*lint --e{715}*/
    GCG_DETECTORDATA *detectordata;
 
-   assert(scip != NULL);
    assert(detector != NULL);
 
    assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
@@ -512,7 +509,7 @@ GCG_DECL_EXITDETECTOR(detectorExitStaircaseLsp)
 
    if( detectordata->components != NULL )
    {
-      SCIPfreeMemoryArray(scip, &detectordata->components);
+      SCIPfreeMemoryArray(GCGgetOrigprob(gcg), &detectordata->components);
    }
 
    return SCIP_OKAY;
@@ -642,10 +639,10 @@ SCIP_RETCODE detection(
 static
 GCG_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecStaircaseLsp)
 {
-
    GCG_DETECTORDATA* detectordata = NULL;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
-   SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &detectordata) );
    assert(detectordata != NULL);
    detectordata->graph = NULL;
    detectordata->constoblock = NULL;
@@ -658,12 +655,12 @@ GCG_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecStaircaseLsp)
 
    *result = SCIP_DIDNOTFIND;
 
-   detection(scip, detectordata, partialdecdetectiondata);
+   detection(origprob, detectordata, partialdecdetectiondata);
 
    delete detectordata->newToOld;
    delete detectordata->oldToNew;
 
-   SCIPfreeMemory(scip, &detectordata);
+   SCIPfreeMemory(origprob, &detectordata);
 
    *result = SCIP_SUCCESS;
 
@@ -674,8 +671,9 @@ static
 GCG_DECL_FINISHPARTIALDEC(detectorFinishPartialdecStaircaseLsp)
 {
    GCG_DETECTORDATA* detectordata = NULL;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
-   SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &detectordata) );
    assert(detectordata != NULL);
    detectordata->graph = NULL;
    detectordata->constoblock = NULL;
@@ -688,12 +686,12 @@ GCG_DECL_FINISHPARTIALDEC(detectorFinishPartialdecStaircaseLsp)
 
    *result = SCIP_DIDNOTFIND;
 
-   detection(scip, detectordata, partialdecdetectiondata);
+   detection(origprob, detectordata, partialdecdetectiondata);
 
    delete detectordata->newToOld;
    delete detectordata->oldToNew;
 
-   SCIPfreeMemory(scip, &detectordata);
+   SCIPfreeMemory(origprob, &detectordata);
 
    *result = SCIP_SUCCESS;
 
@@ -709,12 +707,13 @@ GCG_DECL_SETPARAMFAST(setParamAggressiveStaircaseLsp)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, TRUE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, TRUE ) );
 
    return SCIP_OKAY;
 
@@ -725,12 +724,13 @@ GCG_DECL_SETPARAMFAST(setParamDefaultStaircaseLsp)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLED) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLEDFINISHING ) );
 
    return SCIP_OKAY;
 
@@ -743,12 +743,13 @@ GCG_DECL_SETPARAMFAST(setParamFastStaircaseLsp)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE ) );
 
    return SCIP_OKAY;
 
@@ -760,8 +761,8 @@ GCG_DECL_SETPARAMFAST(setParamFastStaircaseLsp)
  */
 
 /** creates the handler for staircase constraints and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorStaircaseLsp(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorStaircaseLsp(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_DETECTORDATA* detectordata;
@@ -769,7 +770,7 @@ SCIP_RETCODE SCIPincludeDetectorStaircaseLsp(
    /* for thread safety: create staircase constraint handler data in callback methods*/
    detectordata = NULL;
 
-   SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
+   SCIP_CALL( SCIPallocMemory(GCGgetOrigprob(gcg), &detectordata) );
    assert(detectordata != NULL);
    detectordata->graph = NULL;
    detectordata->constoblock = NULL;
@@ -779,7 +780,7 @@ SCIP_RETCODE SCIPincludeDetectorStaircaseLsp(
    detectordata->oldToNew = NULL;
 
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
+   SCIP_CALL( GCGincludeDetector(gcg, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND,
                                  DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP,
                                  DEC_USEFULRECALL, detectordata, detectorFreeStaircaseLsp,
                                  detectorInitStaircaseLsp, detectorExitStaircaseLsp, detectorPropagatePartialdecStaircaseLsp, detectorFinishPartialdecStaircaseLsp, detectorPostprocessPartialdecStaircaseLsp, setParamAggressiveStaircaseLsp, setParamDefaultStaircaseLsp, setParamFastStaircaseLsp) );

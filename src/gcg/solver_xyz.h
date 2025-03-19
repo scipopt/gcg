@@ -36,7 +36,7 @@
 #define GCG_SOLVER_XYZ_H__
 
 #include "scip/scip.h"
-#include "def.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,7 +45,7 @@ extern "C" {
 /** creates the Xyz pricing solver and includes it in GCG */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeSolverXyz(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

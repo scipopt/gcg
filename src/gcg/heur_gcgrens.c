@@ -37,8 +37,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "heur_gcgrens.h"
-#include "gcg.h"
+#include "gcg/heur_gcgrens.h"
+#include "gcg/gcg.h"
 
 #include "scip/scipdefplugins.h"
 #include "scip/cons_linear.h"
@@ -77,6 +77,7 @@
 /** primal heuristic data */
 struct SCIP_HeurData
 {
+   GCG*                  gcg;                /**< GCG data structure */
    SCIP_Longint          maxnodes;           /**< maximum number of nodes to regard in the subproblem                 */
    SCIP_Longint          minnodes;           /**< minimum number of nodes to regard in the subproblem                 */
    SCIP_Longint          nodesofs;           /**< number of nodes added to the contingent of the total nodes          */
@@ -329,7 +330,8 @@ SCIP_RETCODE createNewSol(
 }
 
 /** main procedure of the GCG RENS heuristic, creates and solves a sub-SCIP */
-SCIP_RETCODE GCGapplyGcgrens(
+static
+SCIP_RETCODE applyGcgrens(
    SCIP*                 scip,               /**< original SCIP data structure                                   */
    SCIP_HEUR*            heur,               /**< heuristic data structure                                       */
    SCIP_RESULT*          result,             /**< result data structure                                          */
@@ -745,13 +747,13 @@ SCIP_DECL_HEUREXEC(heurExecGcgrens)
    assert( scip != NULL );
    assert( result != NULL );
 
-   /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
-   assert( masterprob != NULL);
-
    /* get heuristic data */
    heurdata = SCIPheurGetData(heur);
    assert( heurdata != NULL );
+
+   /* get master problem */
+   masterprob = GCGgetMasterprob(heurdata->gcg);
+   assert( masterprob != NULL);
 
    *result = SCIP_DELAYED;
 
@@ -798,7 +800,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgrens)
    if( SCIPisStopped(scip) )
       return SCIP_OKAY;
 
-   SCIP_CALL( GCGapplyGcgrens(scip, heur, result, heurdata->minfixingrate, heurdata->minimprove,
+   SCIP_CALL( applyGcgrens(scip, heur, result, heurdata->minfixingrate, heurdata->minimprove,
          heurdata->maxnodes, nstallnodes, heurdata->binarybounds, heurdata->uselprows) );
 
    return SCIP_OKAY;
@@ -811,70 +813,72 @@ SCIP_DECL_HEUREXEC(heurExecGcgrens)
  */
 
 /** creates GCG RENS primal heuristic and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurGcgrens(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeHeurGcgrens(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_HEURDATA* heurdata;
    SCIP_HEUR* heur;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* create GCG RENS primal heuristic data */
-   SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &heurdata) );
+   heurdata->gcg = gcg;
 
    /* include primal heuristic */
-   SCIP_CALL( SCIPincludeHeurBasic(scip, &heur,
+   SCIP_CALL( SCIPincludeHeurBasic(origprob, &heur,
          HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, HEUR_TIMING, HEUR_USESSUBSCIP, heurExecGcgrens, heurdata) );
 
    assert(heur != NULL);
 
    /* set non-NULL pointers to callback methods */
-   SCIP_CALL( SCIPsetHeurFree(scip, heur, heurFreeGcgrens) );
-   SCIP_CALL( SCIPsetHeurInit(scip, heur, heurInitGcgrens) );
+   SCIP_CALL( SCIPsetHeurFree(origprob, heur, heurFreeGcgrens) );
+   SCIP_CALL( SCIPsetHeurInit(origprob, heur, heurInitGcgrens) );
 #ifdef SCIP_STATISTIC
-   SCIP_CALL( SCIPsetHeurInitsol(scip, heur, heurInitsolGcgrens) );
-   SCIP_CALL( SCIPsetHeurExitsol(scip, heur, heurExitsolGcgrens) );
+   SCIP_CALL( SCIPsetHeurInitsol(origprob, heur, heurInitsolGcgrens) );
+   SCIP_CALL( SCIPsetHeurExitsol(origprob, heur, heurExitsolGcgrens) );
 #endif
 
    /* add rens primal heuristic parameters */
 
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/minfixingrate",
+   SCIP_CALL( SCIPaddRealParam(origprob, "heuristics/"HEUR_NAME"/minfixingrate",
          "minimum percentage of integer variables that have to be fixable",
          &heurdata->minfixingrate, FALSE, DEFAULT_MINFIXINGRATE, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/"HEUR_NAME"/maxnodes",
+   SCIP_CALL( SCIPaddLongintParam(origprob, "heuristics/"HEUR_NAME"/maxnodes",
          "maximum number of nodes to regard in the subproblem",
          &heurdata->maxnodes,  TRUE,DEFAULT_MAXNODES, 0LL, SCIP_LONGINT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/"HEUR_NAME"/nodesofs",
+   SCIP_CALL( SCIPaddLongintParam(origprob, "heuristics/"HEUR_NAME"/nodesofs",
          "number of nodes added to the contingent of the total nodes",
          &heurdata->nodesofs, FALSE, DEFAULT_NODESOFS, 0LL, SCIP_LONGINT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddLongintParam(scip, "heuristics/"HEUR_NAME"/minnodes",
+   SCIP_CALL( SCIPaddLongintParam(origprob, "heuristics/"HEUR_NAME"/minnodes",
          "minimum number of nodes required to start the subproblem",
          &heurdata->minnodes, TRUE, DEFAULT_MINNODES, 0LL, SCIP_LONGINT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/nodesquot",
+   SCIP_CALL( SCIPaddRealParam(origprob, "heuristics/"HEUR_NAME"/nodesquot",
          "contingent of sub problem nodes in relation to the number of nodes of the original problem",
          &heurdata->nodesquot, FALSE, DEFAULT_NODESQUOT, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(scip, "heuristics/"HEUR_NAME"/minimprove",
+   SCIP_CALL( SCIPaddRealParam(origprob, "heuristics/"HEUR_NAME"/minimprove",
          "factor by which RENS should at least improve the incumbent",
          &heurdata->minimprove, TRUE, DEFAULT_MINIMPROVE, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/binarybounds",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "heuristics/"HEUR_NAME"/binarybounds",
          "should general integers get binary bounds [floor(.),ceil(.)] ?",
          &heurdata->binarybounds, TRUE, DEFAULT_BINARYBOUNDS, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/uselprows",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "heuristics/"HEUR_NAME"/uselprows",
          "should subproblem be created out of the rows in the LP rows?",
          &heurdata->uselprows, TRUE, DEFAULT_USELPROWS, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/copycuts",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "heuristics/"HEUR_NAME"/copycuts",
          "if uselprows == FALSE, should all active cuts from cutpool be copied to constraints in subproblem?",
          &heurdata->copycuts, TRUE, DEFAULT_COPYCUTS, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(scip, "heuristics/"HEUR_NAME"/addallsols",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "heuristics/"HEUR_NAME"/addallsols",
          "should all subproblem solutions be added to the original SCIP?",
          &heurdata->addallsols, TRUE, DEFAULT_ADDALLSOLS, NULL, NULL) );
 

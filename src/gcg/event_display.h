@@ -37,7 +37,8 @@
 #define GCG_EVENT_DISPLAY_H__
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,14 +46,14 @@ extern "C" {
 
 /** activates the eventhandler in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPactivateEventHdlrDisplay(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGactivateEventHdlrDisplay(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** creates event handler for display event */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeEventHdlrDisplay(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeEventHdlrDisplay(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

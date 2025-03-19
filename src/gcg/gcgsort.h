@@ -35,7 +35,7 @@
 #ifndef GCG_SORT_H__
 #define GCG_SORT_H__
 
-#include "def.h"
+#include "gcg/def.h"
 #include "scip/scip.h"
 
 #ifdef __cplusplus

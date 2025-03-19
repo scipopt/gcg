@@ -38,7 +38,7 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,8 +46,8 @@ extern "C" {
 
 /** creates the scip consnames no numbers classifier and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeConsClassifierForConsnamesDigitFreeIdentical(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeConsClassifierForConsnamesDigitFreeIdentical(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

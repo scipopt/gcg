@@ -35,9 +35,9 @@
 #ifndef GCG_COLUMNGRAPH_H_
 #define GCG_COLUMNGRAPH_H_
 
-#include "graph.h"
-#include "bipartitegraph.h"
-#include "matrixgraph.h"
+#include "graph/graph.h"
+#include "graph/bipartitegraph.h"
+#include "graph/matrixgraph.h"
 
 namespace gcg {
 template <class T>
@@ -48,7 +48,7 @@ private:
 
 public:
    ColumnGraph(
-      SCIP*                 scip,              /**< SCIP data structure */
+      GCG*                  gcg,               /**< GCG data structure */
       Weights               w                  /**< weights for the given graph */
       );
    virtual ~ColumnGraph();

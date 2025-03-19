@@ -48,7 +48,8 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
+#include "gcg/gcg.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,8 +57,8 @@ extern "C" {
 
 /** creates the feaspump primal heuristic and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeHeurGcgfeaspump(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeHeurGcgfeaspump(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

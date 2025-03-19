@@ -36,8 +36,10 @@
 #ifndef CLASS_STABILIZATION_H_
 #define CLASS_STABILIZATION_H_
 
-#include "objscip/objscip.h"
-#include "class_pricingtype.h"
+#include "gcg/class_pricingtype.h"
+#include "gcg/type_extendedmasterconsdata.h"
+#include <scip/type_misc.h>
+#include <scip/type_retcode.h>
 
 namespace gcg {
 
@@ -49,13 +51,18 @@ namespace gcg {
 class Stabilization
 {
 private:
-   SCIP* scip_;
+   GCG* gcg;
+   SCIP* masterprob;
    SCIP_Real* stabcenterconsvals;
    int stabcenterconsvalssize;
    int nstabcenterconsvals;
-   SCIP_Real* stabcentercutvals;
-   int stabcentercutvalssize;
-   int nstabcentercutvals;
+   SCIP_Real* stabcenteroriginalsepacutvals;
+   int stabcenteroriginalsepacutvalssize;
+   int nstabcenteroriginalsepacutvals;
+   GCG_EXTENDEDMASTERCONSDATA** stabcenterextendedmasterconss;
+   int nstabcenterextendedmasterconss;
+   int stabcenterextendedmasterconsssize;
+   SCIP_Real* stabcenterextendedmasterconsvals;
    SCIP_Real* stabcenterlinkingconsvals;
    int nstabcenterlinkingconsvals;
    int stabcenterlinkingconsvalssize;
@@ -65,9 +72,13 @@ private:
    SCIP_Real* subgradientconsvals;
    int subgradientconsvalssize;
    int nsubgradientconsvals;
-   SCIP_Real* subgradientcutvals;
-   int subgradientcutvalssize;
-   int nsubgradientcutvals;
+   SCIP_Real* subgradientoriginalsepacutvals;
+   int subgradientoriginalsepacutvalssize;
+   int nsubgradientoriginalsepacutvals;
+   GCG_EXTENDEDMASTERCONSDATA** subgradientextendedmasterconss;
+   int nsubgradientextendedmasterconss;
+   int subgradientextendedmasterconsssize;
+   SCIP_Real* subgradientextendedmasterconsvals;
    SCIP_Real* subgradientlinkingconsvals;
    int subgradientlinkingconsvalssize;
    SCIP_Real subgradientnorm;
@@ -88,7 +99,7 @@ private:
 public:
    /** constructor */
    Stabilization(
-      SCIP*              scip,               /**< SCIP data structure */
+      GCG*               gcgstruct,          /**< SCIP data structure */
       PricingType*       pricingtype,        /**< the pricing type when the stabilization should run */
       SCIP_Bool          hybridascent        /**< enable hybridization of smoothing with an ascent method? */
    );
@@ -113,6 +124,11 @@ public:
    /** gets the stabilized dual of the convexity constraint at position i */
    SCIP_Real convGetDual(
       int i
+   );
+
+   SCIP_RETCODE extendedmasterconsGetDual(
+      GCG_EXTENDEDMASTERCONSDATA*    extendedmasterconsdata,      /**< extendedmasterconsdata */
+      SCIP_Real*            dual                /**< return pointer for dual value */
    );
 
    /** updates the stability center if the bound has increased */
@@ -186,14 +202,20 @@ private:
    /** updates the constraints in the stability center (and allocates more memory) */
    SCIP_RETCODE updateStabcenterconsvals();
 
-   /** updates the cuts in the stability center (and allocates more memory) */
-   SCIP_RETCODE updateStabcentercutvals();
+   /** updates the original cuts in the stability center (and allocates more memory) */
+   SCIP_RETCODE updateStabcenteroriginalcutvals();
+
+   /** updates the extended master conss in the stability center (and allocates more memory) */
+   SCIP_RETCODE updateStabcenterextendedmasterconsvals();
 
    /** updates the constraints in the subgradient (and allocates more memory) */
    SCIP_RETCODE updateSubgradientconsvals();
 
-   /** updates the cuts in the subgradient (and allocates more memory) */
-   SCIP_RETCODE updateSubgradientcutvals();
+   /** updates the original cuts in the subgradient (and allocates more memory) */
+   SCIP_RETCODE updateSubgradientoriginalcutvals();
+
+   /** updates the extended master conss in the subgradient (and allocates more memory) */
+   SCIP_RETCODE updateSubgradientextendedmasterconsvals();
 
    /** increase the alpha value */
    void increaseAlpha();

@@ -36,8 +36,8 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_masterlinesdiving.h"
-#include "heur_masterdiving.h"
+#include "gcg/heur_masterlinesdiving.h"
+#include "gcg/heur_masterdiving.h"
 
 
 #define HEUR_NAME             "masterlinesdiving"
@@ -60,7 +60,7 @@
  * - round this variable to the integral value
  */
 static
-GCG_DECL_DIVINGSELECTVAR(heurSelectVarMasterlinesdiving) /*lint --e{715}*/
+GCG_DECL_MASTER_DIVINGSELECTVAR(heurSelectVarMasterlinesdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    SCIP_VAR** lpcands;
    SCIP_Real* lpcandssol;
@@ -68,21 +68,22 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarMasterlinesdiving) /*lint --e{715}*/
    int nlpcands;
    SCIP_Real bestdistquot;
    int c;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
    /* check preconditions */
-   assert(scip != NULL);
+   assert(masterprob != NULL);
    assert(heur != NULL);
    assert(bestcand != NULL);
    assert(bestcandmayround != NULL);
 
    /* get fractional variables that should be integral */
-   SCIP_CALL( SCIPgetLPBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL) );
+   SCIP_CALL( SCIPgetLPBranchCands(masterprob, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL) );
    assert(lpcands != NULL);
    assert(lpcandsfrac != NULL);
    assert(lpcandssol != NULL);
 
    *bestcandmayround = TRUE;
-   bestdistquot = SCIPinfinity(scip);
+   bestdistquot = SCIPinfinity(masterprob);
 
    /* get best candidate */
    for( c = 0; c < nlpcands; ++c )
@@ -105,16 +106,16 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarMasterlinesdiving) /*lint --e{715}*/
       if( i < tabulistsize )
          continue;
 
-      if( SCIPisGT(scip, solval, rootsolval) )
+      if( SCIPisGT(masterprob, solval, rootsolval) )
       {
-         distquot = (SCIPfeasCeil(scip, solval) - solval) / (solval - rootsolval);
+         distquot = (SCIPfeasCeil(masterprob, solval) - solval) / (solval - rootsolval);
 
          /* avoid roundable candidates */
          if( SCIPvarMayRoundUp(var) )
             distquot *= 1000.0;
       }
       else
-         distquot = SCIPinfinity(scip);
+         distquot = SCIPinfinity(masterprob);
 
       /* check whether the variable is roundable */
       *bestcandmayround = *bestcandmayround && (SCIPvarMayRoundDown(var) || SCIPvarMayRoundUp(var));
@@ -137,13 +138,13 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarMasterlinesdiving) /*lint --e{715}*/
 
 /** creates the masterlinesdiving heuristic and includes it in GCG */
 SCIP_RETCODE GCGincludeHeurMasterlinesdiving(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_HEUR* heur;
 
    /* include diving heuristic */
-   SCIP_CALL( GCGincludeDivingHeurMaster(scip, &heur,
+   SCIP_CALL( GCGincludeDivingHeurMaster(gcg, &heur,
          HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, NULL, NULL, NULL, NULL, NULL, NULL, NULL, heurSelectVarMasterlinesdiving, NULL) );
 
