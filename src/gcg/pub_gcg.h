@@ -314,7 +314,7 @@ SCIP* GCGgetOrigprob(
 #ifdef NDEBUG
 #define GCGgetMasterprob(gcg)               (gcg->masterprob)
 #else
-/** returns the master problem */
+/** returns the active master problem (may change until solving is initiated) */
 GCG_EXPORT
 SCIP* GCGgetMasterprob(
    GCG*                 gcg                  /**< GCG data structure */
@@ -324,7 +324,7 @@ SCIP* GCGgetMasterprob(
 #ifdef NDEBUG
 #define GCGgetBendersMasterprob(gcg)               (gcg->bendersmasterprob)
 #else
-/** returns the benders master problem */
+/** returns the benders master problem (also used to solve the original problem directly) */
 GCG_EXPORT
 SCIP* GCGgetBendersMasterprob(
    GCG*                 gcg                  /**< GCG data structure */

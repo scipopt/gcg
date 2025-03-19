@@ -936,7 +936,7 @@ GCG_DECL_SOLVERFREE(solverFreeHighs)
    solverdata = GCGsolverGetData(solver);
    assert(solverdata != NULL);
 
-   SCIPfreeMemory(GCGgetMasterprob(gcg), &solverdata);
+   SCIPfreeMemory(GCGgetDwMasterprob(gcg), &solverdata);
    GCGsolverSetData(solver, NULL);
 
    return SCIP_OKAY;
@@ -1184,7 +1184,7 @@ SCIP_RETCODE GCGincludeSolverHighs(
    SCIP* origprob;
    GCG_SOLVERDATA* solverdata;
 
-   SCIP_CALL( SCIPallocMemory(GCGgetMasterprob(gcg), &solverdata) );
+   SCIP_CALL( SCIPallocMemory(GCGgetDwMasterprob(gcg), &solverdata) );
    origprob = GCGgetOrigprob(gcg);
 
    SCIP_CALL( GCGpricerIncludeSolver(gcg, SOLVER_NAME, SOLVER_DESC, SOLVER_PRIORITY,
