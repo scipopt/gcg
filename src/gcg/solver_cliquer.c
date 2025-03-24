@@ -686,7 +686,7 @@ void setProblemNotApplicable(
    SCIP_Bool*            isnotapplicable     /**< array storing if solver is applicable to problems */
    )
 {
-   if( GCGisRootNode(gcg) && SCIPgetNCutsApplied(masterprob) == 0 )
+   if( GCGisRootNode(gcg) && SCIPgetNCutsApplied(GCGgetMasterprob(gcg)) == 0 )
       isnotapplicable[probnr] = TRUE;
 }
 
