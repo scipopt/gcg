@@ -46,6 +46,7 @@
 #include "gcg/pub_gcgcol.h"
 #include "gcg/pub_gcgvar.h"
 #include "gcg/gcg.h"
+#include "gcg/scip_misc.h"
 
 #include "cliquer/cliquer.h"
 
@@ -685,11 +686,7 @@ void setProblemNotApplicable(
    SCIP_Bool*            isnotapplicable     /**< array storing if solver is applicable to problems */
    )
 {
-   SCIP* masterprob;
-
-   masterprob = GCGgetMasterprob(gcg);
-
-   if( SCIPgetFocusDepth(masterprob) == 0 && SCIPgetNCutsApplied(masterprob) == 0 )
+   if( GCGisRootNode(gcg) && SCIPgetNCutsApplied(masterprob) == 0 )
       isnotapplicable[probnr] = TRUE;
 }
 
@@ -2535,7 +2532,7 @@ SCIP_RETCODE solveCliquer(
    density = (SCIP_Real)nedges / ((SCIP_Real)(g->n - 1) * (g->n) / 2);
 
    SCIPdebugMessage("Problem number: %i ; Tree depth: %i ; Graph size: %d ; Graph density: %g\n",
-                    probnr, SCIPgetFocusDepth(GCGgetMasterprob(gcg)), indexcount, density);
+                    probnr, SCIPgetDepth(GCGgetMasterprob(gcg)), indexcount, density);
 
    /* Test if the node threshold is respected */
    if( SCIPisGT(pricingprob, indexcount, solver->nodelimit) )
