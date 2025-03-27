@@ -81,11 +81,16 @@ void GCGpricingjobFree(
    *pricingjob = NULL;
 }
 
-/** setup a pricing job at the beginning of the pricing loop */
+/** setup a pricing job at the beginning of the pricing loop
+ *
+ *  The solver in the pricing job is reset during this call. This is to ensure that a valid solver is available for the
+ *  pricing job. In some cases, such as when columns could not be found from a particular solver, the solver could be
+ *  set to NULL. As such, the highest priority solver is assigned to the pricing job in this function.
+ */
 SCIP_RETCODE GCGpricingjobSetup(
    GCG*                  gcg,                /**< GCG data structure */
    GCG_PRICINGJOB*       pricingjob,         /**< pricing job */
-   SCIP_Bool             heuristic,          /**< shall the pricing job be performed heuristically? */
+   SCIP_Bool             heuristic,          /**< is heuristic pricing still possible at the current solving stage */
    int                   scoring,            /**< scoring parameter */
    int                   nroundscol,         /**< number of previous pricing rounds for which the number of improving columns should be counted */
    SCIP_Real             dualsolconv,        /**< dual solution value of corresponding convexity constraint */

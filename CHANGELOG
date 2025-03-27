@@ -13,6 +13,12 @@ New features:
 - created a pricing variable type for variables not corresponding to any original variable, inferred by extended master constraints
 - automatic mastervariable synchronization across the entire search tree through history-tracking
 - component bound branching rule
+- New pricing callback plugin type. This plugin type provides two callback methods for interacting with the GCG pricer.
+  The pre-pricing and post-pricing callback methods is called immediately before and after, respectively, new variables
+  are generated in the REDCOST and FARKAS pricing methods.
+- New heuristic Integer programming column generation (IPColGen). The heuristic is a destroy-and-repair large
+  neighbourhood search heuristic. Given a partial solution, the repair procedure generates new columns using a modified
+  pricing problem objective.
 
 New/modified/removed structures, defines, and classes:
 ---------------------------

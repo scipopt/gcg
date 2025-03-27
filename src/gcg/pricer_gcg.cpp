@@ -90,6 +90,7 @@
 #include "gcg/pub_colpool.h"
 #include "gcg/gcgvarhistory.h"
 #include "gcg/struct_solver.h"
+#include "gcg/pricingcb.h"
 
 #ifdef SCIP_STATISTIC
 #include "scip/struct_scip.h"
@@ -185,6 +186,10 @@ struct SCIP_PricerData
    SCIP_Real**           realdualvalues;     /**< real dual values for pricing variables */
    int*                  nrealdualvalues;  /**< capacities of realdualvalues */
 
+   SCIP_Real             dualweight;         /**< the weighting applied to the dual variables */
+   SCIP_Real*            relaxweight;        /**< the Lagrangian relaxation weight applied to master constraints, or NULL */
+   SCIP_Bool             relaxobjective;     /**< are relaxation weights applied to the pricing objective */
+
    /* variables used for statistics */
    SCIP_CLOCK*           freeclock;          /**< time for freeing pricing problems */
    SCIP_CLOCK*           transformclock;     /**< time for transforming pricing problems */
@@ -199,6 +204,10 @@ struct SCIP_PricerData
 
    /* event handler */
    SCIP_EVENTHDLR*       eventhdlr;          /**< event handler */
+
+   /* pricing callbacks */
+   GCG_PRICINGCB**       pricingcbs;         /**< an array to store the pricing callback plugins */
+   int                   npricingcbs;        /**< the number of available pricing callback plugins */
 
    /* parameter values */
    SCIP_VARTYPE          vartype;            /**< vartype of created master variables */
@@ -641,6 +650,201 @@ SCIP_RETCODE ObjPricerGcg::solversExitsol()
    return SCIP_OKAY;
 }
 
+/** frees all pricing callback plugins */
+SCIP_RETCODE ObjPricerGcg::pricingcbsFree()
+{
+   int i;
+   assert(pricerdata != NULL);
+   assert((pricerdata->pricingcbs == NULL) == (pricerdata->npricingcbs == 0));
+
+   if( pricerdata->npricingcbs == 0 )
+      return SCIP_OKAY;
+
+   assert(pricerdata->pricingcbs != NULL);
+
+   for( i = 0; i < pricerdata->npricingcbs; i++ )
+   {
+      SCIP_CALL( GCGpricingcbFree(gcg, &pricerdata->pricingcbs[i]) );
+   }
+
+   return SCIP_OKAY;
+}
+
+/** calls the init method on all pricing callback plugins */
+SCIP_RETCODE ObjPricerGcg::pricingcbsInit()
+{
+   int i;
+   assert(pricerdata != NULL);
+   assert((pricerdata->pricingcbs == NULL) == (pricerdata->npricingcbs == 0));
+
+   if( pricerdata->npricingcbs == 0 )
+      return SCIP_OKAY;
+
+   assert(pricerdata->pricingcbs != NULL);
+
+   for( i = 0; i < pricerdata->npricingcbs; i++ )
+   {
+      SCIP_CALL( GCGpricingcbInit(gcg, pricerdata->pricingcbs[i]) );
+   }
+
+   return SCIP_OKAY;
+}
+
+/** calls the exit method on all pricing callback plugins */
+SCIP_RETCODE ObjPricerGcg::pricingcbsExit()
+{
+   int i;
+   assert(pricerdata != NULL);
+   assert((pricerdata->pricingcbs == NULL) == (pricerdata->npricingcbs == 0));
+
+   if( pricerdata->npricingcbs == 0 )
+      return SCIP_OKAY;
+
+   assert(pricerdata->pricingcbs != NULL);
+
+   for( i = 0; i < pricerdata->npricingcbs; i++ )
+   {
+      SCIP_CALL( GCGpricingcbExit(gcg, pricerdata->pricingcbs[i]) );
+   }
+
+   return SCIP_OKAY;
+}
+
+/** calls the initsol method on all pricing callback plugins */
+SCIP_RETCODE ObjPricerGcg::pricingcbsInitsol()
+{
+   int i;
+   assert(pricerdata != NULL);
+
+   /* if there are no pricing problems, then the pricing callback methods are not required */
+   if( pricerdata->npricingprobs == 0 )
+      return SCIP_OKAY;
+
+   assert((pricerdata->pricingcbs == NULL) == (pricerdata->npricingcbs == 0));
+
+   if( pricerdata->npricingcbs == 0 )
+      return SCIP_OKAY;
+
+   assert(pricerdata->pricingcbs != NULL);
+
+   for( i = 0; i < pricerdata->npricingcbs; i++ )
+   {
+      SCIP_CALL( GCGpricingcbInitsol(gcg, pricerdata->pricingcbs[i]) );
+   }
+
+   return SCIP_OKAY;
+}
+
+/** calls the exitsol method of all pricing callback plugins */
+SCIP_RETCODE ObjPricerGcg::pricingcbsExitsol()
+{
+   int i;
+   assert(pricerdata != NULL);
+   assert((pricerdata->pricingcbs == NULL) == (pricerdata->npricingcbs == 0));
+
+   /* if there are no pricing problems, then the pricing callback methods are not required */
+   if( pricerdata->npricingcbs == 0 )
+      return SCIP_OKAY;
+
+   assert(pricerdata->pricingcbs != NULL);
+
+   if( pricerdata->npricingprobs == 0 )
+      return SCIP_OKAY;
+
+   for( i = 0; i < pricerdata->npricingcbs; i++ )
+   {
+      SCIP_CALL( GCGpricingcbExitsol(gcg, pricerdata->pricingcbs[i]) );
+   }
+
+   return SCIP_OKAY;
+}
+
+/** calls pre-pricing method of the pricing callback plugins */
+SCIP_RETCODE ObjPricerGcg::pricingcbsPrepricing(
+   SCIP_PRICER*          pricer,             /**< the pointer to the calling pricer */
+   GCG_PRICETYPE         type,               /**< the type of pricing, either redcost or farkas */
+   SCIP_Bool*            abort               /**< flag to set whether the pricing should be aborted */
+   )
+{
+   int i;
+   SCIP_RESULT result;
+
+   assert(pricer != NULL);
+   assert(pricerdata != NULL);
+   assert((pricerdata->pricingcbs == NULL) == (pricerdata->npricingcbs == 0));
+
+   assert(abort != NULL);
+
+   (*abort) = FALSE;
+
+   /* if there are no pricing problems, then the pricing callback methods are not required */
+   if( pricerdata->npricingcbs == 0 )
+      return SCIP_OKAY;
+
+   assert(pricerdata->pricingcbs != NULL);
+
+   for( i = 0; i < pricerdata->npricingcbs; i++ )
+   {
+      SCIP_Bool locabort = FALSE;
+
+      /* the pricing callback methods are only called if the plugin is enabled */
+      if( GCGpricingcbIsEnabled(pricerdata->pricingcbs[i]) )
+      {
+         SCIP_CALL( GCGpricingcbPrepricing(gcg, pricerdata->pricingcbs[i], pricer, type, &locabort, &result) );
+
+         /* if one of the prepricing methods calls for an abort of the pricing, then pricing is aborted. */
+         (*abort) = (*abort) || locabort;
+
+         /* if the pricing callback plugin is to be executed exclusively, then no other callback plugins are executed.
+          * However, this only takes effect for the highest priority pricing callback plugin. For all pricing callback
+          * plugins that have the second highest and lower priority, the exclusive flag is ignored.
+          */
+         if( i == 0 && GCGpricingcbIsExclusive(pricerdata->pricingcbs[i]) )
+            break;
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
+/** calls post-pricing method of the pricing callback plugins */
+SCIP_RETCODE ObjPricerGcg::pricingcbsPostpricing(
+   SCIP_PRICER*          pricer,             /**< the pointer to the calling pricer */
+   GCG_PRICETYPE         type                /**< the type of pricing, either redcost or farkas */
+   )
+{
+   int i;
+   SCIP_RESULT result;
+
+   assert(pricer != NULL);
+   assert(pricerdata != NULL);
+   assert((pricerdata->pricingcbs == NULL) == (pricerdata->npricingcbs == 0));
+
+   /* if there are no pricing problems, then the pricing callback methods are not required */
+   if( pricerdata->npricingcbs == 0 )
+      return SCIP_OKAY;
+
+   assert(pricerdata->pricingcbs != NULL);
+
+   for( i = 0; i < pricerdata->npricingcbs; i++ )
+   {
+      /* the pricing callback methods are only called if the plugin is enabled */
+      if( GCGpricingcbIsEnabled(pricerdata->pricingcbs[i]) )
+      {
+         SCIP_CALL( GCGpricingcbPostpricing(gcg, pricerdata->pricingcbs[i], pricer, type, &result) );
+
+         /* if the pricing callback plugin is to be executed exclusively, then no other callback plugins are executed.
+          * However, this only takes effect for the highest priority pricing callback plugin. For all pricing callback
+          * plugins that have the second highest and lower priority, the exclusive flag is ignored.
+          */
+         if( i == 0 && GCGpricingcbIsExclusive(pricerdata->pricingcbs[i]) )
+            break;
+      }
+   }
+
+   return SCIP_OKAY;
+}
+
 /** returns the gegeneracy of the masterproblem */
 SCIP_RETCODE ObjPricerGcg::computeCurrentDegeneracy(
    double*               degeneracy          /**< pointer to store degeneracy */
@@ -762,6 +966,8 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    SCIP_Real* consvals = NULL;
    SCIP_Real dualsol;
    SCIP_Real realdualsol;
+   SCIP_Real dualweight;
+   SCIP_Real* relaxweight;
 
    SCIP_VAR** consvars = NULL;
    int nconsvars;
@@ -781,6 +987,12 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    nmasterconss = GCGgetNMasterConss(gcg);
    masterconss = GCGgetMasterConss(gcg);
    origconss = GCGgetOrigMasterConss(gcg);
+
+   /* the dual weight and the relaxation weight may be set when performing pricing with a Lagrangian relaxation
+    * objective
+    */
+   dualweight = pricerdata->dualweight;
+   relaxweight = pricerdata->relaxweight;
 
    /* set objective value of all variables in the pricing problems to 0 (for farkas pricing) /
     * to the original objective of the variable (for redcost pricing)
@@ -853,7 +1065,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
        */
       priceridx = SCIPvarGetIndex(pricingvar);
       assert(priceridx >= 0 && priceridx < pricerdata->nrealdualvalues[block]);
-      SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[block], pricingvar, dualsol) );
+      SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[block], pricingvar, dualweight * dualsol) );
       pricerdata->realdualvalues[block][priceridx] += pricetype->consGetDual(linkcons);
 
 #ifdef PRINTDUALSOLS
@@ -906,11 +1118,17 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
             assert(pricingvar != NULL);
             /* modify the objective of the corresponding variable in the pricing problem */
             SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[blocknr],
-               pricingvar, -1.0 * dualsol * consvals[j]) );
+               pricingvar, -1.0 * dualweight * dualsol * consvals[j]) );
 
             priceridx = SCIPvarGetIndex(pricingvar);
             assert(priceridx >= 0 && priceridx < pricerdata->nrealdualvalues[blocknr]);
             pricerdata->realdualvalues[blocknr][priceridx] -= consvals[j] * realdualsol;
+
+            /* adding a weight for the Lagrangian relaxation of the master constraints */
+            if( !SCIPisEQ(scip_, relaxweight[i], 0.0) )
+            {
+               SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[blocknr], GCGoriginalVarGetPricingVar(consvars[j]), relaxweight[i] * consvals[j]) );
+            }
 
 #ifdef PRINTDUALSOLS
             if( !SCIPisZero(scip_, dualsol) || !SCIPisZero(scip_, consvals[j] * realdualsol) )
@@ -980,7 +1198,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
             assert(pricingvar != NULL);
             /* modify the objective of the corresponding variable in the pricing problem */
             SCIP_CALL( SCIPaddVarObj(pricerdata->pricingprobs[blocknr],
-               pricingvar, -1.0 * dualsol * consvals[j]) );
+               pricingvar, -1.0 * dualweight * dualsol * consvals[j]) );
 
             priceridx = SCIPvarGetIndex(pricingvar);
             assert(priceridx >= 0 && priceridx < pricerdata->nrealdualvalues[blocknr]);
@@ -1021,7 +1239,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
             }
       #endif
 
-      SCIP_CALL( GCGextendedmasterconsUpdateDualValue(gcg, branchextendedmasterconsdata[i], dualsol) );
+      SCIP_CALL( GCGextendedmasterconsUpdateDualValue(gcg, branchextendedmasterconsdata[i], dualweight * dualsol) );
    }
 
    /* get dual solutions / farkas values of the convexity constraints */
@@ -1035,7 +1253,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          continue;
       }
 
-      pricerdata->dualsolconv[i] = pricetype->consGetDual(GCGgetConvCons(gcg, i));
+      pricerdata->dualsolconv[i] = dualweight * pricetype->consGetDual(GCGgetConvCons(gcg, i));
 
 #ifdef PRINTDUALSOLS
       if( pricerdata->pricingprobs[i] != NULL && !SCIPisZero(scip_, pricerdata->dualsolconv[i]) )
@@ -3486,7 +3704,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
             SCIPgetSolOrigObj(scip_, NULL), bestredcost, stabdualval, beststabobj);
 
 #ifndef NDEBUG
-         if( optimal && *bestredcostvalid && !stabilized && !SCIPisSumEQ(scip_, SCIPgetSolOrigObj(scip_, NULL) + bestredcost, stabdualval + beststabobj) )
+         if( optimal && *bestredcostvalid && !stabilized &&
+             SCIPisEQ(scip_, pricerdata->dualweight, 1.0) && !pricerdata->relaxobjective &&
+             !SCIPisSumEQ(scip_, SCIPgetSolOrigObj(scip_, NULL) + bestredcost, stabdualval + beststabobj) )
          {
             SCIP_ROW** rows = SCIPgetLPRows(scip_);
             int nrows = SCIPgetNLPRows(scip_);
@@ -3553,7 +3773,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
          }
 #endif
 
-         assert(!optimal || !*bestredcostvalid || stabilized || SCIPisSumEQ(scip_, SCIPgetSolOrigObj(scip_, NULL) + bestredcost, stabdualval + beststabobj));
+         assert(!optimal || !*bestredcostvalid || stabilized ||
+                !SCIPisEQ(scip_, pricerdata->dualweight, 1.0) || pricerdata->relaxobjective ||
+                SCIPisSumEQ(scip_, SCIPgetSolOrigObj(scip_, NULL) + bestredcost, stabdualval + beststabobj));
 
          if( stabilized || !optimal || !*bestredcostvalid )
             lowerboundcandidate = SCIPtransformObj(scip_, stabdualval + beststabobj);
@@ -3756,6 +3978,60 @@ SCIP_RETCODE GCGsetPricingObjs(
    return SCIP_OKAY;
 }
 
+/** sets the dual weight for the pricing objective */
+extern "C"
+void GCGsetPricingObjDualWeight(
+   GCG*                  gcg,                /**< GCG data structure */
+   SCIP_Real             dualweight          /**< the weighting applied to the dual variables */
+   )
+{
+   ObjPricerGcg* pricer;
+
+   assert(gcg != NULL);
+
+   pricer = GCGgetObjPricer(gcg);
+   assert(pricer != NULL);
+
+   pricer->pricerdata->dualweight = dualweight;
+}
+
+/** sets the Lagrangian relaxation weight for the pricing objective */
+extern "C"
+void GCGsetPricingObjRelaxWeight(
+   GCG*                  gcg,                /**< GCG data structure */
+   SCIP_Real*            weights,            /**< the Lagrangian relaxation weight applied to the master constraints */
+   int*                  weightids,          /**< the constraint ids for the relaxation weights */
+   int                   nweights            /**< the number of weights */
+   )
+{
+   ObjPricerGcg* pricer;
+   int nmasterconss;
+   SCIP_Bool relaxobjective;
+   int i;
+
+   assert(gcg != NULL);
+
+   pricer = GCGgetObjPricer(gcg);
+   assert(pricer != NULL);
+
+   /* setting the relaxation weights to zero */
+   nmasterconss = GCGgetNMasterConss(gcg);
+   BMSclearMemoryArray(pricer->pricerdata->relaxweight, nmasterconss);
+   relaxobjective = FALSE;
+
+   for( i = 0; i < nweights; i++ )
+   {
+      assert(weightids[i] >= 0 && weightids[i] < nmasterconss);
+
+      pricer->pricerdata->relaxweight[weightids[i]] += weights[i];
+
+      if( !SCIPisZero(GCGgetMasterprob(gcg), weights[i]) )
+         relaxobjective = TRUE;
+   }
+
+   pricer->pricerdata->relaxobjective = relaxobjective;
+}
+
 /** creates a new master variable corresponding to the given gcg column */
 extern "C"
 SCIP_RETCODE GCGcreateNewMasterVarFromGcgCol(
@@ -3828,6 +4104,124 @@ SCIP_Real GCGcomputeRedCostGcgCol(
    redcost = pricer->computeRedCostGcgCol(pricetype, gcgcol, objvalptr);
 
    return redcost;
+}
+
+/** includes a pricing callback plugin into the pricer data */
+extern "C"
+SCIP_RETCODE GCGpricerIncludePricingcb(
+   GCG*                  gcg,                /**< GCG data structure */
+   const char*           name,               /**< name of pricing callback plugin */
+   const char*           desc,               /**< description of pricing callback plugin */
+   int                   priority,           /**< priority of pricing callback plugin */
+   GCG_DECL_PRICINGCBFREE((*pricingcbfree)), /**< destructor of the pricing callback */
+   GCG_DECL_PRICINGCBINIT((*pricingcbinit)), /**< initialize the pricing callback */
+   GCG_DECL_PRICINGCBEXIT((*pricingcbexit)), /**< deinitialize the pricing callback */
+   GCG_DECL_PRICINGCBINITSOL((*pricingcbinitsol)),/**< solving process initialization method of the pricing callback */
+   GCG_DECL_PRICINGCBEXITSOL((*pricingcbexitsol)),/**< solving process deinitialization method of the pricing callback */
+   GCG_DECL_PRICINGCBPREPRICING((*pricingcbprepricing)),/**< pre-pricing method of the pricing callback */
+   GCG_DECL_PRICINGCBPOSTPRICING((*pricingcbpostpricing)),/**< post-pricing method of the pricing callback */
+   GCG_PRICINGCBDATA*  pricingcbdata         /**< pricing callback data */
+   )
+{
+   GCG_PRICINGCB* pricingcb;
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(gcg != NULL);
+
+   pricer = GCGgetObjPricer(gcg);
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   /* create pricing callback plugin */
+   pricingcb = NULL;
+   SCIP_CALL( GCGpricingcbCreate(gcg, &pricingcb, name, desc, priority, pricingcbfree, pricingcbinit,
+         pricingcbexit, pricingcbinitsol, pricingcbexitsol, pricingcbprepricing, pricingcbpostpricing, pricingcbdata) );
+   assert(pricingcb != NULL);
+
+   /* add solver to pricer data */
+   if( pricerdata->npricingcbs == 0 )
+   {
+      SCIP_CALL( SCIPallocMemoryArray(scip, &(pricerdata->pricingcbs), 1) ); /*lint !e506*/
+   }
+   else
+   {
+      SCIP_CALL( SCIPreallocMemoryArray(scip, &(pricerdata->pricingcbs), (size_t)pricerdata->npricingcbs+1) );
+   }
+   pricerdata->pricingcbs[pricerdata->npricingcbs] = pricingcb;
+   ++pricerdata->npricingcbs;
+
+   return SCIP_OKAY;
+}
+
+/** returns the available pricing callback plugins */
+extern "C"
+GCG_PRICINGCB** GCGpricerGetPricingcbs(
+   GCG*                  gcg                 /**< GCG data structure */
+   )
+{
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(gcg != NULL);
+
+   pricer = GCGgetObjPricer(gcg);
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   return pricerdata->pricingcbs;
+}
+
+/** returns the number of available pricing callback plugins */
+extern "C"
+int GCGpricerGetNPricingcbs(
+   GCG*                  gcg                 /**< GCG data structure */
+   )
+{
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+
+   assert(gcg != NULL);
+
+   pricer = GCGgetObjPricer(gcg);
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   return pricerdata->npricingcbs;
+}
+
+/** returns the pricing callback plugin of the given name, or NULL if it doesn't exist */
+extern "C"
+GCG_PRICINGCB* GCGpricerFindPricingcb(
+   GCG*                  gcg,                /**< GCG data structure */
+   const char*           name                /**< the name of the pricing callback plugin */
+   )
+{
+   ObjPricerGcg* pricer;
+   SCIP_PRICERDATA* pricerdata;
+   int i;
+
+   assert(gcg != NULL);
+
+   pricer = GCGgetObjPricer(gcg);
+   assert(pricer != NULL);
+
+   pricerdata = pricer->getPricerdata();
+   assert(pricerdata != NULL);
+
+   for( i = 0; i < pricerdata->npricingcbs; i++ )
+   {
+      if( strcmp(GCGpricingcbGetName(pricerdata->pricingcbs[i]), name) == 0 )
+         return pricerdata->pricingcbs[i];
+   }
+
+   return NULL;
 }
 
 /** performs the pricing routine, gets the type of pricing that should be done: farkas or redcost pricing */
@@ -3940,6 +4334,13 @@ SCIP_DECL_PRICERFREE(ObjPricerGcg::scip_free)
    assert(scip == scip_);
    SCIP_CALL( solversFree() );
 
+   if( pricerdata->pricingcbs != NULL )
+   {
+      SCIP_CALL( pricingcbsFree() );
+
+      SCIPfreeMemoryArray(scip, &pricerdata->pricingcbs);
+   }
+
    SCIPfreeMemoryArray(scip, &pricerdata->solvers);
 
    gcg->pricer = NULL;
@@ -3970,7 +4371,13 @@ SCIP_DECL_PRICERINIT(ObjPricerGcg::scip_init)
    assert(reducedcostpricing != NULL);
    assert(farkaspricing != NULL);
 
+   pricerdata->artificialused = FALSE;
+   pricerdata->artificialvars = NULL;
+   pricerdata->nartificialvars = 0;
+   pricerdata->maxartificialvars = 0;
+
    SCIP_CALL( solversInit() );
+   SCIP_CALL( pricingcbsInit() );
 
    SCIP_CALL( reducedcostpricing->resetCalls() );
    SCIP_CALL( farkaspricing->resetCalls() );
@@ -3984,6 +4391,7 @@ SCIP_DECL_PRICEREXIT(ObjPricerGcg::scip_exit)
 { /*lint --e{715}*/
    assert(scip == scip_);
    SCIP_CALL( solversExit() );
+   SCIP_CALL( pricingcbsExit() );
 
    return SCIP_OKAY;
 }
@@ -4015,6 +4423,10 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 
    nmasterconss = GCGgetNMasterConss(gcg);
    masterconss = GCGgetMasterConss(gcg);
+
+   pricerdata->relaxobjective = FALSE;
+   pricerdata->dualweight = 1.0;
+   SCIP_CALL( SCIPallocClearBlockMemoryArray(scip, &(pricerdata->relaxweight), nmasterconss) );
 
    /* init array containing all pricing problems */
    pricerdata->npricingprobs = GCGgetNPricingprobs(gcg);
@@ -4139,9 +4551,13 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
    /* sort solvers by priority */
    SCIPsortPtr((void**)pricerdata->solvers, GCGsolverComp, pricerdata->nsolvers);
 
+   /* sort pricing callback plugins by priority */
+   SCIPsortPtr((void**)pricerdata->pricingcbs, GCGpricingcbComp, pricerdata->npricingcbs);
+
    SCIP_CALL( pricingcontroller->initSol() );
 
    SCIP_CALL( solversInitsol() );
+   SCIP_CALL( pricingcbsInitsol() );
 
    /* if maxobj should be used, compute it */
    if( pricerdata->usemaxobj )
@@ -4206,6 +4622,7 @@ SCIP_DECL_PRICERINITSOL(ObjPricerGcg::scip_initsol)
 /** solving process deinitialization method of variable pricer (called before branch and bound process data is freed) */
 SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
 {
+   int nmasterconss;
    int i;
 #ifdef SCIP_STATISTIC
    int j;
@@ -4215,7 +4632,10 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
    assert(pricer != NULL);
    assert(pricerdata != NULL);
 
+   nmasterconss = GCGgetNMasterConss(gcg);
+
    SCIP_CALL( solversExitsol() );
+   SCIP_CALL( pricingcbsExitsol() );
 
    SCIP_CALL( pricingcontroller->exitSol() );
 
@@ -4318,6 +4738,10 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
 
    SCIPfreeBlockMemoryArray(scip, &(pricerdata->nefficaciouscols), pricerdata->npricingprobs);
 
+   SCIPfreeBlockMemoryArray(scip, &(pricerdata->relaxweight), nmasterconss);
+   pricerdata->dualweight = 1.0;
+   pricerdata->relaxobjective = FALSE;
+
    return SCIP_OKAY;
 }
 
@@ -4325,6 +4749,7 @@ SCIP_DECL_PRICEREXITSOL(ObjPricerGcg::scip_exitsol)
 /** reduced cost pricing method of variable pricer for feasible LPs */
 SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
 { /*lint -esym(715, stopearly)*/
+   SCIP_Bool abort = FALSE;
    SCIP_RETCODE retcode;
 
    assert(scip == scip_);
@@ -4392,9 +4817,21 @@ SCIP_DECL_PRICERREDCOST(ObjPricerGcg::scip_redcost)
    if( pricerdata->usecolpool )
       GCGcolpoolEndFarkas(colpool);
 
+   /* executing the pre-pricing method of the pricing callback plugins. */
+   SCIP_CALL( pricingcbsPrepricing(pricer, GCG_PRICETYPE_REDCOST, &abort) );
+
+   /*If one of the pre-pricing methods of the pricing callback plugins indicates that the pricing must be aborted,
+    * then no columns are generated
+    */
+   if( abort )
+      return SCIP_OKAY;
+
    SCIP_CALL( reducedcostpricing->startClock() );
    retcode = priceNewVariables(reducedcostpricing, result, lowerbound);
    SCIP_CALL( reducedcostpricing->stopClock() );
+
+   /* executing the post-pricing method of the pricing callback plugins. */
+   SCIP_CALL( pricingcbsPostpricing(pricer, GCG_PRICETYPE_REDCOST) );
 
 #ifdef SCIP_STATISTIC
    if( SCIPgetCurrentNode(scip_) == SCIPgetRootNode(scip_) && GCGsepaGetNOriginalSepaCuts(gcg) == 0 )
@@ -4515,6 +4952,7 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    SCIP_SOL** origsols;
    int norigsols;
    int nstoredsols;
+   SCIP_Bool abort = FALSE;
 
    assert(scip == scip_);
    assert(pricer != NULL);
@@ -4587,9 +5025,21 @@ SCIP_DECL_PRICERFARKAS(ObjPricerGcg::scip_farkas)
    if( pricerdata->usecolpool )
       GCGcolpoolStartFarkas(colpool);
 
+   /* executing the pre-pricing method of the pricing callback plugins. */
+   SCIP_CALL( pricingcbsPrepricing(pricer, GCG_PRICETYPE_FARKAS, &abort) );
+
+   /*If one of the pre-pricing methods of the pricing callback plugins indicates that the pricing must be aborted,
+    * then no columns are generated
+    */
+   if( abort )
+      return SCIP_OKAY;
+
    SCIP_CALL( farkaspricing->startClock() );
    retcode = priceNewVariables(farkaspricing, result, NULL);
    SCIP_CALL( farkaspricing->stopClock() );
+
+   /* executing the post-pricing method of the pricing callback plugins. */
+   SCIP_CALL( pricingcbsPostpricing(pricer, GCG_PRICETYPE_FARKAS) );
 
 #ifdef SCIP_STATISTIC
    pricerdata->rootfarkastime =  SCIPgetSolvingTime(scip_);
@@ -4681,6 +5131,10 @@ SCIP_RETCODE GCGincludePricerGcg(
    pricerdata->artificialvars = NULL;
    pricerdata->nartificialvars = 0;
    pricerdata->maxartificialvars = 0;
+
+   /* initialize pricing callback array */
+   pricerdata->pricingcbs = NULL;
+   pricerdata->npricingcbs = 0;
 
 #ifdef SCIP_STATISTIC
    pricerdata->nodetimehist = NULL;

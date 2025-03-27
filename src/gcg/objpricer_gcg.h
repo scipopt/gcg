@@ -430,6 +430,34 @@ private:
    /** calls the exitsol method of all solvers */
    SCIP_RETCODE solversExitsol();
 
+   /** frees all pricing callback plugins */
+   SCIP_RETCODE pricingcbsFree();
+
+   /** calls the init method on all pricing callback plugins */
+   SCIP_RETCODE pricingcbsInit();
+
+   /** calls the exit method on all pricing callback plugins */
+   SCIP_RETCODE pricingcbsExit();
+
+   /** calls the initsol method on all pricing callback plugins */
+   SCIP_RETCODE pricingcbsInitsol();
+
+   /** calls the exitsol method of all pricing callback plugins */
+   SCIP_RETCODE pricingcbsExitsol();
+
+   /** calls pre-pricing method of the pricing callback plugins */
+   SCIP_RETCODE pricingcbsPrepricing(
+      SCIP_PRICER*          pricer,             /**< the pointer to the calling pricer */
+      GCG_PRICETYPE         type,               /**< the type of pricing, either redcost or farkas */
+      SCIP_Bool*            abort               /**< flag to set whether the pricing should be aborted */
+      );
+
+   /** calls post-pricing method of the pricing callback plugins */
+   SCIP_RETCODE pricingcbsPostpricing(
+      SCIP_PRICER*          pricer,             /**< the pointer to the calling pricer */
+      GCG_PRICETYPE         type                /**< the type of pricing, either redcost or farkas */
+      );
+
    /** computes the stack of masterbranch constraints up to the last generic branching node
     * @note This method has to be threadsafe!
     */
