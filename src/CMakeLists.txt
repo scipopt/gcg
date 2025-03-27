@@ -106,6 +106,7 @@ set(gcgsources
     gcg/heur_gcgveclendiving.c
     gcg/heur_gcgzirounding.c
     gcg/heur_greedycolsel.c
+    gcg/heur_ipcolgen.c
     gcg/heur_mastercoefdiving.c
     gcg/heur_masterdiving.c
     gcg/heur_masterfracdiving.c
@@ -127,6 +128,7 @@ set(gcgsources
     gcg/presol_roundbound.c
     gcg/pricer_gcg.cpp
     gcg/pricestore_gcg.c
+    gcg/pricingcb.c
     gcg/pricingjob.c
     gcg/pricingprob.c
     gcg/reader_blk.cpp
@@ -242,6 +244,7 @@ set(gcgheaders
     gcg/heur_gcgveclendiving.h
     gcg/heur_gcgzirounding.h
     gcg/heur_greedycolsel.h
+    gcg/heur_ipcolgen.h
     gcg/heur_mastercoefdiving.h
     gcg/heur_masterdiving.h
     gcg/heur_masterfracdiving.h
@@ -262,6 +265,7 @@ set(gcgheaders
     gcg/presol_roundbound.h
     gcg/pricer_gcg.h
     gcg/pricestore_gcg.h
+    gcg/pub_pricingcb.h
     gcg/pricingjob.h
     gcg/pricingprob.h
     gcg/pub_clscons.h
@@ -276,6 +280,7 @@ set(gcgheaders
     gcg/pub_gcgpqueue.h
     gcg/pub_gcgvar.h
     gcg/pub_extendedmasterconsdata.h
+    gcg/pub_pricingcb.h
     gcg/pub_pricingjob.h
     gcg/pub_pricingprob.h
     gcg/pub_score.h
@@ -316,6 +321,7 @@ set(gcgheaders
     gcg/struct_gcgpqueue.h
     gcg/struct_extendedmasterconsdata.h
     gcg/struct_pricestore_gcg.h
+    gcg/struct_pricingcb.h
     gcg/struct_pricingjob.h
     gcg/struct_pricingprob.h
     gcg/struct_score.h
@@ -338,6 +344,8 @@ set(gcgheaders
     gcg/type_origdiving.h
     gcg/type_parameter.h
     gcg/type_pricestore_gcg.h
+    gcg/type_pricetype.h
+    gcg/type_pricingcb.h
     gcg/type_pricingjob.h
     gcg/type_pricingprob.h
     gcg/type_pricingstatus.h

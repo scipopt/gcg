@@ -52,17 +52,6 @@ extern "C" {
  * @{
  */
 
-enum GCG_Pricetype
-{
-   GCG_PRICETYPE_UNKNOWN = -1,               /**< unknown pricing type */
-   GCG_PRICETYPE_INIT = 0,                   /**< initial pricing */
-   GCG_PRICETYPE_FARKAS = 1,                 /**< farkas pricing */
-   GCG_PRICETYPE_REDCOST = 2                 /**< redcost pricing */
-};
-typedef enum GCG_Pricetype GCG_PRICETYPE;
-
-
-
 /** creates the GCG variable pricer and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludePricerGcg(
@@ -242,7 +231,6 @@ SCIP_Bool GCGmasterIsSolValid(
    SCIP_SOL*             mastersol           /**< solution of the master problem, or NULL for current LP solution */
    );
 
-
 /** get number of iterations in pricing problems */
 GCG_EXPORT
 SCIP_Longint GCGmasterGetPricingSimplexIters(
@@ -261,6 +249,22 @@ GCG_EXPORT
 SCIP_RETCODE GCGsetPricingObjs(
    GCG*                  gcg,                /**< GCG data structure */
    SCIP_Real*            dualsolconv         /**< array of dual solutions corresponding to convexity constraints */
+   );
+
+/** sets the dual weight for the pricing objective */
+extern
+void GCGsetPricingObjDualWeight(
+   GCG*                  gcg,                /**< GCG data structure */
+   SCIP_Real             dualweight          /**< the weighting applied to the dual variables */
+   );
+
+/** sets the Lagrangian relaxation weight for the pricing objective */
+extern
+void GCGsetPricingObjRelaxWeight(
+   GCG*                  gcg,                /**< GCG data structure */
+   SCIP_Real*            weights,            /**< the Lagrangian relaxation weight applied to the master constraints */
+   int*                  weightids,          /**< the constraint ids for the relaxation weights */
+   int                   nweights            /**< the number of weights */
    );
 
 /** creates a new master variable corresponding to the given gcg column */
@@ -284,12 +288,47 @@ SCIP_Real GCGcomputeRedCostGcgCol(
    SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
    );
 
-
 /** compute master and cut coefficients of column */
 GCG_EXPORT
 SCIP_RETCODE GCGcomputeColMastercoefs(
    GCG*                  gcg,                /**< GCG data structure */
    GCG_COL*              gcgcol              /**< GCG column data structure */
+   );
+
+/** includes a pricing callback plugin into the pricer data */
+extern
+SCIP_RETCODE GCGpricerIncludePricingcb(
+   GCG*                  gcg,                /**< GCG data structure */
+   const char*           name,               /**< name of pricing callback plugin */
+   const char*           desc,               /**< description of pricing callback plugin */
+   int                   priority,           /**< priority of pricing callback plugin */
+   GCG_DECL_PRICINGCBFREE((*pricingcbfree)), /**< destructor of the pricing callback */
+   GCG_DECL_PRICINGCBINIT((*pricingcbinit)), /**< initialize the pricing callback */
+   GCG_DECL_PRICINGCBEXIT((*pricingcbexit)), /**< deinitialize the pricing callback */
+   GCG_DECL_PRICINGCBINITSOL((*pricingcbinitsol)),/**< solving process initialization method of the pricing callback */
+   GCG_DECL_PRICINGCBEXITSOL((*pricingcbexitsol)),/**< solving process deinitialization method of the pricing callback */
+   GCG_DECL_PRICINGCBPREPRICING((*pricingcbprepricing)),/**< pre-pricing method of the pricing callback */
+   GCG_DECL_PRICINGCBPOSTPRICING((*pricingcbpostpricing)),/**< post-pricing method of the pricing callback */
+   GCG_PRICINGCBDATA*  pricingcbdata         /**< pricing callback data */
+   );
+
+/** returns the available pricing callback plugins */
+extern
+GCG_PRICINGCB** GCGpricerGetPricingcbs(
+   GCG*                  gcg                 /**< GCG data structure */
+   );
+
+/** returns the number of available pricing callback plugins */
+extern
+int GCGpricerGetNPricingcbs(
+   GCG*                  gcg                 /**< GCG data structure */
+   );
+
+/** returns the pricing callback plugin of the given name, or NULL if it doesn't exist */
+extern
+GCG_PRICINGCB* GCGpricerFindPricingcb(
+   GCG*                  gcg,                /**< GCG data structure */
+   const char*           name                /**< the name of the pricing callback plugin */
    );
 
 /** get colpool */

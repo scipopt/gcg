@@ -350,6 +350,7 @@ LIBOBJ = \
 			gcg/heur_gcgveclendiving.o \
 			gcg/heur_gcgzirounding.o \
 			gcg/heur_greedycolsel.o \
+			gcg/heur_ipcolgen.o \
 			gcg/heur_mastercoefdiving.o \
 			gcg/heur_masterdiving.o \
 			gcg/heur_masterfracdiving.o \
@@ -374,6 +375,7 @@ LIBOBJ = \
 			gcg/presol_roundbound.o \
 			gcg/pricer_gcg.o \
 			gcg/pricestore_gcg.o \
+			gcg/pricingcb.o \
 			gcg/pricingjob.o \
 			gcg/pricingprob.o \
 			gcg/reader_blk.o \

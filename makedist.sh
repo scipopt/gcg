@@ -41,8 +41,7 @@ $NAME/cmake/Modules/*.cmake \
 $NAME/release-notes/release-notes* \
 $NAME/check/check.sh $NAME/check/evalcheck.sh $NAME/check/check.awk $NAME/check/eval.sh \
 $NAME/check/testset/short.test $NAME/check/testset/short.solu $NAME/check/cmpres.awk \
-$NAME/settings/earlybranching.set \
-$NAME/settings/heurpricing.set \
+$NAME/settings/default.set \
 $NAME/src/depend.* \
 $NAME/src/*.c $NAME/src/*.h \
 $NAME/src/gcg/*.c $NAME/src/gcg/*.cpp $NAME/src/gcg/*.h $NAME/src/gcg/*.hpp \

@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2022 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /* This program is free software; you can redistribute it and/or             */
@@ -25,63 +25,36 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   gcg.h
- * @ingroup PUBLICCOREAPI
- * @brief  GCG interface methods
+/**@file   type_pricetype.h
+ * @ingroup DECOMP
+ * @brief  type definition for price type
+ * @author Gerald Gamrath
  * @author Martin Bergner
+ * @ingroup PRICERS
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-/* #define SCIP_STATISTIC */
+#ifndef __GCG_TYPE_PRICETYPE_H__
+#define __GCG_TYPE_PRICETYPE_H__
 
-#ifndef GCG_H_
-#define GCG_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "scip/scip.h"
-#include "gcg/def.h"
 
-#include "gcg/type_branchgcg.h"
-#include "gcg/type_classifier.h"
-#include "gcg/type_colpool.h"
-#include "gcg/type_consclassifier.h"
-#include "gcg/type_decomp.h"
-#include "gcg/type_detector.h"
-#include "gcg/type_extendedmasterconsdata.h"
-#include "gcg/type_gcg.h"
-#include "gcg/type_gcgcol.h"
-#include "gcg/type_gcgpqueue.h"
-#include "gcg/type_masterdiving.h"
-#include "gcg/type_origdiving.h"
-#include "gcg/type_parameter.h"
-#include "gcg/type_pricetype.h"
-#include "gcg/type_pricingcb.h"
-#include "gcg/type_pricingjob.h"
-#include "gcg/type_pricingprob.h"
-#include "gcg/type_pricingstatus.h"
-#include "gcg/type_score.h"
-#include "gcg/type_solver.h"
-#include "gcg/type_varclassifier.h"
+enum GCG_Pricetype
+{
+   GCG_PRICETYPE_UNKNOWN = -1,               /**< unknown pricing type */
+   GCG_PRICETYPE_INIT = 0,                   /**< initial pricing */
+   GCG_PRICETYPE_FARKAS = 1,                 /**< farkas pricing */
+   GCG_PRICETYPE_REDCOST = 2                 /**< redcost pricing */
+};
+typedef enum GCG_Pricetype GCG_PRICETYPE;
 
-/* include public interfaces, s.t. the user only needs to include gcg.h */
-#include "gcg/pub_clscons.h"
-#include "gcg/pub_clsvar.h"
-#include "gcg/pub_colpool.h"
-#include "gcg/pub_decomp.h"
-#include "gcg/pub_extendedmasterconsdata.h"
-#include "gcg/pub_gcg.h"
-#include "gcg/pub_gcgcol.h"
-#include "gcg/pub_gcgheur.h"
-#include "gcg/pub_gcgpqueue.h"
-#include "gcg/pub_gcgsepa.h"
-#include "gcg/pub_gcgvar.h"
-#include "gcg/pub_pricingcb.h"
-#include "gcg/pub_pricingjob.h"
-#include "gcg/pub_pricingprob.h"
-#include "gcg/pub_score.h"
-#include "gcg/pub_solver.h"
 
-#include "gcg/relax_gcg.h"
-#include "gcg/gcg_general.h"
+#ifdef __cplusplus
+}
+#endif
 
-#endif /* GCG_H_ */
+#endif

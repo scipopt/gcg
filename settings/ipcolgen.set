@@ -1,0 +1,12 @@
+#
+heuristics/ipcolgen/freq = 5
+heuristics/ipcolgen/solveauxproblem = TRUE
+heuristics/ipcolgen/dualweight = 1.0
+heuristics/ipcolgen/relaxweight = 2.0
+heuristics/ipcolgen/minfixingrate = 0.2
+heuristics/ipcolgen/priority = -1110000
+heuristics/ipcolgen/performlpfixings = FALSE
+heuristics/ipcolgen/mininitialgap = 0.5
+
+#
+display/freq = 10

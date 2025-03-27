@@ -186,6 +186,8 @@
 #include "gcg/heur_restmaster.h"
 #include "gcg/heur_setcover.h"
 
+#include "heur_ipcolgen.h"
+
 #ifdef WITH_CLIQUER
 #include "gcg/solver_cliquer.h"
 #endif
@@ -320,6 +322,8 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( GCGincludeHeurRelaxcolsel(gcg) );
    SCIP_CALL( GCGincludeHeurRestmaster(gcg) );
    SCIP_CALL( GCGincludeHeurSetcover(gcg) );
+
+   SCIP_CALL( SCIPincludeHeurIPcolgen(gcg) );
 #endif
 
 #if USESEPA
