@@ -58,15 +58,15 @@
 #define SOLVER_HEURENABLED   TRUE            /**< indicates whether the solver should be enabled */
 #define SOLVER_EXACTENABLED  FALSE           /**< indicates whether the solver should be enabled */
 
-#define DEFAULT_NODELIMIT    200
-#define DEFAULT_DENSITY      1.0
-#define DEFAULT_DENSITYSTART 75
+#define DEFAULT_MAXNODES     200
+#define DEFAULT_MAXDENSITY   1.0
+#define DEFAULT_SKIPCHECKSNODELIMIT 75
 #define DEFAULT_USELINCUTOFF TRUE
 #define DEFAULT_SLOPE        -1980
 #define DEFAULT_INTERCEPT    2000
 #define DEFAULT_OBJCOEFDISTR 0
 #define DEFAULT_USEMULTIPL   FALSE
-#define DEFAULT_CLIQUECONSTHRESH 0.5
+#define DEFAULT_MAXCLIQUECONSPERC 0.5
 
 /*
  * Data structures.
@@ -88,10 +88,10 @@ typedef enum cliquerConsType CLIQUER_CONSTYPE;
 
 struct GCG_SolverData
 {
-   SCIP_Real             density;            /**< graph density threshold above which to use solver */
-   int                   densitystart;       /**< graph node threshold above which to apply density and linear cutoff */
-   int                   nodelimit;          /**< graph node threshold below which to use solver */
-   SCIP_Real             cliqueconsthresh;   /**< clique constraint percentage threshold below which to use solver */
+   SCIP_Real             maxdensity;         /**< maximum graph density the solver should run on */
+   int                   skipchecksnodelimit;/**< maximum number of graph nodes for which additional checks (density threshold / linear cutoff) are skipped */
+   int                   maxnodes;           /**< maximum number of graph nodes the solver should run on */
+   SCIP_Real             maxcliqueconsperc;  /**< maximum clique constraint percentage the solver should run on */
    SCIP_Bool*            isnotapplicable;    /**< array tracking if solver is not applicable in root node (& no cuts) */
    int                   objcoefdistr;       /**< param deciding strategy for distributing obj coefs of coupling vars */
    SCIP_Bool             usemultiplicity;    /**< boolean for activating usage of var multiplicities for weighting */
@@ -2178,8 +2178,8 @@ SCIP_RETCODE solveCliquer(
    }
 
    /* Cliquer may perform worse than other solvers (e.g. SCIP) on problems containing many clique inequalities:
-    * ->    Thus, we do not apply the solver if the percentage of clique constraints exceeds a threshold parameter. */
-   if( SCIPisLT(pricingprob, solver->cliqueconsthresh, 1.0) )
+    * ->    Thus, we do not apply the solver if the percentage of clique constraints exceeds a limit parameter. */
+   if( SCIPisLT(pricingprob, solver->maxcliqueconsperc, 1.0) )
    {
       cliqueconscount = 0;
       for( i = 0; i < nconss; i++ )
@@ -2188,9 +2188,9 @@ SCIP_RETCODE solveCliquer(
             cliqueconscount++;
       }
 
-      if( SCIPisGT(pricingprob, ((SCIP_Real)cliqueconscount / nconss), solver->cliqueconsthresh) )
+      if( SCIPisGT(pricingprob, ((SCIP_Real)cliqueconscount / nconss), solver->maxcliqueconsperc) )
       {
-         SCIPdebugMessage("Exit: Clique-constraint percentage threshold exceeded, clique-cons perc.: %3.f\n",
+         SCIPdebugMessage("Exit: Clique-constraint percentage limit exceeded, clique-cons perc.: %3.f\n",
                           ((SCIP_Real)cliqueconscount / nconss));
          *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
          goto TERMINATE;
@@ -2535,18 +2535,18 @@ SCIP_RETCODE solveCliquer(
                     probnr, SCIPgetDepth(GCGgetMasterprob(gcg)), indexcount, density);
 
    /* Test if the node threshold is respected */
-   if( SCIPisGT(pricingprob, indexcount, solver->nodelimit) )
+   if( SCIPisGT(pricingprob, indexcount, solver->maxnodes) )
    {
       SCIPdebugMessage("Exit: Node threshold exceeded, number of nodes: %i.\n", indexcount);
       *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
       goto TERMINATE;
    }
 
-   /* Only apply density / linear cutoff if density start threshold is exceeded. */
-   if( SCIPisGT(pricingprob, indexcount, solver->densitystart) )
+   /* Only apply density / linear cutoff if limit is exceeded. */
+   if( SCIPisGT(pricingprob, indexcount, solver->skipchecksnodelimit) )
    {
       /* Test if the density criteria is met */
-      if( SCIPisGT(pricingprob, density, solver->density) )
+      if( SCIPisGT(pricingprob, density, solver->maxdensity) )
       {
          SCIPdebugMessage("Exit: Density criteria not met, density: %g.\n", density);
          *status = GCG_PRICINGSTATUS_NOTAPPLICABLE;
@@ -2837,21 +2837,21 @@ SCIP_RETCODE GCGincludeSolverCliquer(
          solverFreeCliquer, solverInitCliquer, solverExitCliquer,
          solverInitsolCliquer, solverExitsolCliquer, solverdata) );
 
-   SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/cliquer/density",
-          "graph density threshold below which to use solver",
-          &solverdata->density, TRUE, DEFAULT_DENSITY, 0.0, 1.0, NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/cliquer/maxdensity",
+          "maximum graph density the solver should run on",
+          &solverdata->maxdensity, TRUE, DEFAULT_MAXDENSITY, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/cliquer/densitystart",
-          "graph node threshold above which to apply density threshold / linear cutoff (below not applied)",
-          &solverdata->densitystart, TRUE, DEFAULT_DENSITYSTART, 0, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/cliquer/skipchecksnodelimit",
+          "maximum number of graph nodes for which additional checks (density threshold / linear cutoff) are skipped",
+          &solverdata->skipchecksnodelimit, TRUE, DEFAULT_SKIPCHECKSNODELIMIT, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/cliquer/maxcliqueconsperc",
-          "threshold for share of clique constraints in pricing problem below which to use solver (disabled = 1.0)",
-          &solverdata->cliqueconsthresh, TRUE, DEFAULT_CLIQUECONSTHRESH, 0.0, 1.0, NULL, NULL) );
+          "maximum percentage share of clique constraints the solver should run on (disabled = 1.0)",
+          &solverdata->maxcliqueconsperc, TRUE, DEFAULT_MAXCLIQUECONSPERC, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/cliquer/nodelimit",
-          "graph node threshold below which to use solver",
-          &solverdata->nodelimit, TRUE, DEFAULT_NODELIMIT, 0, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/cliquer/maxnodes",
+          "maximum number of graph nodes the solver should run on",
+          &solverdata->maxnodes, TRUE, DEFAULT_MAXNODES, 0, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricingsolver/cliquer/objcoefdistr",
           "distribution of objective coefficients of coupling variables (disabled = 0, natural share = 1, "
