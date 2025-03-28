@@ -760,8 +760,10 @@ SCIP_RETCODE createGraphNewDetection(
       int conscolor;
 
       /**experimental */
-      if( !masterconssrelevant[i] )
+      if( !masterconssrelevant[i] ) {
+         currentnode++;
          continue;
+      }
       /*experimental end */
 
       masterconsid= partialdec->getMasterconss()[i];
