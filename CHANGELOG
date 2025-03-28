@@ -111,6 +111,20 @@ New/changed parameters:
 - moved parameter 'sepa/master/paramsetting' to 'sepa/original/paramsetting'
 - mdded parameter 'branching/compbnd/useMDMH'
 - added parameter 'branching/compbnd/useMRMH'
+- added parameter 'pricingsolver/cliquer/skipchecksnodelimit'
+- added parameter 'pricingsolver/cliquer/maxcliqueconsperc'
+- added parameter 'pricingsolver/cliquer/maxnodes'
+- added parameter 'pricingsolver/cliquer/objcoefdistr'
+- added parameter 'pricingsolver/cliquer/usemultiplicity'
+- added parameter 'pricingsolver/cliquer/lincutoff/enable'
+- added parameter 'pricingsolver/cliquer/lincutoff/slope'
+- added parameter 'pricingsolver/cliquer/lincutoff/intercept'
+- changed and renamed parameter 'pricingsolver/cliquer/density' to 'pricingsolver/cliquer/maxdensity': now used as upper bound
+
+Bug fixes
+---------
+
+- Cliquer pricing problem solver: fixed handling of fixed variables, fixed check of linked variables, fixed pricing problem compatibility check
 
 Miscellaneous
 -------------
