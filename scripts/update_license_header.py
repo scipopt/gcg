@@ -5,6 +5,7 @@ import re
 import sys
 import logging
 import argparse
+import glob
 
 
 # #############################################################################
@@ -15,7 +16,7 @@ DEFAULT_LOG_LVL         = logging.INFO
 DEFAULT_LOGFILE_NAME    = "update_license_header.log"
 DEFAULT_LOG_TO_STDOUT   = True
 
-DEFAULT_PATHS           = ["check", "doc", "src", "tests", "stats"]
+DEFAULT_PATHS           = ["*", "check/*", "doc/*", "doc/resources/**", "src/*", "src/gcg/**", "src/graph/**", "src/symmetry/**", "tests/**", "stats/**"]
 DEFAULT_FILE_EXTENSIONS = ["c", "h", "cpp", "hpp", "awk", "sh", "dag", ""]
 
 DEFAULT_LOG_PADDING     = 28
@@ -60,10 +61,6 @@ def replace_license_header(path_to_gcg_root, paths_from_gcg_root, file_ext_to_co
     logging.info(f"*** Replacing license in paths: {paths_from_gcg_root} ***")
     logging.info(f"*** Replacing license in file extensions: {file_ext_to_consider} ***")
 
-    match_no_ext = ("" in file_ext_to_consider)
-    if match_no_ext:
-        file_ext_to_consider.remove("")
-    
     # Read new license header
     with open(path_to_new_lic_header, "r") as f:
         new_license_header_c = f.read()
@@ -80,38 +77,40 @@ def replace_license_header(path_to_gcg_root, paths_from_gcg_root, file_ext_to_co
 
     # Find and replace license header
     for path in paths_from_gcg_root:
-        logging.info(f"*** Processing path: {path} ***")
-        for root, dirs, files in os.walk(os.path.join(path_to_gcg_root, path)):
-            for file in files:
-                name, ext = os.path.splitext(file)
-                ext = ext.strip(".")
-                if ext in file_ext_to_consider or (match_no_ext and not "." in file):
-                    file_path = os.path.join(root, file)
-                    logging.info("Checking file: ".ljust(DEFAULT_LOG_PADDING) + f"{file_path}")
-                    try:
-                        with open(file_path, "r", encoding="utf-8") as f:
-                            content = f.read()
-                    except UnicodeDecodeError:
-                        # If file is not UTF-8, skip it
-                        logging.warning("Skipping non-UTF-8 file: ".ljust(DEFAULT_LOG_PADDING) + f"{file_path}")
-                        continue
-                    # Match regex for license header
-                    for regex, new_lic_header in match_replace_pairs:
-                        result = re.search(regex, content)
-                        if result:
-                            if ignore_act_lic and result.group() == new_lic_header:
-                                logging.info("License up to date. Ignore: ".ljust(DEFAULT_LOG_PADDING) + f"{file_path}")
-                                continue
-                            logging.info("Updating license in: ".ljust(DEFAULT_LOG_PADDING) + f"{file_path}")
-                            l1, l2 = span_to_lines(content, result.span())
-                            logging.debug("Match lines: ".ljust(DEFAULT_LOG_PADDING) + f"{l1}-{l2}")
-                            logging.debug(f"Replacing matched header:\n{result.group()}")
-                            logging.debug(f"Replacing with:\n{new_lic_header}")
-                            if not dry_run:
-                                content = re.sub(regex, new_lic_header, content)
-                                with open(os.path.join(root, file), "w") as f:
-                                    f.write(content)
-                            break
+        joined_path = os.path.join(path_to_gcg_root, path)
+        logging.info(f"*** Processing path: {joined_path} ***")
+        for file in glob.glob(joined_path, recursive=True):
+            if not os.path.isfile(file):
+                continue
+
+            name, ext = os.path.splitext(file)
+            ext = ext.strip(".")
+            if ext in file_ext_to_consider:
+                logging.info("Checking file: ".ljust(DEFAULT_LOG_PADDING) + f"{file}")
+                try:
+                    with open(file, "r", encoding="utf-8") as f:
+                        content = f.read()
+                except UnicodeDecodeError:
+                    # If file is not UTF-8, skip it
+                    logging.warning("Skipping non-UTF-8 file: ".ljust(DEFAULT_LOG_PADDING) + f"{file}")
+                    continue
+                # Match regex for license header
+                for regex, new_lic_header in match_replace_pairs:
+                    result = re.search(regex, content)
+                    if result:
+                        if ignore_act_lic and result.group() == new_lic_header:
+                            logging.info("License up to date. Ignore: ".ljust(DEFAULT_LOG_PADDING) + f"{file}")
+                            continue
+                        logging.info("Updating license in: ".ljust(DEFAULT_LOG_PADDING) + f"{file}")
+                        l1, l2 = span_to_lines(content, result.span())
+                        logging.debug("Match lines: ".ljust(DEFAULT_LOG_PADDING) + f"{l1}-{l2}")
+                        logging.debug(f"Replacing matched header:\n{result.group()}")
+                        logging.debug(f"Replacing with:\n{new_lic_header}")
+                        if not dry_run:
+                            content = re.sub(regex, new_lic_header, content)
+                            with open(file, "w") as f:
+                                f.write(content)
+                        break
 
 
 # #############################################################################
@@ -173,4 +172,4 @@ if __name__ == '__main__':
                            args.path_to_new_license, 
                            args.dry_run,
                            args.ignore_act_lic)
-
+    print("Finished. Please replace the LICENSE file and update scipts/readers that write the license into files.")

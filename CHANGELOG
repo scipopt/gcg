@@ -131,6 +131,7 @@ Miscellaneous
 
 - enable OpenMP by default
 - increased minimal cmake version to 3.11
+- GCG is now licensed under the Apache 2.0 License, see http://www.apache.org/licenses/LICENSE-2.0
 
 
 @page RN37 Release notes for GCG 3.7
