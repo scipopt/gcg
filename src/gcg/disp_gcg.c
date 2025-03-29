@@ -197,13 +197,13 @@
 #define DISP_POSI_CURROWS       3400
 #define DISP_STRI_CURROWS       TRUE
 
-#define DISP_NAME_CUTS          "cuts"
-#define DISP_DESC_CUTS          "total number of cuts applied to the original LPs"
-#define DISP_HEAD_CUTS          "ocuts"
-#define DISP_WIDT_CUTS          5
-#define DISP_PRIO_CUTS          100
-#define DISP_POSI_CUTS          3500
-#define DISP_STRI_CUTS          TRUE
+#define DISP_NAME_OCUTS         "ocuts"
+#define DISP_DESC_OCUTS         "total number of cuts applied to the original LPs"
+#define DISP_HEAD_OCUTS         "ocuts"
+#define DISP_WIDT_OCUTS         5
+#define DISP_PRIO_OCUTS         100
+#define DISP_POSI_OCUTS         3500
+#define DISP_STRI_OCUTS         TRUE
 
 #define DISP_NAME_SEPAROUNDS    "separounds"
 #define DISP_DESC_SEPAROUNDS    "number of separation rounds performed at the current node"
@@ -357,13 +357,13 @@
 #define DISP_POSI_MCONSS        3150
 #define DISP_STRI_MCONSS        TRUE
 
-#define DISP_NAME_OCUTS         "ocuts"
-#define DISP_DESC_OCUTS         "total number of original cuts applied to the master LPs"
-#define DISP_HEAD_OCUTS         "ocuts"
-#define DISP_WIDT_OCUTS         5
-#define DISP_PRIO_OCUTS         80000
-#define DISP_POSI_OCUTS         3550
-#define DISP_STRI_OCUTS         TRUE
+#define DISP_NAME_MCUTS         "cuts"
+#define DISP_DESC_MCUTS         "total number of cuts applied to the master LPs"
+#define DISP_HEAD_MCUTS         "cuts"
+#define DISP_WIDT_MCUTS         4
+#define DISP_PRIO_MCUTS         80000
+#define DISP_POSI_MCUTS         3550
+#define DISP_STRI_MCUTS         TRUE
 
 struct SCIP_DispData
 {
@@ -756,13 +756,13 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputNCurRows)
 
 /** output method of display column to output file stream 'file' for number of applied cuts */
 static
-SCIP_DECL_DISPOUTPUT(SCIPdispOutputNAppliedCuts)
+SCIP_DECL_DISPOUTPUT(SCIPdispOutputNAppliedOCuts)
 {  /*lint --e{715}*/
    assert(disp != NULL);
-   assert(strcmp(SCIPdispGetName(disp), DISP_NAME_CUTS) == 0);
+   assert(strcmp(SCIPdispGetName(disp), DISP_NAME_OCUTS) == 0);
    assert(scip != NULL);
 
-   SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNCutsApplied(scip), DISP_WIDT_CUTS);
+   SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNCutsApplied(scip), DISP_WIDT_OCUTS);
 
    return SCIP_OKAY;
 }
@@ -1206,22 +1206,22 @@ SCIP_DECL_DISPOUTPUT(SCIPdispOutputMconss)
 
 /** output method of display column to output file stream 'file' */
 static
-SCIP_DECL_DISPOUTPUT(SCIPdispOutputOcuts)
+SCIP_DECL_DISPOUTPUT(SCIPdispOutputMcuts)
 {  /*lint --e{715}*/
    SCIP_DISPDATA* dispdata;
    assert(disp != NULL);
    dispdata = SCIPdispGetData(disp);
    assert(dispdata != NULL);
-   assert(strcmp(SCIPdispGetName(disp), DISP_NAME_OCUTS) == 0);
+   assert(strcmp(SCIPdispGetName(disp), DISP_NAME_MCUTS) == 0);
    assert(scip != NULL);
 
    if( SCIPgetStage(GCGgetMasterprob(dispdata->gcg)) >= SCIP_STAGE_SOLVING )
    {
-      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNCutsApplied(GCGgetMasterprob(dispdata->gcg)), DISP_WIDT_OCUTS);
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, SCIPgetNCutsApplied(GCGgetMasterprob(dispdata->gcg)), DISP_WIDT_MCUTS);
    }
    else
    {
-      SCIPdispInt(SCIPgetMessagehdlr(scip), file, 0, DISP_WIDT_OCUTS);
+      SCIPdispInt(SCIPgetMessagehdlr(scip), file, 0, DISP_WIDT_MCUTS);
    }
 
 
@@ -1373,11 +1373,11 @@ SCIP_RETCODE GCGincludeDispGcg(
             NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNCurRows, dispdata,
             DISP_WIDT_CURROWS, DISP_PRIO_CURROWS, DISP_POSI_CURROWS, DISP_STRI_CURROWS) );
 
-      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_CUTS, DISP_DESC_CUTS, DISP_HEAD_CUTS,
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_OCUTS, DISP_DESC_OCUTS, DISP_HEAD_OCUTS,
             SCIP_DISPSTATUS_AUTO,
             dispCopyGcg,
-            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNAppliedCuts, dispdata,
-            DISP_WIDT_CUTS, DISP_PRIO_CUTS, DISP_POSI_CUTS, DISP_STRI_CUTS) );
+            NULL, NULL, NULL, NULL, NULL, SCIPdispOutputNAppliedOCuts, dispdata,
+            DISP_WIDT_OCUTS, DISP_PRIO_OCUTS, DISP_POSI_OCUTS, DISP_STRI_OCUTS) );
 
       SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_SEPAROUNDS, DISP_DESC_SEPAROUNDS, DISP_HEAD_SEPAROUNDS,
             SCIP_DISPSTATUS_AUTO,
@@ -1481,9 +1481,9 @@ SCIP_RETCODE GCGincludeDispGcg(
             SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMconss, dispdata,
             DISP_WIDT_MCONSS, DISP_PRIO_MCONSS, DISP_POSI_MCONSS, DISP_STRI_MCONSS) );
 
-      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_OCUTS, DISP_DESC_OCUTS, DISP_HEAD_OCUTS,
-            SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputOcuts, dispdata,
-            DISP_WIDT_OCUTS, DISP_PRIO_OCUTS, DISP_POSI_OCUTS, DISP_STRI_OCUTS) );
+      SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_MCUTS, DISP_DESC_MCUTS, DISP_HEAD_MCUTS,
+            SCIP_DISPSTATUS_AUTO, dispCopyGcg, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputMcuts, dispdata,
+            DISP_WIDT_MCUTS, DISP_PRIO_MCUTS, DISP_POSI_MCUTS, DISP_STRI_MCUTS) );
 
       SCIP_CALL( SCIPincludeDisp(origprob, DISP_NAME_DEGENERACY, DISP_DESC_DEGENERACY, DISP_HEAD_DEGENERACY,
             SCIP_DISPSTATUS_AUTO, NULL, NULL, NULL, NULL, NULL, NULL, SCIPdispOutputDegeneracy, dispdata,
