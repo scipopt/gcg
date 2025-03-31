@@ -416,6 +416,16 @@ void GCGpricingcbSetData(
 
 /* new callback setter methods */
 
+/** sets priority of the pricing callback */
+void GCGpricingcbSetPriority(
+   GCG_PRICINGCB*        pricingcb,          /**< pricing callback */
+   int                   priority            /**< new priority of the pricing callback */
+   )
+{
+   assert(pricingcb != NULL);
+   pricingcb->priority = priority;
+}
+
 /** sets destructor callback of the pricing callback */
 void GCGpricingcbSetFree(
    GCG_PRICINGCB*        pricingcb,          /**< pricing callback */
