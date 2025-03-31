@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #*                                                                           *
-#*                  This file is part of the program                         *
+#*                  This file is part of the program and library             *
 #*          GCG --- Generic Column Generation                                *
 #*                  a Dantzig-Wolfe decomposition based extension            *
 #*                  of the branch-cut-and-price framework                    *
@@ -481,7 +481,7 @@ function printTeX_preamble(){
 cat > ${REPORTFILE} << EndOfMessage
 %* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 %*                                                                           *
-%*                  This file is part of the program                         *
+%*                  This file is part of the program and library             *
 %*          GCG --- Generic Column Generation                                *
 %*                  a Dantzig-Wolfe decomposition based extension            *
 %*                  of the branch-cut-and-price framework                    *

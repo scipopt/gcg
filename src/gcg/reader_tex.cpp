@@ -1,6 +1,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
@@ -207,7 +207,7 @@ SCIP_RETCODE writeTexHeader(
    /* write header */
    SCIPinfoMessage(scip, file, "%% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n");
    SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
-   SCIPinfoMessage(scip, file, "%% *                  This file is part of the program                         * \n");
+   SCIPinfoMessage(scip, file, "%% *                  This file is part of the program and library             * \n");
    SCIPinfoMessage(scip, file, "%% *          GCG --- Generic Column Generation                                * \n");
    SCIPinfoMessage(scip, file, "%% *                  a Dantzig-Wolfe decomposition based extension            * \n");
    SCIPinfoMessage(scip, file, "%% *                  of the branch-cut-and-price framework                    * \n");
