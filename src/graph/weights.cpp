@@ -89,9 +89,6 @@ int Weights::calculate(SCIP_VAR* var) const
    case SCIP_VARTYPE_INTEGER:
       weight = vinteger;
       break;
-   case SCIP_VARTYPE_IMPLINT:
-      weight = vimplint;
-      break;
    case SCIP_VARTYPE_BINARY:
       weight = vbinary;
       break;

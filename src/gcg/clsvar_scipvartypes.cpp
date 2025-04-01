@@ -116,8 +116,6 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
       {
          if ( vT == SCIP_VARTYPE_BINARY )
             vT = SCIP_VARTYPE_INTEGER;
-         if( vT == SCIP_VARTYPE_IMPLINT )
-            vT = SCIP_VARTYPE_CONTINUOUS;
       }
 
       /* check whether the variable's vartype is new */
@@ -158,11 +156,6 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
             name = "int";
             if( onlycontsub )
                classifier->setClassDecompInfo(c, gcg::LINKING);
-            if( onlybinmaster )
-               classifier->setClassDecompInfo(c, gcg::BLOCK);
-            break;
-         case SCIP_VARTYPE_IMPLINT:
-            name = "impl";
             if( onlybinmaster )
                classifier->setClassDecompInfo(c, gcg::BLOCK);
             break;

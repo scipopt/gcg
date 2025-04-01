@@ -1638,8 +1638,8 @@ SCIP_RETCODE GCGcreateArtificialVar(
    newvardata->data.mastervardata.index = -1;
 
    /* create variable in the master problem */
-   SCIP_CALL( SCIPcreateVar(scip, newvar, name,
-         0.0, SCIPinfinity(scip), objcoef, SCIP_VARTYPE_IMPLINT,
+   SCIP_CALL( SCIPcreateVarImpl(scip, newvar, name,
+         0.0, SCIPinfinity(scip), objcoef, SCIP_VARTYPE_CONTINUOUS, SCIP_IMPLINTTYPE_WEAK,
          TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
 
    return SCIP_OKAY;
