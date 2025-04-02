@@ -36,10 +36,6 @@
 #include <cassert>
 #include <cstring>
 
-#if defined(_WIN32) || defined(_WIN64)
-#else
-#include <strings.h> /*lint --e{766}*/ /* needed for strcasecmp() */
-#endif
 #include <cstdio>
 #include <vector>
 #include <sstream>
