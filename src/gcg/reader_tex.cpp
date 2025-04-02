@@ -964,7 +964,7 @@ SCIP_RETCODE GCGincludeReaderTex(
    GCG*                  gcg                 /*< GCG data structure */
    )
 {
-   SCIP_READERDATA* readerdata;
+   SCIP_READERDATA* readerdata = NULL;
    SCIP* origprob = GCGgetOrigprob(gcg);
    assert(origprob != NULL);
    /* create dec reader data */
