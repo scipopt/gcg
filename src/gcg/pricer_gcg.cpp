@@ -1823,7 +1823,6 @@ SCIP_RETCODE ObjPricerGcg::computeColExtendedMasterconss(
    SCIP_Real* extendedmasterconscoeffs;
    SCIP_Real* extendedmasterconsbounds;
 
-   assert(scip_ != NULL);
    assert(solvars != NULL);
    assert(solvals != NULL);
 

@@ -793,7 +793,7 @@ SCIP_RETCODE tightenPricingVarBound(
 {
    SCIP* masterprob;
 
-   assert(masterprob != NULL);
+   assert(gcg != NULL);
    assert(pricingvar != NULL);
    assert(consdata != NULL);
    assert(consdata->nactivated >= 1);
