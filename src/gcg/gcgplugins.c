@@ -47,6 +47,7 @@
  */
 #include "scip/cons_and.h"
 #include "scip/cons_bounddisjunction.h"
+#include "scip/cons_fixedvar.h"
 #include "scip/cons_indicator.h"
 #include "scip/cons_integral.h"
 #include "scip/cons_knapsack.h"
@@ -71,6 +72,7 @@
 #include "scip/heur_crossover.h"
 #include "scip/heur_dins.h"
 #include "scip/heur_distributiondiving.h"
+#include "scip/heur_dks.h"
 #include "scip/heur_dps.h"
 #include "scip/heur_dualval.h"
 #include "scip/heur_farkasdiving.h"
@@ -141,6 +143,7 @@
 #include "scip/presol_dualinfer.h"
 #include "scip/presol_dualsparsify.h"
 #include "scip/presol_implics.h"
+#include "scip/presol_implint.h"
 #include "scip/presol_inttobinary.h"
 #include "scip/presol_redvub.h"
 #include "scip/presol_sparsify.h"
@@ -319,6 +322,7 @@ SCIP_RETCODE GCGincludeGcgPlugins(
 
    SCIP_CALL( SCIPincludeConshdlrAnd(scip) );
    SCIP_CALL( SCIPincludeConshdlrBounddisjunction(scip) );
+   SCIP_CALL( SCIPincludeConshdlrFixedvar(scip) );
    SCIP_CALL( SCIPincludeConshdlrLinear(scip) ); /* linear must be first due to constraint upgrading */
    SCIP_CALL( SCIPincludeConshdlrIndicator(scip) );
    SCIP_CALL( SCIPincludeConshdlrIntegral(scip) );
@@ -357,6 +361,7 @@ SCIP_RETCODE GCGincludeGcgPlugins(
    SCIP_CALL( SCIPincludePresolDualinfer(scip) );
    // SCIP_CALL( SCIPincludePresolGateextraction(scip) );  @todo: GCG cannot handle this presolver currently
    SCIP_CALL( SCIPincludePresolImplics(scip) );
+   SCIP_CALL( SCIPincludePresolImplint(scip) );
    SCIP_CALL( SCIPincludePresolInttobinary(scip) );
    SCIP_CALL( SCIPincludePresolRedvub(scip) );
    SCIP_CALL( SCIPincludePresolTrivial(scip) );
@@ -401,6 +406,7 @@ SCIP_RETCODE GCGincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurCrossover(scip) );
    SCIP_CALL( SCIPincludeHeurDins(scip) );
    SCIP_CALL( SCIPincludeHeurDistributiondiving(scip) );
+   SCIP_CALL( SCIPincludeHeurDKS(scip) );
    SCIP_CALL( SCIPincludeHeurDps(scip) );
    SCIP_CALL( SCIPincludeHeurDualval(scip) );
    SCIP_CALL( SCIPincludeHeurFarkasdiving(scip) );
