@@ -62,6 +62,16 @@ struct GCG_ClassifierData
 {
 };
 
+/* local enum of possible classes considered by this classifier */
+enum GCG_CLSVAR_VARTYPE_CLASS
+{
+   GCG_CLSVAR_VARTYPE_CLASS_BINARY              = 0,
+   GCG_CLSVAR_VARTYPE_CLASS_INTEGER             = 1,
+   GCG_CLSVAR_VARTYPE_CLASS_CONTINUOUS_IMPLINT  = 2,
+   GCG_CLSVAR_VARTYPE_CLASS_CONTINUOUS          = 3,
+   GCG_CLSVAR_VARTYPE_CLASS_UNKNOWN             = 4
+};
+
 
 /*
  * Local methods
@@ -93,8 +103,8 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
    }
 
    // CLASSIFICATION
-   std::vector < SCIP_VARTYPE > foundVartypes( 0 );
-   std::vector<int> classForVars = std::vector<int>( detprobdata->getNVars(), - 1 );
+   std::vector<GCG_CLSVAR_VARTYPE_CLASS> foundVartypes;
+   std::vector<int> classForVars(detprobdata->getNVars(), -1);
    gcg::VarPartition* classifier;
 
    SCIP_Bool onlycontsub;
@@ -109,32 +119,53 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
       SCIP_VAR* var;
       bool found = false;
       var = detprobdata->getVar(i);
-      SCIP_VARTYPE vT = SCIPvarGetType( var );
-      size_t vartype;
+      SCIP_VARTYPE vt = SCIPvarGetType(var);
+      GCG_CLSVAR_VARTYPE_CLASS vtc;
+      size_t j;
 
       if( onlycontsub )
       {
-         if ( vT == SCIP_VARTYPE_BINARY )
-            vT = SCIP_VARTYPE_INTEGER;
+         if ( vt == SCIP_VARTYPE_BINARY )
+            vt = SCIP_VARTYPE_INTEGER;
+      }
+
+      switch( vt )
+      {
+         case SCIP_VARTYPE_BINARY:
+            vtc = GCG_CLSVAR_VARTYPE_CLASS_BINARY;
+            break;
+         case SCIP_VARTYPE_INTEGER:
+            vtc = GCG_CLSVAR_VARTYPE_CLASS_INTEGER;
+            break;
+         case SCIP_VARTYPE_CONTINUOUS:
+            if( onlycontsub || SCIPvarGetImplType(var) == SCIP_IMPLINTTYPE_NONE )
+               vtc = GCG_CLSVAR_VARTYPE_CLASS_CONTINUOUS;
+            else
+               vtc = GCG_CLSVAR_VARTYPE_CLASS_CONTINUOUS_IMPLINT;
+            break;
+         default:
+            vtc = GCG_CLSVAR_VARTYPE_CLASS_UNKNOWN;
+            SCIPwarningMessage(origprob, "Encountered unknown variable type: %d.\n", vt);
+            break;
       }
 
       /* check whether the variable's vartype is new */
-      for( vartype = 0; vartype < foundVartypes.size(); ++ vartype )
+      for( j = 0; j < foundVartypes.size(); ++ j )
       {
-         if( foundVartypes[vartype] == vT )
+         if( foundVartypes[j] == vtc )
          {
             found = true;
             break;
          }
       }
       /* if it is new, create a new class index */
-      if( ! found )
+      if( !found )
       {
-         foundVartypes.push_back( vT );
+         foundVartypes.push_back(vtc);
          classForVars[i] = (int) foundVartypes.size() - 1;
       }
       else
-         classForVars[i] = (int) vartype;
+         classForVars[i] = (int) j;
    }
 
    /* secondly, use these information to create a VarPartition */
@@ -147,19 +178,24 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
       std::stringstream text;
       switch( foundVartypes[c] )
       {
-         case SCIP_VARTYPE_BINARY:
+         case GCG_CLSVAR_VARTYPE_CLASS_BINARY:
             name = "bin";
             if( onlybinmaster )
                classifier->setClassDecompInfo(c, gcg::LINKING);
             break;
-         case SCIP_VARTYPE_INTEGER:
+         case GCG_CLSVAR_VARTYPE_CLASS_INTEGER:
             name = "int";
             if( onlycontsub )
                classifier->setClassDecompInfo(c, gcg::LINKING);
             if( onlybinmaster )
                classifier->setClassDecompInfo(c, gcg::BLOCK);
             break;
-         case SCIP_VARTYPE_CONTINUOUS:
+         case GCG_CLSVAR_VARTYPE_CLASS_CONTINUOUS_IMPLINT:
+            name = "impl";
+            if( onlybinmaster )
+               classifier->setClassDecompInfo(c, gcg::BLOCK);
+            break;
+         case GCG_CLSVAR_VARTYPE_CLASS_CONTINUOUS:
             name = "cont";
             if( onlycontsub )
                classifier->setClassDecompInfo(c, gcg::BLOCK);
@@ -170,18 +206,18 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
             name = "newVartype";
             break;
       }
-      classifier->setClassName( c, name.c_str() );
+      classifier->setClassName(c, name.c_str());
       text << "This class contains all variables that are of (SCIP) vartype \"" << name << "\".";
-      classifier->setClassDescription( c, text.str().c_str() );
+      classifier->setClassDescription(c, text.str().c_str());
    }
 
    /* copy the variable assignment information found in first step */
    for( int i = 0; i < classifier->getNVars(); ++ i )
    {
-      classifier->assignVarToClass( i, classForVars[i] );
+      classifier->assignVarToClass(i, classForVars[i]);
    }
 
-   SCIPverbMessage(origprob, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes\n", classifier->getName(), classifier->getNClasses() ) ;
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d different variable classes\n", classifier->getName(), classifier->getNClasses()) ;
 
    detprobdata->addVarPartition(classifier);
    return SCIP_OKAY;
