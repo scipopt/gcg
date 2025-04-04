@@ -84,7 +84,10 @@ int Weights::calculate(SCIP_VAR* var) const
 
    switch ( SCIPvarGetType(var) ) {
    case SCIP_VARTYPE_CONTINUOUS:
-      weight = vcontinous;
+      if( SCIPvarGetImplType(var) != SCIP_IMPLINTTYPE_NONE )
+         weight = vimplint;
+      else
+         weight = vcontinous;
       break;
    case SCIP_VARTYPE_INTEGER:
       weight = vinteger;
