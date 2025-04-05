@@ -42,3 +42,4 @@ __pycache__
 *.set
 *.test
 *.solu
+plots/
