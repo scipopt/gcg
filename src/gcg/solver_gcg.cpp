@@ -561,17 +561,20 @@ SCIP_RETCODE solveProblem(
    solverdata->count++;
 
 #ifdef _OPENMP
-   int nthreads = GCGpricerGetMaxNThreads(gcg);
-   if( nthreads == 0 )
-      nthreads = omp_get_max_threads();
+   int nthreads;
+   int maxthreads = GCGpricerGetMaxNThreads(gcg);
+   if( maxthreads == 0 )
+      maxthreads = omp_get_max_threads();
    else
-      nthreads = MIN(nthreads, omp_get_max_threads());
-   nthreads = (int) MAX(nthreads / solverdata->nrelpricingprobs, 1);
+      maxthreads = MIN(maxthreads, omp_get_max_threads());
+   nthreads = maxthreads / solverdata->nrelpricingprobs;
    /* @todo: free threads should be assigned to expensive pps or even better:
       use additional threads (dynamically during solving) if other pps terminated */
    assert(solverdata->relpricingprobidxs[probnr] >= 0);
-   if( solverdata->relpricingprobidxs[probnr] + 1 <= (nthreads % solverdata->nrelpricingprobs) )
+   if( solverdata->relpricingprobidxs[probnr] + 1 <= (maxthreads % solverdata->nrelpricingprobs) )
       nthreads++;
+   
+   nthreads = MAX(nthreads, 1);
 
    if( GCGpricerGetMaxNThreads(subgcg) != nthreads )
    {
