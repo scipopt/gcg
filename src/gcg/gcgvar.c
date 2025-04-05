@@ -49,6 +49,15 @@
  * Vardata methods
  */
 
+/** callback method called when a GCG variable is copied */
+static
+SCIP_DECL_VARCOPY(gcgvarcopy)
+{
+   /* do not copy the vardata (since SCIP 10 the vardata pointer will be copied if no callback is registered) */
+   *targetdata = NULL;
+   return SCIP_OKAY;
+}
+
 /** callback method called when an original GCG variable is deleted */
 static
 SCIP_DECL_VARDELORIG(GCGvarDelOrig)
@@ -406,6 +415,9 @@ SCIP_RETCODE GCGorigVarCreateData(
       SCIP_CALL( GCGvarDelOrig(scip, var, &oldvardata) );
    }
    SCIPvarSetData(var, vardata);
+
+   SCIPvarSetCopyData(var, gcgvarcopy);
+
    if( SCIPvarIsOriginal(var) )
    {
       SCIPvarSetDelorigData(var, GCGvarDelOrig);
@@ -1316,7 +1328,7 @@ SCIP_RETCODE GCGoriginalVarCreatePricingVar(
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", pricingprobnr, SCIPvarGetName(origvar));
    SCIP_CALL( SCIPcreateVar(pricingprob, var, name, SCIPvarGetLbGlobal(origvar),
          SCIPvarGetUbGlobal(origvar), 0.0, SCIPvarGetType(origvar),
-         TRUE, FALSE, GCGvarDelOrig, NULL, NULL, NULL, vardata) );
+         TRUE, FALSE, GCGvarDelOrig, NULL, NULL, gcgvarcopy, vardata) );
 
    return SCIP_OKAY;
 }
@@ -1351,7 +1363,7 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", pricingprobnr, SCIPvarGetName(origvar));
    SCIP_CALL( SCIPcreateVar(pricingscip, var, name, SCIPvarGetLbGlobal(origvar),
          SCIPvarGetUbGlobal(origvar), 0.0, SCIPvarGetType(origvar),
-         TRUE, FALSE, GCGvarDelOrig, NULL, NULL, NULL, vardata) );
+         TRUE, FALSE, GCGvarDelOrig, NULL, NULL, gcgvarcopy, vardata) );
 
    return SCIP_OKAY;
 }
