@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -44,16 +45,16 @@
 #include <sstream>
 #include <algorithm>    // std::sort
 
-#include "reader_tex.h"
-#include "scip_misc.h"
-#include "reader_gp.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "pub_decomp.h"
-#include "miscvisualization.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "params_visu.h"
+#include "gcg/reader_tex.h"
+#include "gcg/scip_misc.h"
+#include "gcg/reader_gp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/pub_decomp.h"
+#include "gcg/miscvisualization.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/params_visu.h"
 
 #define READER_NAME             "texreader"
 #define READER_DESC             "LaTeX file writer for partialdec visualization"
@@ -61,9 +62,22 @@
 
 using namespace gcg;
 
+/** data for dec reader */
+struct SCIP_ReaderData
+{
+   GCG* gcg;                                 /**< GCG data structure */
+};
+
 /** Destructor of reader to free user data (called when SCIP is exiting) */
 SCIP_DECL_READERFREE(readerFreeTex)
 {
+   SCIP_READERDATA* readerdata;
+
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
+
+   SCIPfreeMemory(scip, &readerdata);
+
    return SCIP_OKAY;
 }
 
@@ -78,12 +92,16 @@ SCIP_DECL_READERREAD(readerReadTex)
 SCIP_DECL_READERWRITE(readerWriteTex)
 {
    PARTIALDECOMP* pd;
+   SCIP_READERDATA* readerdata;
+
    assert(scip != NULL);
    assert(reader != NULL);
 
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
 
    /* get partialdec to write */
-   pd = GCGgetPartialdecToWrite(scip, transformed);
+   pd = GCGgetPartialdecToWrite(readerdata->gcg, transformed);
 
    if( pd == NULL )
    {
@@ -92,7 +110,7 @@ SCIP_DECL_READERWRITE(readerWriteTex)
    }
    else
    {
-      GCGwriteTexVisualization(scip, file, pd->getID(), TRUE, FALSE);
+      GCGwriteTexVisualization(readerdata->gcg, file, pd->getID(), TRUE, FALSE);
       *result = SCIP_SUCCESS;
    }
 
@@ -178,38 +196,40 @@ SCIP_RETCODE getTexColorFromHex(
  *  @returns SCIP status */
 static
 SCIP_RETCODE writeTexHeader(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    FILE*                file,               /**< File pointer to write to */
    SCIP_Bool            externalizepics     /**< whether to use the tikz externalize package */
    )
 {
    char temp[SCIP_MAXSTRLEN];
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    /* write header */
    SCIPinfoMessage(scip, file, "%% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n");
    SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
-   SCIPinfoMessage(scip, file, "%% *                  This file is part of the program                         * \n");
+   SCIPinfoMessage(scip, file, "%% *                  This file is part of the program and library             * \n");
    SCIPinfoMessage(scip, file, "%% *          GCG --- Generic Column Generation                                * \n");
    SCIPinfoMessage(scip, file, "%% *                  a Dantzig-Wolfe decomposition based extension            * \n");
    SCIPinfoMessage(scip, file, "%% *                  of the branch-cut-and-price framework                    * \n");
    SCIPinfoMessage(scip, file, "%% *         SCIP --- Solving Constraint Integer Programs                      * \n");
    SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
-   SCIPinfoMessage(scip, file, "%% * Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       * \n");
+   SCIPinfoMessage(scip, file, "%% * Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       * \n");
    SCIPinfoMessage(scip, file, "%% *                         Zuse Institute Berlin (ZIB)                       * \n");
    SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
-   SCIPinfoMessage(scip, file, "%% * This program is free software; you can redistribute it and/or             * \n");
-   SCIPinfoMessage(scip, file, "%% * modify it under the terms of the GNU Lesser General Public License        * \n");
-   SCIPinfoMessage(scip, file, "%% * as published by the Free Software Foundation; either version 3            * \n");
-   SCIPinfoMessage(scip, file, "%% * of the License, or (at your option) any later version.                    * \n");
+   SCIPinfoMessage(scip, file, "%% *  Licensed under the Apache License, Version 2.0 (the \"License\");          * \n");
+   SCIPinfoMessage(scip, file, "%% *  you may not use this file except in compliance with the License.         * \n");
+   SCIPinfoMessage(scip, file, "%% *  You may obtain a copy of the License at                                  * \n");
    SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
-   SCIPinfoMessage(scip, file, "%% * This program is distributed in the hope that it will be useful,           * \n");
-   SCIPinfoMessage(scip, file, "%% * but WITHOUT ANY WARRANTY; without even the implied warranty of            * \n");
-   SCIPinfoMessage(scip, file, "%% * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             * \n");
-   SCIPinfoMessage(scip, file, "%% * GNU Lesser General Public License for more details.                       * \n");
+   SCIPinfoMessage(scip, file, "%% *      http://www.apache.org/licenses/LICENSE-2.0                           * \n");
    SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
-   SCIPinfoMessage(scip, file, "%% * You should have received a copy of the GNU Lesser General Public License  * \n");
-   SCIPinfoMessage(scip, file, "%% * along with this program; if not, write to the Free Software               * \n");
-   SCIPinfoMessage(scip, file, "%% * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.* \n");
+   SCIPinfoMessage(scip, file, "%% *  Unless required by applicable law or agreed to in writing, software      * \n");
+   SCIPinfoMessage(scip, file, "%% *  distributed under the License is distributed on an \"AS IS\" BASIS,        * \n");
+   SCIPinfoMessage(scip, file, "%% *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. * \n");
+   SCIPinfoMessage(scip, file, "%% *  See the License for the specific language governing permissions and      * \n");
+   SCIPinfoMessage(scip, file, "%% *  limitations under the License.                                           * \n");
+   SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
+   SCIPinfoMessage(scip, file, "%% *  You should have received a copy of the Apache-2.0 license                * \n");
+   SCIPinfoMessage(scip, file, "%% *  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.* \n");
    SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
    SCIPinfoMessage(scip, file, "%% * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n");
    SCIPinfoMessage(scip, file, "%%\n");
@@ -223,7 +243,7 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, "\\usepackage[hidelinks]{hyperref}\n");
    SCIPinfoMessage(scip, file, "\\usepackage{pdfpages}\n");
    SCIPinfoMessage(scip, file, "\\usepackage{fancybox}\n");
-   if(!GCGgetUseGp(scip))
+   if(!GCGgetUseGp(gcg))
    {
       SCIPinfoMessage(scip, file, "\\usepackage{pgfplots}\n");
       SCIPinfoMessage(scip, file, "\\pgfplotsset{compat=1.12}\n");
@@ -241,28 +261,28 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, "\n");
 
   /* introduce colors of current color scheme */
-   getTexColorFromHex(SCIPvisuGetColorMasterconss(scip), "colormasterconss", temp);
+   getTexColorFromHex(GCGvisuGetColorMasterconss(gcg), "colormasterconss", temp);
    SCIPinfoMessage(scip, file, "%s\n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorMastervars(scip), "colormastervars", temp);
+   getTexColorFromHex(GCGvisuGetColorMastervars(gcg), "colormastervars", temp);
    SCIPinfoMessage(scip, file, "%s\n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorLinking(scip), "colorlinking", temp);
+   getTexColorFromHex(GCGvisuGetColorLinking(gcg), "colorlinking", temp);
    SCIPinfoMessage(scip, file, "%s\n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorStairlinking(scip), "colorstairlinking", temp);
+   getTexColorFromHex(GCGvisuGetColorStairlinking(gcg), "colorstairlinking", temp);
    SCIPinfoMessage(scip, file, "%s\n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorBlock(scip), "colorblock", temp);
+   getTexColorFromHex(GCGvisuGetColorBlock(gcg), "colorblock", temp);
    SCIPinfoMessage(scip, file, "%s\n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorOpen(scip), "coloropen", temp);
+   getTexColorFromHex(GCGvisuGetColorOpen(gcg), "coloropen", temp);
    SCIPinfoMessage(scip, file, "%s\n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorNonzero(scip), "colornonzero", temp);
+   getTexColorFromHex(GCGvisuGetColorNonzero(gcg), "colornonzero", temp);
    SCIPinfoMessage(scip, file, "%s\n", temp);
 
-   getTexColorFromHex(SCIPvisuGetColorLine(scip), "colorline", temp);
+   getTexColorFromHex(GCGvisuGetColorLine(gcg), "colorline", temp);
    SCIPinfoMessage(scip, file, "%s\n", temp);
 
    /* start writing the document */
@@ -279,7 +299,7 @@ SCIP_RETCODE writeTexHeader(
  * @returns SCIP status */
 static
 SCIP_RETCODE writeTexTitlepage(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    FILE*                file,               /**< File pointer to write to */
    int*                 npresentedpartialdecs    /**< Number of decompositions to be shown in the file or NULL if unknown */
    )
@@ -287,8 +307,9 @@ SCIP_RETCODE writeTexTitlepage(
    char* pname;
    char ppath[SCIP_MAXSTRLEN];
    int ndecomps;
+   SCIP* scip = GCGgetOrigprob(gcg);
 
-   ndecomps = GCGconshdlrDecompGetNDecomps(scip);
+   ndecomps = GCGconshdlrDecompGetNDecomps(gcg);
    strcpy(ppath, SCIPgetProbName(scip));
    SCIPsplitFilename(ppath, NULL, &pname, NULL, NULL);
 
@@ -310,9 +331,9 @@ SCIP_RETCODE writeTexTitlepage(
    SCIPinfoMessage(scip, file, "  Number of constraints in original problem: & %i  \\\\ \n",
       SCIPgetNOrigConss(scip));
    SCIPinfoMessage(scip, file, "  Number of found finished decompositions: & %i  \\\\ \n",
-      GCGconshdlrDecompGetNDecomps(scip));
+      GCGconshdlrDecompGetNDecomps(gcg));
    SCIPinfoMessage(scip, file, "  Number of found incomplete decompositions: & %i  \\\\ \n",
-      GCGconshdlrDecompGetNPartialdecs(scip) - GCGconshdlrDecompGetNDecomps(scip));
+      GCGconshdlrDecompGetNPartialdecs(gcg) - GCGconshdlrDecompGetNDecomps(gcg));
    if(npresentedpartialdecs != NULL){
       if( ndecomps > *npresentedpartialdecs )
       {
@@ -327,7 +348,7 @@ SCIP_RETCODE writeTexTitlepage(
    
    SCIPinfoMessage(scip, file, "Score info: & \\begin{minipage}{5cm}\n");
    SCIPinfoMessage(scip, file, "                  %s\n",
-                   GCGscoreGetDesc(GCGgetCurrentScore(scip)));
+                   GCGscoreGetDesc(GCGgetCurrentScore(gcg)));
    SCIPinfoMessage(scip, file, "              \\end{minipage} \\\\ \n");
    
    SCIPinfoMessage(scip, file, "\\end{tabular}\n");
@@ -508,7 +529,7 @@ SCIP_RETCODE writeTikzNonzeros(
  * @returns SCIP status */
 static
 SCIP_RETCODE writeTexPartialdec(
-   SCIP* scip,                /**< SCIP data structure */
+   GCG* gcg,                  /**< GCG data structure */
    FILE* file,                /**< file to write to */
    PARTIALDECOMP* partialdec, /**< PARTIALDECOMP to be visualized */
    SCIP_Bool nofigure         /**< if true there will be no figure environment around tikz code*/
@@ -518,6 +539,7 @@ SCIP_RETCODE writeTexPartialdec(
    int colboxcounter = 0;
    int nvars;
    int nconss;
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    nvars = partialdec->getNVars();
    nconss = partialdec->getNConss();
@@ -583,9 +605,9 @@ SCIP_RETCODE writeTexPartialdec(
    }
 
    /* --- draw nonzeros --- */
-   if(SCIPvisuGetDraftmode(scip) == FALSE)
+   if(GCGvisuGetDraftmode(gcg) == FALSE)
    {
-      writeTikzNonzeros(scip, file, partialdec, SCIPvisuGetNonzeroRadius(scip, partialdec->getNVars(), partialdec->getNConss(), 1),
+      writeTikzNonzeros(scip, file, partialdec, GCGvisuGetNonzeroRadius(gcg, partialdec->getNVars(), partialdec->getNConss(), 1),
          nvars, nconss);
    }
 
@@ -609,12 +631,13 @@ SCIP_RETCODE writeTexPartialdec(
  * @returns SCIP status */
 static
 SCIP_RETCODE writeTexPartialdecStatistics(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    FILE* file,             /**< file to write to */
    PARTIALDECOMP* partialdec            /**< statistics are about this partialdec */
    )
 {
    std::ostringstream fulldetectorstring;
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    /* get detector chain full-text string*/
    if( partialdec->getUsergiven() != gcg::USERGIVEN::NOT )
@@ -645,7 +668,7 @@ SCIP_RETCODE writeTexPartialdecStatistics(
    SCIPinfoMessage(scip, file, "  Number of stairlinking variables: & %i \\\\ \n",
       partialdec->getNTotalStairlinkingvars());
    SCIPinfoMessage(scip, file, "  Score: & %f \\\\ \n",
-      partialdec->getScore(GCGgetCurrentScore(scip)));
+      partialdec->getScore(GCGgetCurrentScore(gcg)));
    SCIPinfoMessage(scip, file, "\\end{tabular}\n");
 
    SCIPinfoMessage(scip, file, "\\clearpage\n");
@@ -672,7 +695,7 @@ SCIP_RETCODE writeTexEnding(
 
 /* Writes a report for the given partialdecs */
 SCIP_RETCODE GCGwriteTexReport(
-   SCIP* scip,             /* SCIP data structure */
+   GCG* gcg,               /* GCG data structure */
    FILE* file,             /* file to write to */
    int* partialdecids,     /* ids of partialdecs to visualize */
    int* npartialdecs,      /* number of partialdecs to visualize */
@@ -688,11 +711,12 @@ SCIP_RETCODE GCGwriteTexReport(
    char* path;
    char gpname[SCIP_MAXSTRLEN];
    char pdfname[SCIP_MAXSTRLEN];
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    /* write tex code into file */
-   writeTexHeader(scip, file, TRUE);
+   writeTexHeader(gcg, file, TRUE);
    if(titlepage)
-      writeTexTitlepage(scip, file, npartialdecs);
+      writeTexTitlepage(gcg, file, npartialdecs);
    if(toc)
       writeTexTableOfContents(scip, file);
 
@@ -701,13 +725,13 @@ SCIP_RETCODE GCGwriteTexReport(
    partialdecs.reserve(*npartialdecs);
    for(int i = 0; i < *npartialdecs; i++)
    {
-      partialdecs.push_back(GCGconshdlrDecompGetPartialdecFromID(scip, partialdecids[i]));
+      partialdecs.push_back(GCGconshdlrDecompGetPartialdecFromID(gcg, partialdecids[i]));
    }
-   std::sort(partialdecs.begin(), partialdecs.end(), [&](PARTIALDECOMP* a, PARTIALDECOMP* b) {return (a->getScore(GCGgetCurrentScore(scip)) > b->getScore(GCGgetCurrentScore(scip))); });
+   std::sort(partialdecs.begin(), partialdecs.end(), [&](PARTIALDECOMP* a, PARTIALDECOMP* b) {return (a->getScore(GCGgetCurrentScore(gcg)) > b->getScore(GCGgetCurrentScore(gcg))); });
 
    /* if there are more decomps than the maximum, reset npartialdecs */
-   if(*npartialdecs > GCGreportGetMaxNDecomps(scip))
-      *npartialdecs = GCGreportGetMaxNDecomps(scip);
+   if(*npartialdecs > GCGreportGetMaxNDecomps(gcg))
+      *npartialdecs = GCGreportGetMaxNDecomps(gcg);
 
    for(int i = 0; i < *npartialdecs; i++)
    {
@@ -728,13 +752,13 @@ SCIP_RETCODE GCGwriteTexReport(
 
       if(!usegp)
       {
-         writeTexPartialdec(scip, file, partialdec, FALSE);
+         writeTexPartialdec(gcg, file, partialdec, FALSE);
       }
       else
       {
          /* in case a gp file should be generated include it in the tex code */
-         GCGgetVisualizationFilename(scip, partialdec, "gp", gpname);
-         GCGgetVisualizationFilename(scip, partialdec, "pdf", pdfname);
+         GCGgetVisualizationFilename(gcg, partialdec, "gp", gpname);
+         GCGgetVisualizationFilename(gcg, partialdec, "pdf", pdfname);
          strcat(pdfname, ".pdf");
 
          GCGgetFilePath(file, filepath);
@@ -742,7 +766,7 @@ SCIP_RETCODE GCGwriteTexReport(
 
          SCIPsnprintf(gppath, SCIP_MAXSTRLEN, "%s/%s.gp", path, gpname);
 
-         GCGwriteGpVisualization(scip, gppath, pdfname, partialdecids[i]);
+         GCGwriteGpVisualization(gcg, gppath, pdfname, partialdecids[i]);
 
          SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]\n");
          SCIPinfoMessage(scip, file, "  \\begin{center}\n");
@@ -751,11 +775,11 @@ SCIP_RETCODE GCGwriteTexReport(
          SCIPinfoMessage(scip, file, "\\end {figure}\n");
       }
       if(statistics)
-         writeTexPartialdecStatistics(scip, file, partialdec);
+         writeTexPartialdecStatistics(gcg, file, partialdec);
    }
    writeTexEnding(scip, file);
 
-   GCGtexWriteMakefileAndReadme(scip, file, usegp, FALSE);
+   GCGtexWriteMakefileAndReadme(gcg, file, usegp, FALSE);
 
    return SCIP_OKAY;
 }
@@ -763,7 +787,7 @@ SCIP_RETCODE GCGwriteTexReport(
 
 /* Writes a visualization for the given partialdec */
 SCIP_RETCODE GCGwriteTexVisualization(
-   SCIP* scip,             /* SCIP data structure */
+   GCG* gcg,               /* GCG data structure */
    FILE* file,             /* file to write to */
    int partialdecid,            /* id of partialdec to visualize */
    SCIP_Bool statistics,   /* additionally to picture show statistics */
@@ -773,24 +797,25 @@ SCIP_RETCODE GCGwriteTexVisualization(
    PARTIALDECOMP* partialdec;
    char gpname[SCIP_MAXSTRLEN];
    char pdfname[SCIP_MAXSTRLEN];
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    /* get partialdec */
-   partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
+   partialdec = GCGconshdlrDecompGetPartialdecFromID(gcg, partialdecid);
 
    /* write tex code into file */
-   writeTexHeader(scip, file, FALSE);
+   writeTexHeader(gcg, file, FALSE);
 
    if(!usegp)
    {
-      writeTexPartialdec(scip, file, partialdec, FALSE);
+      writeTexPartialdec(gcg, file, partialdec, FALSE);
    }
    else
    {
       /* in case a gp file should be generated include it */
-       GCGgetVisualizationFilename(scip, partialdec, "gp", gpname);
-       GCGgetVisualizationFilename(scip, partialdec, "pdf", pdfname);
+       GCGgetVisualizationFilename(gcg, partialdec, "gp", gpname);
+       GCGgetVisualizationFilename(gcg, partialdec, "pdf", pdfname);
 
-      GCGwriteGpVisualization(scip, gpname, pdfname, partialdecid);
+      GCGwriteGpVisualization(gcg, gpname, pdfname, partialdecid);
 
       SCIPinfoMessage(scip, file, "\\begin{figure}[!htb]\n");
       SCIPinfoMessage(scip, file, "  \\begin{center}\n");
@@ -799,7 +824,7 @@ SCIP_RETCODE GCGwriteTexVisualization(
       SCIPinfoMessage(scip, file, "\\end {figure}\n");
    }
    if(statistics)
-      writeTexPartialdecStatistics(scip, file, partialdec);
+      writeTexPartialdecStatistics(gcg, file, partialdec);
 
    writeTexEnding(scip, file);
 
@@ -809,7 +834,7 @@ SCIP_RETCODE GCGwriteTexVisualization(
 
 /* Makes a new makefile and readme for the given .tex file */
 SCIP_RETCODE GCGtexWriteMakefileAndReadme(
-   SCIP*                scip,               /* SCIP data structure */
+   GCG*                 gcg,                /* GCG data structure */
    FILE*                file,               /* File for which the makefile & readme are generated */
    SCIP_Bool            usegp,              /* true if there are gp files to be included in the makefile */
    SCIP_Bool            compiletex          /* true if there are tex files to be compiled before main document */
@@ -825,6 +850,7 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
    char readmename[SCIP_MAXSTRLEN];
    char name[SCIP_MAXSTRLEN];
    const char makename[SCIP_MAXSTRLEN] = "makepdf";
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    /* --- create a Makefile --- */
 
@@ -934,12 +960,18 @@ SCIP_RETCODE GCGtexWriteMakefileAndReadme(
 
 
 /* Includes the tex file reader in SCIP */
-SCIP_RETCODE SCIPincludeReaderTex(
-   SCIP*                 scip                /*< SCIP data structure */
+SCIP_RETCODE GCGincludeReaderTex(
+   GCG*                  gcg                 /*< GCG data structure */
    )
 {
-   SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
-           readerFreeTex, readerReadTex, readerWriteTex, NULL));
+   SCIP_READERDATA* readerdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
+   /* create dec reader data */
+   SCIP_CALL( SCIPallocMemory(origprob, &readerdata) );
+   readerdata->gcg = gcg;
+   SCIP_CALL(SCIPincludeReader(origprob, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
+           readerFreeTex, readerReadTex, readerWriteTex, readerdata));
 
    return SCIP_OKAY;
 }

@@ -518,7 +518,8 @@
       </table>
 
       <h2 id="license" style="padding-top:70px">License and Citing</h2>
-        <p>GCG is released under the LGPL. If you use GCG in a publication, please reference the following article:</p>
+        <p>Since version 4.0, GCG is released under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2.0 License</a>. Prior releases and versions (up to and including GCG 3.7.2) remain under the LGPL.</p>
+        <p>If you use GCG in a publication, please reference the following article:</p>
         <p><a href="http://www.zib.de/gamrath/publications/gamrathluebbecke2010_experimentsDW.pdf"><em>Experiments with a Generic Dantzig-Wolfe Decomposition for Integer Programs</em></a>, Gerald Gamrath and Marco E. Lübbecke<br>
         In P.Festa (Ed.), Symposium on Experimental Algorithms (SEA 2010), LNCS, 6049, pp. 239-252, 2010, Springer, Berlin. DOI: <a href="http://doi.org/10.1007/978-3-642-13193-6_21">10.1007/978-3-642-13193-6_21</a></p>
 	</div>

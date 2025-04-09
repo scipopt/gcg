@@ -1,9 +1,13 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
 /*                  This file is part of the program and library             */
+/*          GCG --- Generic Column Generation                                */
+/*                  a Dantzig-Wolfe decomposition based extension            */
+/*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/*  Copyright (c) 2002-2024 Zuse Institute Berlin (ZIB)                      */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /*  Licensed under the Apache License, Version 2.0 (the "License");          */
 /*  you may not use this file except in compliance with the License.         */
@@ -18,7 +22,7 @@
 /*  limitations under the License.                                           */
 /*                                                                           */
 /*  You should have received a copy of the Apache-2.0 license                */
-/*  along with SCIP; see the file LICENSE. If not visit scipopt.org.         */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -40,6 +44,8 @@
 #include <scip/def.h>
 #include <scip/type_retcode.h>
 #include <scip/type_scip.h>
+
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,7 +84,7 @@ typedef struct RowIndex ROWINDEX;
 
 /** perform the zerohalf cut separation */
 SCIP_RETCODE GCGselectConstraintsZeroHalf(
-   SCIP*                 scip,
+   GCG*                  gcg,
    SCIP_SOL*             sol,
    SCIP_Bool             allowlocal,
    int                   depth,               /* current depth */

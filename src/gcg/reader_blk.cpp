@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -56,14 +57,14 @@
 #endif
 #include <ctype.h>
 
-#include "reader_blk.h"
-#include "relax_gcg.h"
-#include "pub_gcgvar.h"
-#include "pub_decomp.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "scip_misc.h"
-#include "class_partialdecomp.h"
+#include "gcg/reader_blk.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/pub_gcgvar.h"
+#include "gcg/pub_decomp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/scip_misc.h"
+#include "gcg/class_partialdecomp.h"
 
 #define READER_NAME             "blkreader"
 #define READER_DESC             "file reader for structures in blk format"
@@ -113,6 +114,7 @@ typedef struct BlkInput BLKINPUT;
 /** data for blk reader */
 struct SCIP_ReaderData
 {
+   GCG*                  gcg;                /**< GCG data structure */
    int*                  varstoblock;        /**< index=varid; value= -1 or blockID or -2 for multipleblocks */
    int*                  nblockvars;         /**< number of variable per block that are not linkingvars */
    int**                 linkingvarsblocks;  /**< array with blocks assigned to one linking var */
@@ -904,7 +906,7 @@ SCIP_RETCODE fillDecompStruct(
 
    SCIPinfoMessage(scip, NULL, "just read blk file:\n");
 
-   retcode = GCGfilloutDecompFromConstoblock(scip, decomp, constoblock, nblocks, FALSE);
+   retcode = GCGfilloutDecompFromConstoblock(readerdata->gcg, decomp, constoblock, nblocks, FALSE);
    SCIPfreeMemoryArray(scip, &consvars);
 
    return retcode;
@@ -1001,7 +1003,7 @@ SCIP_RETCODE readBLKFile(
       case BLK_NBLOCKS:
          if( blkinput->haspresolvesection )
          {
-            newpartialdec = new gcg::PARTIALDECOMP(scip, !blkinput->presolved);
+            newpartialdec = new gcg::PARTIALDECOMP(readerdata->gcg, !blkinput->presolved);
             newpartialdec->setUsergiven(gcg::USERGIVEN::COMPLETED_CONSTOMASTER);
          }
          SCIP_CALL( readNBlocks(scip, newpartialdec, blkinput) );
@@ -1014,7 +1016,7 @@ SCIP_RETCODE readBLKFile(
          {
             SCIPwarningMessage(scip, "decomposition has no presolve section at beginning. It is assumed to belong to the unpresolved problem but the behaviour is undefined. See the FAQ for further information.\n");
             blkinput->presolved = FALSE;
-            newpartialdec = new gcg::PARTIALDECOMP(scip, !blkinput->presolved);
+            newpartialdec = new gcg::PARTIALDECOMP(readerdata->gcg, !blkinput->presolved);
             newpartialdec->setUsergiven(gcg::USERGIVEN::COMPLETED_CONSTOMASTER);
          }
 
@@ -1049,14 +1051,14 @@ SCIP_RETCODE readBLKFile(
       }
    }
 
-   SCIP_CALL( GCGdecompCreate(scip, &decdecomp) );
+   SCIP_CALL( GCGdecompCreate(readerdata->gcg, &decdecomp) );
 
    /* fill decomp */
    retcode = fillDecompStruct(scip, blkinput, decdecomp, newpartialdec, readerdata);
 
-   GCGconshdlrDecompAddPreexisitingPartialDec(scip, newpartialdec);
+   GCGconshdlrDecompAddPreexisitingPartialDec(readerdata->gcg, newpartialdec);
 
-   SCIP_CALL( GCGdecompFree(scip, &decdecomp) );
+   SCIP_CALL( GCGdecompFree(readerdata->gcg, &decdecomp) );
 
    for( i = 0; i < nvars; ++i )
    {
@@ -1091,73 +1093,9 @@ SCIP_RETCODE readBLKFile(
    return retcode;
 }
 
-
-/*
- * Callback methods of reader
- */
-
-/** destructor of reader to free user data (called when SCIP is exiting) */
-static
-SCIP_DECL_READERFREE(readerFreeBlk)
-{
-   SCIP_READERDATA* readerdata;
-
-   readerdata = SCIPreaderGetData(reader);
-   assert(readerdata != NULL);
-
-   SCIPfreeMemory(scip, &readerdata);
-
-   return SCIP_OKAY;
-}
-
-
-/** problem reading method of reader */
-static
-SCIP_DECL_READERREAD(readerReadBlk)
-{  /*lint --e{715} */
-
-   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
-   {
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Please read in a problem before reading in the corresponding structure file!\n");
-      return SCIP_OKAY;
-   }
-   SCIP_CALL( SCIPreadBlk(scip, filename, result) );
-
-   return SCIP_OKAY;
-}
-
-
-/** problem writing method of reader */
-static
-SCIP_DECL_READERWRITE(readerWriteBlk)
-{ /*lint --e{715}*/
-   return SCIP_OKAY;
-}
-
-/*
- * reader specific interface methods
- */
-
-/** includes the blk file reader in SCIP */
-SCIP_RETCODE SCIPincludeReaderBlk(
-   SCIP*                 scip                /**< SCIP data structure */
-   )
-{
-   SCIP_READERDATA* readerdata = NULL;
-
-   /* create blk reader data */
-   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
-
-   /* include blk reader */
-   SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
-         readerFreeBlk, readerReadBlk, readerWriteBlk, readerdata) );
-
-   return SCIP_OKAY;
-}
-
-
 /* reads problem from file */
-SCIP_RETCODE SCIPreadBlk(
+static
+SCIP_RETCODE readBlk(
    SCIP*                 scip,               /**< SCIP data structure */
    const char*           filename,           /**< full path and name of file to read, or NULL if stdin should be used */
    SCIP_RESULT*          result              /**< pointer to store the result of the file reading call */
@@ -1221,6 +1159,73 @@ SCIP_RETCODE SCIPreadBlk(
    {
       *result = SCIP_SUCCESS;
    }
+
+   return SCIP_OKAY;
+}
+
+
+/*
+ * Callback methods of reader
+ */
+
+/** destructor of reader to free user data (called when SCIP is exiting) */
+static
+SCIP_DECL_READERFREE(readerFreeBlk)
+{
+   SCIP_READERDATA* readerdata;
+
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
+
+   SCIPfreeMemory(scip, &readerdata);
+
+   return SCIP_OKAY;
+}
+
+
+/** problem reading method of reader */
+static
+SCIP_DECL_READERREAD(readerReadBlk)
+{  /*lint --e{715} */
+
+   if( SCIPgetStage(scip) == SCIP_STAGE_INIT || SCIPgetNVars(scip) == 0 || SCIPgetNConss(scip) == 0 )
+   {
+      SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "Please read in a problem before reading in the corresponding structure file!\n");
+      return SCIP_OKAY;
+   }
+   SCIP_CALL( readBlk(scip, filename, result) );
+
+   return SCIP_OKAY;
+}
+
+
+/** problem writing method of reader */
+static
+SCIP_DECL_READERWRITE(readerWriteBlk)
+{ /*lint --e{715}*/
+   return SCIP_OKAY;
+}
+
+/*
+ * reader specific interface methods
+ */
+
+/** includes the blk file reader in SCIP */
+SCIP_RETCODE GCGincludeReaderBlk(
+   GCG*                  gcg                 /**< GCG data structure */
+   )
+{
+   SCIP_READERDATA* readerdata = NULL;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
+
+   /* create blk reader data */
+   SCIP_CALL( SCIPallocMemory(origprob, &readerdata) );
+   readerdata->gcg = gcg;
+
+   /* include blk reader */
+   SCIP_CALL( SCIPincludeReader(origprob, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
+         readerFreeBlk, readerReadBlk, readerWriteBlk, readerdata) );
 
    return SCIP_OKAY;
 }

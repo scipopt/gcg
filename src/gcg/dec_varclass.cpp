@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -33,15 +34,15 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "dec_varclass.h"
-#include "cons_decomp.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "class_varpartition.h"
-#include "gcg.h"
+#include "gcg/dec_varclass.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/class_varpartition.h"
+#include "gcg/gcg.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
-#include "scip_misc.h"
+#include "gcg/scip_misc.h"
 #include "scip/clock.h"
 
 #include <sstream>
@@ -108,6 +109,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecVarclass)
 {
    *result = SCIP_DIDNOTFIND;
    char decinfo[SCIP_MAXSTRLEN];
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    SCIP_CLOCK* temporaryClock;
 
@@ -117,8 +119,8 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecVarclass)
      return SCIP_OKAY;
    }
 
-   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+   SCIP_CALL_ABORT( SCIPcreateClock(origprob, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
 
    std::vector<gcg::PARTIALDECOMP*> foundpartialdecs(0);
 
@@ -128,9 +130,9 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecVarclass)
    int maximumnclasses;
 
    if( partialdecdetectiondata->detprobdata->getNConss() + partialdecdetectiondata->detprobdata->getNVars() >= 50000 )
-      SCIPgetIntParam(scip, "detection/classification/maxnclassesperpartitionforlargeprobs", &maximumnclasses);
+      SCIPgetIntParam(origprob, "detection/classification/maxnclassesperpartitionforlargeprobs", &maximumnclasses);
    else
-      SCIPgetIntParam(scip, "detection/classification/maxnclassesperpartition", &maximumnclasses);
+      SCIPgetIntParam(origprob, "detection/classification/maxnclassesperpartition", &maximumnclasses);
 
    for( int classifierIndex = 0; classifierIndex < partialdecdetectiondata->detprobdata->getNVarPartitions(); ++classifierIndex )
    {
@@ -173,7 +175,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecVarclass)
          partialdec = new gcg::PARTIALDECOMP(partialdecOrig);
 
          /* fix open vars that have a) type of the current subset or b) decomp info LINKING as linking vars */
-         auto& openvars = partialdec->getOpenvarsVec();
+         auto& openvars = partialdec->getOpenvars();
          for( auto itr = openvars.cbegin(); itr != openvars.cend(); )
          {
             bool foundVar = false;
@@ -255,10 +257,10 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecVarclass)
       }
    }
 
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock) );
 
-   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), foundpartialdecs.size()) );
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(origprob, temporaryClock);
+   SCIP_CALL( SCIPallocMemoryArray(origprob, &(partialdecdetectiondata->newpartialdecs), foundpartialdecs.size()) );
    partialdecdetectiondata->nnewpartialdecs = (int) foundpartialdecs.size();
 
    for( int s = 0; s < partialdecdetectiondata->nnewpartialdecs; ++s )
@@ -267,7 +269,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecVarclass)
       partialdecdetectiondata->newpartialdecs[s]->addClockTime(partialdecdetectiondata->detectiontime / partialdecdetectiondata->nnewpartialdecs);
    }
 
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT(SCIPfreeClock(origprob, &temporaryClock) );
 
    *result = SCIP_SUCCESS;
 
@@ -285,29 +287,30 @@ GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveVarclass)
 
    int newval;
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, TRUE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE ) );
 
-   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   if( SCIPgetStage(origprob) < SCIP_STAGE_PROBLEM )
       return SCIP_OKAY;
 
-   modifier = ((SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
+   modifier = ((SCIP_Real)SCIPgetNConss(origprob) + (SCIP_Real)SCIPgetNVars(origprob) ) / SET_MULTIPLEFORSIZETRANSF;
    modifier = log(modifier) / log(2.);
 
-   if (!SCIPisFeasPositive(scip, modifier) )
+   if (!SCIPisFeasPositive(origprob, modifier) )
       modifier = -1.;
 
-   modifier = SCIPfloor(scip, modifier);
+   modifier = SCIPfloor(origprob, modifier);
 
    newval = MAX( 2, AGGRESSIVE_MAXIMUMNCLASSES - modifier );
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnclasses", name);
 
-   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "\n%s = %d\n", setstr, newval);
+   SCIP_CALL( SCIPsetIntParam(origprob, setstr, newval ) );
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_DIALOG, NULL, "\n%s = %d\n", setstr, newval);
 
    return SCIP_OKAY;
 }
@@ -321,29 +324,30 @@ GCG_DECL_SETPARAMDEFAULT(setParamDefaultVarclass)
 
    int newval;
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLED) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLEDFINISHING ) );
 
-   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   if( SCIPgetStage(origprob) < SCIP_STAGE_PROBLEM )
          return SCIP_OKAY;
 
-   modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
+   modifier = ( (SCIP_Real)SCIPgetNConss(origprob) + (SCIP_Real)SCIPgetNVars(origprob) ) / SET_MULTIPLEFORSIZETRANSF;
    modifier = log(modifier) / log(2);
 
-   if (!SCIPisFeasPositive(scip, modifier) )
+   if (!SCIPisFeasPositive(origprob, modifier) )
       modifier = -1.;
 
-   modifier = SCIPfloor(scip, modifier);
+   modifier = SCIPfloor(origprob, modifier);
 
    newval = MAX( 2, DEFAULT_MAXIMUMNCLASSES - modifier );
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnclasses", name);
 
-   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "\n%s = %d\n", setstr, newval);
+   SCIP_CALL( SCIPsetIntParam(origprob, setstr, newval ) );
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_DIALOG, NULL, "\n%s = %d\n", setstr, newval);
 
    return SCIP_OKAY;
 
@@ -355,33 +359,33 @@ GCG_DECL_SETPARAMFAST(setParamFastVarclass)
    char setstr[SCIP_MAXSTRLEN];
    SCIP_Real modifier;
    int newval;
-
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE ) );
 
-   if( SCIPgetStage(scip) < SCIP_STAGE_PROBLEM )
+   if( SCIPgetStage(origprob) < SCIP_STAGE_PROBLEM )
          return SCIP_OKAY;
 
-   modifier = ( (SCIP_Real)SCIPgetNConss(scip) + (SCIP_Real)SCIPgetNVars(scip) ) / SET_MULTIPLEFORSIZETRANSF;
+   modifier = ( (SCIP_Real)SCIPgetNConss(origprob) + (SCIP_Real)SCIPgetNVars(origprob) ) / SET_MULTIPLEFORSIZETRANSF;
 
    modifier = log(modifier) / log(2);
 
-   if (!SCIPisFeasPositive(scip, modifier) )
+   if (!SCIPisFeasPositive(origprob, modifier) )
       modifier = -1.;
 
-   modifier = SCIPfloor(scip, modifier);
+   modifier = SCIPfloor(origprob, modifier);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnclasses", name);
 
    newval = MAX( 2, FAST_MAXIMUMNCLASSES - modifier );
 
-   SCIP_CALL( SCIPsetIntParam(scip, setstr, newval ) );
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_DIALOG, NULL, "\n%s = %d\n", setstr, newval);
+   SCIP_CALL( SCIPsetIntParam(origprob, setstr, newval ) );
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_DIALOG, NULL, "\n%s = %d\n", setstr, newval);
 
    return SCIP_OKAY;
 }
@@ -393,17 +397,19 @@ GCG_DECL_SETPARAMFAST(setParamFastVarclass)
  */
 
 /** creates the handler for varclass detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorVarclass(SCIP* scip /**< SCIP data structure */
-)
+SCIP_RETCODE GCGincludeDetectorVarclass(
+   GCG*                 gcg                  /**< GCG data structure */
+   )
 {
    GCG_DETECTORDATA* detectordata;
    char setstr[SCIP_MAXSTRLEN];
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /**@todo create varclass detector data here*/
    detectordata = NULL;
 
    SCIP_CALL(
-      GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
+      GCGincludeDetector(gcg, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
                          DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata,
                          freeVarclass, initVarclass, exitVarclass, propagatePartialdecVarclass, finishPartialdecVarclass, detectorPostprocessPartialdecVarclass, setParamAggressiveVarclass, setParamDefaultVarclass, setParamFastVarclass));
 
@@ -411,7 +417,7 @@ SCIP_RETCODE SCIPincludeDetectorVarclass(SCIP* scip /**< SCIP data structure */
 
    const char* name = DEC_NAME;
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/maxnclasses", name);
-   SCIP_CALL( SCIPaddIntParam(scip, setstr, "maximum number of classes ",  NULL, FALSE, DEFAULT_MAXIMUMNCLASSES, 1, INT_MAX, NULL, NULL ) );
+   SCIP_CALL( SCIPaddIntParam(origprob, setstr, "maximum number of classes ",  NULL, FALSE, DEFAULT_MAXIMUMNCLASSES, 1, INT_MAX, NULL, NULL ) );
 
    return SCIP_OKAY;
 }

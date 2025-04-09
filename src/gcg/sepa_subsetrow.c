@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -36,17 +37,13 @@
 #include <assert.h>
 #include <scip/cons_linear.h>
 
-#include "gcg.h"
-#include "mastercutdata.h"
-#include "mastersepacut.h"
-#include "pricer_gcg.h"
-#include "relax_gcg.h"
-#include "scip_misc.h"
-#include "sepa_subsetrow.h"
-#include "struct_gcgcol.h"
-#include "struct_sepagcg.h"
-#include "type_sepagcg.h"
-#include "zerohalf_selector.h"
+#include "gcg/mastersepacut.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/scip_misc.h"
+#include "gcg/sepa_subsetrow.h"
+#include "gcg/zerohalf_selector.h"
+#include "gcg/struct_sepagcg.h"
 
 #define SEPA_NAME           "subsetrow"
 #define SEPA_DESC "subsetrow separator"
@@ -74,6 +71,7 @@
 /** separator data */
 struct SCIP_SepaData
 {
+   GCG*                    gcg;                 /**< GCG data structure */
    GCG_SEPA*               sepa;                /**< gcg master separator instance */
    SCIP_RANDNUMGEN*        randnumgen;          /**< random number generator (for strategy RANDOM) */
    SCIP_Bool               enable;              /**< is this separator enabled? */
@@ -129,8 +127,8 @@ SCIP_DECL_SEPAFREE(sepaFreeSubsetrow)
 /**< create a mastersepacut instance for a subset-row cut and add it to the generated cuts */
 static
 SCIP_RETCODE addSubsetRowCutToGeneratedCuts(
-   SCIP*                masterscip,       /**< SCIP data structure */
-   GCG_MASTERCUTDATA*   mastercutdata,    /**< master cut data */
+   GCG*                 gcg,              /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*   mastercutdata,    /**< master cut data */
    SCIP_Real*           weights,          /**< weights used to create the cut */
    int*                 conssindices,     /**< indices of constraints used to create the cut */
    int                  n,                /**< number of constraints used to create the cut */
@@ -139,16 +137,15 @@ SCIP_RETCODE addSubsetRowCutToGeneratedCuts(
 {
    GCG_SEPARATORMASTERCUT* mastersepacut;
 
-   assert(masterscip != NULL);
-   assert(GCGisMaster(masterscip));
+   assert(gcg != NULL);
    assert(mastercutdata != NULL);
 
    /* create a subset row cut */
-   SCIP_CALL( GCGcreateChvatalGomoryCut(masterscip, &mastersepacut, sepa, mastercutdata, NULL, weights, conssindices, n) );
+   SCIP_CALL( GCGcreateChvatalGomoryCut(gcg, &mastersepacut, sepa, mastercutdata, NULL, weights, conssindices, n) );
    assert(mastersepacut != NULL);
 
    /* register it with the event handler managing active master separator cuts */
-   SCIP_CALL( GCGaddCutToGeneratedCuts(masterscip, mastersepacut) );
+   SCIP_CALL( GCGaddCutToGeneratedCuts(gcg, mastersepacut) );
 
    return SCIP_OKAY;
 }
@@ -354,7 +351,7 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS(
 /** computes the (non-rounded) coefficients for the pricing variables used in the pricing constraints */
 static
 SCIP_RETCODE computePricingConssCoefficients(
-   SCIP*             origscip,               /**< SCIP data structure (original problem) */
+   GCG*              gcg,                    /**< GCG data structure */
    SCIP_CONS**       originalconss,          /**< constraints in the original problem */
    int*              selectedconssidx,       /**< indices of selected constraints */
    int               nselectedconss,         /**< number of selected constraints */
@@ -362,6 +359,7 @@ SCIP_RETCODE computePricingConssCoefficients(
    SCIP_HASHMAP*     mappricingvarxcoeff     /**< map to store the coefficient for each pricing variable */
    )
 {
+   SCIP* origscip;
    SCIP_CONS* origcons;
    SCIP_VAR** origconsvars;
    SCIP_VAR*  pricingvar;
@@ -371,8 +369,9 @@ SCIP_RETCODE computePricingConssCoefficients(
    int        i;
    int        j;
 
-   assert(GCGisOriginal(origscip));
    assert(nselectedconss > 0);
+
+   origscip = GCGgetOrigprob(gcg);
 
    SCIPdebugMessage("compute the coefficients of the pricing variables\n");
    /* - compute w_1 * A_1j + ... + w_m * A_mj for each pricing variable x_j */
@@ -416,10 +415,10 @@ SCIP_RETCODE computePricingConssCoefficients(
           * --> only consider the original variables associated with the relevant pricing problem block */
          if( GCGvarGetBlock(pricingvar) != GCGvarGetBlock(origconsvars[j]))
          {
-            assert(!GCGisPricingprobRelevant(origscip, GCGvarGetBlock(origconsvars[j])));
+            assert(!GCGisPricingprobRelevant(gcg, GCGvarGetBlock(origconsvars[j])));
             continue;
          }
-         assert(GCGisPricingprobRelevant(origscip, GCGvarGetBlock(origconsvars[j])));
+         assert(GCGisPricingprobRelevant(gcg, GCGvarGetBlock(origconsvars[j])));
 
          coeff_pricing = SCIPhashmapGetImageReal(mappricingvarxcoeff, pricingvar);
          if( coeff_pricing == SCIP_INVALID )
@@ -474,7 +473,7 @@ SCIP_RETCODE selectConstraintsRandom(
  * @to-do: finished implementing alternative strategy */
 static
 SCIP_RETCODE selectConstraintsKosterEtAl(
-   SCIP*                   masterscip,    /**< SCIP data structure (master problem) */
+   GCG*                    gcg,           /**< GCG data structure */
    GCG_CUTINDICES***       cutindices,    /**< pointer to store array of constraint indices for cuts */
    int*                    ncutindices,   /**< pointer to store the number of cuts for which constraint indices were found */
    int                     ncalls,        /**< number of time separator has bin called at current node */
@@ -484,24 +483,21 @@ SCIP_RETCODE selectConstraintsKosterEtAl(
    SCIP_SOL*               sol            /**< current best solution, if available (else NULL) */
    )
 {
-   GCG_ZEROHALFDATA* zhdata;
+   GCG_ZEROHALFDATA zhdata;
 
-   SCIPallocMemory(masterscip, &zhdata);
-   zhdata->maxroundsroot = 20;
-   zhdata->maxrounds = 5;
-   zhdata->maxslack = 0.0;
-   zhdata->maxslackroot = 0.0;
-   zhdata->minviol = 0.1;
-   zhdata->dynamiccuts = TRUE;
-   zhdata->maxrowdensity = 0.05;
-   zhdata->densityoffset = 100;
-   zhdata->infeasible = FALSE;
-   zhdata->nreductions = 0;
+   zhdata.maxroundsroot = 20;
+   zhdata.maxrounds = 5;
+   zhdata.maxslack = 0.0;
+   zhdata.maxslackroot = 0.0;
+   zhdata.minviol = 0.1;
+   zhdata.dynamiccuts = TRUE;
+   zhdata.maxrowdensity = 0.05;
+   zhdata.densityoffset = 100;
+   zhdata.infeasible = FALSE;
+   zhdata.nreductions = 0;
    *ncutindices = 0;
 
-   SCIP_CALL( GCGselectConstraintsZeroHalf(masterscip, sol, allowlocal, depth, zhdata, ncalls, maxcuts, cutindices, ncutindices) );
-
-   SCIPfreeMemory(masterscip, &zhdata);
+   SCIP_CALL( GCGselectConstraintsZeroHalf(gcg, sol, allowlocal, depth, &zhdata, ncalls, maxcuts, cutindices, ncutindices) );
 
    return SCIP_OKAY;
 }
@@ -540,28 +536,28 @@ SCIP_RETCODE createCut(
 
 /** creates the master cut data for the subset row cut */
 static
-GCG_MASTERCUTDATA* createMastercutData(
-   SCIP*          masterscip,             /**< SCIP data structure (master problem) */
-   SCIP*          origscip,               /**< SCIP data structure (original problem) */
+GCG_EXTENDEDMASTERCONSDATA* createMastercutData(
+   GCG*           gcg,                    /**< GCG data structure */
    SCIP_ROW*      ssrc,                   /**< subset row cut */
    int            npricingproblems,       /**< number of pricing problems */
    SCIP_SEPADATA* sepadata,               /**< subset row separator data */
    SCIP_HASHMAP*  mappricingvarxcoeff     /**< map storing the coefficients for the pricing constraints for subset row cut */
    )
 {
-   GCG_MASTERCUTDATA*         mastercutdata = NULL;         // master cut data for subset row cut
-   GCG_PRICINGMODIFICATION*   pricingmodifications = NULL;  // pricing modifications associated with cut
+   SCIP* masterscip;
+   GCG_EXTENDEDMASTERCONSDATA*         mastercutdata = NULL;         // master cut data for subset row cut
+   GCG_PRICINGMODIFICATION**  pricingmodifications = NULL;  // pricing modifications associated with cut
    SCIP_Bool                  success;
    char                       name[SCIP_MAXSTRLEN];         // name of the subset row cut
    int                        npricingmodifications = 0;    // counter for number of pricing modifications
    int                        j;
 
+   masterscip = GCGgetMasterprob(gcg);
 
    /* create the pricing modification for every (relevant) pricing problem */
    for( j = 0; j < npricingproblems; j++ )
    {
       SCIP*                      pricingproblem;
-      GCG_PRICINGMODIFICATION    pricingmodification;
       SCIP_CONS**                pricingconss = NULL;
       SCIP_VAR**                 pricingvars;
       SCIP_VAR*                  coeffvar = NULL; // y
@@ -571,11 +567,11 @@ GCG_MASTERCUTDATA* createMastercutData(
       int                        l;
 
       /* in case of aggregated pricing problems, we skip the non-representative ones */
-      pricingproblem = GCGgetPricingprob(origscip, j);
-      if( pricingproblem == NULL || !GCGisPricingprobRelevant(origscip, j) )
+      pricingproblem = GCGgetPricingprob(gcg, j);
+      if( pricingproblem == NULL || !GCGisPricingprobRelevant(gcg, j) )
          continue;
 
-      assert(GCGisPricingprobRelevant(origscip, j));
+      assert(GCGisPricingprobRelevant(gcg, j));
       assert(SCIPgetObjsense(pricingproblem) == SCIP_OBJSENSE_MINIMIZE);
 
       npricingvars = SCIPgetNVars(pricingproblem);
@@ -624,22 +620,19 @@ GCG_MASTERCUTDATA* createMastercutData(
       SCIPaddCoefLinear(pricingproblem, pricingconss[0], coeffvar, -1.0);
       SCIPdebugPrintCons(pricingproblem, pricingconss[0], NULL);
 
+      assert(GCGgetNRelPricingprobs(gcg) > npricingmodifications);
+
       /* create pricing modifications containing y as the coeffvar and the single constraint we created */
-      GCGpricingmodificationCreate(masterscip, &pricingmodification, j, coeffvar, NULL, 0, pricingconss, 1); // released in GCGpricingmodificationFree
+      GCGpricingmodificationCreate(gcg, &pricingmodifications[npricingmodifications], j, coeffvar, NULL, 0, pricingconss, 1); // released in GCGpricingmodificationFree
 
-      /* ensure we have enough memory for all the pricing modifications */
-      if( npricingmodifications == 0 )
-         SCIPallocBlockMemoryArray(masterscip, &pricingmodifications, 1); // freed in GCGmastercutFree
-      else
-         SCIPreallocBlockMemoryArray(masterscip, &pricingmodifications, npricingmodifications, npricingmodifications + 1); // freed in GCGmastercutFree
-
-      pricingmodifications[npricingmodifications] = pricingmodification;
       npricingmodifications++;
    }
    SCIPdebugMessage("number of pricing mods: %i\n", npricingmodifications);
 
+   SCIPreallocBlockMemoryArray(masterscip, &pricingmodifications, GCGgetNRelPricingprobs(gcg), npricingmodifications);
+
    /* create master cut data containing y, ssrc and the pricing modifications */
-   GCGmastercutCreateFromRow(masterscip, &mastercutdata, ssrc, pricingmodifications, npricingmodifications); // freed in GCGmastercutFree
+   GCGextendedmasterconsCreateFromRow(gcg, &mastercutdata, ssrc, pricingmodifications, npricingmodifications, NULL, NULL); // freed in GCGextendedmasterconsFree
    sepadata->ngeneratedcut++;
 
    return mastercutdata;
@@ -651,7 +644,7 @@ GCG_MASTERCUTDATA* createMastercutData(
 static
 SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
 {
-   SCIP*             origscip;                     // original problem
+   GCG*              gcg;
    SCIP_SEPADATA*    sepadata;
    SCIP_HASHMAP*     mappricingvarxcoeff = NULL;   // maps pricing variable to its coefficient in its pricing constraint
    SCIP_CONS**       masterconss;                  // a              : constraints in master problem
@@ -669,17 +662,15 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    int               curfound;                     // number of generated subset-row cuts
    int               i;
 
-
    assert(scip != NULL);
    assert(result != NULL);
    assert(sepa != NULL);
    assert(GCGisMaster(scip));
 
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
-
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
+
+   gcg = sepadata->gcg;
 
    isroot = SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip);
    ncalls = SCIPsepaGetNCallsAtNode(sepa);
@@ -728,10 +719,10 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    }
 
    /* get info of master problem */
-   originalconss = GCGgetOrigMasterConss(origscip);
-   masterconss = GCGgetMasterConss(origscip);
-   nmasterconss = GCGgetNMasterConss(origscip);
-   npricingproblems = GCGgetNPricingprobs(origscip);
+   originalconss = GCGgetOrigMasterConss(gcg);
+   masterconss = GCGgetMasterConss(gcg);
+   nmasterconss = GCGgetNMasterConss(gcg);
+   npricingproblems = GCGgetNPricingprobs(gcg);
    nmastervars = SCIPgetNVars(scip);
    ncontmastervars = SCIPgetNContVars(scip);
 
@@ -763,7 +754,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    if( sepadata->strategy == 0 )
       SCIP_CALL( selectConstraintsRandom(scip, &cutindices, &ncutindices, maxcuts, sepadata->n, nmasterconss, sepadata->randnumgen) );
    else if( sepadata->strategy == 1 )
-      SCIP_CALL( selectConstraintsKosterEtAl(scip, &cutindices, &ncutindices, ncalls, allowlocal, depth, maxcuts, NULL) );
+      SCIP_CALL( selectConstraintsKosterEtAl(gcg, &cutindices, &ncutindices, ncalls, allowlocal, depth, maxcuts, NULL) );
    else
    {
       *result = SCIP_DIDNOTRUN;
@@ -773,7 +764,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    curfound = 0;
    for( i = 0; i < ncutindices; i++ )
    {
-      GCG_MASTERCUTDATA*   mastercutdata = NULL;
+      GCG_EXTENDEDMASTERCONSDATA*   mastercutdata = NULL;
       SCIP_ROW*            ssrc = NULL;
       SCIP_Real*           weights = NULL;
 
@@ -797,13 +788,13 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       SCIPprintRow(scip, ssrc, NULL);
 #endif
       // determine the pricing variables and their coefficients for the pricing constraints
-      SCIP_CALL( computePricingConssCoefficients(origscip, originalconss, cutindices[i]->indices, cutindices[i]->nindices,
+      SCIP_CALL( computePricingConssCoefficients(gcg, originalconss, cutindices[i]->indices, cutindices[i]->nindices,
                                                  weights, mappricingvarxcoeff) );
 
       // add cut to separation store and corresponding master separator cut to sepacut event handler
-      mastercutdata = createMastercutData(scip, origscip, ssrc, npricingproblems, sepadata, mappricingvarxcoeff);
+      mastercutdata = createMastercutData(gcg, ssrc, npricingproblems, sepadata, mappricingvarxcoeff);
       SCIP_CALL( SCIPaddRow(scip, ssrc, FALSE, &success) );
-      SCIP_CALL( addSubsetRowCutToGeneratedCuts(scip, mastercutdata, weights, cutindices[i]->indices,
+      SCIP_CALL( addSubsetRowCutToGeneratedCuts(gcg, mastercutdata, weights, cutindices[i]->indices,
                                                 cutindices[i]->nindices, sepadata->sepa) );
       curfound++;
 
@@ -831,43 +822,39 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
 static
 GCG_DECL_SEPAGETCOLCOEFFICIENTS(gcgsepaGetColCoefficientSubsetrow)
 {
-   return GCGchvatalGomoryCutGetColumnCoefficient(scip, cut, gcgcol, coeff);
+   return GCGchvatalGomoryCutGetColumnCoefficient(gcg, cut, gcgcol, coeff);
 }
 
 /** compute cut coefficient for master variable */
 static
 GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
 {
-   return GCGchvatalGomoryCutGetVariableCoefficient(scip, cut, vars, vals, nvars, probnr, coef);
+   return GCGchvatalGomoryCutGetVariableCoefficient(gcg, cut, vars, vals, nvars, probnr, coef);
 }
 
 /** modifies the objective values of the pricing variables affected by the master cut */
 static
 GCG_DECL_SEPASETOBJECTIVE(gcgsepaSetObjectiveSubsetrow)
 {
-   return GCGchvatalGomorySetPricingObjectives(scip, cut, dual);
+   return GCGchvatalGomorySetPricingObjectives(gcg, cut, dual);
 }
 
 /** modifies outdated column to respect cut */
 static
 GCG_DECL_SEPAADJUSTCOL(gcgsepaAdjustCol)
 {
-   return GCGchvatalGomoryAdjustGCGColumn(scip, cut, gcgcol);
+   return GCGchvatalGomoryAdjustGCGColumn(gcg, cut, gcgcol);
 }
 
 /** initialization method of separator (called after problem was transformed) */
 static
 SCIP_DECL_SEPAINIT(sepaInitSubsetrow)
 {
-   SCIP*          origscip;
    SCIP_SEPADATA* sepadata;
 
    assert(scip != NULL);
    assert(sepa != NULL);
    assert(GCGisMaster(scip));
-
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
@@ -892,16 +879,20 @@ SCIP_DECL_SEPAINIT(sepaInitSubsetrow)
 
 /** creates the scip separator of the subset row separator and includes it in master SCIP*/
 SCIP_RETCODE SCIPincludeSepaSubsetrow(
-   SCIP*                 scip                /**< SCIP data structure (master problem) */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
+   SCIP* scip;
    SCIP_SEPADATA* sepadata;
    SCIP_SEPA* sepa;
    SCIP* origscip;
 
+   scip = GCGgetMasterprob(gcg);
+
    /* create subsetrow separator data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &sepadata) );
    sepa = NULL;
+   sepadata->gcg = gcg;
    sepadata->ngeneratedcut = 0;
    sepadata->randnumgen = NULL;
    sepadata->enable = FALSE;
@@ -921,7 +912,7 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
    SCIP_CALL( SCIPsetSepaInit(scip, sepa, sepaInitSubsetrow) );
    SCIP_CALL( SCIPsetSepaExitsol(scip, sepa, sepaExitSubsetrow) );
 
-   origscip = GCGmasterGetOrigprob(scip);
+   origscip = GCGgetOrigprob(gcg);
    assert(origscip != NULL);
 
    /* define setting parameters */

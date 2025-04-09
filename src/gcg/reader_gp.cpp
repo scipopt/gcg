@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -42,17 +43,17 @@
 
 #include "scip/scip.h"
 
-#include "reader_gp.h"
-#include "scip_misc.h"
-#include "struct_decomp.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "pub_decomp.h"
-#include "params_visu.h"
+#include "gcg/reader_gp.h"
+#include "gcg/scip_misc.h"
+#include "gcg/struct_decomp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/pub_decomp.h"
+#include "gcg/params_visu.h"
 
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "miscvisualization.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/miscvisualization.h"
 
 #define READER_NAME             "gpreader"
 #define READER_DESC             "gnuplot file writer for partialdec visualization"
@@ -61,6 +62,11 @@
 #define SCALING_FACTOR_NONZEROS 0.6
 
 using namespace gcg;
+
+struct SCIP_ReaderData
+{
+   GCG* gcg;
+};
 
 /*
  * Callback methods of reader
@@ -71,6 +77,12 @@ using namespace gcg;
 static
 SCIP_DECL_READERFREE(readerFreeGp)
 {
+   SCIP_READERDATA* readerdata;
+
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
+
+   SCIPfreeMemory(scip, &readerdata);
    assert(strcmp(SCIPreaderGetName(reader), READER_NAME) == 0);
    return SCIP_OKAY;
 }
@@ -83,12 +95,15 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    PARTIALDECOMP* partialdec;
    char filename[SCIP_MAXSTRLEN];
    char outputname[SCIP_MAXSTRLEN];
+   SCIP_READERDATA* readerdata;
 
+   readerdata = SCIPreaderGetData(reader);
+   assert(readerdata != NULL);
    assert(scip != NULL);
    assert(file != NULL);
 
    /* get partialdec to write */
-   partialdec = GCGgetPartialdecToWrite(scip, transformed);
+   partialdec = GCGgetPartialdecToWrite(readerdata->gcg, transformed);
 
    if(partialdec == NULL)
    {
@@ -101,10 +116,10 @@ SCIP_DECL_READERWRITE(readerWriteGp)
       GCGgetFilePath(file, filename);
 
       /* get filename for compiled file */
-      GCGgetVisualizationFilename(scip, partialdec, "pdf", outputname);
+      GCGgetVisualizationFilename(readerdata->gcg, partialdec, "pdf", outputname);
       strcat(outputname, ".pdf");
 
-      GCGwriteGpVisualization(scip, filename, outputname, partialdec->getID() );
+      GCGwriteGpVisualization(readerdata->gcg, filename, outputname, partialdec->getID() );
 
       *result = SCIP_SUCCESS;
    }
@@ -117,7 +132,7 @@ SCIP_DECL_READERWRITE(readerWriteGp)
  * @returns SCIP status */
 static
 SCIP_RETCODE writeGpHeader(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    char*                 filename,           /**< filename (including path) to write to */
    const char*           outputname,         /**< the filename to which gnuplot should compile the visualization */
    GP_OUTPUT_FORMAT      outputformat        /**< the output format which gnuplot should emit */
@@ -157,7 +172,7 @@ SCIP_RETCODE writeGpHeader(
  * @returns SCIP status */
 static
 SCIP_RETCODE drawGpBox(
-   SCIP* scip,       /**< SCIP data structure */
+   GCG* gcg,         /**< GCG data structure */
    char* filename,   /**< filename (including path) to write to */
    int objectid,     /**< id number of box (>0), must be unique */
    int x1,           /**< x value of lower left vertex coordinate */
@@ -171,7 +186,7 @@ SCIP_RETCODE drawGpBox(
    ofs.open( filename, std::ofstream::out | std::ofstream::app );
 
    ofs << "set object " << objectid << " rect from " << x1 << "," << y1 << " to " << x2 << "," << y2
-      << " fc rgb \"" << color << "\"" << " lc rgb \"" << SCIPvisuGetColorLine(scip) << "\"" << std::endl;
+      << " fc rgb \"" << color << "\"" << " lc rgb \"" << GCGvisuGetColorLine(gcg) << "\"" << std::endl;
 
    ofs.close();
    return SCIP_OKAY;
@@ -182,7 +197,7 @@ SCIP_RETCODE drawGpBox(
  * @returns SCIP status */
 static
 SCIP_RETCODE writeGpNonzeros(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    const char* filename,   /**< filename to write to (including path & extension) */
    PARTIALDECOMP* partialdec,           /**< PARTIALDECOMP for which the nonzeros should be visualized */
    float radius            /**< radius of the dots (scaled concerning matrix dimensions)*/
@@ -282,7 +297,7 @@ SCIP_RETCODE writeGpNonzeros(
    ofs.open (filename, std::ofstream::out | std::ofstream::app );
 
    /* scaling factor concerning user wishes */
-   SCIPgetIntParam(scip, "visual/nonzeroradius", &radiusscale);
+   SCIPgetIntParam(GCGgetOrigprob(gcg), "visual/nonzeroradius", &radiusscale);
    radius *= radiusscale;
 
 
@@ -291,7 +306,7 @@ SCIP_RETCODE writeGpNonzeros(
       radius = (float)0.01;
 
    /* start writing dots */
-   ofs << "set style line 99 lc rgb \"" << SCIPvisuGetColorNonzero(scip) << "\"  " << std::endl;
+   ofs << "set style line 99 lc rgb \"" << GCGvisuGetColorNonzero(gcg) << "\"  " << std::endl;
    ofs << "plot \"-\" using 1:2:(" << radius << ") with dots ls 99 notitle " << std::endl;
    /* write scatter plot */
    for( int row = 0; row < partialdec->getNConss(); ++row )
@@ -323,7 +338,7 @@ SCIP_RETCODE writeGpNonzeros(
  * This includes axes, blocks and nonzeros. */
 static
 SCIP_RETCODE writeGpPartialdec(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    char* filename,         /**< filename (including path) to write to */
    PARTIALDECOMP* partialdec            /**< PARTIALDECOMP for which the nonzeros should be visualized */
    )
@@ -372,8 +387,8 @@ SCIP_RETCODE writeGpPartialdec(
       if(partialdec->getNLinkingvars() != 0)
       {
          ++objcounter; /* has to start at 1 for gnuplot */
-         drawGpBox( scip, filename, objcounter, 0, 0, partialdec->getNLinkingvars(), partialdec->getNConss(),
-            SCIPvisuGetColorLinking(scip) );
+         drawGpBox(gcg, filename, objcounter, 0, 0, partialdec->getNLinkingvars(), partialdec->getNConss(),
+            GCGvisuGetColorLinking(gcg));
          colboxcounter += partialdec->getNLinkingvars();
       }
 
@@ -381,8 +396,8 @@ SCIP_RETCODE writeGpPartialdec(
       if(partialdec->getNMasterconss() != 0)
       {
          ++objcounter;
-         drawGpBox( scip, filename, objcounter, 0, 0, partialdec->getNVars(), partialdec->getNMasterconss(),
-            SCIPvisuGetColorMasterconss(scip) );
+         drawGpBox(gcg, filename, objcounter, 0, 0, partialdec->getNVars(), partialdec->getNMasterconss(),
+            GCGvisuGetColorMasterconss(gcg) );
          rowboxcounter += partialdec->getNMasterconss();
       }
 
@@ -391,7 +406,7 @@ SCIP_RETCODE writeGpPartialdec(
       {
          ++objcounter;
          //      drawGpBox( scip, filename, objcounter, colboxcounter, 0, partialdec->getNMastervars()+colboxcounter,
-         //         partialdec->getNMasterconss(), SCIPvisuGetColorMastervars() );
+         //         partialdec->getNMasterconss(), GCGvisuGetColorMastervars() );
          colboxcounter += partialdec->getNMastervars();
       }
 
@@ -399,18 +414,18 @@ SCIP_RETCODE writeGpPartialdec(
       for( int b = 0; b < partialdec->getNBlocks() ; ++b )
       {
          ++objcounter;
-         drawGpBox(scip, filename, objcounter, colboxcounter, rowboxcounter,
+         drawGpBox(gcg, filename, objcounter, colboxcounter, rowboxcounter,
             colboxcounter + partialdec->getNVarsForBlock(b), rowboxcounter + partialdec->getNConssForBlock(b),
-            SCIPvisuGetColorBlock(scip));
+            GCGvisuGetColorBlock(gcg));
          colboxcounter += partialdec->getNVarsForBlock(b);
 
          if( partialdec->getNStairlinkingvars(b) != 0 )
          {
             ++objcounter;
-            drawGpBox( scip, filename, objcounter, colboxcounter, rowboxcounter,
+            drawGpBox(gcg, filename, objcounter, colboxcounter, rowboxcounter,
                colboxcounter + partialdec->getNStairlinkingvars(b),
                rowboxcounter + partialdec->getNConssForBlock(b) + partialdec->getNConssForBlock(b+1),
-               SCIPvisuGetColorStairlinking(scip) );
+               GCGvisuGetColorStairlinking(gcg) );
          }
          colboxcounter += partialdec->getNStairlinkingvars(b);
          rowboxcounter += partialdec->getNConssForBlock(b);
@@ -420,17 +435,17 @@ SCIP_RETCODE writeGpPartialdec(
       if(partialdec->getNOpenvars() != 0)
       {
          ++objcounter;
-         drawGpBox( scip, filename, objcounter, colboxcounter, rowboxcounter, colboxcounter + partialdec->getNOpenvars(),
-            rowboxcounter+partialdec->getNOpenconss(), SCIPvisuGetColorOpen(scip) );
+         drawGpBox(gcg, filename, objcounter, colboxcounter, rowboxcounter, colboxcounter + partialdec->getNOpenvars(),
+            rowboxcounter+partialdec->getNOpenconss(), GCGvisuGetColorOpen(gcg) );
          colboxcounter += partialdec->getNOpenvars();
          rowboxcounter += partialdec->getNOpenconss();
       }
    }
    /* --- draw nonzeros --- */
-   if( SCIPvisuGetDraftmode(scip) == FALSE )
+   if( GCGvisuGetDraftmode(gcg) == FALSE )
    {
       /* scale the dots according to matrix dimensions here */
-      writeGpNonzeros(scip, filename, partialdec, SCIPvisuGetNonzeroRadius(scip, partialdec->getNVars(), partialdec->getNConss(),
+      writeGpNonzeros(gcg, filename, partialdec, GCGvisuGetNonzeroRadius(gcg, partialdec->getNVars(), partialdec->getNConss(),
          (float)SCALING_FACTOR_NONZEROS) );
    }
    else
@@ -447,7 +462,7 @@ SCIP_RETCODE writeGpPartialdec(
 
 /* Writes a visualization for the given partialdec */
 SCIP_RETCODE GCGwriteGpVisualizationFormat(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    char* filename,         /**< filename (including path) to write to */
    char* outputname,       /**< filename for compiled output file */
    int partialdecid,       /**< id of partialdec to visualize */
@@ -458,7 +473,7 @@ SCIP_RETCODE GCGwriteGpVisualizationFormat(
    PARTIALDECOMP* partialdec;
 
    /* get partialdec and detprobdata */
-   partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
+   partialdec = GCGconshdlrDecompGetPartialdecFromID(gcg, partialdecid);
    if( partialdec == NULL )
    {
       SCIPerrorMessage("Could not find PARTIALDECOMP!\n");
@@ -473,28 +488,28 @@ SCIP_RETCODE GCGwriteGpVisualizationFormat(
    }
 
    /* write file */
-   writeGpHeader(scip, filename, outputname, outputformat );
-   writeGpPartialdec(scip, filename, partialdec );
+   writeGpHeader(gcg, filename, outputname, outputformat );
+   writeGpPartialdec(gcg, filename, partialdec );
 
    return SCIP_OKAY;
 }
 
 /* Writes a visualization as .pdf file for the given partialdec */
 SCIP_RETCODE GCGwriteGpVisualization(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    char* filename,         /**< filename (including path) to write to */
    char* outputname,       /**< filename for compiled output file */
    int partialdecid             /**< id of partialdec to visualize */
    )
 {
-   return GCGwriteGpVisualizationFormat(scip, filename, outputname, partialdecid, GP_OUTPUT_FORMAT_PDF);
+   return GCGwriteGpVisualizationFormat(gcg, filename, outputname, partialdecid, GP_OUTPUT_FORMAT_PDF);
 }
 
 
 /* Creates a block matrix and outputs its visualization as .pdf file
  * @returns SCIP return code*/
 SCIP_RETCODE GCGWriteGpDecompMatrix(
-   SCIP*                 scip,               /* scip data structure */
+   GCG*                  gcg,                /* GCG data structure */
    const char*           filename,           /* filename the output should be written to (including directory) */
    const char*           workfolder,         /* directory in which should be worked */
    SCIP_Bool             originalmatrix      /* should the original (or transformed) matrix be written */
@@ -503,17 +518,17 @@ SCIP_RETCODE GCGWriteGpDecompMatrix(
    char outputname[SCIP_MAXSTRLEN];
    char filename2[SCIP_MAXSTRLEN];
 
-   int id = GCGconshdlrDecompAddMatrixPartialdec(scip, !originalmatrix);
+   int id = GCGconshdlrDecompAddMatrixPartialdec(gcg, !originalmatrix);
 
-   GCGgetVisualizationFilename(scip, GCGconshdlrDecompGetPartialdecFromID(scip, id), "pdf", outputname);
+   GCGgetVisualizationFilename(gcg, GCGconshdlrDecompGetPartialdecFromID(gcg, id), "pdf", outputname);
 
    strcat(outputname, ".pdf");
    strcpy(filename2, filename);
-   SCIPinfoMessage(scip, NULL, "filename for matrix plot is %s \n", filename );
-   SCIPinfoMessage(scip, NULL, "foldername for matrix plot is %s \n", workfolder );
+   SCIPinfoMessage(GCGgetOrigprob(gcg), NULL, "filename for matrix plot is %s \n", filename );
+   SCIPinfoMessage(GCGgetOrigprob(gcg), NULL, "foldername for matrix plot is %s \n", workfolder );
 
    /* actual writing */
-   GCGwriteGpVisualization(scip, filename2, outputname, id );
+   GCGwriteGpVisualization(gcg, filename2, outputname, id );
 
    return SCIP_OKAY;
 }
@@ -524,12 +539,18 @@ SCIP_RETCODE GCGWriteGpDecompMatrix(
  */
 
 /* includes the gp file reader into SCIP */
-SCIP_RETCODE SCIPincludeReaderGp(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeReaderGp(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
-   SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
-      NULL, readerFreeGp, NULL, readerWriteGp, NULL) );
+   SCIP_READERDATA* readerdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
+   /* create cls reader data */
+   SCIP_CALL( SCIPallocMemory(origprob, &readerdata) );
+   readerdata->gcg = gcg;
+   SCIP_CALL( SCIPincludeReader(origprob, READER_NAME, READER_DESC, READER_EXTENSION,
+      NULL, readerFreeGp, NULL, readerWriteGp, readerdata) );
 
    return SCIP_OKAY;
 }

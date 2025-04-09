@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -36,8 +37,8 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_mastervecldiving.h"
-#include "heur_masterdiving.h"
+#include "gcg/heur_mastervecldiving.h"
+#include "gcg/heur_masterdiving.h"
 
 
 #define HEUR_NAME             "mastervecldiving"
@@ -61,7 +62,7 @@
  *   (we want to "fix" as many rows as possible with the least damage to the objective function)
  */
 static
-GCG_DECL_DIVINGSELECTVAR(heurSelectVarMastervecldiving) /*lint --e{715}*/
+GCG_DECL_MASTER_DIVINGSELECTVAR(heurSelectVarMastervecldiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    SCIP_VAR** lpcands;
    SCIP_Real* lpcandssol;
@@ -69,15 +70,16 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarMastervecldiving) /*lint --e{715}*/
    int nlpcands;
    SCIP_Real bestscore;
    int c;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
    /* check preconditions */
-   assert(scip != NULL);
+   assert(masterprob != NULL);
    assert(heur != NULL);
    assert(bestcand != NULL);
    assert(bestcandmayround != NULL);
 
    /* get fractional variables that should be integral */
-   SCIP_CALL( SCIPgetLPBranchCands(scip, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL) );
+   SCIP_CALL( SCIPgetLPBranchCands(masterprob, &lpcands, &lpcandssol, &lpcandsfrac, &nlpcands, NULL, NULL) );
    assert(lpcands != NULL);
    assert(lpcandsfrac != NULL);
    assert(lpcandssol != NULL);
@@ -117,7 +119,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarMastervecldiving) /*lint --e{715}*/
       *bestcandmayround = *bestcandmayround && (SCIPvarMayRoundDown(var) || SCIPvarMayRoundUp(var));
 
       /* smaller score is better */
-      score = (objdelta + SCIPsumepsilon(scip))/((SCIP_Real)colveclen+1.0);
+      score = (objdelta + SCIPsumepsilon(masterprob))/((SCIP_Real)colveclen+1.0);
 
       /* penalize negative scores (i.e. improvements in the objective) */
       if( score <= 0.0 )
@@ -145,13 +147,13 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarMastervecldiving) /*lint --e{715}*/
 
 /** creates the mastervecldiving heuristic and includes it in GCG */
 SCIP_RETCODE GCGincludeHeurMastervecldiving(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_HEUR* heur;
 
    /* include diving heuristic */
-   SCIP_CALL( GCGincludeDivingHeurMaster(scip, &heur,
+   SCIP_CALL( GCGincludeDivingHeurMaster(gcg, &heur,
          HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, NULL, NULL, NULL, NULL, NULL, NULL, NULL, heurSelectVarMastervecldiving, NULL) );
 

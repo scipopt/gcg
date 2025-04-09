@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -34,16 +35,15 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include "scip/scip.h"
-#include "class_pricingtype.h"
+#include "gcg/class_pricingtype.h"
 #include "scip/cons_linear.h"
-#include "pub_gcgvar.h"
+#include "gcg/pub_gcgvar.h"
+#include "gcg/pub_extendedmasterconsdata.h"
 #include "scip/pub_lp.h"
 #include "scip/clock.h"
-#include "scip_misc.h"
-#include "struct_mastercutdata.h"
+#include "gcg/scip_misc.h"
 
 #include <exception>
-#include <scip/def.h>
 
 #define DEFAULT_MAXROUNDSREDCOST         INT_MAX    /**< maximal number of reduced cost pricing rounds */
 #define DEFAULT_MAXCOLSROUNDREDCOSTROOT  100        /**< maximal number of columns per reduced cost pricing round at root node */
@@ -72,10 +72,10 @@
                        while( FALSE )
 
 PricingType::PricingType(
-   SCIP*                 scip
-   )
+   GCG*                 gcgstruct
+   ) : gcg(gcgstruct)
 {
-   scip_ = scip;                             /* SCIP instance (master problem) */
+   masterprob = GCGgetMasterprob(gcg);       /* SCIP instance (master problem) */
    type  = GCG_PRICETYPE_UNKNOWN;            /* type of pricing */
 
    /* statistical values */
@@ -92,46 +92,45 @@ PricingType::PricingType(
    relmaxprobs = 1.0;                        /* maximal percentage of pricing problems that are solved if variables have already been found */
    relmaxsuccessfulprobs = 1.0;              /* maximal percentage of successfully solved pricing problems until pricing loop is aborted */
 
-   SCIP_CALL_EXC( SCIPcreateCPUClock(scip, &(clock)) );
+   SCIP_CALL_EXC( SCIPcreateCPUClock(masterprob, &(clock)) );
 }
 
 PricingType::~PricingType()
 {
-   SCIP_CALL_ABORT( SCIPfreeClock(scip_, &(clock)) );
+   SCIP_CALL_ABORT( SCIPfreeClock(masterprob, &(clock)) );
 
-   scip_ = (SCIP*) NULL;
+   masterprob = (SCIP*) NULL;
 }
 
 SCIP_RETCODE PricingType::startClock()
 {
-   SCIP_CALL( SCIPstartClock(scip_, clock) );
+   SCIP_CALL( SCIPstartClock(masterprob, clock) );
    return SCIP_OKAY;
 }
 
 SCIP_RETCODE PricingType::stopClock()
 {
-   SCIP_CALL( SCIPstopClock(scip_, clock) );
+   SCIP_CALL( SCIPstopClock(masterprob, clock) );
    return SCIP_OKAY;
 }
 
 SCIP_Real PricingType::getClockTime() const
 {
-   return SCIPgetClockTime(scip_, clock);
+   return SCIPgetClockTime(masterprob, clock);
 }
 
 FarkasPricing::FarkasPricing(
-   SCIP*                 scip
-   ) : PricingType(scip)
+   GCG*                  gcgstruct
+   ) : PricingType(gcgstruct)
 {
    type = GCG_PRICETYPE_FARKAS;
 }
 
 SCIP_Real FarkasPricing::consGetDual(
-   SCIP*                 scip,
    SCIP_CONS*            cons
    ) const
 {
-   return SCIPgetDualfarkasLinear(scip, cons);
+   return SCIPgetDualfarkasLinear(masterprob, cons);
 }
 
 SCIP_Real FarkasPricing::rowGetDual(
@@ -141,21 +140,17 @@ SCIP_Real FarkasPricing::rowGetDual(
    return SCIProwGetDualfarkas(row);
 }
 
-SCIP_Real FarkasPricing::mastercutGetDual(
-   SCIP*                 scip,
-   GCG_MASTERCUTDATA*    mastercutdata
+SCIP_Real FarkasPricing::extendedmasterconsGetDual(
+   GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata
    ) const
 {
-   assert(scip != NULL);
-   assert(mastercutdata != NULL);
-   switch( mastercutdata->type )
+   assert(extendedmasterconsdata != NULL);
+   switch( GCGextendedmasterconsGetType(extendedmasterconsdata) )
    {
-   case GCG_MASTERCUTTYPE_CONS:
-      assert(mastercutdata->cut.cons != NULL);
-      return SCIPgetDualfarkasLinear(scip, mastercutdata->cut.cons);
-   case GCG_MASTERCUTTYPE_ROW:
-      assert(mastercutdata->cut.row != NULL);
-      return SCIProwGetDualfarkas(mastercutdata->cut.row);
+   case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+      return SCIPgetDualfarkasLinear(masterprob, GCGextendedmasterconsGetCons(extendedmasterconsdata));
+   case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+      return SCIProwGetDualfarkas(GCGextendedmasterconsGetRow(extendedmasterconsdata));
    default:
       SCIP_CALL_ABORT( SCIP_ERROR );
       return 0.0;
@@ -190,7 +185,7 @@ SCIP_Real FarkasPricing::getRelmaxprobs() const
 
 SCIP_RETCODE FarkasPricing::addParameters()
 {
-   SCIP* origprob = GCGmasterGetOrigprob(scip_);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/maxcolsroundfarkas",
          "maximal number of columns per Farkas pricing round",
@@ -208,11 +203,10 @@ SCIP_RETCODE FarkasPricing::addParameters()
 }
 
 SCIP_Real ReducedCostPricing::consGetDual(
-   SCIP*                 scip,
    SCIP_CONS*            cons
    ) const
 {
-   return SCIPgetDualsolLinear(scip, cons);
+   return SCIPgetDualsolLinear(masterprob, cons);
 }
 
 SCIP_Real ReducedCostPricing::rowGetDual(
@@ -222,21 +216,17 @@ SCIP_Real ReducedCostPricing::rowGetDual(
    return SCIProwGetDualsol(row);
 }
 
-SCIP_Real ReducedCostPricing::mastercutGetDual(
-   SCIP*                 scip,
-   GCG_MASTERCUTDATA*    mastercutdata
+SCIP_Real ReducedCostPricing::extendedmasterconsGetDual(
+   GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata
    ) const
 {
-   assert(scip != NULL);
-   assert(mastercutdata != NULL);
-   switch( mastercutdata->type )
+   assert(extendedmasterconsdata != NULL);
+   switch( GCGextendedmasterconsGetType(extendedmasterconsdata) )
    {
-   case GCG_MASTERCUTTYPE_CONS:
-      assert(mastercutdata->cut.cons != NULL);
-      return SCIPgetDualsolLinear(scip, mastercutdata->cut.cons);
-   case GCG_MASTERCUTTYPE_ROW:
-      assert(mastercutdata->cut.row != NULL);
-      return SCIProwGetDualsol(mastercutdata->cut.row);
+   case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+      return SCIPgetDualsolLinear(masterprob, GCGextendedmasterconsGetCons(extendedmasterconsdata));
+   case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+      return SCIProwGetDualsol(GCGextendedmasterconsGetRow(extendedmasterconsdata));
    default:
       SCIP_CALL_ABORT( SCIP_ERROR );
       return 0.0;
@@ -244,8 +234,8 @@ SCIP_Real ReducedCostPricing::mastercutGetDual(
 }
 
 ReducedCostPricing::ReducedCostPricing(
-   SCIP*                 p_scip
-   ) : PricingType(p_scip)
+   GCG*                  gcgstruct
+   ) : PricingType(gcgstruct)
 {
    type = GCG_PRICETYPE_REDCOST;
 }
@@ -268,24 +258,24 @@ SCIP_Real ReducedCostPricing::varGetObj(
 /** returns the maximal number of columns per pricing round */
 int ReducedCostPricing::getMaxcolsround() const
 {
-   return GCGisRootNode(scip_) ? maxcolsroundroot : maxcolsround;
+   return GCGisRootNode(gcg) ? maxcolsroundroot : maxcolsround;
 }
 
 /** returns the maximal number of columns per problem to be generated during pricing */
 int ReducedCostPricing::getMaxcolsprob() const
 {
-   return GCGisRootNode(scip_) ? maxcolsprobroot : maxcolsprob;
+   return GCGisRootNode(gcg) ? maxcolsprobroot : maxcolsprob;
 }
 
 /** returns the maximal percentage of pricing problems that are solved if variables have already been found */
 SCIP_Real ReducedCostPricing::getRelmaxprobs() const
 {
-   return GCGisRootNode(scip_) ? relmaxprobsroot : relmaxprobs;
+   return GCGisRootNode(gcg) ? relmaxprobsroot : relmaxprobs;
 }
 
 SCIP_RETCODE ReducedCostPricing::addParameters()
 {
-   SCIP* origprob = GCGmasterGetOrigprob(scip_);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    SCIP_CALL( SCIPaddIntParam(origprob, "pricing/masterpricer/maxroundsredcost",
          "maximal number of pricing rounds per node after the root node",

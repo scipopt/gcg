@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -35,10 +36,10 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "gcgpqueue.h"
-#include "pub_gcgpqueue.h"
+#include "gcg/gcgpqueue.h"
+#include "gcg/pub_gcgpqueue.h"
 
-#include "gcg.h"
+#include "gcg/gcg.h"
 #include "scip/def.h"
 #include "scip/scip.h"
 #include "blockmemshell/memory.h"
@@ -64,16 +65,21 @@ SCIP_RETCODE pqueueResize(
    )
 {
    int newsize;
+   SCIP_RETCODE retcode = SCIP_OKAY;
    assert(pqueue != NULL);
 
    if( minsize <= pqueue->size )
-      return SCIP_OKAY;
+      return retcode;
 
    newsize = SCIPcalcMemGrowSize(pqueue->scip, minsize);
-   SCIP_CALL( SCIPreallocBlockMemoryArray(pqueue->scip, &pqueue->slots, pqueue->size, newsize) );
+
+   GCG_SET_LOCK(pqueue->memorylock);
+   retcode = SCIPreallocBlockMemoryArray(pqueue->scip, &pqueue->slots, pqueue->size, newsize);
+   GCG_UNSET_LOCK(pqueue->memorylock);
+
    pqueue->size = newsize;
 
-   return SCIP_OKAY;
+   return retcode;
 }
 
 /** heapifies element at position pos into corresponding subtrees */
@@ -119,7 +125,8 @@ SCIP_RETCODE GCGpqueueCreate(
    SCIP*                 scip,               /**< SCIP data structure */
    GCG_PQUEUE**          pqueue,             /**< pointer to a priority queue */
    int                   initsize,           /**< initial number of available element slots */
-   SCIP_DECL_SORTPTRCOMP((*ptrcomp))         /**< data element comparator */
+   SCIP_DECL_SORTPTRCOMP((*ptrcomp)),        /**< data element comparator */
+   GCG_LOCK*             memorylock          /**< memory lock */
    )
 {
    assert(pqueue != NULL);
@@ -133,6 +140,9 @@ SCIP_RETCODE GCGpqueueCreate(
    (*pqueue)->scip = scip;
    (*pqueue)->slots = NULL;
    (*pqueue)->ptrcomp = ptrcomp;
+#ifdef _OPENMP
+   (*pqueue)->memorylock = memorylock;
+#endif
    SCIP_CALL( pqueueResize(*pqueue, initsize) );
 
    return SCIP_OKAY;

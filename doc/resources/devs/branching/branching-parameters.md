@@ -6,11 +6,11 @@
 ## Parameters for Strong Branching-Based Branching Candidate Selection Heuristics {#selection-heuristics-params}
 
 See @ref branching-selection-heuristics "here" for explanations regarding branching candidate selection heuristics.
-## Activating selection heuristics
+### Activating selection heuristics
 Per default, **strong branching is disabled**. Furthermore, GCG will use the first active non-strong branching heuristics in place of
 pseudocost branching for hybrid, reliability and hierarchical branching.
 
-### Original Variable Branching
+#### Original Variable Branching
 ```
 branching/orig/usepseudocosts =  TRUE
 branching/orig/mostfrac       = FALSE
@@ -18,7 +18,7 @@ branching/orig/random         = FALSE
 branching/orig/usestrong      = FALSE
 ```
 
-### Ryan-Foster Branching
+#### Ryan-Foster Branching
 ```
 branching/bp_strong/ryanfoster/usepseudocosts = FALSE
 branching/bp_strong/ryanfoster/mostfrac       = FALSE
@@ -27,9 +27,9 @@ branching/ryanfoster/usestrong                =  TRUE
 ```
 
 
-## Branching rule-dependent settings for hierarchical strong branching
+### Branching rule-dependent settings for hierarchical strong branching
 
-### Number of candidates in phase 0
+#### Number of candidates in phase 0
 ```
 # minimum number of output candidates from phase 0 [1..MAX]
 branching/orig/minphase0outcands           =  10
@@ -49,7 +49,7 @@ branching/orig/phase1gapweight             = 0.25
 branching/ryanfoster/phase1gapweight       = 0.25
 ```
 
-### Number of candidates in phase 1
+#### Number of candidates in phase 1
 ```
 # minimum number of output candidates from phase 1 [1..MAX]
 branching/orig/minphase1outcands           =   3
@@ -70,7 +70,7 @@ branching/orig/phase2gapweight             =   1
 branching/ryanfoster/phase2gapweight       =   1
 ```
 
-## Additional hierarchical strong branching parameters
+### Additional hierarchical strong branching parameters
 ```
 # minimum number of variables for phase 2 to be executed, otherwise the best
 # candidate from phase 1 will be chosen [0..MAX]
@@ -81,7 +81,7 @@ branching/bp_strong/mincolgencands =   4
 branching/bp_strong/histweight     = 0.5
 ```
 
-## Hybrid Branching
+### Hybrid Branching
 ```
 # minimum tree depth from which on phase 0 is performed [0..MAX]
 branching/bp_strong/minphase0depth     =    0
@@ -109,7 +109,7 @@ branching/bp_strong/depthlogphase0frac =    0
 branching/bp_strong/depthlogphase2frac = 0.75
 ```
 
-## Reliability Branching
+### Reliability Branching
 ```
 # min count of pseudocost scores for a variable to be considered reliable in
 # phase 1 (-1 = never) [-1..MAX]
@@ -120,7 +120,7 @@ branching/bp_strong/phase1reliable = 2147483000
 branching/bp_strong/phase2reliable = 2147483000
 ```
 
-## Additional strong branching parameters
+### Additional strong branching parameters
 ```
 # should infeasibility detected during strong branching be handled immediately,
 # or only if the candidate is selected? [TRUE/FALSE]
@@ -160,4 +160,23 @@ branching/bp_strong/sbpseudocostweight =     1
 # should phase 0 be performed even if the number of input candidates is already
 # lower or equal to the number of output candidates? [TRUE/FALSE]
 branching/bp_strong/forcep0            = FALSE
+```
+
+
+## Other Branching rule-dependent settings
+
+### Component Bound Branching
+For branching, the component bound branching rule searches for a subset of columns
+in the master problem of which the sum over the corresponding master variables
+solution values is fractional. Whenever branching is required, multiple such subsets
+exist. The implementation of the component bound branching rule provides two
+heuristics that generate suitable branching candidates, i.e., subsets of columns.
+The following parameters control the use of these heuristics. It is possible to
+activate both heuristics simultaneously, however at least one heuristic must be
+active:
+```
+# should the max range midrange heuristic be used?
+branching/compbnd/useMRMH = TRUE
+# should the most distinct median heuristic be used?
+branching/compbnd/useMDMH = TRUE
 ```

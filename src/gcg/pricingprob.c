@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -35,27 +36,28 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "pricingprob.h"
-#include "pub_pricingprob.h"
+#include "gcg/pricingprob.h"
+#include "gcg/pub_pricingprob.h"
 
-#include "gcg.h"
-#include "pricestore_gcg.h"
-#include "pub_colpool.h"
-#include "pub_gcgcol.h"
-#include "pub_pricingjob.h"
+#include "gcg/gcg.h"
+#include "gcg/pricestore_gcg.h"
+#include "gcg/pub_colpool.h"
+#include "gcg/pub_gcgcol.h"
+#include "gcg/pub_pricingjob.h"
 
 #include "scip/scip.h"
 
 
 /** create a pricing problem */
 SCIP_RETCODE GCGpricingprobCreate(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure (master problem) */
    GCG_PRICINGPROB**     pricingprob,        /**< pricing problem to be created */
    SCIP*                 pricingscip,        /**< SCIP data structure of the corresponding pricing problem */
    int                   probnr,             /**< index of the corresponding pricing problem */
    int                   nroundscol          /**< number of previous pricing rounds for which the number of improving columns should be counted */
 )
 {
+   SCIP* scip = GCGgetMasterprob(gcg);
    SCIP_CALL( SCIPallocBlockMemory(scip, pricingprob) );
 
    (*pricingprob)->pricingscip = pricingscip;
@@ -80,10 +82,11 @@ SCIP_RETCODE GCGpricingprobCreate(
 
 /** free a pricing problem */
 void GCGpricingprobFree(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure (master problem) */
    GCG_PRICINGPROB**     pricingprob         /**< pricing problem to be freed */
 )
 {
+   SCIP* scip = GCGgetMasterprob(gcg);
    SCIPfreeBlockMemoryArrayNull(scip, &(*pricingprob)->branchduals, (*pricingprob)->branchconsssize);
    SCIPfreeBlockMemoryArrayNull(scip, &(*pricingprob)->branchconss, (*pricingprob)->branchconsssize);
    SCIPfreeBlockMemoryArray(scip, &(*pricingprob)->ncolsround, (*pricingprob)->maxcolsround);
@@ -120,12 +123,13 @@ void GCGpricingprobExitPricing(
 
 /** add generic branching data (constraint and dual value) to the current pricing problem */
 SCIP_RETCODE GCGpricingprobAddGenericBranchData(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    SCIP_CONS*            branchcons,         /**< generic branching constraint */
    SCIP_Real             branchdual          /**< corresponding dual solution value */
    )
 {
+   SCIP* scip = GCGgetMasterprob(gcg);
    /* allocate memory, if necessary */
    if( pricingprob->branchconsssize == pricingprob->nbranchconss )
    {
@@ -158,7 +162,7 @@ SCIP_RETCODE GCGpricingprobAddGenericBranchData(
 
 /** reset the pricing problem statistics for the current pricing round */
 void GCGpricingprobReset(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob         /**< pricing problem structure */
    )
 {
@@ -166,13 +170,13 @@ void GCGpricingprobReset(
 
    pricingprob->branchconsidx = pricingprob->nbranchconss;
    pricingprob->status = GCG_PRICINGSTATUS_UNKNOWN;
-   pricingprob->lowerbound = -SCIPinfinity(scip);
+   pricingprob->lowerbound = -SCIPinfinity(GCGgetMasterprob(gcg));
    pricingprob->nsolves = 0;
 }
 
 /** update solution information of a pricing problem */
 void GCGpricingprobUpdate(
-   SCIP*                 scip,               /**< SCIP data structure (master problem) */
+   GCG*                  gcg,                /**< GCG data structure (master problem) */
    GCG_PRICINGPROB*      pricingprob,        /**< pricing problem structure */
    GCG_PRICINGSTATUS     status,             /**< status of last pricing job */
    SCIP_Real             lowerbound,         /**< new lower bound */
@@ -185,7 +189,7 @@ void GCGpricingprobUpdate(
 
    /* update status, lower bound and number of improving columns */
    pricingprob->status = status;
-   if( SCIPisDualfeasGT(scip, lowerbound, pricingprob->lowerbound) )
+   if( SCIPisDualfeasGT(GCGgetMasterprob(gcg), lowerbound, pricingprob->lowerbound) )
       pricingprob->lowerbound = lowerbound;
    pricingprob->nimpcols += nimpcols;
 

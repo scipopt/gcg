@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -38,13 +39,13 @@
 
 //#define SCIP_DEBUG
 
-#include "decomp.h"
-#include "gcg.h"
-#include "cons_decomp.h"
+#include "gcg/decomp.h"
+#include "gcg/gcg.h"
+#include "gcg/cons_decomp.h"
 #include "scip/scip.h"
-#include "struct_decomp.h"
-#include "scip_misc.h"
-#include "relax_gcg.h"
+#include "gcg/struct_decomp.h"
+#include "gcg/scip_misc.h"
+#include "gcg/relax_gcg.h"
 
 
 #include <assert.h>
@@ -121,7 +122,7 @@ SCIP_Real quick_select_median(SCIP_Real arr[], int n)
 /** fill out subscipvars arrays from the information from vartoblock */
 static
 SCIP_RETCODE fillOutVarsFromVartoblock(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         vartoblock,         /**< variable to block hashmap */
    int                   nblocks,            /**< number of blocks */
@@ -137,13 +138,15 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
    int nlinkingvars;
    int nmastervars;
    int i;
+   SCIP* scip;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(vartoblock != NULL);
    assert(nblocks >= 0);
    assert(vars != NULL);
 
+   scip = GCGgetOrigprob(gcg);
    nlinkingvars = 0;
    nmastervars = 0;
 
@@ -206,7 +209,7 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
 
    if( nlinkingvars > 0 )
    {
-      SCIP_CALL( GCGdecompSetLinkingvars(scip, decomp, linkingvars, nlinkingvars, 0, nmastervars) );
+      SCIP_CALL( GCGdecompSetLinkingvars(gcg, decomp, linkingvars, nlinkingvars, 0, nmastervars) );
       *haslinking = TRUE;
    }
 
@@ -220,7 +223,7 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
    }
    if( nblocks > 0 )
    {
-      SCIP_CALL( GCGdecompSetSubscipvars(scip, decomp, subscipvars, nsubscipvars) );
+      SCIP_CALL( GCGdecompSetSubscipvars(gcg, decomp, subscipvars, nsubscipvars) );
    }
    GCGdecompSetVartoblock(decomp, vartoblock);
 
@@ -240,7 +243,7 @@ SCIP_RETCODE fillOutVarsFromVartoblock(
 /** fill out subscipcons arrays from the information from constoblock */
 static
 SCIP_RETCODE fillOutConsFromConstoblock(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap */
    int                   nblocks,            /**< number of blocks */
@@ -249,6 +252,7 @@ SCIP_RETCODE fillOutConsFromConstoblock(
    SCIP_Bool*            haslinking          /**< returns whether there are linking constraints */
    )
 {
+   SCIP* scip;
    SCIP_RETCODE retcode;
 
    SCIP_CONS*** subscipconss;
@@ -257,7 +261,7 @@ SCIP_RETCODE fillOutConsFromConstoblock(
    SCIP_CONS** linkingconss;
    int nlinkingconss;
    int i;
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(constoblock != NULL);
    assert(nblocks >= 0);
@@ -267,6 +271,7 @@ SCIP_RETCODE fillOutConsFromConstoblock(
    *haslinking = FALSE;
    retcode = SCIP_OKAY;
 
+   scip = GCGgetOrigprob(gcg);
    GCGdecompSetConstoblock(decomp, constoblock);
 
    if( nconss == 0 )
@@ -330,12 +335,12 @@ SCIP_RETCODE fillOutConsFromConstoblock(
 
    if( nlinkingconss > 0 )
    {
-      retcode = GCGdecompSetLinkingconss(scip, decomp, linkingconss, nlinkingconss);
+      retcode = GCGdecompSetLinkingconss(gcg, decomp, linkingconss, nlinkingconss);
       *haslinking = TRUE;
    }
    if( nblocks > 0 )
    {
-      retcode = GCGdecompSetSubscipconss(scip, decomp, subscipconss, nsubscipconss);
+      retcode = GCGdecompSetSubscipconss(gcg, decomp, subscipconss, nsubscipconss);
    }
 
    for( i = nblocks-1; i >= 0; --i )
@@ -353,19 +358,21 @@ SCIP_RETCODE fillOutConsFromConstoblock(
 /** removes a variable from the linking variable array */
 static
 SCIP_RETCODE removeFromLinkingvars(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR*             var,                /**< variable to remove */
    SCIP_Bool*            success             /**< indicates whether the variable was successfully removed */
    )
 {
+   SCIP* scip;
    int v;
    int linkingvarsize;
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(var != NULL);
    assert(success != NULL);
 
+   scip = GCGgetOrigprob(gcg);
    *success = FALSE;
    linkingvarsize = decomp->nlinkingvars;
 
@@ -408,18 +415,20 @@ SCIP_RETCODE removeFromLinkingvars(
  */
 static
 SCIP_RETCODE assignConsvarsToBlock(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_CONS*            cons,               /**< constraint whose variables should be assigned to its block */
    int                   block               /**< block to which the constraint has been assigned */
    )
 {
+   SCIP* scip;
    SCIP_VAR** curvars;
    int ncurvars;
 
    SCIP_Bool success;
    int v;
 
+   scip = GCGgetOrigprob(gcg);
    curvars = NULL;
    ncurvars = 0;
 
@@ -448,7 +457,7 @@ SCIP_RETCODE assignConsvarsToBlock(
          SCIP_CALL( SCIPreallocBlockMemoryArray(scip, &decomp->subscipvars[block], oldsize, newsize) ) /*lint !e866 */;
          decomp->subscipvars[block][decomp->nsubscipvars[block]] = probvar;
          decomp->nsubscipvars[block] += 1;
-         SCIP_CALL( removeFromLinkingvars(scip, decomp, probvar, &success) );
+         SCIP_CALL( removeFromLinkingvars(gcg, decomp, probvar, &success) );
          assert(success);
       }
    }
@@ -469,17 +478,19 @@ const char *GCGdecompGetStrType(
 
 /** initializes the decomposition to absolutely nothing */
 SCIP_RETCODE GCGdecompCreate(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP**          decdecomp           /**< pointer to the decomposition data structure */
    )
 {
+   SCIP* scip;
    GCG_DECOMP* decomp;
 
    int ncalls;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decdecomp != NULL);
 
+   scip = GCGgetOrigprob(gcg);
    SCIP_CALL( SCIPallocMemory(scip, decdecomp) );
    assert(*decdecomp != NULL);
    decomp = *decdecomp;
@@ -519,7 +530,7 @@ SCIP_RETCODE GCGdecompCreate(
    decomp->nnewblocks= NULL;
    decomp->maxwhitescore = -1.;
 
-   ncalls = GCGconshdlrDecompIncreaseNCallsCreateDecomp(scip);
+   ncalls = GCGconshdlrDecompIncreaseNCallsCreateDecomp(gcg);
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "ncalls of createdecompfrompartialdec: %d \n", ncalls);
 
@@ -528,19 +539,20 @@ SCIP_RETCODE GCGdecompCreate(
 
 /** frees the decdecomp structure */
 SCIP_RETCODE GCGdecompFree(
-   SCIP*                 scip,               /**< pointer to the SCIP instance */
+   GCG*                  gcg,                /**< pointer to the GCG instance */
    GCG_DECOMP**          decdecomp           /**< pointer to the decomposition data structure */
    )
 {
+   SCIP* scip;
    GCG_DECOMP* decomp;
    int i;
    int j;
    int ncalls;
 
-   assert( scip!= NULL );
+   assert( gcg!= NULL );
    assert( decdecomp != NULL);
+   scip = GCGgetOrigprob(gcg);
    decomp = *decdecomp;
-
    assert(decomp != NULL);
 
    for( i = 0; i < decomp->nblocks; ++i )
@@ -636,7 +648,7 @@ SCIP_RETCODE GCGdecompFree(
 
    SCIPfreeMemoryNull(scip, decdecomp);
 
-   ncalls = GCGconshdlrDecompDecreaseNCallsCreateDecomp(scip);
+   ncalls = GCGconshdlrDecompDecreaseNCallsCreateDecomp(gcg);
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_FULL, NULL, "ncalls of createdecompfrompartialdec: %d \n", ncalls);
 
@@ -753,16 +765,17 @@ int GCGdecompGetNBlocks(
 
 /** copies the input subscipvars array to the given decomposition */
 SCIP_RETCODE GCGdecompSetSubscipvars(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR***           subscipvars,        /**< subscipvars array  */
    int*                  nsubscipvars        /**< number of subscipvars per block */
    )
 {
+   SCIP* scip;
    SCIP_Bool valid;
    int i;
    int b;
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(subscipvars != NULL);
    assert(nsubscipvars != NULL);
@@ -774,6 +787,7 @@ SCIP_RETCODE GCGdecompSetSubscipvars(
    if( decomp->nblocks == 0 )
       return SCIP_OKAY;
 
+   scip = GCGgetOrigprob(gcg);
    valid = TRUE;
 
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decomp->subscipvars, decomp->nblocks) );
@@ -841,16 +855,17 @@ int* GCGdecompGetNSubscipvars(
 
 /** copies the input subscipconss array to the given decomposition */
 SCIP_RETCODE GCGdecompSetSubscipconss(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_CONS***          subscipconss,       /**< subscipconss array  */
    int*                  nsubscipconss       /**< number of subscipconss per block */
    )
 {
+   SCIP* scip;
    SCIP_Bool valid;
    int i;
    int b;
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(subscipconss != NULL);
    assert(nsubscipconss != NULL);
@@ -864,6 +879,7 @@ SCIP_RETCODE GCGdecompSetSubscipconss(
    if( decomp->nblocks == 0)
       return SCIP_OKAY;
 
+   scip = GCGgetOrigprob(gcg);
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decomp->subscipconss, decomp->nblocks) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &decomp->nsubscipconss, decomp->nblocks) );
 
@@ -924,13 +940,14 @@ int* GCGdecompGetNSubscipconss(
 
 /** copies the input linkingconss array to the given decomposition */
 SCIP_RETCODE GCGdecompSetLinkingconss(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_CONS**           linkingconss,       /**< linkingconss array  */
    int                   nlinkingconss       /**< number of linkingconss per block */
    )
 {
-   assert(scip != NULL);
+   SCIP* scip;
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(linkingconss != NULL);
    assert(nlinkingconss >= 0);
@@ -938,6 +955,7 @@ SCIP_RETCODE GCGdecompSetLinkingconss(
    assert(decomp->linkingconss == NULL);
    assert(decomp->nlinkingconss == 0);
 
+   scip = GCGgetOrigprob(gcg);
    decomp->nlinkingconss = nlinkingconss;
 
    if( nlinkingconss > 0 )
@@ -987,7 +1005,7 @@ int GCGdecompGetNLinkingconss(
 
 /** copies the input linkingvars array to the given decdecomp structure */
 SCIP_RETCODE GCGdecompSetLinkingvars(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR**            linkingvars,        /**< linkingvars array  */
    int                   nlinkingvars,       /**< number of total linkingvars (including fixed linking vars,  ) */
@@ -996,13 +1014,15 @@ SCIP_RETCODE GCGdecompSetLinkingvars(
 
    )
 {
-   assert(scip != NULL);
+   SCIP* scip;
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(linkingvars != NULL || nlinkingvars == 0);
 
    assert(decomp->linkingvars == NULL);
    assert(decomp->nlinkingvars == 0);
 
+   scip = GCGgetOrigprob(gcg);
    decomp->nlinkingvars = nlinkingvars;
    decomp->nmastervars = nmastervars;
    decomp->nfixedlinkingvars = nfixedlinkingvars;
@@ -1079,16 +1099,17 @@ int GCGdecompGetNMastervars(
 
 /** copies the input stairlinkingvars array to the given decomposition */
 SCIP_RETCODE GCGdecompSetStairlinkingvars(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR***           stairlinkingvars,   /**< stairlinkingvars array  */
    int*                  nstairlinkingvars   /**< number of linkingvars per block */
    )
 {
+   SCIP* scip;
    SCIP_Bool valid;
    int b;
    int i;
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(stairlinkingvars != NULL);
    assert(nstairlinkingvars != NULL);
@@ -1098,6 +1119,7 @@ SCIP_RETCODE GCGdecompSetStairlinkingvars(
    assert(decomp->stairlinkingvars == NULL);
    assert(decomp->nstairlinkingvars == NULL);
 
+   scip = GCGgetOrigprob(gcg);
    valid = TRUE; /**@todo A valid check needs to be implemented */
 
    if( decomp->nblocks == 0 )
@@ -1269,7 +1291,7 @@ SCIP_HASHMAP* GCGdecompGetConsindex(
 
 /** completely initializes decomposition structure from the values of the hashmaps */
 SCIP_RETCODE GCGfilloutDecompFromHashmaps(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         vartoblock,         /**< variable to block hashmap */
    SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap */
@@ -1277,6 +1299,7 @@ SCIP_RETCODE GCGfilloutDecompFromHashmaps(
    SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
    )
 {
+   SCIP* scip;
    SCIP_HASHMAP* varindex;
    SCIP_HASHMAP* consindex;
    int* nsubscipconss;
@@ -1299,12 +1322,13 @@ SCIP_RETCODE GCGfilloutDecompFromHashmaps(
    SCIP_CONS** conss;
    int nconss;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(vartoblock != NULL);
    assert(constoblock != NULL);
    assert(nblocks >= 0);
 
+   scip = GCGgetOrigprob(gcg);
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
    vars = SCIPgetVars(scip);
@@ -1316,7 +1340,7 @@ SCIP_RETCODE GCGfilloutDecompFromHashmaps(
    GCGdecompSetNBlocks(decomp, nblocks);
 
    SCIP_CALL( GCGdecompSetType(decomp, GCG_DECTYPE_DIAGONAL) );
-   SCIP_CALL_QUIET( fillOutConsFromConstoblock(scip, decomp, constoblock, nblocks, conss, nconss, &haslinking) );
+   SCIP_CALL_QUIET( fillOutConsFromConstoblock(gcg, decomp, constoblock, nblocks, conss, nconss, &haslinking) );
 
    if( haslinking )
    {
@@ -1324,7 +1348,7 @@ SCIP_RETCODE GCGfilloutDecompFromHashmaps(
       SCIP_CALL( GCGdecompSetType(decomp, GCG_DECTYPE_BORDERED) );
    }
 
-   SCIP_CALL( fillOutVarsFromVartoblock(scip,  decomp, vartoblock, nblocks, vars, nvars, &haslinking) );
+   SCIP_CALL( fillOutVarsFromVartoblock(gcg,  decomp, vartoblock, nblocks, vars, nvars, &haslinking) );
 
    if( haslinking )
    {
@@ -1334,7 +1358,7 @@ SCIP_RETCODE GCGfilloutDecompFromHashmaps(
 
    if( !staircase )
    {
-      SCIP_CALL( GCGdecompCheckConsistency(scip, decomp) );
+      SCIP_CALL( GCGdecompCheckConsistency(gcg, decomp) );
       return SCIP_OKAY;
    }
 
@@ -1431,7 +1455,7 @@ SCIP_RETCODE GCGfilloutDecompFromHashmaps(
       }
    }
 
-   SCIP_CALL( GCGdecompSetStairlinkingvars(scip, decomp, stairlinkingvars, nstairlinkingvars) );
+   SCIP_CALL( GCGdecompSetStairlinkingvars(gcg, decomp, stairlinkingvars, nstairlinkingvars) );
 
    for( b = nblocks-1; b >= 0; --b )
    {
@@ -1440,7 +1464,7 @@ SCIP_RETCODE GCGfilloutDecompFromHashmaps(
    SCIPfreeBufferArray(scip, &nstairlinkingvars);
    SCIPfreeBufferArray(scip, &stairlinkingvars);
 
-   SCIP_CALL( GCGdecompCheckConsistency(scip, decomp) );
+   SCIP_CALL( GCGdecompCheckConsistency(gcg, decomp) );
 
    return SCIP_OKAY;
 }
@@ -1453,13 +1477,14 @@ SCIP_RETCODE GCGfilloutDecompFromHashmaps(
  *  (iii) nblocks+1 ["master var"] iff constoblock(i) == nblocks+1 for all i in C(j)
  */
 SCIP_RETCODE GCGfilloutDecompFromConstoblock(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_HASHMAP*         constoblock,        /**< constraint to block hashmap, start with 1 for first block and nblocks+1 for linking constraints */
    int                   nblocks,            /**< number of blocks */
    SCIP_Bool             staircase           /**< should the decomposition be a staircase structure */
    )
 {
+   SCIP* scip;
    SCIP_HASHMAP* vartoblock;
    int i;
    int j;
@@ -1473,11 +1498,12 @@ SCIP_RETCODE GCGfilloutDecompFromConstoblock(
    SCIP_Bool success;
    SCIP_RETCODE retcode;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(constoblock != NULL);
    assert(nblocks >= 0);
 
+   scip = GCGgetOrigprob(gcg);
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
    vars = SCIPgetVars(scip);
@@ -1565,7 +1591,7 @@ SCIP_RETCODE GCGfilloutDecompFromConstoblock(
       }
    }
 
-   retcode = GCGfilloutDecompFromHashmaps(scip, decomp, vartoblock, constoblock, nblocks, staircase && haslinking);
+   retcode = GCGfilloutDecompFromHashmaps(gcg, decomp, vartoblock, constoblock, nblocks, staircase && haslinking);
    if( retcode != SCIP_OKAY )
    {
       SCIPhashmapFree(&vartoblock);
@@ -1606,16 +1632,17 @@ GCG_DETECTOR** GCGdecompGetDetectorChain(
    return decomp->detectorchain;
 }
 
-
 SCIP_RETCODE GCGdecompSetDetectorChain(
-   SCIP*                 scip,
+   GCG*                  gcg,
    GCG_DECOMP*           decomp,
    GCG_DETECTOR**        detectors,
    int                   ndetectors
    )
 {
+   SCIP* scip;
    int d;
 
+   scip = GCGgetOrigprob(gcg);
    /* resize detectorchain */
    int size = SCIPcalcMemGrowSize( scip, ndetectors);
    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray( scip, &decomp->detectorchain, size ) );
@@ -1632,7 +1659,6 @@ SCIP_RETCODE GCGdecompSetDetectorChain(
    return SCIP_OKAY;
 }
 
-
 /** gets the number of detectors for the given decomposition */
 int GCGdecompGetDetectorChainSize(
    GCG_DECOMP*           decomp              /**< decomposition data structure */
@@ -1642,7 +1668,6 @@ int GCGdecompGetDetectorChainSize(
 
    return decomp->sizedetectorchain;
 }
-
 
 /** sets the id of the original partialdec */
 void GCGdecompSetPartialdecID(
@@ -1665,17 +1690,18 @@ int GCGdecompGetPartialdecID(
    return decomp->partialdecid;
 }
 
-
 /** sets the detector clock times of the detectors of the detector chain */
 void GCGdecompSetDetectorClockTimes(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_Real*            detectorClockTimes  /**< time used by the detectors */
    )
 {
+   SCIP* scip;
    int d;
 
    int size;
+   scip = GCGgetOrigprob(gcg);
    size = SCIPcalcMemGrowSize(scip, decomp->sizedetectorchain);
 
    assert(decomp->sizedetectorchain > 0);
@@ -1702,11 +1728,13 @@ SCIP_Real* GCGdecompGetDetectorClockTimes(
 /** sets the detector clock times of the detectors of the detector chain */
 GCG_EXPORT
 SCIP_RETCODE GCGdecompSetDetectorChainString(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                 /**< GCG data structure */
    GCG_DECOMP*           decomp,              /**< decomposition data structure */
    const char*           detectorchainstring  /**< string for the detector information working on that decomposition */
    )
 {
+   SCIP* scip;
+   scip = GCGgetOrigprob(gcg);
    SCIP_CALL (SCIPduplicateBlockMemoryArray(scip, &(decomp->detectorchainstring), detectorchainstring, SCIP_MAXSTRLEN ) );
    return SCIP_OKAY;
 
@@ -1715,23 +1743,24 @@ SCIP_RETCODE GCGdecompSetDetectorChainString(
 /** sets the detector clock times of the detectors of the detector chain */
 GCG_EXPORT
 char* GCGdecompGetDetectorChainString(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
    return decomp->detectorchainstring;
 }
 
-
 /** sets the percentages of variables assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
 void GCGdecompSetDetectorPctVarsToBorder(
-   SCIP*                 scip,              /**< SCIP data structure */
+   GCG*                  gcg,               /**< GCG data structure */
    GCG_DECOMP*           decomp,            /**< decomposition data structure */
    SCIP_Real*            pctVarsToBorder    /**< percentage of variables assigned to border */
    )
 {
+   SCIP* scip;
    int d;
    int size;
+   scip = GCGgetOrigprob(gcg);
    size = SCIPcalcMemGrowSize(scip, decomp->sizedetectorchain);
 
    assert(decomp->sizedetectorchain > 0);
@@ -1744,10 +1773,6 @@ void GCGdecompSetDetectorPctVarsToBorder(
    {
       decomp->pctvarstoborder[d] = pctVarsToBorder[d];
    }
-
-   return;
-
-
 }
 
 /** gets the percentages of variables assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
@@ -1761,14 +1786,15 @@ SCIP_Real* GCGdecompGetDetectorPctVarsToBorder(
 
 /** sets the percentages of constraints assigned to the border of the corresponding detectors (of the detector chain) on this decomposition */
 void GCGdecompSetDetectorPctConssToBorder(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_Real*            pctConssToBorder    /**< percentage of constraints assigned to border */
    )
 {
-
+   SCIP* scip;
    int d;
    int size;
+   scip = GCGgetOrigprob(gcg);
    size = SCIPcalcMemGrowSize(scip, decomp->sizedetectorchain);
 
 
@@ -1796,29 +1822,28 @@ SCIP_Real* GCGdecompGetDetectorPctConssToBorder(
 
 /** sets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
 void GCGdecompSetDetectorPctVarsToBlock(
-   SCIP*                 scip,             /**< SCIP data structure */
+   GCG*                  gcg,              /**< GCG data structure */
    GCG_DECOMP*           decomp,           /**< decomposition data structure */
    SCIP_Real*            pctVarsToBlock    /**< percentage of variables assigned to some block in the detector chain */
    )
 {
+   SCIP* scip;
    int d;
    int size;
 
-    assert(decomp->sizedetectorchain > 0);
+   assert(decomp->sizedetectorchain > 0);
+   scip = GCGgetOrigprob(gcg);
+   size = SCIPcalcMemGrowSize(scip, decomp->sizedetectorchain);
 
-    size = SCIPcalcMemGrowSize(scip, decomp->sizedetectorchain);
 
+   SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decomp->pctvarstoblock, size) );
 
-    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decomp->pctvarstoblock, size) );
+   BMSclearMemoryArray(decomp->pctvarstoblock, size);
 
-    BMSclearMemoryArray(decomp->pctvarstoblock, size);
-
-    for ( d = 0; d < decomp->sizedetectorchain; ++d )
-    {
-       decomp->pctvarstoblock[d] = pctVarsToBlock[d];
-    }
-
-    return;
+   for ( d = 0; d < decomp->sizedetectorchain; ++d )
+   {
+      decomp->pctvarstoblock[d] = pctVarsToBlock[d];
+   }
  }
 
 /** gets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
@@ -1831,17 +1856,17 @@ SCIP_Real* GCGdecompGetDetectorPctVarsToBlock(
 
 /** sets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
 void GCGdecompSetDetectorPctConssToBlock(
-   SCIP*                 scip,              /**< SCIP data structure */
+   GCG*                  gcg,               /**< GCG data structure */
    GCG_DECOMP*           decomp,            /**< decomposition data structure */
    SCIP_Real*            pctConssToBlock    /**< percentage of constraints assigned to some block in the detector chain */
    )
 {
+   SCIP* scip;
    int d;
-
    int size;
 
    assert(decomp->sizedetectorchain > 0);
-
+   scip = GCGgetOrigprob(gcg);
    size = SCIPcalcMemGrowSize(scip, decomp->sizedetectorchain);
 
    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decomp->pctconsstoblock, size) );
@@ -1868,13 +1893,14 @@ SCIP_Real* GCGdecompGetDetectorPctConssToBlock(
 
 /** sets the percentages of variables assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
 void GCGdecompSetDetectorPctVarsFromOpen(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_Real*            pctVarsFromOpen     /**< percentage of open variables assigned to some block in the detector chain */
    )
 {
    int d;
    int size;
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    assert(decomp->sizedetectorchain > 0);
 
@@ -1904,17 +1930,18 @@ SCIP_Real* GCGdecompGetDetectorPctVarsFromOpen(
 
 /** sets the percentages of constraints assigned to some block of the corresponding detectors (of the detector chain) on this decomposition */
 void GCGdecompSetDetectorPctConssFromOpen(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_Real*            pctConssFromOpen    /**< percentage of open variables assigned to some block in the detector chain */
    )
 {
+   SCIP* scip;
    int d;
    int size;
 
    assert(decomp->sizedetectorchain > 0);
 
-
+   scip = GCGgetOrigprob(gcg);
    size = SCIPcalcMemGrowSize(scip, decomp->sizedetectorchain);
 
 
@@ -1941,16 +1968,17 @@ SCIP_Real* GCGdecompGetDetectorPctConssFromOpen(
 
 /** sets the number of new blocks of the corresponding detectors (of the detector chain) on this decomposition */
 void GCGdecompSetNNewBlocks(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    int*                  nNewBlocks          /**< number of newly found blocks in this decomposition */
    )
 {
+   SCIP* scip;
    int d;
    int size;
 
    assert(decomp->sizedetectorchain > 0);
-
+   scip = GCGgetOrigprob(gcg);
    size = SCIPcalcMemGrowSize(scip, decomp->sizedetectorchain);
 
    SCIP_CALL_ABORT( SCIPallocBlockMemoryArray(scip, &decomp->nnewblocks, size) );
@@ -1973,16 +2001,13 @@ int* GCGdecompGetNNewBlocks(
    return decomp->nnewblocks;
 }
 
-
-
-
-
 /** transforms all constraints and variables, updating the arrays */
 SCIP_RETCODE GCGdecompTransform(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp              /**< decomposition data structure */
    )
 {
+   SCIP* scip;
    int b;
    int c;
    int v;
@@ -1990,6 +2015,7 @@ SCIP_RETCODE GCGdecompTransform(
    SCIP_HASHMAP* newvartoblock;
    SCIP_VAR* newvar;
 
+   scip = GCGgetOrigprob(gcg);
    assert(SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED);
 
    SCIP_CALL( SCIPhashmapCreate(&newconstoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
@@ -2111,7 +2137,7 @@ SCIP_RETCODE GCGdecompTransform(
    SCIPhashmapFree(&decomp->vartoblock);
    decomp->vartoblock = newvartoblock;
 
-   SCIP_CALL( GCGdecompCheckConsistency(scip, decomp) );
+   SCIP_CALL( GCGdecompCheckConsistency(gcg, decomp) );
 
    return SCIP_OKAY;
 }
@@ -2120,17 +2146,19 @@ SCIP_RETCODE GCGdecompTransform(
  * Remove all those constraints that were removed from the problem after the decomposition had been created
  */
 SCIP_RETCODE GCGdecompRemoveDeletedConss(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decdecomp           /**< decomposition data structure */
    )
 {
+   SCIP* scip;
    int block;
-
    int c;
    int pos;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decdecomp != NULL);
+
+   scip = GCGgetOrigprob(gcg);
 
    for( block = 0; block < decdecomp->nblocks; ++block )
    {
@@ -2176,14 +2204,17 @@ SCIP_RETCODE GCGdecompRemoveDeletedConss(
  * Adds all those constraints that were added to the problem after the decomposition had been created
  */
 SCIP_RETCODE GCGdecompAddRemainingConss(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decdecomp           /**< decomposition data structure */
    )
 {
+   SCIP* scip;
    int c;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decdecomp != NULL);
+
+   scip = GCGgetOrigprob(gcg);
 
    for( c = 0; c < SCIPgetNConss(scip); ++c )
    {
@@ -2194,7 +2225,7 @@ SCIP_RETCODE GCGdecompAddRemainingConss(
       if( !GCGisConsGCGCons(cons) && !SCIPhashmapExists(GCGdecompGetConstoblock(decdecomp), cons) )
       {
          int block;
-         SCIP_CALL( GCGdetermineConsBlock(scip, decdecomp, cons, &block) );
+         SCIP_CALL( GCGdetermineConsBlock(gcg, decdecomp, cons, &block) );
          SCIPdebugMessage("add remaining: cons <%s> in block %d/%d\n", SCIPconsGetName(cons), block, GCGdecompGetNBlocks(decdecomp) );
 
          /* If the constraint has only variables appearing in the master only,
@@ -2248,7 +2279,7 @@ SCIP_RETCODE GCGdecompAddRemainingConss(
             decdecomp->subscipconss[block][decdecomp->nsubscipconss[block]] = cons;
             decdecomp->nsubscipconss[block] += 1;
             SCIP_CALL( SCIPhashmapInsert(decdecomp->constoblock, cons, (void*) (size_t) (block+1)) );
-            SCIP_CALL( assignConsvarsToBlock(scip, decdecomp, cons, block) );
+            SCIP_CALL( assignConsvarsToBlock(gcg, decdecomp, cons, block) );
          }
          SCIP_CALL( SCIPcaptureCons(scip, cons) );
       }
@@ -2264,7 +2295,7 @@ SCIP_RETCODE GCGdecompAddRemainingConss(
  *  whether the variables in the structure are both existant in the arrays and in the problem
  */
 SCIP_RETCODE GCGdecompCheckConsistency(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decdecomp           /**< decomposition data structure */
    )
 {
@@ -2272,7 +2303,7 @@ SCIP_RETCODE GCGdecompCheckConsistency(
    int c;
    int b;
    int v;
-
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    SCIPdebugMessage("Problem is %stransformed\n", SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED ? "": "not ");
 
@@ -2385,11 +2416,12 @@ SCIP_RETCODE GCGdecompCheckConsistency(
 
 /** creates a decomposition with all constraints in the master */
 SCIP_RETCODE GCGcreateBasicDecomp(
-   SCIP*                 scip,                /**< SCIP data structure */
+   GCG*                  gcg,                 /**< GCG data structure */
    GCG_DECOMP**          decomp,              /**< decomposition data structure */
    SCIP_Bool             solveorigprob        /**< is the original problem being solved? */
    )
 {
+   SCIP* scip;
    SCIP_HASHMAP* constoblock;
    SCIP_HASHMAP* vartoblock;
    SCIP_CONS** conss;
@@ -2401,10 +2433,11 @@ SCIP_RETCODE GCGcreateBasicDecomp(
    int c;
    int v;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
 
-   SCIP_CALL( GCGdecompCreate(scip, decomp) );
+   scip = GCGgetOrigprob(gcg);
+   SCIP_CALL( GCGdecompCreate(gcg, decomp) );
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
    vars = SCIPgetVars(scip);
@@ -2436,7 +2469,7 @@ SCIP_RETCODE GCGcreateBasicDecomp(
    else
       nblocks = 1;
 
-   GCGfilloutDecompFromHashmaps(scip, *decomp, vartoblock, constoblock, nblocks, haslinking);
+   GCGfilloutDecompFromHashmaps(gcg, *decomp, vartoblock, constoblock, nblocks, haslinking);
 
    GCGdecompSetPresolved(*decomp, TRUE);
 
@@ -2485,7 +2518,7 @@ int processBlockRepresentatives(
 /** */
 static
 SCIP_RETCODE assignConstraintsToRepresentatives(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_CONS**           conss,              /**< array of all constraints */
    int                   nconss,             /**< number of constraints */
    SCIP_Bool*            consismaster,       /**< array of flags whether a constraint belongs to the master problem */
@@ -2495,12 +2528,13 @@ SCIP_RETCODE assignConstraintsToRepresentatives(
    int*                  blockrepresentative /**< array of blockrepresentatives */
    )
 {
-
+   SCIP* scip;
    int i;
    int j;
    SCIP_VAR** curvars;
    int ncurvars;
 
+   scip = GCGgetOrigprob(gcg);
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
 
@@ -2712,12 +2746,13 @@ SCIP_RETCODE fillConstoblock(
  * depending on whether the subproblems decompose with no variables in common.
  */
 SCIP_RETCODE GCGcreateDecompFromMasterconss(
-   SCIP*                 scip,                /**< SCIP data structure */
+   GCG*                  gcg,                 /**< GCG data structure */
    GCG_DECOMP**          decomp,              /**< decomposition data structure */
    SCIP_CONS**           masterconss,         /**< constraints to be put in the master */
    int                   nmasterconss         /**< number of constraints in the master */
    )
 {
+   SCIP* scip;
    SCIP_HASHMAP* constoblock;
    SCIP_HASHMAP* newconstoblock;
    SCIP_CONS** conss;
@@ -2730,14 +2765,16 @@ SCIP_RETCODE GCGcreateDecompFromMasterconss(
    int i;
    int* vartoblock;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(nmasterconss == 0 || masterconss != NULL);
-   assert(SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED);
 
+   scip = GCGgetOrigprob(gcg);
    conss = SCIPgetConss(scip);
    nconss = SCIPgetNConss(scip);
    nvars = SCIPgetNVars(scip);
+
+   assert(SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED);
 
    assert( nmasterconss <= nconss );
 
@@ -2774,15 +2811,15 @@ SCIP_RETCODE GCGcreateDecompFromMasterconss(
       blockrepresentative[i] = -1;
    }
 
-   SCIP_CALL( assignConstraintsToRepresentatives(scip, conss, nconss, consismaster, constoblock, vartoblock, &nextblock, blockrepresentative) );
+   SCIP_CALL( assignConstraintsToRepresentatives(gcg, conss, nconss, consismaster, constoblock, vartoblock, &nextblock, blockrepresentative) );
 
    /* postprocess blockrepresentatives */
    nblocks = processBlockRepresentatives(nextblock, blockrepresentative);
 
    /* convert temporary data to detectordata */
    SCIP_CALL( fillConstoblock(conss, nconss, consismaster, nblocks, constoblock, newconstoblock, blockrepresentative) );
-   SCIP_CALL( GCGdecompCreate(scip, decomp) );
-   SCIP_CALL( GCGfilloutDecompFromConstoblock(scip, *decomp, newconstoblock, nblocks, FALSE) );
+   SCIP_CALL( GCGdecompCreate(gcg, decomp) );
+   SCIP_CALL( GCGfilloutDecompFromConstoblock(gcg, *decomp, newconstoblock, nblocks, FALSE) );
 
    SCIPfreeBufferArray(scip, &vartoblock);
    SCIPfreeBufferArray(scip, &consismaster);
@@ -2834,7 +2871,7 @@ void incVarsData(
 
 /** return the number of variables and binary, integer, implied integer, continuous variables of all subproblems */
 void GCGgetSubproblemVarsData(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    int*                  nvars,              /**< pointer to array of size nproblems to store number of subproblem vars or NULL */
    int*                  nbinvars,           /**< pointer to array of size nproblems to store number of binary subproblem vars or NULL */
@@ -2847,7 +2884,7 @@ void GCGgetSubproblemVarsData(
    int i;
    int j;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(nproblems > 0);
 
@@ -2883,7 +2920,7 @@ void GCGgetSubproblemVarsData(
 
 /** return the number of variables and binary, integer, implied integer, continuous variables of the master */
 void GCGgetLinkingVarsData(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    int*                  nvars,              /**< pointer to store number of linking vars or NULL */
    int*                  nbinvars,           /**< pointer to store number of binary linking vars or NULL */
@@ -2896,7 +2933,7 @@ void GCGgetLinkingVarsData(
    SCIP_VAR** linkingvars;
    int nlinkingvars;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
 
    assert(GCGdecompGetType(decomp) != GCG_DECTYPE_UNKNOWN);
@@ -2933,7 +2970,7 @@ void GCGgetLinkingVarsData(
  *
  */
 SCIP_RETCODE GCGgetDensityData(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR**            vars,               /**< pointer to array store variables belonging to density */
    int                   nvars,              /**< number of variables */
@@ -2945,6 +2982,7 @@ SCIP_RETCODE GCGgetDensityData(
    int*                  consmasterdensity   /**< pointer to array to store the nonzeros for the master */
 )
 {
+   SCIP* scip;
    int nlinkingconss;
    SCIP_HASHMAP* vartoblock;
    SCIP_CONS** curconss;
@@ -2958,7 +2996,7 @@ SCIP_RETCODE GCGgetDensityData(
    int v;
    int c;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(vars != NULL);
    assert(nvars > 0);
@@ -2967,6 +3005,8 @@ SCIP_RETCODE GCGgetDensityData(
    assert(varmasterdensity != NULL);
    assert(conssubproblemdensity != NULL);
    assert(consmasterdensity != NULL);
+
+   scip = GCGgetOrigprob(gcg);
 
    /* make sure the passed data is initialised to 0 */
    BMSclearMemoryArray(vars, nvars);
@@ -3076,7 +3116,7 @@ SCIP_RETCODE GCGgetDensityData(
 /** helper function to increase correct lock */
 static
 void increaseLock(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_Real             lhs,                /**< left side of constraint */
    SCIP_Real             coef,               /**< coefficient of variable in constraint */
    SCIP_Real             rhs,                /**< right side of constraint */
@@ -3084,10 +3124,12 @@ void increaseLock(
    int*                  uplock              /**< pointer to store uplock */
    )
 {
-   assert(scip != NULL);
+   SCIP* scip;
+   assert(gcg != NULL);
    assert(downlock != NULL);
    assert(uplock != NULL);
 
+   scip = GCGgetOrigprob(gcg);
    if( !SCIPisInfinity(scip, -lhs) )
    {
       if( SCIPisPositive(scip, coef) )
@@ -3114,7 +3156,7 @@ void increaseLock(
  *  @warning This function needs a lot of memory (nvars*nblocks+1) array entries
  */
 SCIP_RETCODE GCGgetVarLockData(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_VAR**            vars,               /**< pointer to array store variables belonging to density */
    int                   nvars,              /**< number of variables */
@@ -3125,6 +3167,7 @@ SCIP_RETCODE GCGgetVarLockData(
    int*                  masterlocksup       /**< pointer to array to store the down locks for the master */
    )
 {
+   SCIP* scip;
    int nlinkingconss;
    SCIP_CONS** curconss;
    SCIP_VAR** curvars;
@@ -3139,7 +3182,8 @@ SCIP_RETCODE GCGgetVarLockData(
    int j;
    int v;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
+   scip = GCGgetOrigprob(gcg);
    assert(decomp != NULL);
    assert(vars != NULL);
    assert(nvars > 0);
@@ -3196,7 +3240,7 @@ SCIP_RETCODE GCGgetVarLockData(
             assert(probindex < nvars);
             assert(SCIPhashmapExists(GCGdecompGetVartoblock(decomp), var));
 
-            increaseLock(scip, lhs, curvals[v], rhs, &(subsciplocksdown[i][probindex]), &(subsciplocksup[i][probindex]));
+            increaseLock(gcg, lhs, curvals[v], rhs, &(subsciplocksdown[i][probindex]), &(subsciplocksup[i][probindex]));
          }
 
          SCIPfreeBufferArray(scip, &curvals);
@@ -3235,7 +3279,7 @@ SCIP_RETCODE GCGgetVarLockData(
          assert(probindex >= 0);
          assert(probindex < nvars);
 
-         increaseLock(scip, lhs, curvals[v], rhs, &(masterlocksdown[probindex]), &(masterlocksup[probindex]));
+         increaseLock(gcg, lhs, curvals[v], rhs, &(masterlocksdown[probindex]), &(masterlocksup[probindex]));
       }
 
       SCIPfreeBufferArray(scip, &curvals);
@@ -3250,7 +3294,7 @@ SCIP_RETCODE GCGgetVarLockData(
  * linking variables
  */
 void GCGdecompSetMaxWhiteScore(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decdecomp,          /**< decomposition data structure */
    SCIP_Real             maxwhitescore       /**< score related to max white measure (i.e. fraction of white (nonblock and nonborder) matrix area ) */
    )
@@ -3267,14 +3311,14 @@ void GCGdecompSetMaxWhiteScore(
  * linking variables
  */
 SCIP_Real GCGdecompGetMaxWhiteScore(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decdecomp           /**< decomposition data structure */
    )
 {
    DEC_SCORES score;
 
    if( decdecomp->maxwhitescore == -1.)
-      GCGdecompEvaluateDecomposition(scip, decdecomp, &score);
+      GCGdecompEvaluateDecomposition(gcg, decdecomp, &score);
 
    assert(decdecomp->maxwhitescore >= 0);
 
@@ -3285,11 +3329,12 @@ SCIP_Real GCGdecompGetMaxWhiteScore(
  * linking variables
  */
 SCIP_RETCODE GCGdecompEvaluateDecomposition(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decdecomp,          /**< decomposition data structure */
    DEC_SCORES*           score               /**< returns the score of the decomposition */
    )
 {
+   SCIP* scip;
    SCIP_Longint matrixarea;
    SCIP_Longint borderarea;
    int nvars;
@@ -3318,9 +3363,10 @@ SCIP_RETCODE GCGdecompEvaluateDecomposition(
    blackarea = 0.;
 
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(score != NULL);
 
+   scip = GCGgetOrigprob(gcg);
    nvars = SCIPgetNVars(scip);
    nconss = SCIPgetNConss(scip);
 
@@ -3509,7 +3555,7 @@ SCIP_RETCODE GCGdecompEvaluateDecomposition(
 /** compute the density of variables in blocks and master */
 static
 SCIP_RETCODE computeVarDensities(
-   SCIP*              scip,               /**< SCIP data structure */
+   GCG*               gcg,                /**< GCG data structure */
    GCG_DECOMP*        decomp,             /**< decomposition data structure */
    int*               varprobdensity,     /**< density information */
    int*               varmasterdensity,   /**< density information */
@@ -3520,6 +3566,7 @@ SCIP_RETCODE computeVarDensities(
    int                nblocks             /**< number of blocks */
    )
 {
+   SCIP* scip;
    int v;
    int b;
    SCIP_Real** vardistribution;
@@ -3531,7 +3578,7 @@ SCIP_RETCODE computeVarDensities(
    SCIP_Real median = 0;
    SCIP_Real mean = 0;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
 
    assert(vars != NULL);
@@ -3540,6 +3587,7 @@ SCIP_RETCODE computeVarDensities(
    assert(mastervardensity != NULL);
    assert(nblocks >= 0);
 
+   scip = GCGgetOrigprob(gcg);
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vardistribution, nblocks) );
    SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nvardistribution, nblocks) );
 
@@ -3664,7 +3712,7 @@ int GCGdecompGetNConss(
 /** computes nonzero elements of a given constraint, separated into linking variables and normal vars */
 static
 SCIP_RETCODE computeConssNzeros(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_CONS*            cons,               /**< SCIP data structure */
    int*                  nzeros,             /**< pointer to store nonzero elements */
@@ -3673,12 +3721,13 @@ SCIP_RETCODE computeConssNzeros(
    int*                  nintbzeros          /**< pointer to store border integer nonzeros */
 )
 {
+   SCIP* scip;
    int v;
    int ncurvars;
    SCIP_VAR** curvars = NULL;
    SCIP_Real* curvals = NULL;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(cons != NULL);
    assert(nzeros != NULL);
@@ -3686,6 +3735,7 @@ SCIP_RETCODE computeConssNzeros(
    assert(nbzeros != NULL);
    assert(nintbzeros != NULL);
 
+   scip = GCGgetOrigprob(gcg);
    ncurvars = GCGconsGetNVars(scip, cons);
    SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
    SCIP_CALL( SCIPallocBufferArray(scip, &curvals, ncurvars) );
@@ -3733,7 +3783,7 @@ SCIP_RETCODE computeConssNzeros(
 /** computes nonzero elements of the pricing problems and the master */
 static
 SCIP_RETCODE computeNonzeros(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    int*                  mnzeros,            /**< number of nonzero elements in row border */
    int*                  mintnzeros,         /**< number of integral nonzero elements in row border */
@@ -3746,7 +3796,7 @@ SCIP_RETCODE computeNonzeros(
    int c;
    int b;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(mnzeros != NULL);
    assert(mintnzeros != NULL);
@@ -3761,13 +3811,13 @@ SCIP_RETCODE computeNonzeros(
       int nsubscipconss = GCGdecompGetNSubscipconss(decomp)[b];
       for( c = 0; c < nsubscipconss; ++c )
       {
-         SCIP_CALL( computeConssNzeros(scip, decomp, subscipconss[c], &(nonzeros[b]), &(intnzeros[b]), lnzeros, lintnzeros ) );
+         SCIP_CALL( computeConssNzeros(gcg, decomp, subscipconss[c], &(nonzeros[b]), &(intnzeros[b]), lnzeros, lintnzeros ) );
       }
    }
 
    for( c = 0; c < GCGdecompGetNLinkingconss(decomp); ++c )
    {
-      SCIP_CALL( computeConssNzeros(scip, decomp, GCGdecompGetLinkingconss(decomp)[c], mnzeros, mintnzeros, lnzeros, lintnzeros ) );
+      SCIP_CALL( computeConssNzeros(gcg, decomp, GCGdecompGetLinkingconss(decomp)[c], mnzeros, mintnzeros, lnzeros, lintnzeros ) );
    }
 
    return SCIP_OKAY;
@@ -3775,7 +3825,7 @@ SCIP_RETCODE computeNonzeros(
 
 /** display statistics about the decomposition */
 SCIP_RETCODE GCGprintDecompStatistics(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    FILE*                 file,               /**< output file or NULL for standard output */
    GCG_DECOMP*           decomp              /**< decomp that should be evaluated */
    )
@@ -3783,6 +3833,7 @@ SCIP_RETCODE GCGprintDecompStatistics(
    DEC_SCORES scores;
    SCIP_VAR** vars;
    SCIP_CONS** conss;
+   SCIP* origprob;
 
    int nvars;
    int nconss;
@@ -3820,31 +3871,32 @@ SCIP_RETCODE GCGprintDecompStatistics(
    int* nonzeros;
    int* intnzeros;
 
-   assert(scip != NULL);
+   origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
    assert(decomp != NULL);
 
    nblocks = GCGdecompGetNBlocks(decomp);
-   nvars = SCIPgetNVars(scip);
+   nvars = SCIPgetNVars(origprob);
    nconss = GCGdecompGetNConss(decomp);
 
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nallvars, nblocks) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nbinvars, nblocks) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nintvars, nblocks) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nimplvars, nblocks) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &ncontvars, nblocks) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(origprob, &nallvars, nblocks) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(origprob, &nbinvars, nblocks) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(origprob, &nintvars, nblocks) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(origprob, &nimplvars, nblocks) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(origprob, &ncontvars, nblocks) );
 
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &blockvardensities, nblocks) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &blockconsdensities, nblocks) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(origprob, &blockvardensities, nblocks) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(origprob, &blockconsdensities, nblocks) );
 
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &varprobdensity, nvars) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &varmasterdensity, nvars) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &vars, nvars) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &conss, nconss) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consprobsensity, nconss) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &consmasterdensity, nconss) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(origprob, &varprobdensity, nvars) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(origprob, &varmasterdensity, nvars) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(origprob, &vars, nvars) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(origprob, &conss, nconss) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(origprob, &consprobsensity, nconss) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(origprob, &consmasterdensity, nconss) );
 
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &nonzeros, nblocks) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &intnzeros, nblocks) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(origprob, &nonzeros, nblocks) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(origprob, &intnzeros, nblocks) );
 
    BMSclearMemoryArray(nonzeros, nblocks);
    BMSclearMemoryArray(intnzeros, nblocks);
@@ -3854,93 +3906,94 @@ SCIP_RETCODE GCGprintDecompStatistics(
    lnzeros = 0;
    lintnzeros = 0;
 
-   SCIP_CALL( GCGdecompEvaluateDecomposition(scip, decomp, &scores) );
+   SCIP_CALL( GCGdecompEvaluateDecomposition(gcg, decomp, &scores) );
 
-   GCGgetSubproblemVarsData(scip, decomp, nallvars, nbinvars, nintvars, nimplvars, ncontvars, nblocks);
-   GCGgetLinkingVarsData(scip, decomp, &nlinkvars, &nlinkbinvar, &nlinkintvars, &nlinkimplvars, &nlinkcontvars);
+   GCGgetSubproblemVarsData(gcg, decomp, nallvars, nbinvars, nintvars, nimplvars, ncontvars, nblocks);
+   GCGgetLinkingVarsData(gcg, decomp, &nlinkvars, &nlinkbinvar, &nlinkintvars, &nlinkimplvars, &nlinkcontvars);
    nlinkvars = nlinkvars - GCGdecompGetNMastervars(decomp);
    nstaticvars = GCGdecompGetNMastervars(decomp);
 
-   SCIP_CALL( GCGgetDensityData(scip, decomp, vars, nvars, conss, nconss, varprobdensity, varmasterdensity, consprobsensity, consmasterdensity) );
+   SCIP_CALL( GCGgetDensityData(gcg, decomp, vars, nvars, conss, nconss, varprobdensity, varmasterdensity, consprobsensity, consmasterdensity) );
 
-   SCIP_CALL( computeVarDensities(scip, decomp, varprobdensity, varmasterdensity, vars, nvars, blockvardensities, &mastervardensity, nblocks) );
-   SCIP_CALL( computeNonzeros(scip, decomp, &mnzeros, &mintnzeros, &lnzeros, &lintnzeros, nonzeros, intnzeros) );
+   SCIP_CALL( computeVarDensities(gcg, decomp, varprobdensity, varmasterdensity, vars, nvars, blockvardensities, &mastervardensity, nblocks) );
+   SCIP_CALL( computeNonzeros(gcg, decomp, &mnzeros, &mintnzeros, &lnzeros, &lintnzeros, nonzeros, intnzeros) );
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Decomp statistics  :\n");
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  type             : %10s\n", GCGdecompGetStrType(GCGdecompGetType(decomp)));
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  detector         : %10s\n", decomp->detectorchainstring == NULL? "provided": decomp->detectorchainstring);
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  blocks           : %10d\n", GCGdecompGetNBlocks(decomp));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(origprob), file, "Decomp statistics  :\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(origprob), file, "  type             : %10s\n", GCGdecompGetStrType(GCGdecompGetType(decomp)));
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(origprob), file, "  detector         : %10s\n", decomp->detectorchainstring == NULL? "provided": decomp->detectorchainstring);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(origprob), file, "  blocks           : %10d\n", GCGdecompGetNBlocks(decomp));
 
    nblocksrelevant = nblocks;
-   if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_PRESOLVED )
+   if( SCIPgetStage(GCGgetMasterprob(gcg)) >= SCIP_STAGE_PRESOLVED )
    {
       for( b = 0; b < nblocks; ++b )
       {
-         if( GCGgetNIdenticalBlocks(scip, b) == 0 )
+         if( GCGgetNIdenticalBlocks(gcg, b) == 0 )
             nblocksrelevant -= 1;
       }
    }
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  aggr. blocks     : %10d\n", nblocksrelevant);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(origprob), file, "  aggr. blocks     : %10d\n", nblocksrelevant);
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Master statistics  :  nlinkvars  nstatvars  nbinvars  nintvars nimplvars  ncontvars   nconss  nonzeros intnzeros   bnzeros bintnzeros min(dens) max(dens) medi(dens) mean(dens)\n");
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  master           : %10d %10d %9d %9d %9d %10d %8d %9d %9d %9d %10d %9.3f %9.3f %10.3f %9.3f\n", nlinkvars, nstaticvars,
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(origprob), file, "Master statistics  :  nlinkvars  nstatvars  nbinvars  nintvars nimplvars  ncontvars   nconss  nonzeros intnzeros   bnzeros bintnzeros min(dens) max(dens) medi(dens) mean(dens)\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(origprob), file, "  master           : %10d %10d %9d %9d %9d %10d %8d %9d %9d %9d %10d %9.3f %9.3f %10.3f %9.3f\n", nlinkvars, nstaticvars,
          nlinkbinvar, nlinkintvars, nlinkimplvars, nlinkcontvars, GCGdecompGetNLinkingconss(decomp),
          mnzeros, mintnzeros, lnzeros, lintnzeros, mastervardensity.min, mastervardensity.max, mastervardensity.median, mastervardensity.mean);
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Pricing statistics :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss   nonzeros  intnzeros  min(dens)  max(dens) medi(dens) mean(dens)  identical\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(origprob), file, "Pricing statistics :      nvars   nbinvars   nintvars  nimplvars  ncontvars     nconss   nonzeros  intnzeros  min(dens)  max(dens) medi(dens) mean(dens)  identical\n");
    for( b = 0; b < nblocks; ++b )
    {
       int identical = 0;
       SCIP_Bool relevant = TRUE;
 
-      if( SCIPgetStage(GCGgetMasterprob(scip)) >= SCIP_STAGE_PRESOLVED )
+      if( SCIPgetStage(GCGgetMasterprob(gcg)) >= SCIP_STAGE_PRESOLVED )
       {
-         relevant =  GCGisPricingprobRelevant(scip, b);
-         identical = GCGgetNIdenticalBlocks(scip, b);
+         relevant =  GCGisPricingprobRelevant(gcg, b);
+         identical = GCGgetNIdenticalBlocks(gcg, b);
       }
       if( relevant )
       {
-         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " %10d        : %10d %10d %10d %10d %10d %10d %10d %10d %10.3f %10.3f %10.3f %10.3f %10d\n", b+1, nallvars[b], nbinvars[b], nintvars[b], nimplvars[b], ncontvars[b],
+         SCIPmessageFPrintInfo(SCIPgetMessagehdlr(origprob), file, " %10d        : %10d %10d %10d %10d %10d %10d %10d %10d %10.3f %10.3f %10.3f %10.3f %10d\n", b+1, nallvars[b], nbinvars[b], nintvars[b], nimplvars[b], ncontvars[b],
                GCGdecompGetNSubscipconss(decomp)[b], nonzeros[b], intnzeros[b], blockvardensities[b].min, blockvardensities[b].max, blockvardensities[b].median, blockvardensities[b].mean, identical);
       }
    }
 
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Decomp Scores      :\n");
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  border area      : %10.3f\n", scores.borderscore);
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  avg. density     : %10.3f\n", scores.densityscore);
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "  linking score    : %10.3f\n", scores.linkingscore);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(origprob), file, "Decomp Scores      :\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(origprob), file, "  border area      : %10.3f\n", scores.borderscore);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(origprob), file, "  avg. density     : %10.3f\n", scores.densityscore);
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(origprob), file, "  linking score    : %10.3f\n", scores.linkingscore);
 
-   SCIPfreeBlockMemoryArray(scip, &vars, nvars);
-   SCIPfreeBlockMemoryArray(scip, &conss, nconss);
+   SCIPfreeBlockMemoryArray(origprob, &vars, nvars);
+   SCIPfreeBlockMemoryArray(origprob, &conss, nconss);
 
 
-   SCIPfreeBlockMemoryArray(scip, &intnzeros, nblocks);
-   SCIPfreeBlockMemoryArray(scip, &nonzeros, nblocks);
+   SCIPfreeBlockMemoryArray(origprob, &intnzeros, nblocks);
+   SCIPfreeBlockMemoryArray(origprob, &nonzeros, nblocks);
 
-   SCIPfreeBlockMemoryArray(scip, &varprobdensity, nvars);
-   SCIPfreeBlockMemoryArray(scip, &varmasterdensity, nvars);
-   SCIPfreeBlockMemoryArray(scip, &consprobsensity, nconss);
-   SCIPfreeBlockMemoryArray(scip, &consmasterdensity, nconss);
+   SCIPfreeBlockMemoryArray(origprob, &varprobdensity, nvars);
+   SCIPfreeBlockMemoryArray(origprob, &varmasterdensity, nvars);
+   SCIPfreeBlockMemoryArray(origprob, &consprobsensity, nconss);
+   SCIPfreeBlockMemoryArray(origprob, &consmasterdensity, nconss);
 
-   SCIPfreeBlockMemoryArray(scip, &blockvardensities, nblocks);
-   SCIPfreeBlockMemoryArray(scip, &blockconsdensities, nblocks);
+   SCIPfreeBlockMemoryArray(origprob, &blockvardensities, nblocks);
+   SCIPfreeBlockMemoryArray(origprob, &blockconsdensities, nblocks);
 
-   SCIPfreeBlockMemoryArray(scip, &nallvars, nblocks);
-   SCIPfreeBlockMemoryArray(scip, &nbinvars, nblocks);
-   SCIPfreeBlockMemoryArray(scip, &nintvars, nblocks);
-   SCIPfreeBlockMemoryArray(scip, &nimplvars, nblocks);
-   SCIPfreeBlockMemoryArray(scip, &ncontvars, nblocks);
+   SCIPfreeBlockMemoryArray(origprob, &nallvars, nblocks);
+   SCIPfreeBlockMemoryArray(origprob, &nbinvars, nblocks);
+   SCIPfreeBlockMemoryArray(origprob, &nintvars, nblocks);
+   SCIPfreeBlockMemoryArray(origprob, &nimplvars, nblocks);
+   SCIPfreeBlockMemoryArray(origprob, &ncontvars, nblocks);
 
    return SCIP_OKAY;
 }
 
 /** returns whether both structures lead to the same decomposition */
 SCIP_Bool GCGdecompositionsAreEqual(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp1,            /**< first decomp data structure */
    GCG_DECOMP*           decomp2             /**< second decomp data structure */
 )
 {
+   SCIP* scip;
    SCIP_HASHMAP* constoblock1;
    SCIP_HASHMAP* constoblock2;
 
@@ -3954,10 +4007,11 @@ SCIP_Bool GCGdecompositionsAreEqual(
    int nvars;
    int i;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp1 != NULL);
    assert(decomp2 != NULL);
 
+   scip = GCGgetOrigprob(gcg);
    if( GCGdecompGetNBlocks(decomp1) != GCGdecompGetNBlocks(decomp2) )
    {
       return FALSE;
@@ -4001,7 +4055,7 @@ SCIP_Bool GCGdecompositionsAreEqual(
  * @return the number of unique decompositions
  */
 int GCGfilterSimilarDecompositions(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP**          decs,               /**< array of decompositions */
    int                   ndecs               /**< number of decompositions */
 )
@@ -4009,7 +4063,7 @@ int GCGfilterSimilarDecompositions(
    int i;
    int j;
    int nunique;
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decs != NULL);
    assert(ndecs > 0);
 
@@ -4020,7 +4074,7 @@ int GCGfilterSimilarDecompositions(
       for( j = i+1; j < nunique; ++j )
       {
          GCG_DECOMP* tmp;
-         if( GCGdecompositionsAreEqual(scip, decs[i], decs[j]) )
+         if( GCGdecompositionsAreEqual(gcg, decs[i], decs[j]) )
          {
             tmp = decs[nunique-1];
             decs[nunique-1] = decs[j];
@@ -4044,12 +4098,13 @@ int GCGfilterSimilarDecompositions(
 /** @todo: For linking variables, we should check which blocks they actually link */
 /** @todo: maybe this is possible in such a way that a staircase structure is preserved */
 SCIP_RETCODE GCGdetermineConsBlock(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_CONS*            cons,               /**< constraint to check */
    int*                  block              /**< block of the constraint (or nblocks for master) */
 )
 {
+   SCIP* scip;
    SCIP_VAR** curvars = NULL;
    int ncurvars = 0;
    SCIP_Bool success = FALSE;
@@ -4060,13 +4115,14 @@ SCIP_RETCODE GCGdetermineConsBlock(
    int npricingvars = 0;
 
    SCIP_HASHMAP* vartoblock;
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(cons != NULL);
    assert(block != NULL);
 
    *block = -2;
 
+   scip = GCGgetOrigprob(gcg);
    SCIP_CALL( SCIPgetConsNVars(scip, cons, &ncurvars, &success) );
    assert(success);
 
@@ -4134,21 +4190,23 @@ SCIP_RETCODE GCGdetermineConsBlock(
 
 /** move a master constraint to pricing problem */
 SCIP_RETCODE GCGdecompMoveLinkingConsToPricing(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    int                   consindex,          /**< index of constraint to move */
    int                   block               /**< block of the pricing problem where to move */
    )
 {
+   SCIP* scip;
    SCIP_CONS* linkcons;
    int oldsize;
    int newsize;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(consindex >= 0 && consindex < decomp->nlinkingconss);
    assert(block >= 0 && block < decomp->nblocks);
 
+   scip = GCGgetOrigprob(gcg);
    linkcons = decomp->linkingconss[consindex];
 
    decomp->linkingconss[consindex] =  decomp->linkingconss[decomp->nlinkingconss-1];
@@ -4161,7 +4219,7 @@ SCIP_RETCODE GCGdecompMoveLinkingConsToPricing(
    decomp->nsubscipconss[block] += 1;
 
    SCIP_CALL( SCIPhashmapSetImage(decomp->constoblock, linkcons, (void*) (size_t)((size_t)block+1)) );
-   SCIP_CALL( assignConsvarsToBlock(scip, decomp, linkcons, block) );
+   SCIP_CALL( assignConsvarsToBlock(gcg, decomp, linkcons, block) );
 
    return SCIP_OKAY;
 }
@@ -4169,16 +4227,18 @@ SCIP_RETCODE GCGdecompMoveLinkingConsToPricing(
 
 /** tries to assign masterconss to pricing problem */
 SCIP_RETCODE GCGdecompTryAssignMasterconssToExistingPricing(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    int*                  transferred         /**< number of master constraints reassigned */
    )
 {
+   SCIP* scip;
    int c;
    int linkingconssize;
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(transferred != NULL);
+   scip = GCGgetOrigprob(gcg);
    linkingconssize = decomp->nlinkingconss;
    *transferred = 0;
 
@@ -4186,14 +4246,14 @@ SCIP_RETCODE GCGdecompTryAssignMasterconssToExistingPricing(
    for( c = 0; c < decomp->nlinkingconss; ++c )
    {
       int block;
-      SCIP_CALL( GCGdetermineConsBlock(scip, decomp, decomp->linkingconss[c], &block) );
+      SCIP_CALL( GCGdetermineConsBlock(gcg, decomp, decomp->linkingconss[c], &block) );
 
       if( block == GCGdecompGetNBlocks(decomp) || block < 0 )
       {
          continue;
       }
 
-      SCIP_CALL( GCGdecompMoveLinkingConsToPricing(scip, decomp, c, block) );
+      SCIP_CALL( GCGdecompMoveLinkingConsToPricing(gcg, decomp, c, block) );
       --c;
       *transferred += 1;
    }
@@ -4217,19 +4277,21 @@ SCIP_RETCODE GCGdecompTryAssignMasterconssToExistingPricing(
 
 /** tries to assign masterconss to new pricing problem */
 SCIP_RETCODE GCGdecompTryAssignMasterconssToNewPricing(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    GCG_DECOMP**          newdecomp,          /**< new decomposition, if successful */
    int*                  transferred         /**< number of master constraints reassigned */
    )
 {
+   SCIP* scip;
    int c;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(newdecomp != NULL);
    assert(transferred != NULL);
 
+   scip = GCGgetOrigprob(gcg);
    *newdecomp = NULL;
    *transferred = 0;
 
@@ -4239,7 +4301,7 @@ SCIP_RETCODE GCGdecompTryAssignMasterconssToNewPricing(
       int i;
       int nconss;
       SCIP_HASHMAP* constoblock;
-      SCIP_CALL( GCGdetermineConsBlock(scip, decomp, decomp->linkingconss[c], &block) );
+      SCIP_CALL( GCGdetermineConsBlock(gcg, decomp, decomp->linkingconss[c], &block) );
 
       if( block >= 0 )
       {
@@ -4247,7 +4309,7 @@ SCIP_RETCODE GCGdecompTryAssignMasterconssToNewPricing(
       }
       SCIPdebugMessage("Cons <%s> in new pricing problem\n", SCIPconsGetName(decomp->linkingconss[c]));
       nconss = SCIPgetNConss(scip);
-      SCIP_CALL( GCGdecompCreate(scip, newdecomp) );
+      SCIP_CALL( GCGdecompCreate(gcg, newdecomp) );
       SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), SCIPgetNConss(scip)) );
 
       for( i = 0; i < nconss; ++i )
@@ -4263,7 +4325,7 @@ SCIP_RETCODE GCGdecompTryAssignMasterconssToNewPricing(
       SCIP_CALL( SCIPhashmapSetImage(constoblock, decomp->linkingconss[c], (void*) (size_t) (1)) );
       SCIPdebugMessage("Cons <%s>    -> %d\n", SCIPconsGetName(decomp->linkingconss[c]), 1);
 
-      SCIP_CALL( GCGfilloutDecompFromConstoblock(scip, *newdecomp, constoblock, decomp->nblocks+1, FALSE) );
+      SCIP_CALL( GCGfilloutDecompFromConstoblock(gcg, *newdecomp, constoblock, decomp->nblocks+1, FALSE) );
       *transferred += 1;
       break;
    }
@@ -4273,7 +4335,7 @@ SCIP_RETCODE GCGdecompTryAssignMasterconssToNewPricing(
 
 /** polish the decomposition and try to greedily assign master constraints to pricing problem where useful */
 SCIP_RETCODE GCGcreatePolishedDecomp(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    GCG_DECOMP**          newdecomp           /**< new decomposition, if successful */
    )
@@ -4283,7 +4345,7 @@ SCIP_RETCODE GCGcreatePolishedDecomp(
    GCG_DECOMP* origdecomp = decomp;
    GCG_DECOMP* tempdecomp = NULL;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
    assert(newdecomp != NULL);
 
@@ -4296,15 +4358,15 @@ SCIP_RETCODE GCGcreatePolishedDecomp(
 
    do
    {
-      SCIP_CALL( GCGdecompTryAssignMasterconssToExistingPricing(scip, *newdecomp, &transferredexisting) );
+      SCIP_CALL( GCGdecompTryAssignMasterconssToExistingPricing(gcg, *newdecomp, &transferredexisting) );
       SCIPdebugMessage("%d conss transferred to existing pricing\n", transferredexisting);
-      SCIP_CALL( GCGdecompTryAssignMasterconssToNewPricing(scip, *newdecomp, &tempdecomp, &transferrednew) );
+      SCIP_CALL( GCGdecompTryAssignMasterconssToNewPricing(gcg, *newdecomp, &tempdecomp, &transferrednew) );
       SCIPdebugMessage("%d conss transferred to new pricing\n", transferrednew);
       if( transferrednew > 0 )
       {
          if( *newdecomp != origdecomp )
          {
-            SCIP_CALL( GCGdecompFree(scip, newdecomp) );
+            SCIP_CALL( GCGdecompFree(gcg, newdecomp) );
          }
          *newdecomp = tempdecomp;
       }
@@ -4320,14 +4382,14 @@ SCIP_RETCODE GCGcreatePolishedDecomp(
 
 /** permutes the decomposition according to the permutation seed */
 SCIP_RETCODE GCGpermuteDecomp(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    GCG_DECOMP*           decomp,             /**< decomposition data structure */
    SCIP_RANDNUMGEN*      randnumgen          /**< random number generator */
    )
 {
    int b;
    int npricingprobs;
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(decomp != NULL);
 
    npricingprobs = GCGdecompGetNBlocks(decomp);
@@ -4359,6 +4421,6 @@ SCIP_RETCODE GCGpermuteDecomp(
       SCIPrandomPermuteArray(randnumgen, (void**)linkingvars, 0, GCGdecompGetNLinkingvars(decomp));
    }
 
-   SCIP_CALL( GCGdecompCheckConsistency(scip, decomp) );
+   SCIP_CALL( GCGdecompCheckConsistency(gcg, decomp) );
    return SCIP_OKAY;
 }

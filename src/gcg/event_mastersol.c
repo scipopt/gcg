@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -33,11 +34,11 @@
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
 #include <string.h>
-#include "event_mastersol.h"
-#include "pricer_gcg.h"
-#include "gcg.h"
-#include "relax_gcg.h"
-#include "event_relaxsol.h"
+#include "gcg/event_mastersol.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/event_relaxsol.h"
 
 #define EVENTHDLR_NAME         "mastersol"
 #define EVENTHDLR_DESC         "event handler to to transfer solutions found in the original problem to the master problem"
@@ -50,6 +51,7 @@
 /** event handler data */
 struct SCIP_EventhdlrData
 {
+   GCG*                  gcg;                /**< GCG data structure */
    SCIP_Bool             triggered;          /**< flag to indicate whether event has been triggered */
 };
 
@@ -125,7 +127,7 @@ SCIP_DECL_EVENTEXEC(eventExecMastersol)
    assert(sol != NULL);
 
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(eventhdlrdata->gcg);
    assert(masterprob != NULL);
 
    eventhdlrdata->triggered = TRUE;
@@ -143,13 +145,13 @@ SCIP_DECL_EVENTEXEC(eventExecMastersol)
     */
    if( SCIPgetStage(scip) > SCIP_STAGE_TRANSFORMED && SCIPgetStage(masterprob) > SCIP_STAGE_TRANSFORMED &&
       SCIPgetStage(masterprob) < SCIP_STAGE_SOLVED &&
-       !GCGeventhdlrRelaxsolIsTriggered(scip, masterprob) &&
+       !GCGeventhdlrRelaxsolIsTriggered(eventhdlrdata->gcg) &&
        (SCIPsolGetHeur(sol) != NULL || discretization) &&  /* @todo: This check is possibly not needed anymore */
-      GCGgetDecompositionMode(scip) != GCG_DECMODE_BENDERS && GCGgetDecompositionMode(scip) != GCG_DECMODE_ORIGINAL )
+      GCGgetDecompositionMode(eventhdlrdata->gcg) != GCG_DECMODE_BENDERS && GCGgetDecompositionMode(eventhdlrdata->gcg) != GCG_DECMODE_ORIGINAL )
    {
       SCIPdebugMessage("Original feasible solution found by <%s> -- transferring to master problem\n",
          SCIPsolGetHeur(sol) == NULL ? "relaxation" : SCIPheurGetName(SCIPsolGetHeur(sol)));
-      SCIP_CALL( GCGmasterTransOrigSolToMasterVars(masterprob, sol, NULL) );
+      SCIP_CALL( GCGmasterTransOrigSolToMasterVars(eventhdlrdata->gcg, sol, NULL) );
    }
 
    eventhdlrdata->triggered = FALSE;
@@ -158,42 +160,45 @@ SCIP_DECL_EVENTEXEC(eventExecMastersol)
 }
 
 /** creates event handler for mastersol event */
-SCIP_RETCODE SCIPincludeEventHdlrMastersol(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeEventHdlrMastersol(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_EVENTHDLR* eventhdlr;
    SCIP_EVENTHDLRDATA* eventhdlrdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    eventhdlr = NULL;
 
-   SCIP_CALL( SCIPallocMemory(scip, &eventhdlrdata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &eventhdlrdata) );
    assert(eventhdlrdata != NULL);
+   eventhdlrdata->gcg = gcg;
 
    /* include event handler into SCIP */
-   SCIP_CALL( SCIPincludeEventhdlrBasic(scip, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC,
+   SCIP_CALL( SCIPincludeEventhdlrBasic(origprob, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC,
          eventExecMastersol, eventhdlrdata) );
    assert(eventhdlr != NULL);
 
    /* set non fundamental callbacks via setter functions */
-   SCIP_CALL( SCIPsetEventhdlrFree(scip, eventhdlr, eventFreeMastersol) );
-   SCIP_CALL( SCIPsetEventhdlrInit(scip, eventhdlr, eventInitMastersol) );
-   SCIP_CALL( SCIPsetEventhdlrExit(scip, eventhdlr, eventExitMastersol) );
+   SCIP_CALL( SCIPsetEventhdlrFree(origprob, eventhdlr, eventFreeMastersol) );
+   SCIP_CALL( SCIPsetEventhdlrInit(origprob, eventhdlr, eventInitMastersol) );
+   SCIP_CALL( SCIPsetEventhdlrExit(origprob, eventhdlr, eventExitMastersol) );
 
    return SCIP_OKAY;
 }
 
 /** return whether event has been triggered */
 SCIP_Bool GCGeventhdlrMastersolIsTriggered(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_EVENTHDLR* eventhdlr;
    SCIP_EVENTHDLRDATA* eventhdlrdata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   eventhdlr = SCIPfindEventhdlr(scip, EVENTHDLR_NAME);
+   eventhdlr = SCIPfindEventhdlr(GCGgetOrigprob(gcg), EVENTHDLR_NAME);
    assert(eventhdlr != NULL);
 
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);

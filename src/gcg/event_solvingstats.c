@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -43,8 +44,8 @@
 
 /*--+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "event_solvingstats.h"
-#include "pricer_gcg.h"
+#include "gcg/event_solvingstats.h"
+#include "gcg/pricer_gcg.h"
 #include <string.h>
 
 #define EVENTHDLR_NAME         "solvingstats"
@@ -170,27 +171,28 @@ SCIP_DECL_EVENTEXEC(eventExecSolvingstats)
 }
 
 /** includes event handler for best solution found */
-SCIP_RETCODE SCIPincludeEventHdlrSolvingstats(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeEventHdlrSolvingstats(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_EVENTHDLRDATA* eventhdlrdata;
    SCIP_EVENTHDLR* eventhdlr;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
 
    /* create bounds reader data */
-   SCIP_CALL( SCIPallocMemory(scip, &eventhdlrdata) );
-   eventhdlrdata->origprob = GCGmasterGetOrigprob(scip);
+   SCIP_CALL( SCIPallocMemory(masterprob, &eventhdlrdata) );
+   eventhdlrdata->origprob = GCGgetOrigprob(gcg);
    eventhdlrdata->file = NULL;
    eventhdlrdata->filename = NULL;
    eventhdlr = NULL;
 
    /* create event handler for events on watched variables */
-   SCIP_CALL( SCIPincludeEventhdlrBasic(scip, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC, eventExecSolvingstats, eventhdlrdata) );
+   SCIP_CALL( SCIPincludeEventhdlrBasic(masterprob, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC, eventExecSolvingstats, eventhdlrdata) );
    assert(eventhdlr != NULL);
 
-   SCIP_CALL( SCIPsetEventhdlrFree(scip, eventhdlr, eventFreeSolvingstats) );
-   SCIP_CALL( SCIPsetEventhdlrInit(scip, eventhdlr, eventInitSolvingstats) );
-   SCIP_CALL( SCIPsetEventhdlrExit(scip, eventhdlr, eventExitSolvingstats) );
+   SCIP_CALL( SCIPsetEventhdlrFree(masterprob, eventhdlr, eventFreeSolvingstats) );
+   SCIP_CALL( SCIPsetEventhdlrInit(masterprob, eventhdlr, eventInitSolvingstats) );
+   SCIP_CALL( SCIPsetEventhdlrExit(masterprob, eventhdlr, eventExitSolvingstats) );
 
    /* add boundwriting parameters */
    SCIP_CALL( SCIPaddStringParam(eventhdlrdata->origprob,

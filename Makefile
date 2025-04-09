@@ -1,27 +1,28 @@
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 #*                                                                           *
-#*                  This file is part of the program                         *
+#*                  This file is part of the program and library             *
 #*          GCG --- Generic Column Generation                                *
 #*                  a Dantzig-Wolfe decomposition based extension            *
 #*                  of the branch-cut-and-price framework                    *
 #*         SCIP --- Solving Constraint Integer Programs                      *
 #*                                                                           *
-#* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       *
+#* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       *
 #*                         Zuse Institute Berlin (ZIB)                       *
 #*                                                                           *
-#* This program is free software; you can redistribute it and/or             *
-#* modify it under the terms of the GNU Lesser General Public License        *
-#* as published by the Free Software Foundation; either version 3            *
-#* of the License, or (at your option) any later version.                    *
+#*  Licensed under the Apache License, Version 2.0 (the "License");          *
+#*  you may not use this file except in compliance with the License.         *
+#*  You may obtain a copy of the License at                                  *
 #*                                                                           *
-#* This program is distributed in the hope that it will be useful,           *
-#* but WITHOUT ANY WARRANTY; without even the implied warranty of            *
-#* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             *
-#* GNU Lesser General Public License for more details.                       *
+#*      http://www.apache.org/licenses/LICENSE-2.0                           *
 #*                                                                           *
-#* You should have received a copy of the GNU Lesser General Public License  *
-#* along with this program; if not, write to the Free Software               *
-#* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*
+#*  Unless required by applicable law or agreed to in writing, software      *
+#*  distributed under the License is distributed on an "AS IS" BASIS,        *
+#*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. *
+#*  See the License for the specific language governing permissions and      *
+#*  limitations under the License.                                           *
+#*                                                                           *
+#*  You should have received a copy of the Apache-2.0 license                *
+#*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*
 #*                                                                           *
 #* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
@@ -37,7 +38,7 @@
 #-----------------------------------------------------------------------------
 VERSION         :=	4.0.0
 GCGGITHASH	=
-SCIPDIR         =   lib/scip
+SCIPDIR         =   $(CURDIR)/lib/scip
 
 #-----------------------------------------------------------------------------
 # necessary information
@@ -69,11 +70,12 @@ PARASCIP	= 	true
 SYM      	=   snauty
 CLIQUER     =   false
 HMETIS      =   false
-OPENMP      =   false
+OPENMP      =   true
 GSL         =   false
 JSON        =   true
+HIGHS       =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
-LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CLIQUER)
+LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CLIQUER).$(HIGHS)
 
 # overriding SCIP PARASCIP setting if compiled with OPENMP
 ifeq ($(OPENMP),true)
@@ -201,6 +203,7 @@ endif
 #-----------------------------------------------------------------------------
 
 ifeq ($(CPLEXSOLVER),true)
+LDFLAGS		+=	-ldl
 FLAGS		+=	-DWITH_CPLEXSOLVER -I$(SCIPDIR)/lib/include/cpxinc
 endif
 
@@ -211,6 +214,29 @@ endif
 ifeq ($(JSON),true)
 LDFLAGS		+=	-ljansson
 FLAGS		+=	-DWITH_JSON
+endif
+
+#-----------------------------------------------------------------------------
+# HiGHS
+#-----------------------------------------------------------------------------
+
+ifeq ($(HIGHS),true)
+FLAGS		+=	-DWITH_HIGHS
+LDFLAGS	+=	$(LINKCXX_L)$(GCGDIR)/$(LIBDIR)/shared $(LINKCXX_l)highs.$(OSTYPE).$(ARCH).$(COMP)$(LINKLIBSUFFIX)
+ifneq ($(LINKRPATH),)
+LDFLAGS	+=	$(LINKRPATH)$(dir $(realpath $(GCGDIR)/$(LIBDIR)/shared/libhighs.$(OSTYPE).$(ARCH).$(COMP).$(SHAREDLIBEXT)))
+LDFLAGS	+=	$(LINKRPATH)"\$$ORIGIN"/../$(LIBDIR)/shared/
+endif
+ifeq ($(COMP),gnu)
+FLAGS		+=	-isystem$(LIBDIR)/include/highsinc
+else
+FLAGS		+=	-I$(LIBDIR)/include/highsinc
+endif
+SOFTLINKS	+=	$(LIBDIR)/include/highsinc
+SOFTLINKS	+=	$(LIBDIR)/shared/libhighs.$(OSTYPE).$(ARCH).$(COMP).$(SHAREDLIBEXT)
+LINKMSG		+=	"HiGHS library (disable by compiling with \"make HIGHS=false\"):\n"
+LINKMSG		+=	" -> highs is the path to the highs include files, e.g., \"highs\"\n"
+LINKMSG		+=	" -> \"libhighs.so\" is the path to the HiGHS library, e.g., \"highs/lib/libhighs.so\"\n"
 endif
 
 #-----------------------------------------------------------------------------
@@ -236,7 +262,6 @@ LIBOBJ = \
 			gcg/branch_ryanfoster.o \
 			gcg/branch_bpstrong.o \
 			gcg/branch_compbnd.o \
-			gcg/branch_staticvar.o \
 			gcg/class_conspartition.o \
 			gcg/class_indexpartition.o \
 			gcg/class_pricingcontroller.o \
@@ -327,6 +352,7 @@ LIBOBJ = \
 			gcg/heur_gcgveclendiving.o \
 			gcg/heur_gcgzirounding.o \
 			gcg/heur_greedycolsel.o \
+			gcg/heur_ipcolgen.o \
 			gcg/heur_mastercoefdiving.o \
 			gcg/heur_masterdiving.o \
 			gcg/heur_masterfracdiving.o \
@@ -338,11 +364,12 @@ LIBOBJ = \
 			gcg/heur_setcover.o \
 			gcg/heur_xpcrossover.o \
 			gcg/heur_xprins.o \
-			gcg/mastercutdata.o \
 			gcg/mastersepacut.o  \
+			gcg/extendedmasterconsdata.o \
 			gcg/masterplugins.o \
 			gcg/bendersplugins.o \
-			gcg/misc_varhistory.o \
+			gcg/gcg.o \
+			gcg/gcgvarhistory.o \
 			gcg/misc.o \
 			gcg/miscvisualization.o \
 			gcg/nodesel_master.o \
@@ -351,6 +378,7 @@ LIBOBJ = \
 			gcg/presol_roundbound.o \
 			gcg/pricer_gcg.o \
 			gcg/pricestore_gcg.o \
+			gcg/pricingcb.o \
 			gcg/pricingjob.o \
 			gcg/pricingprob.o \
 			gcg/reader_blk.o \
@@ -375,6 +403,7 @@ LIBOBJ = \
 			gcg/sepa_original.o \
 			gcg/sepa_subsetrow.o \
 			gcg/solver.o \
+			gcg/solver_gcg.o \
 			gcg/solver_knapsack.o \
 			gcg/solver_mip.o \
 			gcg/stat.o \
@@ -391,11 +420,11 @@ endif
 
 ifeq ($(NAUTY),true)
 LIBOBJ		+=	symmetry/automorphism_nauty.o \
-			$(SCIPDIR)/src/nauty/nauty.o \
-			$(SCIPDIR)/src/nauty/nautil.o \
-			$(SCIPDIR)/src/nauty/nausparse.o \
-			$(SCIPDIR)/src/nauty/schreier.o \
-			$(SCIPDIR)/src/nauty/naurng.o
+			nauty/nauty.o \
+			nauty/nautil.o \
+			nauty/nausparse.o \
+			nauty/schreier.o \
+			nauty/naurng.o
 FLAGS		+=	-DWITH_NAUTY -I$(SCIPDIR)/src/nauty
 endif
 
@@ -405,6 +434,14 @@ endif
 
 ifeq ($(CPLEXSOLVER),true)
 LIBOBJ		+=	gcg/solver_cplex.o
+endif
+
+ifeq ($(HIGHS),true)
+LIBOBJ		+=	gcg/solver_highs.o
+endif
+
+ifeq ($(JSON),true)
+LIBOBJ		+=	gcg/reader_jdec.o
 endif
 
 MAINOBJ		=	main.o
@@ -421,7 +458,7 @@ MAINOBJFILES	=	$(addprefix $(OBJDIR)/,$(MAINOBJ))
 LIBOBJDIR	=	$(OBJDIR)/lib
 OBJSUBDIRS	= 	gcg graph symmetry
 ifeq ($(NAUTY),true)
-OBJSUBDIRS	+=	lib/scip/src/nauty
+OBJSUBDIRS	+=	nauty
 endif
 LIBOBJSUBDIRS   =       $(addprefix $(LIBOBJDIR)/,$(OBJSUBDIRS))
 
@@ -455,7 +492,7 @@ SPLINT		=       splint
 SPLINTFLAGS	=	-UNDEBUG -UWITH_READLINE -UROUNDING_FE -UWITH_GMP -UWITH_ZLIB -which-lib -warn-posix-headers +skip-sys-headers -preproc -formatcode -weak \
 			-redef +export-header +export-local +decl-undef +relaxtypes
 
-GCGGITHASHFILE	= 	$(SRCDIR)/githash.c
+GCGGITHASHFILE	= 	$(SRCDIR)/gcg/githash.c
 
 #-----------------------------------------------------------------------------
 # Flags
@@ -480,12 +517,12 @@ DCXXFLAGS=$(CXXFLAGS)
 
 .PHONY: all
 all:       	$(SCIPDIR)
-		@-$(MAKE) libs
-		@-$(MAKE) mainfiles
+		@$(MAKE) libs
+		@$(MAKE) mainfiles
 
 .PHONY: mainfiles
 mainfiles:
-		@-$(MAKE) $(MAINFILE) $(MAINLINK) $(MAINSHORTLINK)
+		@$(MAKE) $(MAINFILE) $(MAINLINK) $(MAINSHORTLINK)
 
 $(SCIPDIR)/make/make.project: |$(SCIPDIR)
 
@@ -652,7 +689,7 @@ $(LIBOBJDIR)/%.o:	$(SRCDIR)/%.c | $(LIBOBJDIR) $(LIBOBJSUBDIRS)
 		$(CC) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CFLAGS) $(CC_c)$< $(CC_o)$@
 
 ifeq ($(NAUTY),true)
-$(LIBOBJDIR)/lib/scip/%.o:	$(SCIPDIR)/%.c | $(LIBOBJDIR) $(LIBOBJSUBDIRS)
+$(LIBOBJDIR)/nauty/%.o:	$(SCIPDIR)/src/nauty/%.c | $(LIBOBJDIR) $(LIBOBJSUBDIRS)
 		@echo "-> compiling $@"
 		$(CC) $(FLAGS) $(OFLAGS) $(LIBOFLAGS) $(CFLAGS) $(CC_c)$< $(CC_o)$@
 endif
@@ -703,20 +740,26 @@ $(DIRECTORIES):
 .PHONY: touchexternal
 touchexternal: | $(LIBOBJDIR)
 ifneq ($(LAST_CPLEXSOLVER),$(CPLEXSOLVER))
-		@-touch $(SRCDIR)/solver_cplex.c
+		@-touch $(SRCDIR)/gcg/solver_cplex.c
 endif
 ifneq ($(LAST_STATISTICS),$(STATISTICS))
 		@$(SHELL) -ec 'for file in $$(grep "SCIP_STATISTIC" ${SRCDIR} -rl | sort -u); do touch $$file; done'
 endif
 
 ifneq ($(LAST_BLISS),$(BLISS))
-		@-touch $(SRCDIR)/dec_isomorph.cpp
-		@-touch $(SRCDIR)/relax_gcg.c
-		@-touch $(SRCDIR)/gcgplugins.c
+		@-touch $(SRCDIR)/gcg/dec_isomorph.cpp
+		@-touch $(SRCDIR)/gcg/relax_gcg.c
+		@-touch $(SRCDIR)/gcg/gcgplugins.c
+		@-touch $(SRCDIR)/symmetry/automorphism.cpp
+		@-touch $(SRCDIR)/symmetry/automorphism_bliss.cpp
 endif
 ifneq ($(LAST_CLIQUER),$(CLIQUER))
-		@-touch $(SRCDIR)/solver_cliquer.c
-		@-touch $(SRCDIR)/masterplugins.c
+		@-touch $(SRCDIR)/gcg/solver_cliquer.c
+		@-touch $(SRCDIR)/gcg/masterplugins.c
+endif
+ifneq ($(LAST_HIGHS),$(HIGHS))
+		@-touch $(SRCDIR)/gcg/solver_highs.c
+		@-touch $(SRCDIR)/gcg/masterplugins.c
 endif
 ifneq ($(USRFLAGS),$(LAST_USRFLAGS))
 		@-touch $(ALLSRC)
@@ -752,6 +795,7 @@ endif
 		@echo "LAST_LPS=$(LPS)" >> $(LASTSETTINGS)
 		@echo "LAST_BLISS=$(BLISS)" >> $(LASTSETTINGS)
 		@echo "LAST_CLIQUER=$(CLIQUER)" >> $(LASTSETTINGS)
+		@echo "LAST_HIGHS=$(HIGHS)" >> $(LASTSETTINGS)
 		@echo "LAST_USRFLAGS=$(USRFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_USROFLAGS=$(USROFLAGS)" >> $(LASTSETTINGS)
 		@echo "LAST_USRCFLAGS=$(USRCFLAGS)" >> $(LASTSETTINGS)
@@ -844,6 +888,7 @@ help:
 		@echo "  - GTEST=<true|false>: Enables Google Test."
 		@echo "  - SYM=<none|bliss|sbliss|nauty|snauty>: To choose type of symmetry handling."
 		@echo "  - ZIMPL=<true|false>: Enables ZIMPL, required to convert .zpl files to .lp/.mps files"
+		@echo "  - HIGHS=<true|false>: Enables HiGHS."
 		@echo
 		@echo "  More detailed options:"
 		@echo "  - VALGRIND=<true|false>: Enable memory leak checking (and more) using valgrind."

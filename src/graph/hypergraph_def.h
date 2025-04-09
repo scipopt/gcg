@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -37,17 +38,17 @@
 #define GCG_HYPERGRAPH_DEF_H_
 
 #include "scip/scip.h"
-#include "hypergraph.h"
+#include "graph/hypergraph.h"
 
 namespace gcg {
 
 template <class T>
 Hypergraph<T>::Hypergraph(
-   SCIP*                 scip               /**< SCIP data structure */
-) : name("hypergraph"),scip_(scip),graph(NULL),lastnode(0),dummynodes(0)
+   GCG*                  gcgstruct                /**< GCG data structure */
+) : name("hypergraph"),gcg(gcgstruct),graph(NULL),lastnode(0),dummynodes(0)
 {
    SCIPdebugMessage("Creating graph\n");
-   graph = new Graph<T>(scip);
+   graph = new Graph<T>(gcg);
 }
 
 template <class T>
@@ -187,12 +188,13 @@ SCIP_RETCODE Hypergraph<T>::writeToFile(
       SCIP_Bool writeweights
     )
 {
+   SCIP* scip = GCGgetOrigprob(this->gcg);
    FILE* file;
    file = fdopen(fd, "w");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 
-   SCIPinfoMessage(scip_, file, "%ld %ld\n", nodes.size()+dummynodes, hedges.size());
+   SCIPinfoMessage(scip, file, "%ld %ld\n", nodes.size()+dummynodes, hedges.size());
 
    for( size_t i = 0; i < hedges.size(); ++i )
    {
@@ -201,13 +203,13 @@ SCIP_RETCODE Hypergraph<T>::writeToFile(
 
       if( writeweights )
       {
-         SCIPinfoMessage(scip_, file, "%d ", graph->getWeight((int)i));
+         SCIPinfoMessage(scip, file, "%d ", graph->getWeight((int)i));
       }
       for( int j = 0; j < nneighbors; ++j )
       {
-         SCIPinfoMessage(scip_, file, "%d ", computeNodeId(neighbors[j])+1);
+         SCIPinfoMessage(scip, file, "%d ", computeNodeId(neighbors[j])+1);
       }
-      SCIPinfoMessage(scip_, file, "\n");
+      SCIPinfoMessage(scip, file, "\n");
    }
 
    return SCIP_OKAY;

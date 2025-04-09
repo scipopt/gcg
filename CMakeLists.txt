@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.11)
 
 # option() honors normal variables.
 if(POLICY CMP0077)
@@ -40,12 +40,20 @@ endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
-option(OPENMP "should gcg be compiled with openmp" OFF)
+if(MSVC)
+   # disable since SCIP requires an OpenMP feature which is not supported by the native MSVC
+   set(DEFAULT_OPENMP OFF)
+else()
+   set(DEFAULT_OPENMP ON)
+endif()
+
+option(OPENMP "should gcg be compiled with openmp" ${DEFAULT_OPENMP})
 option(STATIC_GMP "prefer static gmp library" OFF)
 option(GSL "should gcg be compiled with GSL" ON)
 option(GMP "should gmp be linked" ON)
 option(CLIQUER "should cliquer be linked" ON)
 option(CPLEX "should Cplex be used for solving pricing MIPs" OFF)
+option(HIGHS "should HiGHS be used for solving pricing MIPs" OFF)
 option(MT "use static runtime libraries for Visual Studio compiler" OFF)
 option(GCG_DEV_BUILD "compile SCIP and SoPlex located in lib/scip-git and lib/soplex-git" OFF)
 option(HMETIS "should hmetis be called" OFF)
@@ -57,6 +65,7 @@ if(OPENMP)
    if(OPENMP_FOUND)
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+      set(THREADSAFE ON FORCE)
    endif()
 endif()
 
@@ -102,11 +111,27 @@ if(CPLEX)
    find_package(CPLEX REQUIRED)
 endif()
 if(CPLEX_FOUND)
+   add_definitions(-DWITH_CPLEXSOLVER)
    include_directories(${CPLEX_INCLUDE_DIRS})
    set(CPLEX_PIC_LIBRARIES ${CPLEX_LIBRARIES})
 else()
    set(CPLEX_LIBRARIES)
    set(CPLEX_PIC_LIBRARIES)
+endif()
+
+# HiGHS
+if(HIGHS)
+   find_package(HIGHS REQUIRED)
+endif()
+if(HIGHS_FOUND)
+   find_package(Threads)
+   add_definitions(-DWITH_HIGHS)
+   include_directories(${HIGHS_INCLUDE_DIRS})
+   set(HIGHS_LIBRARIES highs::highshighs) # I would expect that this should be set by highs-config.cmake
+   set(HIGHS_PIC_LIBRARIES ${HIGHS_LIBRARIES})
+else()
+   set(HIGHS_LIBRARIES)
+   set(HIGHS_PIC_LIBRARIES)
 endif()
 
 # HMETIS
@@ -157,7 +182,7 @@ if(MSVC AND MT)
 endif()
 
 # create a target for updating the current git hash
-file(WRITE ${CMAKE_BINARY_DIR}/gcg_update_githash.cmake "
+file(WRITE ${PROJECT_BINARY_DIR}/gcg_update_githash.cmake "
 find_program(GIT git)
 if(EXISTS \${DST})
    file(STRINGS \${DST} GITHASH_OLD)
@@ -185,7 +210,7 @@ message(STATUS \"Git hash: \" \${GITHASH})
 add_custom_target(gcg_update_githash
    COMMAND ${CMAKE_COMMAND}
       -DDST=${PROJECT_SOURCE_DIR}/src/gcg/githash.c
-      -P ${CMAKE_BINARY_DIR}/gcg_update_githash.cmake)
+      -P ${PROJECT_BINARY_DIR}/gcg_update_githash.cmake)
 
 # use C++11 standard
 set(CMAKE_CXX_STANDARD 11)
@@ -277,6 +302,36 @@ else()
    set(SYM_PIC_LIBRARIES)
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BLISS_DEFINITIONS} -DNO_AUT_LIB")
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BLISS_DEFINITIONS} -DNO_AUT_LIB")
+endif()
+
+# if changing these flags, also update GCCWARN/GXXWARN in make/make.project
+set(ADD_C_AND_CXX_FLAGS -pedantic -Wall -W -Wpointer-arith -Wcast-align -Wwrite-strings -Wshadow  -Wredundant-decls -Wdisabled-optimization -Wno-long-long -Wno-unknown-pragmas -Wno-unused-parameter)
+set(ADD_C_FLAGS -Wsign-compare -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes -Wno-override-init -Wno-uninitialized -Wno-maybe-uninitialized)
+set(ADD_CXX_FLAGS -Wnon-virtual-dtor -Wreorder -Woverloaded-virtual -Wsign-promo -Wsynth -Wcast-qual -Wno-strict-overflow -Wno-psabi)
+
+# disable fused floating point contraction to enhance reproducibility across compilers and architectures
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    add_compile_options(/fp:precise)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+    add_compile_options(-fp-model=precise)
+    # to prevent symbols from svml exported twice we use the -shared-intel flag, see https://git.zib.de/integer/scip/issues/2872
+    # this happens with the cplex static lib
+    if(LPS MATCHES "cpx")
+        add_compile_options(-shared-intel) # for c and cxx
+    endif()
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    # require at least gcc 4.8
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8)
+        message(WARNING "GCC version not supported, should be at least 4.8!")
+    endif()
+    add_compile_options(-ffp-contract=off ${ADD_C_AND_CXX_FLAGS})
+    add_compile_options("$<$<COMPILE_LANGUAGE:C>:${ADD_C_FLAGS}>$<$<COMPILE_LANGUAGE:CXX>:${ADD_CXX_FLAGS}>")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # clang specific suppressions
+    set(ADD_C_AND_CXX_FLAGS ${ADD_C_AND_CXX_FLAGS} -Wno-unknown-warning-option)
+    set(ADD_C_FLAGS ${ADD_C_FLAGS} -Wno-initializer-overrides)
+    add_compile_options(-ffp-contract=off ${ADD_C_AND_CXX_FLAGS})
+    add_compile_options("$<$<COMPILE_LANGUAGE:C>:${ADD_C_FLAGS}>$<$<COMPILE_LANGUAGE:CXX>:${ADD_CXX_FLAGS}>")
 endif()
 
 # TODO: In SCIP, license is in COPYING file and not in LICENSE.

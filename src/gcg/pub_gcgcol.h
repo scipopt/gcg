@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -35,13 +36,15 @@
 #ifndef GCG_PUB_GCGCOL_H__
 #define GCG_PUB_GCGCOL_H__
 
-#include "type_gcgcol.h"
-#include "def.h"
+#include "gcg/type_gcgcol.h"
+
 #include "scip/type_scip.h"
 #include "scip/type_retcode.h"
 #include "scip/type_var.h"
 #include "scip/type_cons.h"
 #include "scip/type_misc.h"
+#include "gcg/def.h"
+#include "gcg/type_gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,7 +62,7 @@ extern "C" {
 /** create a gcg column */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateGcgCol(
-   SCIP*                scip,               /**< SCIP data structure */
+   SCIP*                pricingprob,        /**< SCIP data structure */
    GCG_COL**            gcgcol,             /**< pointer to store gcg column */
    int                  prob,               /**< number of corresponding pricing problem */
    SCIP_VAR**           vars,               /**< (sorted) array of variables of corresponding pricing problem */
@@ -78,7 +81,9 @@ void GCGfreeGcgCol(
 /** create a gcg column from a solution to a pricing problem */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateGcgColFromSol(
-   SCIP*                scip,               /**< SCIP data structure (original problem) */
+   SCIP*                pricingprob,        /**< SCIP data structure (pricing problem) */
+   SCIP*                subproblem,         /**< SCIP data structure that contains the actual solution (if NULL pricingprob will be used) */
+   SCIP_HASHMAP*        varmap,             /**< mapping of pricingprob vars to subproblem vars (can be NULL if subproblem is NULL) */
    GCG_COL**            gcgcol,             /**< pointer to store gcg column */
    int                  prob,               /**< number of corresponding pricing problem */
    SCIP_SOL*            sol,                /**< solution of pricing problem with index prob */
@@ -154,7 +159,13 @@ void GCGcolUpdateRedcost(
 /** return solution value of variable in gcg column */
 GCG_EXPORT
 SCIP_Real GCGcolGetSolVal(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG_COL*             gcgcol,             /**< gcg column */
+   SCIP_VAR*            var                 /**< variable */
+   );
+
+/** returns true if the gcg column knows the solution value of the variable */
+GCG_EXPORT
+SCIP_Bool GCGcolKnowsSolVar(
    GCG_COL*             gcgcol,             /**< gcg column */
    SCIP_VAR*            var                 /**< variable */
    );
@@ -189,7 +200,7 @@ void GCGcolSetNorm(
 /** get norm of column */
 GCG_EXPORT
 void GCGcolComputeNorm(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
@@ -237,6 +248,18 @@ int GCGcolGetNOriginalSepaMastercuts(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
+/** get extended master cons coefficients of column in the master problem */
+GCG_EXPORT
+SCIP_Real* GCGcolGetExtendedmastercons(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
+/** get number of extended master cons coefficients of column in the master problem */
+GCG_EXPORT
+int GCGcolGetNExtendedmasterconss(
+   GCG_COL*             gcgcol              /**< gcg column structure */
+   );
+
 /** get norm of column */
 GCG_EXPORT
 SCIP_Real GCGcolGetNorm(
@@ -249,6 +272,17 @@ SCIP_RETCODE GCGcolUpdateOriginalSepaMastercuts(
    GCG_COL*             gcgcol,             /**< gcg column structure */
    SCIP_Real*           neworiginalsepamastercuts,/**< pointer to new array of master cut coefficients */
    int                  nneworiginalsepamastercuts/**< new number of master cut coefficients */
+   );
+
+/** set extended master cons coefficients information of column in the master problem
+ * @note the arrays will be freed by the column, they must be allocated using the pricingscip the column belongs to
+ */
+GCG_EXPORT
+SCIP_RETCODE GCGcolSetExtendedmasterconss(
+   GCG_COL*             gcgcol,             /**< gcg column structure */
+   SCIP_Real*           extendedmasterconss,  /**< pointer to array of extended master cons coefficients */
+   SCIP_Real*           extendedmasterconsbounds,/**< pointer to array of extended master cons bounds */
+   int                  nextendedmasterconss  /**< number of extended master cons coefficients */
    );
 
 /** gets the age of the col */
@@ -267,14 +301,14 @@ SCIP_Bool GCGcolIsAged(
 /** compute parallelism of column to dual objective */
 GCG_EXPORT
 SCIP_Real GCGcolComputeDualObjPara(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    GCG_COL*             gcgcol              /**< gcg column */
    );
 
 /** compute orthogonality of two gcg columns */
 GCG_EXPORT
 SCIP_Real GCGcolComputeOrth(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    GCG_COL*             gcgcol1,            /**< first gcg column */
    GCG_COL*             gcgcol2             /**< second gcg column */
    );
@@ -285,7 +319,6 @@ SCIP_RETCODE GCGcolAppendSepaMastercutCoeffs(
    SCIP_Real*           sepamastercoeffs,       /**< pointer to array of new mastercut coefficients */
    int                  nsepamastercoeffs       /**< number of new mastercut coefficients */
    );
-
 
 /** get the column's number of stored coefficients for separator mastercuts */
 int GCGcolGetNSepaMastercutCoeffs(
@@ -302,6 +335,17 @@ SCIP_Real* GCGcolGetSepaMastercutCoeffs(
    GCG_COL*             gcgcol      /**< gcg column structure */
    );
 
+/** gets the hash key of a col */
+GCG_EXPORT
+SCIP_DECL_HASHGETKEY(GCGhashGetKeyCol);
+
+/** returns TRUE iff both cols are identical */
+GCG_EXPORT
+SCIP_DECL_HASHKEYEQ(GCGhashKeyEqCol);
+
+/** calculates the hash key value of a col */
+GCG_EXPORT
+SCIP_DECL_HASHKEYVAL(GCGhashKeyValCol);
 
 /**@} */
 

@@ -1,31 +1,32 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    bliss_automorph.cpp
+/**@file    automorphism.cpp
  * @brief   automorphism recognition of SCIPs
  * @author  Daniel Peters
  * @author  Martin Bergner
@@ -62,22 +63,20 @@ struct AUT_HOOK2
    gcg::DETPROBDATA* detprobdata;            /**< problem information the automorphism should be searched for */
    gcg::PARTIALDECOMP* partialdec;           /**< decomposition information */
    std::vector<int>* blocks;                 /**< array of blocks the automporphisms are searched for */
-   SCIP* scip;
-   int ncalls;
-   int generatorlimit;
-   AUT_GRAPH* graph;
+   SCIP* scip;                               /**< SCIP data structure */
+   int ncalls;                               /**< number of calls of this hook */
+   int generatorlimit;                       /**< generator limit */
+   AUT_GRAPH* graph;                         /**< graph used to search for automorphisms */
 
 
    /** constructor for the hook struct*/
    AUT_HOOK2(
-      SCIP_HASHMAP* varmap,                  /**< hashmap for permutated variables */
-      SCIP_HASHMAP* consmap,                 /**< hashmap for permutated constraints */
-      unsigned int n,                        /**< number of permutations */
-      AUT_GRAPH* graph,                      /**< graph used to search for automorphisms */
-      SCIP* scip,                            /**< SCIP data structure */
-      gcg::DETPROBDATA* givendetprobdata,
-      gcg::PARTIALDECOMP* givenpartialdec,
-      std::vector<int>* givenblocks
+      SCIP_HASHMAP* varmap_,                 /**< hashmap for permutated variables */
+      SCIP_HASHMAP* consmap_,                /**< hashmap for permutated constraints */
+      unsigned int n_,                       /**< number of permutations */
+      AUT_GRAPH* graph_,                     /**< graph used to search for automorphisms */
+      gcg::PARTIALDECOMP* partialdec_,       /**< partialdec the graphs should be compared for */
+      std::vector<int>* blocks_              /**< array of blocks the automporphisms are searched for */
       );
 
    /** destructor for hook struct */
@@ -101,8 +100,6 @@ struct AUT_HOOK2
 
    /** getter for the graph */
    AUT_GRAPH* getGraph();
-
-
 };
 
 
@@ -155,34 +152,26 @@ AUT_HOOK2::AUT_HOOK2(
    SCIP_HASHMAP*         consmap_,           /**< hahsmap of permutated constraints */
    unsigned int          n_,                 /**< number of permutations */
    AUT_GRAPH*            graph_,             /**< graph used to search for automorphisms */
-   SCIP*                 scip_,              /**< SCIP data structure */
-   gcg::DETPROBDATA*     detprobdata_,
-   gcg::PARTIALDECOMP*   partialdec_,
-   std::vector<int>*     blocks_
+   gcg::PARTIALDECOMP*   partialdec_,        /**< partialdec the graphs should be compared for */
+   std::vector<int>*     blocks_             /**< array of blocks the automporphisms are searched for */
    )
 {
    size_t i;
-   scip = scip_;
    aut = FALSE;
    n = n_;
    consmap = consmap_;
    varmap = varmap_;
    graph = graph_;
+   partialdec = partialdec_;
+   detprobdata = partialdec->getDetprobdata();
+   scip = detprobdata->getScip();
+   blocks = blocks_;
    SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &nodemap, n_) ); /*lint !e666*/
    for (i = 0; i < n_; ++i)
       nodemap[i] = -1;
-
    conssperm = NULL;
-   detprobdata = NULL;
-   partialdec = NULL;
-   blocks = NULL;
-
    ncalls = 0;
    generatorlimit = 0;
-
-   detprobdata = detprobdata_;
-   partialdec = partialdec_;
-   blocks = blocks_;
 
    SCIP_CALL_ABORT( SCIPallocMemoryArray(scip, &(this->conssperm), detprobdata->getNConss() ) ); /*lint !e666*/
 }
@@ -760,8 +749,10 @@ SCIP_RETCODE createGraphNewDetection(
       int conscolor;
 
       /**experimental */
-      if( !masterconssrelevant[i] )
+      if( !masterconssrelevant[i] ) {
+         currentnode++;
          continue;
+      }
       /*experimental end */
 
       masterconsid= partialdec->getMasterconss()[i];
@@ -839,7 +830,7 @@ SCIP_RETCODE createGraphNewDetection(
 
 #ifndef NDEBUG
    if( *result == SCIP_SUCCESS )
-      assert(currentnode == nnodes);
+      assert(currentnode == (int) nnodes);
 #endif
 
    //free all allocated memory
@@ -859,8 +850,8 @@ SCIP_RETCODE cmpGraphPair(
    SCIP_RESULT*            result,             /**< result pointer to indicate success or failure */
    SCIP_HASHMAP*           varmap,             /**< hashmap to save permutation of variables */
    SCIP_HASHMAP*           consmap,            /**< hashmap to save permutation of constraints */
-   unsigned int            searchnodelimit,    /**< bliss search node limit (requires patched bliss version) */
-   unsigned int            generatorlimit      /**< bliss generator limit (requires patched bliss version or version >=0.76) */
+   unsigned int            searchnodelimit,    /**< search node limit */
+   unsigned int            generatorlimit      /**< generator limit */
    )
 {
    AUT_GRAPH graph;
@@ -882,10 +873,7 @@ SCIP_RETCODE cmpGraphPair(
    blocks[1] = block2;
    pricingnodes = 0;
 
-   if (partialdec->isAssignedToOrigProb() )
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
-   else
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+   detprobdata = partialdec->getDetprobdata();
 
    assert(detprobdata != NULL);
 
@@ -900,7 +888,7 @@ SCIP_RETCODE cmpGraphPair(
    {
       SCIP_CALL( createGraphNewDetection(scip, detprobdata, partialdec, blocks, colorinfo, &graph,  &pricingnodes, result) );
       SCIPdebugMessage("finished create graph.\n");
-      ptrhook = new AUT_HOOK2(varmap, consmap, (unsigned int) pricingnodes, &graph, detprobdata->getScip(), detprobdata, partialdec, &blocks);
+      ptrhook = new AUT_HOOK2(varmap, consmap, (unsigned int) pricingnodes, &graph, partialdec, &blocks);
       ptrhook->generatorlimit = generatorlimit;
       SCIPdebugMessage("finished creating aut hook.\n");
 

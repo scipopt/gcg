@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -39,7 +40,7 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /* #define SCIP_DEBUG */
-#include "dec_hrcgpartition.h"
+#include "gcg/dec_hrcgpartition.h"
 
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <cassert>
@@ -52,15 +53,15 @@
 #include <queue>
 
 #ifdef HMETIS_HEADER
-#include "hmetis.h"
+#include "gcg/hmetis.h"
 #else
 #define HMETIS_EXECUTABLE "hmetis"
 #endif
 
-#include "cons_decomp.h"
-#include "struct_decomp.h"
-#include "pub_decomp.h"
-#include "scip_misc.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/struct_decomp.h"
+#include "gcg/pub_decomp.h"
+#include "gcg/scip_misc.h"
 #include "scip/pub_misc.h"
 #include "scip/cons_linear.h"
 #include "scip/cons_setppc.h"
@@ -68,8 +69,8 @@
 #include "graph/hyperrowcolgraph.h"
 #include "graph/graph_tclique.h"
 #include "graph/weights.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include "scip/clock.h"
 
 
@@ -108,8 +109,6 @@ using gcg::Weights;
 #define DEFAULT_DUMMYNODES        0.2        /**< percentage of dummy vertices*/
 #define DEFAULT_CONSWEIGHT_SETPPC 5          /**< weight for constraint hyperedges that are setpartitioning or covering
                                                   constraints */
-#define DEFAULT_MINBLOCKS          2          /**< value for the minimum number of blocks to be considered */
-#define DEFAULT_MAXBLOCKS          20         /**< value for the maximum number of blocks to be considered */
 #define DEFAULT_MAXNBLOCKCANDIDATES 3          /**< number of block number candidates to be considered */
 #define DEFAULT_ALPHA              0.0        /**< factor for standard deviation of constraint weights */
 #define DEFAULT_BETA               0.5        /**< factor of how the weight for equality and inequality constraints is
@@ -148,8 +147,6 @@ struct GCG_DetectorData
    SCIP_Real dummynodes;      			/**< percent of dummy nodes */
    SCIP_Bool tidy;            			/**< whether tempory metis files should be cleaned up */
    int       maxnblockcandidates;       /**< maximal number of block canddidates to test */
-   int       maxblocks;       			/**< maximal number of blocks to test */
-   int       minblocks;       			/**< minimal number of blocks to test */
 
    /* metis parameters */
    int       randomseed;      /**< metis random seed */
@@ -177,13 +174,11 @@ GCG_DECL_FREEDETECTOR(freeHrcgpartition)
 {
    GCG_DETECTORDATA* detectordata;
 
-   assert(scip != NULL);
-
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
    assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
-   SCIPfreeMemory(scip, &detectordata);
+   SCIPfreeMemory(GCGgetOrigprob(gcg), &detectordata);
 
    return SCIP_OKAY;
 }
@@ -193,19 +188,13 @@ GCG_DECL_FREEDETECTOR(freeHrcgpartition)
 static
 GCG_DECL_INITDETECTOR(initHrcgpartition)
 {
-   int nconss;
    GCG_DETECTORDATA* detectordata;
-   assert(scip != NULL);
 
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
    assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
    detectordata->found = FALSE;
-
-   nconss = SCIPgetNConss(scip);
-   detectordata->maxblocks = MIN(nconss, detectordata->maxblocks);
-
 
    return SCIP_OKAY;
 }
@@ -214,7 +203,7 @@ GCG_DECL_INITDETECTOR(initHrcgpartition)
 static
 GCG_DECL_EXITDETECTOR(exitHrcgpartition)
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
    assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
@@ -224,7 +213,7 @@ GCG_DECL_EXITDETECTOR(exitHrcgpartition)
 /** will call hmetis via a system call */
 static
 SCIP_RETCODE callMetis(
-   SCIP*                 scip,               /**< SCIP data struture */
+   GCG*                  gcg,                /**< GCG data struture */
    GCG_DETECTORDATA*     detectordata,       /**< detector data data structure */
    MatrixGraph<gcg::GraphTclique>* graph,    /**< the graph of the matrix */
    char                  tempfile[SCIP_MAXSTRLEN],  /**< filename for the metis input file */
@@ -232,6 +221,7 @@ SCIP_RETCODE callMetis(
    SCIP_RESULT*          result              /**< result indicating whether the detection was successful */
    )
 {
+   SCIP* scip;
    char metiscall[SCIP_MAXSTRLEN];
    char metisout[SCIP_MAXSTRLEN];
    SCIP_CLOCK* metisclock;
@@ -240,13 +230,14 @@ SCIP_RETCODE callMetis(
 
    SCIP_Real remainingtime;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(detectordata != NULL);
 
+   scip = GCGgetOrigprob(gcg);
    *result = SCIP_DIDNOTRUN;
 
 
-   remainingtime = GCGgetRemainingTime(scip);
+   remainingtime = GCGgetRemainingTime(gcg);
    SCIP_CALL( SCIPcreateWallClock(scip, &metisclock) );
 
    if( remainingtime <= 0 )
@@ -255,7 +246,7 @@ SCIP_RETCODE callMetis(
    }
 
    /* call metis via syscall as there is no library usable ... */
-   if( !SCIPisInfinity(scip, GCGgetRemainingTime(scip)) )
+   if( !SCIPisInfinity(scip, GCGgetRemainingTime(gcg)) )
    {
       (void) SCIPsnprintf(metiscall, SCIP_MAXSTRLEN, "zsh -c \"ulimit -t %.0f;" HMETIS_EXECUTABLE " %s %d -seed %d -ptype %s -ufactor %f %s\"",
                remainingtime,
@@ -457,7 +448,7 @@ bool connected(
 /** detection function for partialdecs */
 static
 SCIP_RETCODE detection(
-   SCIP*                   scip,                         /**< SCIP data structure */
+   GCG*                    gcg,                          /**< GCG data structure */
    GCG_DETECTORDATA*       detectordata,                 /**< detectordata of the detector */
    Partialdec_Detection_Data*   partialdecdetectiondata, /**< partialdecdetectiondata (including the detprobdata) where to store the new Partialdecs */
    gcg::PARTIALDECOMP*     partialdec,                   /**< partialdec to propagate */
@@ -465,13 +456,12 @@ SCIP_RETCODE detection(
    SCIP_RESULT*            result                        /**< pointer where to store the result */
 )
 {
+   SCIP* scip;
 	/* add hrgpartition presolver parameters */
-   char setstr[SCIP_MAXSTRLEN];
    int maxnblockcandidates;
    int k;
    int j;
    int s;
-   int nMaxPartialdecs;
    gcg::PARTIALDECOMP** newpartialdecs;
    SCIP_CLOCK* clock;
    SCIP_CLOCK* temporaryClock;
@@ -480,6 +470,7 @@ SCIP_RETCODE detection(
    MatrixGraph<gcg::GraphTclique>* graph;    /* the graph of the matrix */
    char tempfile[SCIP_MAXSTRLEN];            /**< filename for the metis input file */
 
+   scip = GCGgetOrigprob(gcg);
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &clock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, clock) );
 
@@ -490,30 +481,28 @@ SCIP_RETCODE detection(
    if( numberOfBlocks.empty() )
       numberOfBlocks.push_back(8);
 
-   (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/hrcgpartition/maxnblockcandidates");
-   SCIP_CALL( SCIPgetIntParam(scip, setstr, &maxnblockcandidates) );
+   SCIP_CALL( SCIPgetIntParam(scip, "detection/detectors/hrcgpartition/maxnblockcandidates", &maxnblockcandidates) );
 
-   maxnblockcandidates = MIN(maxnblockcandidates, (int) numberOfBlocks.size() );
+   maxnblockcandidates = MIN(maxnblockcandidates, (int) numberOfBlocks.size());
 
    assert(scip != NULL);
    assert(detectordata != NULL);
 
    SCIPdebugMessage("Detecting structure from %s\n", DEC_NAME);
-   nMaxPartialdecs = detectordata->maxblocks-detectordata->minblocks+1;
 
    /* allocate space for output data */
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(newpartialdecs), 2 * nMaxPartialdecs) );
+   SCIP_CALL( SCIPallocMemoryArray(scip, &(newpartialdecs), 2 * maxnblockcandidates) );
 
    /* build the hypergraph structure from the original problem */
-   Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous,detectordata->varWeightInteger,detectordata->varWeightInteger,detectordata->consWeight);
-   graph = new HyperrowcolGraph<gcg::GraphTclique>(scip, w);
+   Weights w(detectordata->varWeight, detectordata->varWeightBinary, detectordata->varWeightContinous, detectordata->varWeightInteger, detectordata->varWeightInteger, detectordata->consWeight);
+   graph = new HyperrowcolGraph<gcg::GraphTclique>(gcg, w);
    SCIP_CALL( graph->createFromPartialMatrix(partialdecdetectiondata->detprobdata, partialdec) );
    SCIP_CALL( createMetisFile(scip, detectordata, partialdec->getID(), graph, tempfile) );
 
    SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting Arrowhead structure:");
    SCIP_CALL_ABORT( SCIPstopClock(scip, clock ) );
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
-   for( j = 0, k = 0; k < maxnblockcandidates; ++k)
+   for( j = 0, k = 0; k < maxnblockcandidates; ++k )
    {
       char decinfo[SCIP_MAXSTRLEN];
       int nblocks = numberOfBlocks[k] - partialdec->getNBlocks();
@@ -527,9 +516,9 @@ SCIP_RETCODE detection(
          continue;
       }
 
-      retcode = callMetis(scip, detectordata, graph, tempfile, nblocks, result);
+      retcode = callMetis(gcg, detectordata, graph, tempfile, nblocks, result);
 
-      if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY)
+      if( *result != SCIP_SUCCESS || retcode != SCIP_OKAY )
       {
          SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
          SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
@@ -611,6 +600,7 @@ GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecHrcgpartition)
 {
    SCIP_CLOCK* temporaryClock;
    gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec;
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
@@ -623,7 +613,7 @@ GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecHrcgpartition)
       partialdec->assignSmallestComponentsButOneConssAdjacency();
    }
 
-   detection(scip, GCGdetectorGetData(detector), partialdecdetectiondata, partialdec, true, result);
+   detection(gcg, GCGdetectorGetData(detector), partialdecdetectiondata, partialdec, true, result);
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
    partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
@@ -638,6 +628,7 @@ GCG_DECL_FINISHPARTIALDEC(finishPartialdecHrcgpartition)
 {
    SCIP_CLOCK* temporaryClock;
    gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec;
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
@@ -650,7 +641,7 @@ GCG_DECL_FINISHPARTIALDEC(finishPartialdecHrcgpartition)
       partialdec->assignSmallestComponentsButOneConssAdjacency();
    }
 
-   detection(scip, GCGdetectorGetData(detector), partialdecdetectiondata, partialdec, false, result);
+   detection(gcg, GCGdetectorGetData(detector), partialdecdetectiondata, partialdec, false, result);
 
    SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
    partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
@@ -670,6 +661,7 @@ GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveHrcgpartition)
    const char* name = GCGdetectorGetName(detector);
    int newval;
    SCIP_Real modifier;
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
@@ -726,8 +718,8 @@ GCG_DECL_SETPARAMDEFAULT(setParamDefaultHrcgpartition)
    char setstr[SCIP_MAXSTRLEN];
    int newval;
    SCIP_Real modifier;
-
    const char* name = GCGdetectorGetName(detector);
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
@@ -772,9 +764,8 @@ GCG_DECL_SETPARAMFAST(setParamFastHrcgpartition)
    char setstr[SCIP_MAXSTRLEN];
    int newval;
    SCIP_Real modifier;
-
-
    const char* name = GCGdetectorGetName(detector);
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
@@ -809,30 +800,26 @@ GCG_DECL_SETPARAMFAST(setParamFastHrcgpartition)
    SCIPinfoMessage(scip, NULL, "%s = %d\n", setstr, newval);
 
    return SCIP_OKAY;
-
 }
-
-
 
 /** creates the hrcgpartition presolver and includes it in SCIP */
 extern "C"
-SCIP_RETCODE SCIPincludeDetectorHrcgpartition(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorHrcgpartition(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_DETECTORDATA *detectordata = NULL;
+   SCIP* scip = GCGgetOrigprob(gcg);
    assert(scip != NULL);
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
    assert(detectordata != NULL);
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeHrcgpartition, initHrcgpartition, exitHrcgpartition, propagatePartialdecHrcgpartition, finishPartialdecHrcgpartition, detectorPostprocessPartialdecHrcgpartition, setParamAggressiveHrcgpartition, setParamDefaultHrcgpartition, setParamFastHrcgpartition) );
+   SCIP_CALL( GCGincludeDetector(gcg, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeHrcgpartition, initHrcgpartition, exitHrcgpartition, propagatePartialdecHrcgpartition, finishPartialdecHrcgpartition, detectorPostprocessPartialdecHrcgpartition, setParamAggressiveHrcgpartition, setParamDefaultHrcgpartition, setParamFastHrcgpartition) );
 
 
    /* add hrcgpartition detector parameters */
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hrcgpartition/maxnblockcandidates", "The maximal number of block number candidates", &detectordata->maxnblockcandidates, FALSE, DEFAULT_MAXNBLOCKCANDIDATES, 0, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hrcgpartition/maxblocks", "The maximal number of blocks (detector is called for all block numbers in [minblocks,maxblocks])", &detectordata->maxblocks, FALSE, DEFAULT_MAXBLOCKS, 2, 1000000, NULL, NULL) );
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hrcgpartition/minblocks", "The minimal number of blocks (detector is called for all block numbers in [minblocks,maxblocks])", &detectordata->minblocks, FALSE, DEFAULT_MINBLOCKS, 2, 1000000, NULL, NULL) );
    SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/hrcgpartition/beta", "Factor on how heavy equality (beta) and inequality constraints are measured", &detectordata->beta, FALSE, DEFAULT_BETA, 0.0, 1.0, NULL, NULL ) );
    SCIP_CALL( SCIPaddRealParam(scip, "detection/detectors/hrcgpartition/alpha", "Factor on how heavy the standard deviation of the coefficients is measured", &detectordata->alpha, FALSE, DEFAULT_ALPHA, 0.0, 1E20, NULL, NULL ) );
    SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/hrcgpartition/varWeight", "Weight of a variable hyperedge", &detectordata->varWeight, FALSE, DEFAULT_VARWEIGHT, 0, 1000000, NULL, NULL) );

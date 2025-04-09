@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -39,7 +40,7 @@
 #ifndef GCG_HYPERROWGRAPH_DEF_H_
 #define GCG_HYPERROWGRAPH_DEF_H_
 
-#include "hyperrowgraph.h"
+#include "graph/hyperrowgraph.h"
 #include "gcg/scip_misc.h"
 #include "gcg/class_partialdecomp.h"
 #include "gcg/class_detprobdata.h"
@@ -51,9 +52,9 @@ namespace gcg
 {
 template <class T>
 HyperrowGraph<T>::HyperrowGraph(
-   SCIP*                 scip,              /**< SCIP data structure */
+   GCG*                  gcgstruct,         /**< GCG data structure */
    Weights               w                  /**< weights for the given graph */
-): MatrixGraph<T>(scip, w), graph(scip)
+): MatrixGraph<T>(gcgstruct, w), graph(gcgstruct)
 {
    this->graphiface = &graph;
    this->name = std::string("hyperrow");
@@ -76,11 +77,12 @@ SCIP_RETCODE HyperrowGraph<T>::writeToFile(
    )
 {
    FILE* file;
+   SCIP* scip = GCGgetOrigprob(this->gcg);
    file = fdopen(fd, "w");
    if( file == NULL )
       return SCIP_FILECREATEERROR;
 
-   SCIPinfoMessage(this->scip_, file, "%d %d %d\n", getNEdges(), getNNodes()+this->dummynodes, edgeweights ? 1 :0);
+   SCIPinfoMessage(scip, file, "%d %d %d\n", getNEdges(), getNNodes()+this->dummynodes, edgeweights ? 1 :0);
 
    for( int i = 0; i < getNEdges(); ++i )
    {
@@ -88,13 +90,13 @@ SCIP_RETCODE HyperrowGraph<T>::writeToFile(
 
       if( edgeweights )
       {
-         SCIPinfoMessage(this->scip_, file, "%d ", graph.getWeight(i+this->nvars));
+         SCIPinfoMessage(scip, file, "%d ", graph.getWeight(i+this->nvars));
       }
       for( size_t j = 0; j < neighbors.size(); ++j )
       {
-         SCIPinfoMessage(this->scip_, file, "%d ",neighbors[j]+1);
+         SCIPinfoMessage(scip, file, "%d ",neighbors[j]+1);
       }
-      SCIPinfoMessage(this->scip_, file, "\n");
+      SCIPinfoMessage(scip, file, "\n");
    }
 
    if( !fclose(file) )
@@ -145,19 +147,19 @@ SCIP_RETCODE HyperrowGraph<T>::createDecompFromPartition(
 {
    int nblocks;
    SCIP_HASHMAP* constoblock = NULL;
-
+   SCIP* scip = GCGgetOrigprob(this->gcg);
    int* nsubscipconss = NULL;
    int i;
    SCIP_CONS** conss = NULL;
    SCIP_Bool emptyblocks = FALSE;
    std::vector<int> partition = graph.getPartition();
-   conss = SCIPgetConss(this->scip_);
+   conss = SCIPgetConss(scip);
    nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
 
-   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
 
-   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), this->nconss) );
 
    /* assign constraints to partition */
    for( i = 0; i < this->nconss; i++ )
@@ -194,15 +196,15 @@ SCIP_RETCODE HyperrowGraph<T>::createDecompFromPartition(
 
    if( !emptyblocks )
    {
-      SCIP_CALL( GCGdecompCreate(this->scip_, decomp) );
-      SCIP_CALL( GCGfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
+      SCIP_CALL( GCGdecompCreate(this->gcg, decomp) );
+      SCIP_CALL( GCGfilloutDecompFromConstoblock(this->gcg, *decomp, constoblock, nblocks, FALSE) );
    }
    else {
       SCIPhashmapFree(&constoblock);
       *decomp = NULL;
    }
 
-   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   SCIPfreeBufferArray(scip, &nsubscipconss);
    return SCIP_OKAY;
 }
 
@@ -210,24 +212,29 @@ template <class T>
 SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
    PARTIALDECOMP**     firstpartialdec,
    PARTIALDECOMP**     secondpartialdec,
-   DETPROBDATA*  detprobdata
+   DETPROBDATA*        detprobdata
    )
 {
    int nblocks;
    SCIP_HASHMAP* constoblock = NULL;
-
+   SCIP* scip = GCGgetOrigprob(this->gcg);
    int* nsubscipconss = NULL;
    int i;
    SCIP_CONS** conss = NULL;
    SCIP_Bool emptyblocks = FALSE;
-   std::vector<int> partition = graph.getPartition();
-   conss = SCIPgetConss(this->scip_);
+   std::vector<int> partition;
+
+   if( firstpartialdec == NULL && secondpartialdec == NULL )
+      return SCIP_INVALIDDATA;
+
+   partition = graph.getPartition();
+   conss = SCIPgetConss(scip);
    nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
 
-   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
 
-   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), this->nconss) );
 
    /* assign constraints to partition */
    for( i = 0; i < this->nconss; i++ )
@@ -267,12 +274,12 @@ SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
       bool original = detprobdata->isAssignedToOrigProb();
       if( firstpartialdec != NULL )
       {
-         (*firstpartialdec) = new PARTIALDECOMP(this->scip_, original);
+         (*firstpartialdec) = new PARTIALDECOMP(this->gcg, original);
          SCIP_CALL((*firstpartialdec)->filloutPartialdecFromConstoblock(constoblock, nblocks));
       }
       if( secondpartialdec != NULL )
       {
-         (*secondpartialdec) = new PARTIALDECOMP(this->scip_, original);
+         (*secondpartialdec) = new PARTIALDECOMP(this->gcg, original);
          SCIP_CALL((*secondpartialdec)->filloutBorderFromConstoblock(constoblock, nblocks));
       }
       SCIPhashmapFree(&constoblock);
@@ -289,7 +296,7 @@ SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
       }
    }
 
-   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   SCIPfreeBufferArray(scip, &nsubscipconss);
    return SCIP_OKAY;
 }
 
@@ -298,51 +305,58 @@ SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
    PARTIALDECOMP*      oldpartialdec,
    PARTIALDECOMP**     firstpartialdec,
    PARTIALDECOMP**     secondpartialdec,
-   DETPROBDATA*  detprobdata
+   DETPROBDATA*        detprobdata
    )
 {
    int nblocks;
    SCIP_HASHMAP* constoblock = NULL;
-
+   SCIP* scip = GCGgetOrigprob(this->gcg);
    int *nsubscipconss = NULL;
    int i;
    SCIP_Bool emptyblocks = FALSE;
 
-   if(this->nconss == 0)
+   assert(oldpartialdec != NULL);
+
+   if( firstpartialdec == NULL && secondpartialdec == NULL )
+      return SCIP_INVALIDDATA;
+
+   if( this->nconss == 0 )
    {
-      (*firstpartialdec) = NULL;
-      (*secondpartialdec) = NULL;
+      if( firstpartialdec != NULL )
+         (*firstpartialdec) = NULL;
+      if( secondpartialdec != NULL )
+         (*secondpartialdec) = NULL;
       return SCIP_OKAY;
    }
 
    std::vector<int> partition = graph.getPartition();
    nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
 
-   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
 
-   for(int b = 0; b < nblocks; ++b)
+   for( int b = 0; b < nblocks; ++b )
    {
        nsubscipconss[b] = 0;
    }
 
-   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), this->nconss) );
 
    //fillout conssForGraph
    vector<int> conssForGraph; /** stores the conss included by the graph */
    vector<bool> conssBool(oldpartialdec->getNConss(), false); /**< true, if the cons will be part of the graph */
    bool found;
 
-   for(int c = 0; c < oldpartialdec->getNOpenconss(); ++c)
+   for( int c = 0; c < oldpartialdec->getNOpenconss(); ++c )
    {
       int cons = oldpartialdec->getOpenconss()[c];
       found = false;
-      for(int v = 0; v < oldpartialdec->getNOpenvars() && !found; ++v)
+      for( int v = 0; v < oldpartialdec->getNOpenvars() && !found; ++v )
       {
          int var = oldpartialdec->getOpenvars()[v];
-         for(i = 0; i < detprobdata->getNVarsForCons(cons) && !found; ++i)
+         for( i = 0; i < detprobdata->getNVarsForCons(cons) && !found; ++i )
          {
-            if(var == detprobdata->getVarsForCons(cons)[i])
+            if( var == detprobdata->getVarsForCons(cons)[i] )
             {
                conssBool[cons] = true;
                found = true;
@@ -351,10 +365,10 @@ SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
       }
    }
 
-   for(int c = 0; c < oldpartialdec->getNOpenconss(); ++c)
+   for( int c = 0; c < oldpartialdec->getNOpenconss(); ++c )
    {
       int cons = oldpartialdec->getOpenconss()[c];
-      if(conssBool[cons])
+      if( conssBool[cons] )
          conssForGraph.push_back(cons);
    }
 
@@ -393,19 +407,26 @@ SCIP_RETCODE HyperrowGraph<T>::createPartialdecFromPartition(
 
    if( !emptyblocks )
    {
-      (*firstpartialdec) = new PARTIALDECOMP(oldpartialdec);
-      SCIP_CALL( (*firstpartialdec)->assignPartialdecFromConstoblock(constoblock, nblocks) );
-      (*secondpartialdec) = new PARTIALDECOMP(oldpartialdec);
-      SCIP_CALL( (*secondpartialdec)->assignBorderFromConstoblock(constoblock, nblocks) );
+      if( firstpartialdec != NULL )
+      {
+         (*firstpartialdec) = new PARTIALDECOMP(oldpartialdec);
+         SCIP_CALL( (*firstpartialdec)->assignPartialdecFromConstoblock(constoblock, nblocks) );
+      }
+      if( secondpartialdec != NULL )
+      {
+         (*secondpartialdec) = new PARTIALDECOMP(oldpartialdec);
+         SCIP_CALL( (*secondpartialdec)->assignBorderFromConstoblock(constoblock, nblocks) );
+      }
       SCIPhashmapFree(&constoblock);
    }
-   else {
+   else
+   {
       SCIPhashmapFree(&constoblock);
       *firstpartialdec = NULL;
       *secondpartialdec = NULL;
    }
 
-   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   SCIPfreeBufferArray(scip, &nsubscipconss);
    return SCIP_OKAY;
 }
 
@@ -420,6 +441,7 @@ SCIP_RETCODE HyperrowGraph<T>::createFromMatrix(
    int i;
    int j;
    SCIP_Bool success;
+   SCIP* scip = GCGgetOrigprob(this->gcg);
 
    assert(conss != NULL);
    assert(vars != NULL);
@@ -448,7 +470,7 @@ SCIP_RETCODE HyperrowGraph<T>::createFromMatrix(
       TCLIQUE_WEIGHT weight;
 
       int ncurvars;
-      SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars, &success) );
+      SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &ncurvars, &success) );
       assert(success);
       if( ncurvars == 0 )
          continue;
@@ -457,8 +479,8 @@ SCIP_RETCODE HyperrowGraph<T>::createFromMatrix(
        * may work as is, as we are copying the constraint later regardless
        * if there are variables in it or not
        */
-      SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars, ncurvars) );
-      SCIP_CALL( SCIPgetConsVars(this->scip_, conss[i], curvars, ncurvars, &success) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+      SCIP_CALL( SCIPgetConsVars(scip, conss[i], curvars, ncurvars, &success) );
       assert(success);
 
       /** @todo skip all variables that have a zero coeffient or where all coefficients add to zero */
@@ -469,7 +491,7 @@ SCIP_RETCODE HyperrowGraph<T>::createFromMatrix(
          SCIP_VAR* var1 = NULL;
          int varIndex1;
 
-         if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+         if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
             var1 = SCIPvarGetProbvar(curvars[j]);
          else
             var1 = curvars[j];
@@ -489,7 +511,7 @@ SCIP_RETCODE HyperrowGraph<T>::createFromMatrix(
 
       this->graph.addHyperedge(hyperedge, weight);
 
-      SCIPfreeBufferArray(this->scip_, &curvars);
+      SCIPfreeBufferArray(scip, &curvars);
    }
 
 

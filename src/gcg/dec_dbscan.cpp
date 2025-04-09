@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -39,13 +40,13 @@
 #include <time.h>     // for measuring time performance
 #include <string>
 #include <algorithm>
-#include "dec_dbscan.h"
-#include "cons_decomp.h"
+#include <iostream>
+#include "gcg/dec_dbscan.h"
+#include "gcg/cons_decomp.h"
 #include "graph/matrixgraph.h"
 #include "graph/rowgraph_weighted.h"
 #include "graph/graph_gcg.h"
 #include "scip/clock.h"
-#include "iostream"
 
 using gcg::RowGraphWeighted;
 using gcg::Weights;
@@ -156,13 +157,11 @@ GCG_DECL_FREEDETECTOR(freeDBSCAN)
 {
    GCG_DETECTORDATA* detectordata;
 
-   assert(scip != NULL);
-
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
    assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
 
-   SCIPfreeMemory(scip, &detectordata);
+   SCIPfreeMemory(GCGgetOrigprob(gcg), &detectordata);
 
    return SCIP_OKAY;
 }
@@ -181,8 +180,6 @@ GCG_DECL_INITDETECTOR(initDBSCAN)
 {  /*lint --e{715}*/
 
    GCG_DETECTORDATA* detectordata;
-   assert(scip != NULL);
-
 
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
@@ -257,13 +254,14 @@ GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDBSCAN)
    std::vector<SCIP_Real> clockTimes2;        /* vector containing times in seconds  */
    std::vector< RowGraphWeighted<GraphGCG>*> graphs;
    SCIP_CLOCK* overallClock;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
-   assert(scip != NULL);
    assert(detectordata != NULL);
    *result = SCIP_DIDNOTFIND;
 
-   SCIP_CALL_ABORT( SCIPcreateClock(scip, &overallClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, overallClock) );
+   SCIP_CALL_ABORT( SCIPcreateClock(origprob, &overallClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(origprob, overallClock) );
 
    partialdec = partialdecdetectiondata->workonpartialdec;
    partialdec->refineToBlocks();
@@ -272,16 +270,16 @@ GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDBSCAN)
    {
       delete partialdec;
       partialdecdetectiondata->nnewpartialdecs = 0;
-      SCIP_CALL_ABORT( SCIPstopClock(scip, overallClock) );
-      partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, overallClock);
-      SCIP_CALL_ABORT(SCIPfreeClock(scip, &overallClock) );
+      SCIP_CALL_ABORT( SCIPstopClock(origprob, overallClock) );
+      partialdecdetectiondata->detectiontime = SCIPgetClockTime(origprob, overallClock);
+      SCIP_CALL_ABORT(SCIPfreeClock(origprob, &overallClock) );
       *result = SCIP_SUCCESS;
       return SCIP_OKAY;
    }
 
    Weights w(1, 1, 1, 1, 1, 1);
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting DBSCAN structure:");
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "Detecting DBSCAN structure:");
 
    time_t start, cp0, d_s, d_e;
    time(&start);
@@ -289,62 +287,62 @@ GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDBSCAN)
    std::vector<std::string> sim;
    SCIP_CLOCK* temporaryClock;
 
-   SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPcreateClock(origprob, &temporaryClock) );
 
    if( detectordata->johnsonenable )
    {
-      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
+      SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
+      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(gcg, w);
       SCIP_CALL( g->createFromPartialMatrix(partialdecdetectiondata->detprobdata, partialdec, gcg::DISTANCE_MEASURE::JOHNSON, gcg::WEIGHT_TYPE::DIST));
       graphs.push_back(g);
       sim.emplace_back("Johnson");
-      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPgetClockTime( scip, temporaryClock));
-      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
+      SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock ) );
+      clockTimes1.push_back(SCIPgetClockTime( origprob, temporaryClock));
+      SCIP_CALL_ABORT( SCIPresetClock(origprob, temporaryClock ) );
    }
    if( detectordata->intersectionenable )
    {
-      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
+      SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
+      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(gcg, w);
       SCIP_CALL( g->createFromPartialMatrix(partialdecdetectiondata->detprobdata, partialdec, gcg::DISTANCE_MEASURE::INTERSECTION, gcg::WEIGHT_TYPE::DIST));
       graphs.push_back(g);
       sim.emplace_back("Intersection");
-      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPgetClockTime( scip, temporaryClock));
-      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
+      SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock ) );
+      clockTimes1.push_back(SCIPgetClockTime( origprob, temporaryClock));
+      SCIP_CALL_ABORT( SCIPresetClock(origprob, temporaryClock ) );
    }
    if( detectordata->jaccardenable )
    {
-      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
+      SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
+      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(gcg, w);
       SCIP_CALL( g->createFromPartialMatrix(partialdecdetectiondata->detprobdata, partialdec, gcg::DISTANCE_MEASURE::JACCARD, gcg::WEIGHT_TYPE::DIST));
       graphs.push_back(g);
       sim.emplace_back("Jaccard");
-      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPgetClockTime( scip, temporaryClock));
-      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
+      SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock ) );
+      clockTimes1.push_back(SCIPgetClockTime( origprob, temporaryClock));
+      SCIP_CALL_ABORT( SCIPresetClock(origprob, temporaryClock ) );
    }
    if( detectordata->cosineenable )
    {
-      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
+      SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
+      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(gcg, w);
       SCIP_CALL( g->createFromPartialMatrix(partialdecdetectiondata->detprobdata, partialdec, gcg::DISTANCE_MEASURE::COSINE, gcg::WEIGHT_TYPE::DIST));
       graphs.push_back(g);
       sim.emplace_back("Cosine");
-      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPgetClockTime( scip, temporaryClock));
-      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
+      SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock ) );
+      clockTimes1.push_back(SCIPgetClockTime( origprob, temporaryClock));
+      SCIP_CALL_ABORT( SCIPresetClock(origprob, temporaryClock ) );
    }
    if( detectordata->simpsonenable )
    {
-      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(scip, w);
+      SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
+      RowGraphWeighted<GraphGCG>* g = new RowGraphWeighted<GraphGCG>(gcg, w);
       SCIP_CALL( g->createFromPartialMatrix(partialdecdetectiondata->detprobdata, partialdec, gcg::DISTANCE_MEASURE::SIMPSON, gcg::WEIGHT_TYPE::DIST));
       graphs.push_back(g);
       sim.emplace_back("Simspon");
-      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
-      clockTimes1.push_back(SCIPgetClockTime( scip, temporaryClock));
-      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
+      SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock ) );
+      clockTimes1.push_back(SCIPgetClockTime( origprob, temporaryClock));
+      SCIP_CALL_ABORT( SCIPresetClock(origprob, temporaryClock ) );
    }
    time(&cp0);
    detectordata->n_similarities = (int) graphs.size();
@@ -354,7 +352,7 @@ GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDBSCAN)
    std::vector<std::vector<double> > epsLists(graphs.size());
    for( int i = 0; i < (int)graphs.size(); i++ )
    {
-      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+      SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
       mids[i] = graphs.at(i)->getEdgeWeightPercentile(q);
       if( i == 1 && detectordata->intersectionenable )
       {
@@ -364,16 +362,16 @@ GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDBSCAN)
       {
          epsLists[i] = getEpsList(detectordata->n_iterations, mids[i], false); // case for all except intersection
       }
-      SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
-      clockTimes2.push_back(SCIPgetClockTime( scip, temporaryClock));
-      SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock) );
+      SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock) );
+      clockTimes2.push_back(SCIPgetClockTime( origprob, temporaryClock));
+      SCIP_CALL_ABORT( SCIPresetClock(origprob, temporaryClock) );
    }
 
    int nMaxPartialdecs = detectordata->n_iterations * (int) graphs.size();
-   const int max_blocks = std::min((int)round(0.3 * SCIPgetNConss(scip)), MAX_N_BLOCKS);
+   const int max_blocks = std::min((int)round(0.3 * SCIPgetNConss(origprob)), MAX_N_BLOCKS);
    char decinfo[SCIP_MAXSTRLEN];
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 2 * nMaxPartialdecs) );
+   SCIP_CALL( SCIPallocMemoryArray(origprob, &(partialdecdetectiondata->newpartialdecs), 2 * nMaxPartialdecs) );
    nnewpartialdecs = 0;
    time(&d_s);
    for( int i = 0; i < (int)graphs.size(); i++ )
@@ -385,8 +383,8 @@ GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDBSCAN)
       std::vector<std::pair<double, SCIP_Real>> clockTimes3;
       gcg::PARTIALDECOMP *decomp1 = NULL, *decomp2 = NULL;
 
-      SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
-      SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\n  %s similarity:", sim[i].c_str());
+      SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
+      SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "\n  %s similarity:", sim[i].c_str());
       createddecomps.reserve(2 * epsLists[i].size());
       clockTimes3.reserve(epsLists[i].size());
 
@@ -419,12 +417,12 @@ GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDBSCAN)
          {
             break;
          }
-         SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "\n    Blocks: %d, Master Conss: %d/%d, ", n_blocks, non_cl, SCIPgetNConss(scip));
+         SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "\n    Blocks: %d, Master Conss: %d/%d, ", n_blocks, non_cl, SCIPgetNConss(origprob));
          old_n_blocks = n_blocks;
          old_non_cl = non_cl;
 
          SCIP_CALL( graph->createPartialdecFromPartition(partialdec, &decomp1, &decomp2, partialdecdetectiondata->detprobdata));
-         SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock ) );
+         SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock ) );
 
          if( decomp1 != NULL )
          {
@@ -432,10 +430,10 @@ GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDBSCAN)
             detectordata->found = TRUE;
             createddecomps.push_back(decomp1);
             createddecomps.push_back(decomp2);
-            clockTimes3.emplace_back(eps, SCIPgetClockTime(scip, temporaryClock));
+            clockTimes3.emplace_back(eps, SCIPgetClockTime(origprob, temporaryClock));
          }
 
-         SCIP_CALL_ABORT( SCIPresetClock(scip, temporaryClock ) );
+         SCIP_CALL_ABORT( SCIPresetClock(origprob, temporaryClock ) );
       }
 
       size_t ncreateddecomps = createddecomps.size();
@@ -454,25 +452,25 @@ GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecDBSCAN)
       graphs[i] = NULL;
    }
 
-   SCIP_CALL( SCIPreallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), nnewpartialdecs) );
+   SCIP_CALL( SCIPreallocMemoryArray(origprob, &(partialdecdetectiondata->newpartialdecs), nnewpartialdecs) );
    partialdecdetectiondata->nnewpartialdecs = nnewpartialdecs;
-   SCIP_CALL_ABORT( SCIPstopClock(scip, overallClock) );
-   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, overallClock);
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &overallClock) );
+   SCIP_CALL_ABORT( SCIPstopClock(origprob, overallClock) );
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(origprob, overallClock);
+   SCIP_CALL_ABORT(SCIPfreeClock(origprob, &overallClock) );
 
    time(&d_e);
    double elapsed_graphs = difftime(cp0, start);
    double elapsed_dbscan = difftime(d_e, d_s);
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d similarities used, %d partialdecs found.\n", detectordata->n_similarities, nnewpartialdecs);
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_NORMAL, NULL, "DBSCAN Runtime: graphs: %.2lf, dbscan: %.2lf. \n", elapsed_graphs, elapsed_dbscan);
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, " done, %d similarities used, %d partialdecs found.\n", detectordata->n_similarities, nnewpartialdecs);
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_NORMAL, NULL, "DBSCAN Runtime: graphs: %.2lf, dbscan: %.2lf. \n", elapsed_graphs, elapsed_dbscan);
 
    *result = nnewpartialdecs > 0 ? SCIP_SUCCESS: SCIP_DIDNOTFIND;
    if( nnewpartialdecs == 0 )
    {
-      SCIPfreeMemoryArrayNull(scip, &(partialdecdetectiondata->newpartialdecs));
+      SCIPfreeMemoryArrayNull(origprob, &(partialdecdetectiondata->newpartialdecs));
    }
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT(SCIPfreeClock(origprob, &temporaryClock) );
    return SCIP_OKAY;
 }
 
@@ -484,12 +482,14 @@ GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveDBSCAN)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE ) );
 
    return SCIP_OKAY;
 }
@@ -499,14 +499,15 @@ static
 GCG_DECL_SETPARAMDEFAULT(setParamDefaultDBSCAN)
 {
    char setstr[SCIP_MAXSTRLEN];
-
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLED) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLEDFINISHING ) );
 
    return SCIP_OKAY;
 }
@@ -515,14 +516,15 @@ static
 GCG_DECL_SETPARAMFAST(setParamFastDBSCAN)
 {
    char setstr[SCIP_MAXSTRLEN];
-
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE ) );
 
 
    return SCIP_OKAY;
@@ -535,30 +537,32 @@ GCG_DECL_SETPARAMFAST(setParamFastDBSCAN)
  */
 
 /** creates the handler for xyz detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorDBSCAN(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorDBSCAN(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
 #if !defined(_WIN32) && !defined(_WIN64)
    GCG_DETECTORDATA *detectordata = NULL;
-   assert(scip != NULL);
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
+   assert(origprob != NULL);
 
-   SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &detectordata) );
 
    assert(detectordata != NULL);
    detectordata->found = FALSE;
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+   SCIP_CALL( GCGincludeDetector(gcg, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
                                  detectordata, freeDBSCAN, initDBSCAN, exitDBSCAN, propagatePartialdecDBSCAN, finishPartialdecDBSCAN, detectorPostprocessPartialdecDBSCAN, setParamAggressiveDBSCAN, setParamDefaultDBSCAN, setParamFastDBSCAN) );
 
    /* add arrowheur presolver parameters */
-   SCIP_CALL( SCIPaddIntParam(scip, "detection/detectors/dbscan/niterations", "Number of iterations to run dbscan with different eps.", &detectordata->n_iterations, FALSE, DEFAULT_N_ITERATIONS, 11, 1001, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/dbscan/johson", "Enable johson distance measure.", &detectordata->johnsonenable, FALSE, DEFAULT_JOHNSON_ENABLE, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/dbscan/intersection", "Enable intersection distance measure.", &detectordata->intersectionenable, FALSE, DEFAULT_INTERSECTION_ENABLE, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/dbscan/jaccard", "Enable jaccard distance measure.", &detectordata->jaccardenable, FALSE, DEFAULT_JACCARD_ENABLE, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/dbscan/cosine", "Enable cosine distance measure.", &detectordata->cosineenable, FALSE, DEFAULT_COSINE_ENABLE, NULL, NULL) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/dbscan/simpson", "Enable simpson distance measure.", &detectordata->simpsonenable, FALSE, DEFAULT_SIMPSON_ENABLE, NULL, NULL ) );
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/dbscan/postprocenable", "Enable post-processing step.", &detectordata->postprocenable, FALSE, DEFAULT_POSTPROC_ENABLE, NULL, NULL ) );
+   SCIP_CALL( SCIPaddIntParam(origprob, "detection/detectors/dbscan/niterations", "Number of iterations to run dbscan with different eps.", &detectordata->n_iterations, FALSE, DEFAULT_N_ITERATIONS, 11, 1001, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(origprob, "detection/detectors/dbscan/johson", "Enable johson distance measure.", &detectordata->johnsonenable, FALSE, DEFAULT_JOHNSON_ENABLE, NULL, NULL ) );
+   SCIP_CALL( SCIPaddBoolParam(origprob, "detection/detectors/dbscan/intersection", "Enable intersection distance measure.", &detectordata->intersectionenable, FALSE, DEFAULT_INTERSECTION_ENABLE, NULL, NULL ) );
+   SCIP_CALL( SCIPaddBoolParam(origprob, "detection/detectors/dbscan/jaccard", "Enable jaccard distance measure.", &detectordata->jaccardenable, FALSE, DEFAULT_JACCARD_ENABLE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(origprob, "detection/detectors/dbscan/cosine", "Enable cosine distance measure.", &detectordata->cosineenable, FALSE, DEFAULT_COSINE_ENABLE, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(origprob, "detection/detectors/dbscan/simpson", "Enable simpson distance measure.", &detectordata->simpsonenable, FALSE, DEFAULT_SIMPSON_ENABLE, NULL, NULL ) );
+   SCIP_CALL( SCIPaddBoolParam(origprob, "detection/detectors/dbscan/postprocenable", "Enable post-processing step.", &detectordata->postprocenable, FALSE, DEFAULT_POSTPROC_ENABLE, NULL, NULL ) );
 
 #endif
    return SCIP_OKAY;

@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -75,6 +76,9 @@ void GCGgetNautyName(char* buffer, int len);
 #endif
 
 #ifdef __cplusplus
+/**
+ * graph structure used to search for automorphisms
+ */
 struct struct_graph
 {
    /** initializes the graph */
@@ -122,7 +126,10 @@ struct struct_cons
    SCIP_CONS* cons;                         /**< pointer to SCIP constraint */
 
    /** constructor for the constraint struct */
-   struct_cons( SCIP* scip, SCIP_CONS* scons );
+   struct_cons(
+      SCIP* scip_,                          /**< SCIP data structure */
+      SCIP_CONS* scons_                     /**< SCIP constraint */
+      );
 
    /** getter for the SCIP constraint */
    SCIP_CONS* getCons();
@@ -138,7 +145,10 @@ struct struct_var
    SCIP_VAR* var;                           /**< pointer to SCIP variable */
 
    /** constructor for the variable struct */
-   struct_var( SCIP* scip, SCIP_VAR* svar );
+   struct_var(
+      SCIP* scip_,                          /**< SCIP data structure */
+      SCIP_VAR* svar_                       /**< SCIP variable */
+      );
 
    /** getter for the SCIP variable */
    SCIP_VAR* getVar();
@@ -154,7 +164,10 @@ struct struct_coef
    SCIP_Real val;                           /**< SCIP Real value */
 
    /** constructor for the coefficient struct */
-   struct_coef( SCIP* scip, SCIP_Real val );
+   struct_coef(
+      SCIP* scip_,                          /**< SCIP data structure */
+      SCIP_Real val_                        /**< SCIP value */
+      );
 
    /** getter for the SCIP Real value */
    SCIP_Real getVal();

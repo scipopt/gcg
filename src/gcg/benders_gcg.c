@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -35,13 +36,13 @@
 #include <assert.h>
 #include <string.h>
 
-#include "benders_gcg.h"
+#include "gcg/benders_gcg.h"
 
-#include "gcg.h"
+#include "gcg/gcg.h"
 
-#include "relax_gcg.h"
-#include "scip_misc.h"
-#include "pub_gcgvar.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/scip_misc.h"
+#include "gcg/pub_gcgvar.h"
 
 #include "scip/cons_linear.h"
 #include "scip/pub_var.h"
@@ -65,7 +66,7 @@
 /** Benders' decomposition data */
 struct SCIP_BendersData
 {
-   SCIP*                 origprob;           /**< the SCIP instance of the original problem */
+   GCG*                  gcg;                /**< the GCG instance */
    SCIP_SOL*             relaxsol;           /**< the solution to the original problem related to the relaxation */
 };
 
@@ -308,12 +309,12 @@ SCIP_RETCODE createOriginalProblemSolution(
 
    assert(bendersdata != NULL);
 
-   origprob = bendersdata->origprob;
+   origprob = GCGgetOrigprob(bendersdata->gcg);
 
    success = TRUE;
 
    /* creating the original problem */
-   SCIP_CALL( SCIPcreateSol(origprob, &origsol, GCGrelaxGetProbingheur(origprob)) );
+   SCIP_CALL( SCIPcreateSol(origprob, &origsol, GCGrelaxGetProbingheur(bendersdata->gcg)) );
 
    /* setting the values of the master variables in the original solution */
 
@@ -441,6 +442,7 @@ SCIP_RETCODE mergeSubproblemIntoMaster(
    int                   probnumber          /**< the index of the subproblem that will be merged */
    )
 {
+   SCIP_BENDERSDATA* bendersdata;
    SCIP* subproblem;
    SCIP_HASHMAP* varmap;
    SCIP_HASHMAP* consmap;
@@ -451,6 +453,8 @@ SCIP_RETCODE mergeSubproblemIntoMaster(
    assert(masterprob != NULL);
    assert(benders != NULL);
 
+   bendersdata = SCIPbendersGetData(benders);
+   assert(bendersdata != NULL);
    subproblem = SCIPbendersSubproblem(benders, probnumber);
 
    /* allocating the memory for the variable and constraint hashmaps */
@@ -466,7 +470,7 @@ SCIP_RETCODE mergeSubproblemIntoMaster(
       SCIP_VAR* mastervar;
 
       mastervar = (SCIP_VAR*) SCIPhashmapGetImage(varmap, vars[i]);
-      SCIP_CALL( GCGcopyPricingvarDataToMastervar(masterprob, vars[i], mastervar) );
+      SCIP_CALL( GCGcopyPricingvarDataToMastervar(bendersdata->gcg, vars[i], mastervar) );
    }
 
    /* freeing the variable and constraint hashmaps */
@@ -550,17 +554,19 @@ SCIP_DECL_BENDERSFREE(bendersFreeGcg)
 static
 SCIP_DECL_BENDERSINITPRE(bendersInitpreGcg)
 {  /*lint --e{715}*/
+   SCIP_BENDERSDATA* bendersdata;
    int nsubproblems;
    int i;
 
    assert(scip != NULL);
    assert(benders != NULL);
 
+   bendersdata = SCIPbendersGetData(benders);
    nsubproblems = SCIPbendersGetNSubproblems(benders);
 
    for( i = 0; i < nsubproblems; i++ )
    {
-      SCIP_CALL( GCGaddDataAuxiliaryVar(scip, SCIPbendersGetAuxiliaryVar(benders, i), i) );
+      SCIP_CALL( GCGaddDataAuxiliaryVar(bendersdata->gcg, SCIPbendersGetAuxiliaryVar(benders, i), i) );
    }
 
    return SCIP_OKAY;
@@ -571,16 +577,18 @@ static
 SCIP_DECL_BENDERSEXITSOL(bendersExitsolGcg)
 {  /*lint --e{715}*/
    SCIP_BENDERSDATA* bendersdata;
+   SCIP* origprob;
 
    assert(scip != NULL);
    assert(benders != NULL);
 
    bendersdata = SCIPbendersGetData(benders);
+   origprob = GCGgetOrigprob(bendersdata->gcg);
 
    /* freeing the relaxation solution */
    if( bendersdata->relaxsol != NULL )
    {
-      SCIP_CALL( SCIPfreeSol(bendersdata->origprob, &bendersdata->relaxsol) );
+      SCIP_CALL( SCIPfreeSol(origprob, &bendersdata->relaxsol) );
    }
 
    return SCIP_OKAY;
@@ -656,7 +664,6 @@ static
 SCIP_DECL_BENDERSPOSTSOLVE(bendersPostsolveGcg)
 {  /*lint --e{715}*/
    SCIP_BENDERSDATA* bendersdata;
-
    assert(benders != NULL);
 
    bendersdata = SCIPbendersGetData(benders);
@@ -673,7 +680,7 @@ SCIP_DECL_BENDERSPOSTSOLVE(bendersPostsolveGcg)
    /* if there are merge candidates, then they will be merged into the master problem.
     * TODO: maybe check to see whether the merge could be avoided
     */
-   if( nmergecands > 0 )
+   if( nmergecands > 0 && type != SCIP_BENDERSENFOTYPE_CHECK )
    {
       SCIP_CALL( mergeSubproblemsIntoMaster(scip, benders, mergecands, npriomergecands, nmergecands, merged) );
    }
@@ -683,7 +690,7 @@ SCIP_DECL_BENDERSPOSTSOLVE(bendersPostsolveGcg)
       /* if the problem was found to be infeasible, then an artificial solution is created. */
       SCIP_CALL( createOriginalProblemSolution(scip, benders, sol, infeasible) );
       if( type == SCIP_BENDERSENFOTYPE_LP )
-         SCIP_CALL( GCGrelaxUpdateCurrentSol(bendersdata->origprob) );
+         SCIP_CALL( GCGrelaxUpdateCurrentSol(bendersdata->gcg) );
    }
 
    return SCIP_OKAY;
@@ -701,7 +708,6 @@ static
 SCIP_DECL_BENDERSCREATESUB(bendersCreatesubGcg)
 {  /*lint --e{715}*/
    SCIP_BENDERSDATA* bendersdata;
-   SCIP* origprob;
 
    assert(scip != NULL);
    assert(benders != NULL);
@@ -709,9 +715,7 @@ SCIP_DECL_BENDERSCREATESUB(bendersCreatesubGcg)
    bendersdata = SCIPbendersGetData(benders);
    assert(bendersdata != NULL);
 
-   origprob = bendersdata->origprob;
-
-   SCIP_CALL( SCIPaddBendersSubproblem(scip, benders, GCGgetPricingprob(origprob, probnumber)) );
+   SCIP_CALL( SCIPaddBendersSubproblem(scip, benders, GCGgetPricingprob(bendersdata->gcg, probnumber)) );
 
    /* setting the objective coefficients for the subproblems.
     * This is required because the variables are added to the pricing problems with a zero coefficient. In the DW
@@ -728,41 +732,43 @@ SCIP_DECL_BENDERSCREATESUB(bendersCreatesubGcg)
  */
 
 /** creates the gcg Benders' decomposition and includes it in SCIP */
-SCIP_RETCODE SCIPincludeBendersGcg(
-   SCIP*                 scip,               /**< SCIP data structure */
-   SCIP*                 origprob            /**< the SCIP instance of the original problem */
+SCIP_RETCODE GCGincludeBendersGcg(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_BENDERSDATA* bendersdata;
    SCIP_BENDERS* benders;
+   SCIP* origprob;
+
+   origprob = GCGgetOrigprob(gcg);
 
    /* create gcg Benders' decomposition data */
-   SCIP_CALL( SCIPallocMemory(scip, &bendersdata) );
-   bendersdata->origprob = origprob;
+   SCIP_CALL( SCIPallocMemory(origprob, &bendersdata) );
+   bendersdata->gcg = gcg;
    bendersdata->relaxsol = NULL;
 
    benders = NULL;
 
    /* include Benders' decomposition */
-   SCIP_CALL( SCIPincludeBendersBasic(scip, &benders, BENDERS_NAME, BENDERS_DESC, BENDERS_PRIORITY,
+   SCIP_CALL( SCIPincludeBendersBasic(origprob, &benders, BENDERS_NAME, BENDERS_DESC, BENDERS_PRIORITY,
          BENDERS_CUTLP, BENDERS_CUTPSEUDO, BENDERS_CUTRELAX, BENDERS_SHAREAUXVARS, bendersGetvarGcg,
          bendersCreatesubGcg, bendersdata) );
    assert(benders != NULL);
 
    /* set non fundamental callbacks via setter functions */
-   SCIP_CALL( SCIPsetBendersFree(scip, benders, bendersFreeGcg) );
-   SCIP_CALL( SCIPsetBendersInitpre(scip, benders, bendersInitpreGcg) );
-   SCIP_CALL( SCIPsetBendersExitsol(scip, benders, bendersExitsolGcg) );
-   SCIP_CALL( SCIPsetBendersPostsolve(scip, benders, bendersPostsolveGcg) );
+   SCIP_CALL( SCIPsetBendersFree(origprob, benders, bendersFreeGcg) );
+   SCIP_CALL( SCIPsetBendersInitpre(origprob, benders, bendersInitpreGcg) );
+   SCIP_CALL( SCIPsetBendersExitsol(origprob, benders, bendersExitsolGcg) );
+   SCIP_CALL( SCIPsetBendersPostsolve(origprob, benders, bendersPostsolveGcg) );
 
    /* including the default cuts for Benders' decomposition */
-   SCIP_CALL( SCIPincludeBendersDefaultCuts(scip, benders) );
+   SCIP_CALL( SCIPincludeBendersDefaultCuts(origprob, benders) );
 
    return SCIP_OKAY;
 }
 
 /** returns the last relaxation solution */
-SCIP_SOL* SCIPbendersGetRelaxSol(
+SCIP_SOL* GCGbendersGetRelaxSol(
    SCIP_BENDERS*         benders             /**< the Benders' decomposition structure */
    )
 {
@@ -776,21 +782,16 @@ SCIP_SOL* SCIPbendersGetRelaxSol(
    return bendersdata->relaxsol;
 }
 
-/** returns the original problem for the given master problem */
-SCIP* GCGbendersGetOrigprob(
-   SCIP*                 masterprob          /**< the master problem SCIP instance */
+/** returns the GCG data structure */
+GCG* GCGbendersGetGcg(
+   SCIP_BENDERS*         benders             /**< the Benders' decomposition structure */
    )
 {
-   SCIP_BENDERS* benders;
    SCIP_BENDERSDATA* bendersdata;
 
-   assert(masterprob != NULL);
-
-   benders = SCIPfindBenders(masterprob, BENDERS_NAME);
    assert(benders != NULL);
+   assert(strcmp(SCIPbendersGetName(benders), BENDERS_NAME) == 0);
 
    bendersdata = SCIPbendersGetData(benders);
-   assert(bendersdata != NULL);
-
-   return bendersdata->origprob;
+   return bendersdata->gcg;
 }

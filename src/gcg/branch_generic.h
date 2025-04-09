@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -38,8 +39,7 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
-#include "type_branchgcg.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,14 +72,8 @@ typedef struct GCG_Strip GCG_STRIP;
 
 /** creates the generic branching rule and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeBranchruleGeneric(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** initializes branchdata */
-SCIP_RETCODE GCGbranchGenericCreateBranchdata(
-   SCIP*                 scip,               /**< SCIP data structure */
-   GCG_BRANCHDATA**      branchdata          /**< branching data to initialize */
+SCIP_RETCODE GCGincludeBranchruleGeneric(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** get component bound sequence */
@@ -100,17 +94,6 @@ int GCGbranchGenericBranchdataGetConsblocknr(
 /** get master constraint */
 SCIP_CONS* GCGbranchGenericBranchdataGetMastercons(
    GCG_BRANCHDATA*       branchdata          /**< branching data to initialize */
-   );
-
-/** prepares informations for using the generic branching scheme */
-SCIP_RETCODE GCGbranchGenericInitbranch(
-   SCIP*                 masterscip,         /**< SCIP data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
-   SCIP_RESULT*          result,             /**< pointer to store the result of the branching call */
-   int**                 checkedblocks,      /**< blocks that have been checked */
-   int*                  ncheckedblocks,     /**< number of checked blocks */
-   GCG_STRIP****         checkedblockssortstrips, /**< sorted strips of checked blocks */
-   int**                 checkedblocksnsortstrips /**< sizes of the strips */
    );
 
 /** returns true when the branch rule is the generic branchrule */

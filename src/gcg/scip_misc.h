@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -37,7 +38,7 @@
 
 #include "scip/scip.h"
 #include "scip/cons_setppc.h"
-#include "gcg.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,49 +65,49 @@ SCIP_Bool GCGisVarRelevant(
 /** returns the type of an arbitrary SCIP constraint */
 GCG_EXPORT
 consType GCGconsGetType(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure the cons belongs to */
    SCIP_CONS*            cons                /**< constraint to get type for */
    );
 
 /** returns the rhs of an arbitrary SCIP constraint */
 GCG_EXPORT
 SCIP_Real GCGconsGetRhs(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure the cons belongs to */
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    );
 
 /** returns the lhs of an arbitrary SCIP constraint */
 GCG_EXPORT
 SCIP_Real GCGconsGetLhs(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure the cons belongs to */
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    );
 
 /** returns the dual farkas sol of an arbitrary SCIP constraint */
 GCG_EXPORT
 SCIP_Real GCGconsGetDualfarkas(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure the cons belongs to */
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    );
 
 /** returns the dual sol of an arbitrary SCIP constraint */
 GCG_EXPORT
 SCIP_Real GCGconsGetDualsol(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure the cons belongs to */
    SCIP_CONS*            cons                /**< constraint to get left hand side for */
    );
 
 /** returns the number of variables in an arbitrary SCIP constraint */
 GCG_EXPORT
 int GCGconsGetNVars(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure the cons belongs to */
    SCIP_CONS*            cons                /**< constraint to get number of variables */
    );
 
 /** returns the variable array of an arbitrary SCIP constraint */
 GCG_EXPORT
 SCIP_RETCODE GCGconsGetVars(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure the cons belongs to */
    SCIP_CONS*            cons,               /**< constraint to get variables from */
    SCIP_VAR**            vars,               /**< array where variables are stored */
    int                   nvars               /**< size of storage array */
@@ -115,7 +116,7 @@ SCIP_RETCODE GCGconsGetVars(
 /** returns the value array of an arbitrary SCIP constraint */
 GCG_EXPORT
 SCIP_RETCODE GCGconsGetVals(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure the cons belongs to */
    SCIP_CONS*            cons,               /**< constraint to get values from */
    SCIP_Real*            vals,               /**< array where values are stored */
    int                   nvals               /**< size of storage array */
@@ -123,32 +124,31 @@ SCIP_RETCODE GCGconsGetVals(
 
 /** returns true if the constraint should be a master constraint and false otherwise */
 SCIP_Bool GCGconsIsRanged(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure the cons belongs to */
    SCIP_CONS*            cons                /**< constraint to check */
 );
 
 /** returns true if the constraint should be a master constraint and false otherwise */
 SCIP_Bool GCGgetConsIsSetppc(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure the cons belongs to */
    SCIP_CONS*            cons,               /**< constraint to check */
    SCIP_SETPPCTYPE*      setppctype          /**< returns the type of the constraints */
    );
 
 SCIP_Bool GCGgetConsIsCardinalityCons(
-   SCIP*                 scip,               /**< SCIP data structure */
+   SCIP*                 scip,               /**< SCIP data structure the cons belongs to */
    SCIP_CONS*            cons               /**< constraint to check */
 );
-
 
 /** returns TRUE or FALSE, depending whether we are in the root node or not */
 GCG_EXPORT
 SCIP_Bool GCGisRootNode(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                /**< SCIP data structure */
    );
 
 GCG_EXPORT
 SCIP_RETCODE GCGincludeDialogsGraph(
-   SCIP* scip
+   GCG*                  gcg
    );
 
 /**@} */

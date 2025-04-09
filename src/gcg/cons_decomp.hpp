@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -36,42 +37,54 @@
 #ifndef GCG_CONS_DECOMP_HPP
 #define GCG_CONS_DECOMP_HPP
 
-#include "def.h"
-#include "class_partialdecomp.h"
+
+#include "gcg/class_partialdecomp.h"
 
 /** @brief gets vector of all partialdecs
  * @returns finished partialdecs
  */
 GCG_EXPORT
 std::vector<gcg::PARTIALDECOMP*>* GCGconshdlrDecompGetPartialdecs(
-   SCIP*          scip  /**< SCIP data structure */
-);
+   GCG*           gcg  /**< GCG data structure */
+   );
 
 GCG_EXPORT
 gcg::PARTIALDECOMP* GCGgetPartialdecToWrite(
-   SCIP*                         scip,
+   GCG*                          gcg,
    SCIP_Bool                     transformed
-);
+   );
 
 /** @brief local method to find a partialdec for a given id or NULL if no partialdec with such id is found
  * @returns partialdec pointer of partialdec with given id or NULL if it does not exist
  * @note returns NULL if no partialdec by this id is known */
 GCG_EXPORT
 gcg::PARTIALDECOMP* GCGconshdlrDecompGetPartialdecFromID(
-   SCIP* scip,          /**< SCIP data structure */
+   GCG* scip,           /**< GCG data structure */
    int partialdecid     /**< partialdec id */
-);
+   );
 
 /** @brief adds a preexisting partial dec to be considered at the beginning of the detection
  *
- * @note refines the partialdec to be consistent, adds meta data/statistics
+ * @note refines the partialdec to be consistent, adds meta data/statistics, completes partial dec by assigning open conss to master if USERGIVEN::COMPLETED_CONSTOMASTER is set
  * @returns SCIP return code
 */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
-   SCIP* scip,                   /**< SCIP data structure */
+   GCG* gcg,                     /**< GCG data structure */
    gcg::PARTIALDECOMP* partialdec/**< partial dec to add */
-);
+   );
+
+/** @brief adds a preexisting partial dec to be considered at the beginning of the detection
+ *
+ * @note refines the partialdec to be consistent, adds meta data/statistics, completes partial dec by assigning open conss to master if USERGIVEN::COMPLETED_CONSTOMASTER is set
+ * @returns SCIP return code
+*/
+GCG_EXPORT
+SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
+   GCG* gcg,                        /**< GCG data structure */
+   gcg::PARTIALDECOMP* partialdec,  /**< partial dec to add */
+   SCIP_Bool addpartialdec          /**< if completed, add partial dec as well */
+   );
 
 /** @brief deregisters a partialdec in the conshdlr
  *
@@ -80,9 +93,9 @@ SCIP_RETCODE GCGconshdlrDecompAddPreexisitingPartialDec(
  */
 GCG_EXPORT
 void GCGconshdlrDecompDeregisterPartialdec(
-   SCIP* scip,                       /**< SCIP data structure */
+   GCG* gcg,                         /**< GCG data structure */
    gcg::PARTIALDECOMP* partialdec    /**< the partialdec */
-);
+   );
 
 /** @brief registers a partialdec in the conshdlr
  *
@@ -91,9 +104,9 @@ void GCGconshdlrDecompDeregisterPartialdec(
  */
 GCG_EXPORT
 void GCGconshdlrDecompRegisterPartialdec(
-   SCIP* scip,                       /**< SCIP data structure */
+   GCG* gcg,                         /**< GCG data structure */
    gcg::PARTIALDECOMP* partialdec    /**< the partialdec to register */
-);
+   );
 
 /**
  * @brief help method to access detprobdata for unpresolved problem
@@ -102,8 +115,8 @@ void GCGconshdlrDecompRegisterPartialdec(
  */
 GCG_EXPORT
 gcg::DETPROBDATA* GCGconshdlrDecompGetDetprobdataOrig(
-   SCIP*                 scip                 /**< SCIP data structure */
-);
+   GCG*                  gcg                  /**< GCG data structure */
+   );
 
 /**
  * @brief help method to access detprobdata for transformed problem
@@ -112,15 +125,15 @@ gcg::DETPROBDATA* GCGconshdlrDecompGetDetprobdataOrig(
  */
 GCG_EXPORT
 gcg::DETPROBDATA* GCGconshdlrDecompGetDetprobdataPresolved(
-   SCIP*                 scip                 /**< SCIP data structure */
-);
+   GCG*                  gcg                  /**< GCG data structure */
+   );
 
 /**
  * @brief initilizes the candidates data structures with selected partialdecs
  *
  * initializes it with all if there are no selected partialdecs,
  * sort them according to the current scoretype
- * @param scip SCIP data structure
+ * @param gcg GCG data structure
  * @param candidates tuples of partialdecs and scores will be added to this vector (sorted w.r.t. the scores).
  * @param original choose candidates for the original problem?
  * @param printwarnings should warnings be printed?
@@ -128,7 +141,7 @@ gcg::DETPROBDATA* GCGconshdlrDecompGetDetprobdataPresolved(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGconshdlrDecompChooseCandidatesFromSelected(
-   SCIP* scip,
+   GCG* gcg,
    std::vector<std::pair<gcg::PARTIALDECOMP*, SCIP_Real> >& candidates,
    SCIP_Bool original,
    SCIP_Bool printwarnings
@@ -139,7 +152,7 @@ SCIP_RETCODE GCGconshdlrDecompChooseCandidatesFromSelected(
  */
 GCG_EXPORT
 std::string GCGconshdlrDecompGetDetectorHistoryByPartialdecId(
-   SCIP* scip,    /**< SCIP data structure */
+   GCG* gcg,      /**< GCG data structure */
    int id         /**< id of partialdec */
    );
 

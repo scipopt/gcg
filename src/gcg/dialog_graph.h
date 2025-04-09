@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -37,7 +38,7 @@
 #ifndef DIALOG_GRAPH_H_
 #define DIALOG_GRAPH_H_
 
-#include "objdialog.h"
+#include "gcg/objdialog.h"
 #include "graph/graph.h"
 
 namespace gcg
@@ -47,7 +48,7 @@ class DialogGraph: public ObjDialog
 {
 public:
    DialogGraph(
-      SCIP*              scip                /**< SCIP data structure */
+      GCG*               gcg                 /**< GCG data structure */
    );
    virtual ~DialogGraph() {}
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);
@@ -57,7 +58,7 @@ class DialogWriteGraph: public ObjDialog
 {
 public:
    DialogWriteGraph(
-      SCIP*              scip                /**< SCIP data structure */
+      GCG*               gcgstruct           /**< GCG data structure */
    );
    virtual ~DialogWriteGraph() {}
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);
@@ -67,7 +68,7 @@ class DialogReadPartition: public ObjDialog
 {
 public:
    DialogReadPartition(
-      SCIP*              scip                /**< SCIP data structure */
+      GCG*               gcg                 /**< GCG data structure */
    );
    virtual ~DialogReadPartition() {}
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);
@@ -80,7 +81,7 @@ private:
    typedef G<T> GRAPH_TYPE;
 public:
    DialogReadGraphs(
-      SCIP*              scip                /**< SCIP data structure */
+      GCG*               gcgstruct           /**< GCG data structure */
    );
    virtual ~DialogReadGraphs() {}
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);
@@ -93,7 +94,7 @@ private:
    typedef G<T> GRAPH_TYPE;
 public:
    DialogWriteGraphs(
-      SCIP*              scip                /**< SCIP data structure */
+      GCG*               gcgstruct           /**< GCG data structure */
    );
    virtual ~DialogWriteGraphs() {}
    virtual SCIP_DECL_DIALOGEXEC(scip_exec);

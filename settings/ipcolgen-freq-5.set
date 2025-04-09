@@ -1,0 +1,15 @@
+#
+#heuristics/ipcolgen/maxdepth = 0
+heuristics/ipcolgen/callspernode = 4
+heuristics/ipcolgen/freq = 5
+heuristics/ipcolgen/solveauxproblem = TRUE
+heuristics/ipcolgen/dualweight = 0.9
+heuristics/ipcolgen/relaxweight = 0.5
+heuristics/ipcolgen/minfixingrate = 0.2
+#heuristics/ipcolgen/adjustweights = FALSE
+heuristics/ipcolgen/priority = -1110000
+#heuristics/ipcolgen/waitnewsol = FALSE
+heuristics/ipcolgen/mininitialgap = 0.0
+
+#
+display/freq = 10

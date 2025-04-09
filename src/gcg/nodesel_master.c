@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -36,21 +37,29 @@
 #include <assert.h>
 #include <string.h>
 
-#include "nodesel_master.h"
-#include "cons_origbranch.h"
-#include "cons_masterbranch.h"
-#include "pricer_gcg.h"
+#include "gcg/nodesel_master.h"
+#include "gcg/cons_origbranch.h"
+#include "gcg/cons_masterbranch.h"
+#include "gcg/pricer_gcg.h"
 
 #define NODESEL_NAME             "master"
 #define NODESEL_DESC             "orig master coordination"
 #define NODESEL_STDPRIORITY           0
 #define NODESEL_MEMSAVEPRIORITY  100000
+#define EVENTHDLR_NAME           "masterfocusnode"
+#define EVENTHDLR_DESC           "event handler to transfer dual bounds from orig to master"
 
 
 /** node selector data */
 struct SCIP_NodeselData
 {
-   SCIP_Longint lastorignodenumber;
+   GCG*                 gcg;                /**< GCG data structure */
+   SCIP_Longint         lastorignodenumber;
+};
+
+struct SCIP_EventhdlrData
+{
+   GCG*                  gcg;                /**< GCG data structure */
 };
 
 /*
@@ -114,6 +123,7 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
    SCIP_NODE** nodes;
    SCIP* origscip;
    int nnodes;
+   SCIP_NODE* orignode;
    SCIP_Longint orignodenumber;
 
    assert(nodesel != NULL);
@@ -124,15 +134,16 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
    nodeseldata = SCIPnodeselGetData(nodesel);
    assert(nodeseldata != NULL);
 
-   origscip = GCGmasterGetOrigprob(scip);
+   origscip = GCGgetOrigprob(nodeseldata->gcg);
 
    *selnode = NULL;
 
-   orignodenumber = SCIPnodeGetNumber(SCIPgetCurrentNode(origscip));
+   orignode = SCIPgetCurrentNode(origscip);
+   orignodenumber = SCIPnodeGetNumber(orignode);
 
    if( orignodenumber != nodeseldata->lastorignodenumber )
    {
-      SCIP_CONS* origcons = GCGconsOrigbranchGetActiveCons(origscip);
+      SCIP_CONS* origcons = GCGconsOrigbranchGetActiveCons(nodeseldata->gcg);
       SCIP_CONS* parentorigcons = GCGconsOrigbranchGetParentcons(origcons);
 
       nodeseldata->lastorignodenumber = orignodenumber;
@@ -140,16 +151,42 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
       /* check whether the current node is the root node and has no parent */
       if( parentorigcons == NULL )
       {
-         assert((GCGconsOrigbranchGetNode(origcons) == SCIPgetRootNode(origscip)) || ( GCGconsOrigbranchGetNode(origcons) == NULL) );
-         assert(GCGconsOrigbranchGetMastercons(origcons) != NULL);
-         assert((GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == SCIPgetRootNode(scip)) || (GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == NULL));
+         if( SCIPgetRootNode(origscip) == orignode )
+         {
+            assert((GCGconsOrigbranchGetNode(origcons) == SCIPgetRootNode(origscip)) || (GCGconsOrigbranchGetNode(origcons) == NULL) );
+            assert(GCGconsOrigbranchGetMastercons(origcons) != NULL);
+            assert((GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == SCIPgetRootNode(scip)) || (GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons)) == NULL));
 
-         *selnode = SCIPgetRootNode(scip);
-         SCIPdebugMessage("selected root node in the master program\n");
+            *selnode = SCIPgetRootNode(scip);
+            SCIPdebugMessage("selected root node in the master program\n");
+            SCIP_CALL( GCGrestoreLimitSettings(nodeseldata->gcg) );
+         }
+         else
+         {
+            /* solving was interrupted and SCIP created a dummy node in the original problem */
+            assert(SCIPgetNChildren(scip) < 2);
+            if( SCIPgetNChildren(scip) == 0 )
+            {
+               /* create and select dummy node */
+               SCIP_NODE* child;
+               SCIPcreateChild(scip, &child, 0.0, SCIPgetLocalTransEstimate(scip));
+               *selnode = child;
+               SCIPdebugMessage("created and selected dummy node in the master program\n");
+            }
+            else
+            {
+               /* select dummy node */
+               SCIP_NODE** children;
+               int nchildren;
+               SCIPgetChildren(scip, &children, &nchildren);
+               assert(nchildren > 0);
+               *selnode = children[0];
+               SCIPdebugMessage("selected dummy node in the master program\n");
+            }
+         }
       }
       else
       {
-
          assert(GCGconsOrigbranchGetMastercons(parentorigcons) != NULL);
          *selnode = GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(origcons));
 
@@ -162,9 +199,6 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
          SCIPerrorMessage("nodesel_master could not find a node corresponding to the current original node!\n");
       }
       assert(*selnode != NULL);
-
-      /* set the dual bound to the lower bound of the corresponding original node */
-      SCIP_CALL( SCIPupdateNodeDualbound(scip, *selnode, SCIPgetNodeLowerbound(origscip, SCIPgetCurrentNode(origscip))) );
    }
    else
    {
@@ -188,8 +222,8 @@ SCIP_DECL_NODESELSELECT(nodeselSelectMaster)
    }
 
 #ifndef NDEBUG
-   GCGconsOrigbranchCheckConsistency(origscip);
-   GCGconsMasterbranchCheckConsistency(scip);
+   GCGconsOrigbranchCheckConsistency(nodeseldata->gcg);
+   GCGconsMasterbranchCheckConsistency(nodeseldata->gcg);
 #endif
 
    return SCIP_OKAY;
@@ -210,20 +244,101 @@ SCIP_DECL_NODESELCOMP(nodeselCompMaster)
       return -1;
 }
 
+
+/** initialization method of event handler (called after problem was transformed) */
+static
+SCIP_DECL_EVENTINIT(eventInitFocusnode)
+{  /*lint --e{715}*/
+   assert(scip != NULL);
+   assert(eventhdlr != NULL);
+
+   /* catch SCIP_EVENTTYPE_NODEFOCUSED events */
+   SCIP_CALL( SCIPcatchEvent(scip, SCIP_EVENTTYPE_NODEFOCUSED, eventhdlr, NULL, NULL) );
+
+   return SCIP_OKAY;
+}
+
+
+/** deinitialization method of event handler (called before transformed problem is freed) */
+static
+SCIP_DECL_EVENTEXIT(eventExitFocusnode)
+{  /*lint --e{715}*/
+   assert(scip != NULL);
+   assert(eventhdlr != NULL);
+
+   /* stop event handling */
+   SCIP_CALL( SCIPdropEvent(scip, SCIP_EVENTTYPE_NODEFOCUSED, eventhdlr, NULL, -1) );
+
+   return SCIP_OKAY;
+}
+
+/** destructor of event handler */
+static
+SCIP_DECL_EVENTFREE(eventFreeFocusnode)
+{  /*lint --e{715}*/
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+
+   assert(scip != NULL);
+   assert(eventhdlr != NULL);
+   assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
+
+   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
+   assert(eventhdlrdata != NULL);
+
+   SCIPfreeMemory(scip, &eventhdlrdata);
+
+   return SCIP_OKAY;
+}
+
+
+/** execution method of event handler */
+static
+SCIP_DECL_EVENTEXEC(eventExecFocusnode)
+{  /*lint --e{715}*/
+   SCIP* origscip;
+   SCIP_NODE* focusnode;
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+
+   assert(scip != NULL);
+   assert(eventhdlr != NULL);
+   assert(strcmp(SCIPeventhdlrGetName(eventhdlr), EVENTHDLR_NAME) == 0);
+
+   eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
+   assert(eventhdlrdata != NULL);
+
+   origscip = GCGgetOrigprob(eventhdlrdata->gcg);
+   assert(origscip != NULL);
+   focusnode = SCIPeventGetNode(event);
+   assert(focusnode != NULL);
+
+   /* set the dual bound to the lower bound of the corresponding original node */
+   SCIP_CALL( SCIPupdateNodeDualbound(scip, focusnode, SCIPgetNodeLowerbound(origscip, SCIPgetCurrentNode(origscip))) );
+   assert(
+      (GCGconsOrigbranchGetNode(GCGconsOrigbranchGetActiveCons(eventhdlrdata->gcg)) == SCIPgetRootNode(origscip)
+         && SCIPnodeGetDepth(SCIPgetCurrentNode(origscip)) == SCIPnodeGetDepth(focusnode))
+      || focusnode == GCGconsMasterbranchGetNode(GCGconsOrigbranchGetMastercons(GCGconsOrigbranchGetActiveCons(eventhdlrdata->gcg))));
+
+   return SCIP_OKAY;
+}
+
+
 /*
  * master specific interface methods
  */
 
 /** creates the node selector for depth first search and includes it in SCIP */
-SCIP_RETCODE SCIPincludeNodeselMaster(
-   SCIP*                 scip                /**< SCIP data structure */
-)
+SCIP_RETCODE GCGincludeNodeselMaster(
+   GCG*                  gcg                 /**< SCIP data structure */
+   )
 {
    SCIP_NODESELDATA* nodeseldata;
+   SCIP_EVENTHDLR* eventhdlr;
+   SCIP_EVENTHDLRDATA* eventhdlrdata;
+   SCIP* scip = GCGgetMasterprob(gcg);
 
    /* create master node selector data */
    SCIP_CALL( SCIPallocMemory(scip, &nodeseldata) );
-
+   nodeseldata->gcg =  gcg;
    nodeseldata->lastorignodenumber = -1LL;
 
    /* include node selector */
@@ -232,6 +347,16 @@ SCIP_RETCODE SCIPincludeNodeselMaster(
       nodeselInitsolMaster, nodeselExitsolMaster, nodeselSelectMaster, nodeselCompMaster,
       nodeseldata) );
 
+   /* include event handler into SCIP */
+   SCIP_CALL( SCIPallocMemory(scip, &eventhdlrdata) );
+   eventhdlrdata->gcg =  gcg;
+   SCIP_CALL( SCIPincludeEventhdlrBasic(scip, &eventhdlr, EVENTHDLR_NAME, EVENTHDLR_DESC, eventExecFocusnode, eventhdlrdata) );
+   assert(eventhdlr != NULL);
+
+   /* set non fundamental callbacks via setter functions */
+   SCIP_CALL( SCIPsetEventhdlrInit(scip, eventhdlr, eventInitFocusnode) );
+   SCIP_CALL( SCIPsetEventhdlrExit(scip, eventhdlr, eventExitFocusnode) );
+   SCIP_CALL( SCIPsetEventhdlrFree(scip, eventhdlr, eventFreeFocusnode) );
+
    return SCIP_OKAY;
 }
-

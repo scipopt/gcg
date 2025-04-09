@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -37,15 +38,15 @@
 #include <assert.h>
 #include <string.h>
 
-#include "cons_integralorig.h"
-#include "pricer_gcg.h"
-#include "cons_masterbranch.h"
-#include "pub_gcgvar.h"
+#include "gcg/cons_integralorig.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/cons_masterbranch.h"
+#include "gcg/pub_gcgvar.h"
 #include "scip/struct_branch.h"
-#include "relax_gcg.h"
-#include "gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/gcg.h"
 
-#include "branch_orig.h"
+#include "gcg/branch_orig.h"
 
 #define CONSHDLR_NAME          "integralorig"
 #define CONSHDLR_DESC          "integrality constraint"
@@ -59,20 +60,23 @@
 /** constraint handler data */
 struct SCIP_ConshdlrData
 {
+   GCG*                        gcg;                      /**< GCG data structure */
    SCIP_BRANCHRULE**           branchrules;              /**< stack for storing active branchrules */
    int                         nbranchrules;             /**< number of active branchrules */
 };
 
 /** insert branchrule in constraint handler data */
 SCIP_RETCODE GCGconsIntegralorigAddBranchrule(
-   SCIP*                 scip,
+   GCG*                  gcg,
    SCIP_BRANCHRULE*      branchrule
    )
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP* masterprob;
 
-   conshdlr = SCIPfindConshdlr(scip, CONSHDLR_NAME);
+   masterprob = GCGgetMasterprob(gcg);
+   conshdlr = SCIPfindConshdlr(masterprob, CONSHDLR_NAME);
    assert(conshdlr != NULL);
 
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
@@ -81,12 +85,12 @@ SCIP_RETCODE GCGconsIntegralorigAddBranchrule(
    assert(conshdlrdata->nbranchrules >= 0);
    if( conshdlrdata->nbranchrules == 0 )
    {
-      SCIP_CALL( SCIPallocMemoryArray(scip, &(conshdlrdata->branchrules), 1) ); /*lint !e506*/
+      SCIP_CALL( SCIPallocMemoryArray(masterprob, &(conshdlrdata->branchrules), 1) ); /*lint !e506*/
       conshdlrdata->nbranchrules = 1;
    }
    else
    {
-      SCIP_CALL( SCIPreallocMemoryArray(scip, &(conshdlrdata->branchrules), (size_t)conshdlrdata->nbranchrules+1) );
+      SCIP_CALL( SCIPreallocMemoryArray(masterprob, &(conshdlrdata->branchrules), (size_t)conshdlrdata->nbranchrules+1) );
       ++conshdlrdata->nbranchrules;
    }
 
@@ -155,10 +159,10 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
    assert(scip != NULL);
 
-   origprob = GCGmasterGetOrigprob(scip);
-   assert(origprob != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
+   origprob = GCGgetOrigprob(conshdlrdata->gcg);
+   assert(origprob != NULL);
 
    SCIPdebugMessage("LP solution enforcing method of integralorig constraint\n");
 
@@ -173,7 +177,7 @@ SCIP_DECL_CONSENFOLP(consEnfolpIntegralOrig)
    }
 
    /* if the transferred master solution is feasible, the current node is solved to optimality and can be pruned */
-   if( GCGrelaxIsOrigSolFeasible(origprob) )
+   if( GCGrelaxIsOrigSolFeasible(conshdlrdata->gcg) )
    {
       SCIPdebugMessage("Orig sol is feasible\n");
       *result = SCIP_FEASIBLE;
@@ -223,10 +227,10 @@ SCIP_DECL_CONSENFOPS(consEnfopsIntegralOrig)
    assert(nconss == 0);
    assert(result != NULL);
 
-   origprob = GCGmasterGetOrigprob(scip);
-   assert(origprob != NULL);
    conshdlrdata = SCIPconshdlrGetData(conshdlr);
    assert(conshdlrdata != NULL);
+   origprob = GCGgetOrigprob(conshdlrdata->gcg);
+   assert(origprob != NULL);
 
    *result = SCIP_FEASIBLE;
    i = 0;
@@ -272,12 +276,16 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    SCIP_Real solval;
    SCIP_Bool discretization;
    int v;
+   SCIP_Bool violatesvarbnds;
+   SCIP_CONSHDLRDATA* conshdlrdata;
 
    assert(conshdlr != NULL);
    assert(strcmp(SCIPconshdlrGetName(conshdlr), CONSHDLR_NAME) == 0);
    assert(scip != NULL);
 
-   origprob = GCGmasterGetOrigprob(scip);
+   conshdlrdata = SCIPconshdlrGetData(conshdlr);
+   assert(conshdlrdata != NULL);
+   origprob = GCGgetOrigprob(conshdlrdata->gcg);
    assert(origprob != NULL);
 
    SCIPdebugMessage("Check method of integralorig constraint\n");
@@ -293,7 +301,14 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
    }
 
    /* get corresponding origsol in order to check integrality */
-   SCIP_CALL( GCGtransformMastersolToOrigsol(origprob, sol, &origsol) );
+   SCIP_CALL( GCGtransformMastersolToOrigsol(conshdlrdata->gcg, sol, &origsol, TRUE, &violatesvarbnds) );
+
+   if( violatesvarbnds )
+   {
+      *result = SCIP_INFEASIBLE;
+      SCIPfreeSol(origprob, &origsol);
+      return SCIP_OKAY;
+   }
 
    origvars = SCIPgetVars(origprob);
    norigvars = SCIPgetNVars(origprob);
@@ -369,27 +384,33 @@ SCIP_DECL_CONSFREE(consFreeIntegralOrig)
  */
 
 /** creates the handler for integrality constraint and includes it in SCIP */
-SCIP_RETCODE SCIPincludeConshdlrIntegralOrig(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeConshdlrIntegralOrig(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_CONSHDLR* conshdlr;
    SCIP_CONSHDLRDATA* conshdlrdata;
+   SCIP* masterprob;
+
+   assert(gcg != NULL);
 
    /* create integral constraint handler data */
+   masterprob = GCGgetMasterprob(gcg);
+   assert(masterprob != NULL);
    conshdlrdata = NULL;
-   SCIP_CALL( SCIPallocMemory(scip, &conshdlrdata) );
+   SCIP_CALL( SCIPallocMemory(masterprob, &conshdlrdata) );
+   conshdlrdata->gcg = gcg;
    conshdlrdata->branchrules = NULL;
    conshdlrdata->nbranchrules = 0;
 
    /* include constraint handler */
-   SCIP_CALL( SCIPincludeConshdlrBasic(scip, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,
+   SCIP_CALL( SCIPincludeConshdlrBasic(masterprob, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,
          CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY, CONSHDLR_EAGERFREQ, CONSHDLR_NEEDSCONS,
          consEnfolpIntegralOrig, consEnfopsIntegralOrig, consCheckIntegralOrig, consLockIntegralOrig,
          conshdlrdata) );
    assert(conshdlr != NULL);
 
-   SCIP_CALL( SCIPsetConshdlrFree(scip, conshdlr, consFreeIntegralOrig) );
+   SCIP_CALL( SCIPsetConshdlrFree(masterprob, conshdlr, consFreeIntegralOrig) );
 
    return SCIP_OKAY;
 }

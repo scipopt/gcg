@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -36,9 +37,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_gcgshifting.h"
-#include "gcg.h"
-#include "relax_gcg.h"
+#include "gcg/heur_gcgshifting.h"
+#include "gcg/gcg.h"
+#include "gcg/relax_gcg.h"
 #include "scip/misc.h"
 
 
@@ -60,6 +61,7 @@
 /* locally defined heuristic data */
 struct SCIP_HeurData
 {
+   GCG*                  gcg;                /**< GCG data structure */
    SCIP_SOL*             sol;                /**< working solution */
    SCIP_RANDNUMGEN*      randnumgen;         /**< random number generator */
    SCIP_Longint          lastlp;             /**< last LP number where the heuristic was applied */
@@ -474,7 +476,20 @@ void addFracCounter(
 #define heurCopyGcgshifting NULL
 
 /** destructor of primal heuristic to free user data (called when SCIP is exiting) */
-#define heurFreeGcgshifting NULL
+static
+SCIP_DECL_HEURFREE(heurFreeGcgshifting) /*lint --e{715}*/
+{  /*lint --e{715}*/
+   SCIP_HEURDATA* heurdata;
+
+   assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
+
+   /* free heuristic data */
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+   SCIPfreeMemory(scip, &heurdata);
+
+   return SCIP_OKAY;
+}
 
 
 /** initialization method of primal heuristic (called after problem was transformed) */
@@ -484,10 +499,10 @@ SCIP_DECL_HEURINIT(heurInitGcgshifting) /*lint --e{715}*/
    SCIP_HEURDATA* heurdata;
 
    assert(strcmp(SCIPheurGetName(heur), HEUR_NAME) == 0);
-   assert(SCIPheurGetData(heur) == NULL);
 
    /* create heuristic data */
-   SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
    SCIP_CALL( SCIPcreateSol(scip, &heurdata->sol, heur) );
    heurdata->lastlp = -1;
 
@@ -515,9 +530,6 @@ SCIP_DECL_HEUREXIT(heurExitGcgshifting) /*lint --e{715}*/
 
    /* free random number generator */
    SCIPfreeRandom(scip, &heurdata->randnumgen);
-
-   SCIPfreeMemory(scip, &heurdata);
-   SCIPheurSetData(heur, NULL);
 
    return SCIP_OKAY;
 }
@@ -579,8 +591,12 @@ SCIP_DECL_HEUREXEC(heurExecGcgshifting) /*lint --e{715}*/
    assert(scip != NULL);
    assert(result != NULL);
 
+   /* get heuristic data */
+   heurdata = SCIPheurGetData(heur);
+   assert(heurdata != NULL);
+
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(heurdata->gcg);
    assert(masterprob != NULL);
 
    *result = SCIP_DIDNOTRUN;
@@ -597,10 +613,6 @@ SCIP_DECL_HEUREXEC(heurExecGcgshifting) /*lint --e{715}*/
    /* only call heuristic, if an optimal LP solution is at hand */
    if( SCIPgetStage(masterprob) > SCIP_STAGE_SOLVING || SCIPgetLPSolstat(masterprob) != SCIP_LPSOLSTAT_OPTIMAL )
       return SCIP_OKAY;
-
-   /* get heuristic data */
-   heurdata = SCIPheurGetData(heur);
-   assert(heurdata != NULL);
 
    /* don't call heuristic, if we have already processed the current LP solution */
    nlps = SCIPgetNLPs(masterprob);
@@ -655,7 +667,7 @@ SCIP_DECL_HEUREXEC(heurExecGcgshifting) /*lint --e{715}*/
 
       if( !SCIProwIsLocal(row) )
       {
-         activities[r] = SCIPgetRowSolActivity(scip, row, GCGrelaxGetCurrentOrigSol(scip));
+         activities[r] = SCIPgetRowSolActivity(scip, row, GCGrelaxGetCurrentOrigSol(heurdata->gcg));
          if( SCIPisFeasLT(scip, activities[r], SCIProwGetLhs(row) )
             || SCIPisFeasGT(scip, activities[r], SCIProwGetRhs(row)) )
          {
@@ -899,16 +911,21 @@ SCIP_DECL_HEUREXEC(heurExecGcgshifting) /*lint --e{715}*/
  */
 
 /** creates the GCG shifting heuristic with infeasibility recovering and includes it in SCIP */
-SCIP_RETCODE SCIPincludeHeurGcgshifting(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeHeurGcgshifting(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
+   SCIP_HEURDATA* heurdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+
+   SCIP_CALL( SCIPallocMemory(scip, &heurdata) );
+   heurdata->gcg = gcg;
+
    /* include heuristic */
-   SCIP_CALL( SCIPincludeHeur(scip, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
+   SCIP_CALL( SCIPincludeHeur(origprob, HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, HEUR_TIMING, HEUR_USESSUBSCIP,
          heurCopyGcgshifting, heurFreeGcgshifting, heurInitGcgshifting, heurExitGcgshifting,
-         heurInitsolGcgshifting, heurExitsolGcgshifting, heurExecGcgshifting,
-         NULL) );
+         heurInitsolGcgshifting, heurExitsolGcgshifting, heurExecGcgshifting, heurdata) );
 
    return SCIP_OKAY;
 }

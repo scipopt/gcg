@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -33,14 +34,14 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "dec_constype.h"
-#include "cons_decomp.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "gcg.h"
+#include "gcg/dec_constype.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/gcg.h"
 #include "scip/cons_setppc.h"
 #include "scip/scip.h"
-#include "scip_misc.h"
+#include "gcg/scip_misc.h"
 #include "scip/clock.h"
 
 #include <iostream>
@@ -115,10 +116,11 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
 {
    *result = SCIP_DIDNOTFIND;
    char decinfo[SCIP_MAXSTRLEN];
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    SCIP_CLOCK* temporaryClock;
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+   SCIP_CALL_ABORT( SCIPcreateClock(origprob, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
 
    SCIP_CONS* cons;
 
@@ -134,7 +136,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
    for( int i = 0; i < partialdecOrig->getNOpenconss(); ++i)
    {
       cons = partialdecdetectiondata->detprobdata->getCons(partialdecOrig->getOpenconss()[i]);
-      consType cT = GCGconsGetType(scip, cons);
+      consType cT = GCGconsGetType(origprob, cons);
 
       /* find constype or not */
       std::vector<consType>::const_iterator constypeIter = foundConstypes.begin();
@@ -146,7 +148,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
 
       if( constypeIter  == foundConstypes.end()  )
       {
-         foundConstypes.push_back(GCGconsGetType(scip, cons) );
+         foundConstypes.push_back(GCGconsGetType(origprob, cons) );
       }
    }
 
@@ -157,7 +159,7 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
 
    std::vector< std::vector<int> > subsetsOfConstypes = getSubsets(constypesIndices);
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), subsetsOfConstypes.size() - 1) );
+   SCIP_CALL( SCIPallocMemoryArray(origprob, &(partialdecdetectiondata->newpartialdecs), subsetsOfConstypes.size() - 1) );
    partialdecdetectiondata->nnewpartialdecs = (int) subsetsOfConstypes.size() - 1;
 
    for(size_t subset = 0; subset < subsetsOfConstypes.size(); ++subset)
@@ -167,14 +169,14 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
 
       partialdec = new gcg::PARTIALDECOMP(partialdecOrig);
       /* set open cons that have type of the current subset to Master */
-      auto& openconss = partialdec->getOpenconssVec();
+      auto& openconss = partialdec->getOpenconss();
       for( auto itr = openconss.cbegin(); itr != openconss.cend(); )
       {
          cons = partialdecdetectiondata->detprobdata->getCons(*itr);
          bool found = false;
          for(size_t constypeId = 0; constypeId < subsetsOfConstypes[subset].size(); ++constypeId )
          {
-            if( GCGconsGetType(scip, cons) == foundConstypes[subsetsOfConstypes[subset][constypeId]] )
+            if( GCGconsGetType(origprob, cons) == foundConstypes[subsetsOfConstypes[subset][constypeId]] )
             {
                itr = partialdec->fixConsToMaster(itr);
                found = true;
@@ -193,13 +195,13 @@ static GCG_DECL_PROPAGATEPARTIALDEC(propagatePartialdecConstype)
       partialdecCounter++;
    }
 
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
-   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
+   SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock) );
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(origprob, temporaryClock);
    for( int s = 0; s < partialdecdetectiondata->nnewpartialdecs; ++s )
    {
       partialdecdetectiondata->newpartialdecs[s]->addClockTime(partialdecdetectiondata->detectiontime / partialdecdetectiondata->nnewpartialdecs);
    }
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+   SCIP_CALL_ABORT(SCIPfreeClock(origprob, &temporaryClock) );
 
    *result = SCIP_SUCCESS;
 
@@ -213,12 +215,13 @@ GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConstype)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE ) );
 
    return SCIP_OKAY;
 }
@@ -229,12 +232,13 @@ GCG_DECL_SETPARAMDEFAULT(setParamDefaultConstype)
 {
    char setstr[SCIP_MAXSTRLEN];
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLED) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLEDFINISHING ) );
 
    return SCIP_OKAY;
 }
@@ -243,14 +247,14 @@ static
 GCG_DECL_SETPARAMFAST(setParamFastConstype)
 {
    char setstr[SCIP_MAXSTRLEN];
-
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE ) );
 
 
    return SCIP_OKAY;
@@ -263,7 +267,8 @@ GCG_DECL_SETPARAMFAST(setParamFastConstype)
  */
 
 /** creates the handler for constype detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorConstype(SCIP* scip /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorConstype(
+   GCG*                 gcg                  /**< SCIP data structure */
 )
 {
    GCG_DETECTORDATA* detectordata;
@@ -272,7 +277,7 @@ SCIP_RETCODE SCIPincludeDetectorConstype(SCIP* scip /**< SCIP data structure */
    detectordata = NULL;
 
    SCIP_CALL(
-      GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
+      GCGincludeDetector(gcg, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND,
                          DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata,
                          freeConstype, initConstype, exitConstype, propagatePartialdecConstype, finishPartialdecConstype, detectorPostprocessPartialdecConstype, setParamAggressiveConstype, setParamDefaultConstype, setParamFastConstype));
 

@@ -1,28 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You sh
-ould have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -33,17 +33,17 @@ ould have received a copy of the GNU Lesser General Public License  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "clscons_scipconstypes.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
+#include "gcg/clscons_scipconstypes.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
 #include <vector>
 #include <stdio.h>
 #include <sstream>
 
-#include "class_detprobdata.h"
+#include "gcg/class_detprobdata.h"
 
-#include "class_conspartition.h"
-#include "scip_misc.h"
+#include "gcg/class_conspartition.h"
+#include "gcg/scip_misc.h"
 
 /* classifier properties */
 #define CLSCONS_NAME                  "scipconstype"       /**< name of classifier */
@@ -80,13 +80,14 @@ struct GCG_ClassifierData
 static
 GCG_DECL_CONSCLASSIFY(classifierClassify) {
    gcg::DETPROBDATA *detprobdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
    if( transformed )
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(gcg);
    }
    else
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
    }
 
    std::vector<consType> foundConstypes(0);
@@ -99,7 +100,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
       SCIP_CONS *cons;
       bool found = false;
       cons = detprobdata->getCons(i);
-      consType cT = GCGconsGetType(scip, cons);
+      consType cT = GCGconsGetType(origprob, cons);
       size_t constype;
 
       /* check whether the constraint's constype is new */
@@ -111,14 +112,14 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
       }
       /* if it is new, create a new classindex */
       if (!found) {
-         foundConstypes.push_back(GCGconsGetType(scip, cons));
+         foundConstypes.push_back(GCGconsGetType(origprob, cons));
          classForCons[i] = (int) foundConstypes.size() - 1;
       } else
          classForCons[i] = (int) constype;
    }
 
    /* secondly, use these information to create a ConsPartition */
-   classifier = new gcg::ConsPartition(scip, "constypes", (int) foundConstypes.size(), detprobdata->getNConss());
+   classifier = new gcg::ConsPartition(gcg, "constypes", (int) foundConstypes.size(), detprobdata->getNConss());
 
    /* set class names and descriptions of every class */
    for (int c = 0; c < classifier->getNClasses(); ++c) {
@@ -172,7 +173,7 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
       classifier->assignConsToClass(i, classForCons[i]);
    }
 
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL,
+   SCIPverbMessage(origprob, SCIP_VERBLEVEL_HIGH, NULL,
                    " Consclassifier \"%s\" yields a classification with %d different constraint classes \n",
                    classifier->getName(), (int) foundConstypes.size());
 
@@ -185,14 +186,14 @@ GCG_DECL_CONSCLASSIFY(classifierClassify) {
  */
 
 /** creates the handler for XYZ classifier and includes it in SCIP */
-SCIP_RETCODE SCIPincludeConsClassifierScipConstypes(
-   SCIP *scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeConsClassifierScipConstypes(
+   GCG*                 gcg                /**< GCG data structure */
    )
 {
    GCG_CLASSIFIERDATA* classifierdata = NULL;
 
    SCIP_CALL(
-      GCGincludeConsClassifier(scip, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
+      GCGincludeConsClassifier(gcg, CLSCONS_NAME, CLSCONS_DESC, CLSCONS_PRIORITY, CLSCONS_ENABLED, classifierdata,
                                classifierFree, classifierClassify));
 
    return SCIP_OKAY;

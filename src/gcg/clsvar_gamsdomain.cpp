@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -33,19 +34,19 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "clsvar_gamsdomain.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
+#include "gcg/clsvar_gamsdomain.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
 #include <map>
 #include <set>
 #include <stdio.h>
 #include <sstream>
 #include <vector>
 
-#include "class_detprobdata.h"
+#include "gcg/class_detprobdata.h"
 
-#include "class_varpartition.h"
-#include "scip_misc.h"
+#include "gcg/class_varpartition.h"
+#include "gcg/scip_misc.h"
 
 /* classifier properties */
 #define CLSVAR_NAME                  "gamsdomain"              /**< name of classifier */
@@ -80,15 +81,13 @@ struct GCG_ClassifierData
 static
 GCG_DECL_FREEVARCLASSIFIER(classifierFree)
 {
-   assert(scip != NULL);
-
    GCG_CLASSIFIERDATA* classifierdata = GCGvarClassifierGetData(classifier);
    assert(classifierdata != NULL);
    assert(strcmp(GCGvarClassifierGetName(classifier), CLSVAR_NAME) == 0);
 
    delete classifierdata->vartodomain;
 
-   SCIPfreeMemory(scip, &classifierdata);
+   SCIPfreeMemory(GCGgetOrigprob(gcg), &classifierdata);
 
    return SCIP_OKAY;
 }
@@ -97,13 +96,14 @@ static
 GCG_DECL_VARCLASSIFY(classifierClassify)
 {
    gcg::DETPROBDATA* detprobdata;
+
    if( transformed )
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(gcg);
    }
    else
    {
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
    }
 
    int nvar = detprobdata->getNVars();
@@ -112,7 +112,7 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
    std::vector<int> classForVar( nvar, - 1 );          // [i] holds class index for variable i -> indexing over detection internal variable array!
    int counterClasses = 0;
 
-   GCG_VARCLASSIFIER* classifier = GCGfindVarClassifier(scip, CLSVAR_NAME);
+   GCG_VARCLASSIFIER* classifier = GCGfindVarClassifier(gcg, CLSVAR_NAME);
    assert(classifier != NULL);
 
    GCG_CLASSIFIERDATA* classdata = GCGvarClassifierGetData(classifier);
@@ -163,7 +163,7 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
    assert( counterClasses == (int) domainForClass.size() );
 
    /* secondly, use these information to create a ConsPartition */
-   gcg::VarPartition* partition = new gcg::VarPartition(scip, "gamsdomain", counterClasses, detprobdata->getNVars() );
+   gcg::VarPartition* partition = new gcg::VarPartition(gcg, "gamsdomain", counterClasses, detprobdata->getNVars() );
 
    /* set class names and descriptions of every class */
    for( int c = 0; c < partition->getNClasses(); ++ c )
@@ -188,7 +188,7 @@ GCG_DECL_VARCLASSIFY(classifierClassify)
    {
       partition->assignVarToClass( i, classForVar[i] );
    }
-   SCIPverbMessage(scip, SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d  different variable classes \n", partition->getName(), partition->getNClasses() );
+   SCIPverbMessage(GCGgetOrigprob(gcg), SCIP_VERBLEVEL_HIGH, NULL, " Varclassifier \"%s\" yields a classification with %d  different variable classes \n", partition->getName(), partition->getNClasses() );
 
    detprobdata->addVarPartition(partition);
    return SCIP_OKAY;
@@ -226,17 +226,17 @@ SCIP_RETCODE GCGvarClassifierGamsdomainAddEntry(
 }
 
 /** creates the handler for gamsdomain classifier and includes it in SCIP */
-SCIP_RETCODE SCIPincludeVarClassifierGamsdomain(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeVarClassifierGamsdomain(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_CLASSIFIERDATA* classifierdata = NULL;
 
-   SCIP_CALL( SCIPallocMemory(scip, &classifierdata) );
+   SCIP_CALL( SCIPallocMemory(GCGgetOrigprob(gcg), &classifierdata) );
    assert(classifierdata != NULL);
    classifierdata->vartodomain = new std::map<std::string, std::set<int>>();
 
-   SCIP_CALL( GCGincludeVarClassifier(scip, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
+   SCIP_CALL( GCGincludeVarClassifier(gcg, CLSVAR_NAME, CLSVAR_DESC, CLSVAR_PRIORITY, CLSVAR_ENABLED, classifierdata, classifierFree, classifierClassify) );
 
    return SCIP_OKAY;
 }

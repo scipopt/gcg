@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -49,9 +50,9 @@
 #include "scip/type_reopt.h"
 #include "scip/type_branch.h"
 
-#include "pub_colpool.h"
-#include "pub_gcgcol.h"
-#include "type_pricestore_gcg.h"
+#include "gcg/pub_colpool.h"
+#include "gcg/pub_gcgcol.h"
+#include "gcg/type_pricestore_gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,20 +61,20 @@ extern "C" {
 /** creates price storage */
 GCG_EXPORT
 SCIP_RETCODE GCGpricestoreCreate(
-   SCIP*                 scip,                /**< SCIP data structure */
+   GCG*                  gcg,                 /**< GCG data structure */
    GCG_PRICESTORE**      pricestore,          /**< pointer to store price storage */
    SCIP_Real             redcostfac,          /**< factor of -redcost/norm in score function */
    SCIP_Real             objparalfac,         /**< factor of objective parallelism in score function */
    SCIP_Real             orthofac,            /**< factor of orthogonalities in score function */
    SCIP_Real             mincolorth,          /**< minimal orthogonality of columns to add
                                                   (with respect to columns added in the current round) */
-   GCG_EFFICIACYCHOICE   efficiacychoice      /**< choice to base efficiacy on */
+   GCG_EFFICIACYCHOICE   efficiacychoice,     /**< choice to base efficiacy on */
+   int                   hashtablesize        /**< size of hashtable */
    );
 
 /** frees price storage */
 GCG_EXPORT
 SCIP_RETCODE GCGpricestoreFree(
-   SCIP*                 scip,                /**< SCIP data structure */
    GCG_PRICESTORE**      pricestore           /**< pointer to store price storage */
    );
 
@@ -106,12 +107,11 @@ void GCGpricestoreEndForceCols(
  */
 GCG_EXPORT
 SCIP_RETCODE GCGpricestoreAddCol(
-   SCIP*                 scip,               /**< SCIP data structure */
    GCG_PRICESTORE*       pricestore,         /**< price storage */
    GCG_COL*              col,                /**< priced col */
    SCIP_Bool             forcecol,           /**< should the col be forced to enter the LP? */
-   SCIP_Bool             checkcol,           /**< should the col be checked */
-   SCIP_Bool             fromcolpool         /**< is column from column pool */
+   SCIP_Bool             fromcolpool,        /**< is column from colpool */
+   SCIP_Bool*            added               /**< pointer to var that indicates whether the col was added */
    );
 
 /** adds cols to priced vars and clears price storage */
@@ -129,27 +129,23 @@ void GCGpricestoreClearCols(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
-/** removes cols that are inefficacious w.r.t. the current LP solution from price storage without adding the cols to the LP */
-GCG_EXPORT
-void GCGpricestoreRemoveInefficaciousCols(
-   GCG_PRICESTORE*       pricestore          /**< price storage */
-   );
-
 /** get cols in the price storage */
 GCG_EXPORT
 GCG_COL** GCGpricestoreGetCols(
-   GCG_PRICESTORE*       pricestore           /**< price storage */
+   GCG_PRICESTORE*       pricestore,          /**< price storage */
+   int                   arrayindex           /**< index of the arrays */
    );
 
 /** get number of cols in the price storage */
 GCG_EXPORT
 int GCGpricestoreGetNCols(
-   GCG_PRICESTORE*       pricestore           /**< price storage */
+   GCG_PRICESTORE*       pricestore,          /**< price storage */
+   int                   arrayindex           /**< index of the arrays */
    );
 
-/** get number of efficacious cols in the price storage */
+/** get number of cols in the price storage */
 GCG_EXPORT
-int GCGpricestoreGetNEfficaciousCols(
+int GCGpricestoreGetNColsTotal(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 
@@ -168,12 +164,6 @@ int GCGpricestoreGetNColsFoundRound(
 /** get total number of cols applied to the LPs */
 GCG_EXPORT
 int GCGpricestoreGetNColsApplied(
-   GCG_PRICESTORE*       pricestore           /**< price storage */
-   );
-
-/** gets time in seconds used for pricing cols from the pricestore */
-GCG_EXPORT
-SCIP_Real GCGpricestoreGetTime(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 

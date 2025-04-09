@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -42,11 +43,8 @@
 extern "C" {
 #endif
 
-#include "def.h"
-#include "type_decomp.h"
-#include "type_parameter.h"
-
 #include "scip/scip.h"
+#include "gcg/gcg.h"
 
 /** Colorscheme selection for the visualizations */
 enum Colorscheme
@@ -61,8 +59,8 @@ typedef enum Colorscheme VISU_COLORSCHEME; /**< visualization colorscheme type *
 /** includes the visualization parameters into GCG
  * @returns SCIP return code */
 GCG_EXPORT
-SCIP_RETCODE SCIPcreateParamsVisu(
-   SCIP* scip,                /**< SCIP data structure */
+SCIP_RETCODE GCGcreateParamsVisu(
+   GCG*  gcg,                 /**< GCG data structure */
    GCG_PARAMDATA** paramdata  /**< input empty paramdata, oputput new set of param data */
    );
 
@@ -70,32 +68,32 @@ SCIP_RETCODE SCIPcreateParamsVisu(
  * draftmode lets visualizations omit nonzeros
  * @returns true if draftmode is on */
 GCG_EXPORT
-SCIP_Bool SCIPvisuGetDraftmode(
-   SCIP* scip  /**< SCIP data structure */
+SCIP_Bool GCGvisuGetDraftmode(
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** sets draftmode
  * draftmode lets visualizations omit nonzeros
  */
 GCG_EXPORT
-void SCIPvisuSetDraftmode(
-   SCIP* scip,       /**< SCIP data structure */
+void GCGvisuSetDraftmode(
+   GCG*  gcg,        /**< GCG data structure */
    SCIP_Bool setmode /**< true iff draftmode should be on */
    );
 
 /** gets the colorscheme for visualizations
  * @returns current colorscheme */
 GCG_EXPORT
-VISU_COLORSCHEME SCIPvisuGetColorscheme(
-   SCIP* scip  /**< SCIP data structure */
+VISU_COLORSCHEME GCGvisuGetColorscheme(
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** sets colorscheme for visualizations
  * 
  */
 GCG_EXPORT
-void SCIPvisuSetColorscheme(
-   SCIP* scip,                   /**< SCIP data structure */
+void GCGvisuSetColorscheme(
+   GCG*  gcg,                    /**< GCG data structure */
    VISU_COLORSCHEME newscheme    /**< new colorscheme */
    );
 
@@ -103,8 +101,8 @@ void SCIPvisuSetColorscheme(
  *
  */
 GCG_EXPORT
-void SCIPvisuSetColorManMasterconss(
-   SCIP* scip,          /**< SCIP data structure */
+void GCGvisuSetColorManMasterconss(
+   GCG*  gcg,           /**< GCG data structure */
    const char* newcolor /**< new color */
    );
 
@@ -112,8 +110,8 @@ void SCIPvisuSetColorManMasterconss(
  * 
  */
 GCG_EXPORT
-void SCIPvisuSetColorManMastervars(
-   SCIP* scip,          /**< SCIP data structure */
+void GCGvisuSetColorManMastervars(
+   GCG*  gcg,           /**< GCG data structure */
    const char* newcolor /**< new color */
    );
 
@@ -121,8 +119,8 @@ void SCIPvisuSetColorManMastervars(
  * 
  */
 GCG_EXPORT
-void SCIPvisuSetColorManLinking(
-   SCIP* scip,          /**< SCIP data structure */
+void GCGvisuSetColorManLinking(
+   GCG*  gcg,           /**< GCG data structure */
    const char* newcolor /**< new color */
    );
 
@@ -130,8 +128,8 @@ void SCIPvisuSetColorManLinking(
  * 
  */
 GCG_EXPORT
-void SCIPvisuSetColorManStairlinking(
-   SCIP* scip,          /**< SCIP data structure */
+void GCGvisuSetColorManStairlinking(
+   GCG*  gcg,           /**< GCG data structure */
    const char* newcolor /**< new color */
    );
 
@@ -139,8 +137,8 @@ void SCIPvisuSetColorManStairlinking(
  * 
  */
 GCG_EXPORT
-void SCIPvisuSetColorManBlock(
-   SCIP* scip,          /**< SCIP data structure */
+void GCGvisuSetColorManBlock(
+   GCG*  gcg,           /**< GCG data structure */
    const char* newcolor /**< new color */
    );
 
@@ -148,8 +146,8 @@ void SCIPvisuSetColorManBlock(
  * 
  */
 GCG_EXPORT
-void SCIPvisuSetColorManOpen(
-   SCIP* scip,          /**< SCIP data structure */
+void GCGvisuSetColorManOpen(
+   GCG*  gcg,           /**< GCG data structure */
    const char* newcolor /**< new color */
    );
 
@@ -157,8 +155,8 @@ void SCIPvisuSetColorManOpen(
  * 
  */
 GCG_EXPORT
-void SCIPvisuSetColorManNonzero(
-   SCIP* scip,          /**< SCIP data structure */
+void GCGvisuSetColorManNonzero(
+   GCG*  gcg,           /**< GCG data structure */
    const char* newcolor /**< new color */
    );
 
@@ -166,73 +164,73 @@ void SCIPvisuSetColorManNonzero(
  * 
  */
 GCG_EXPORT
-void SCIPvisuSetColorManLine(
-   SCIP* scip,          /**< SCIP data structure */
+void GCGvisuSetColorManLine(
+   GCG*  gcg,           /**< GCG data structure */
    const char* newcolor /**< new color */
    );
 
 /** gets color for mastercons block in current color scheme
  * @returns mastercons color */
 GCG_EXPORT
-const char* SCIPvisuGetColorMasterconss(
-   SCIP* scip  /**< SCIP data structure */
+const char* GCGvisuGetColorMasterconss(
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets color for mastervar block in current color scheme
  * @returns mastervar color */
 GCG_EXPORT
-const char* SCIPvisuGetColorMastervars(
-   SCIP* scip  /**< SCIP data structure */
+const char* GCGvisuGetColorMastervars(
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets color for linking blocks in current color scheme
  * @returns linking color */
 GCG_EXPORT
-const char* SCIPvisuGetColorLinking(
-   SCIP* scip  /**< SCIP data structure */
+const char* GCGvisuGetColorLinking(
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets color for stairlinking blocks in current color scheme
  * @returns stairlinking color */
 GCG_EXPORT
-const char* SCIPvisuGetColorStairlinking(
-   SCIP* scip  /**< SCIP data structure */
+const char* GCGvisuGetColorStairlinking(
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets color for normal decomp blocks in current color scheme
  * @returns block color */
 GCG_EXPORT
-const char* SCIPvisuGetColorBlock(
-   SCIP* scip  /**< SCIP data structure */
+const char* GCGvisuGetColorBlock(
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets color for open blocks in current color scheme
  * @returns open color */
 GCG_EXPORT
-const char* SCIPvisuGetColorOpen(
-   SCIP* scip  /**< SCIP data structure */
+const char* GCGvisuGetColorOpen(
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets color for non-zero points in current color scheme
  * @returns non-zero color */
 GCG_EXPORT
-const char* SCIPvisuGetColorNonzero(
-   SCIP* scip  /**< SCIP data structure */
+const char* GCGvisuGetColorNonzero(
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets color for lines in current color scheme
  * @returns line color */
 GCG_EXPORT
-const char* SCIPvisuGetColorLine(
-   SCIP* scip  /**< SCIP data structure */
+const char* GCGvisuGetColorLine(
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets appropriate radius for nonzeros
  * needs highest indices of both axes for scaling
  * @returns radius */
 GCG_EXPORT
-float SCIPvisuGetNonzeroRadius(
-   SCIP* scip,          /**< SCIP data structure */
+float GCGvisuGetNonzeroRadius(
+   GCG*  gcg,           /**< GCG data structure */
    int maxindx,         /**< highest index x-axis */
    int maxindy,         /**< highest index y-axis */
    float scalingfactor  /**< percentage to scale radius, 1 if no scaling */
@@ -243,49 +241,49 @@ float SCIPvisuGetNonzeroRadius(
  * @returns true if gp reader should be used, false if tex reader should be used */
 GCG_EXPORT
 SCIP_Bool GCGgetUseGp(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets the name of the pdf reader that should be used
  * @returns name of pdf reader */
 GCG_EXPORT
 const char* GCGVisuGetPdfReader(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets the max number of decomps to be included in reports
  * @returns max number of decomps */
 GCG_EXPORT
 int GCGreportGetMaxNDecomps(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets what type of decomps to show in reports (where 0 corresponds to 'show all')
  * @returns type of decomps */
 GCG_EXPORT
 GCG_DECTYPE GCGreportGetDecompTypeToShow(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets whether a titlepage should be included in reports
  * @returns true iff title page should be generated */
 GCG_EXPORT
 SCIP_Bool GCGreportGetShowTitlepage(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets whether a table of contents should be included in reports
  * @returns true iff table of contents should be generated */
 GCG_EXPORT
 SCIP_Bool GCGreportGetShowToc(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** gets whether statistics should be included for each decomp in reports
  * @returns true iff statistics for each decomp should be generated */
 GCG_EXPORT
 SCIP_Bool GCGreportGetShowStatistics(
-   SCIP* scip  /**< SCIP data structure */
+   GCG*  gcg   /**< GCG data structure */
    );
 
 /** frees all visualization parameters
@@ -293,7 +291,7 @@ SCIP_Bool GCGreportGetShowStatistics(
  */
 GCG_EXPORT
 void GCGVisuFreeParams(
-   SCIP* scip,                /**< SCIP data structure */
+   GCG*  gcg,                 /**< GCG data structure */
    GCG_PARAMDATA* paramdata   /**< input empty paramdata, oputput new set of param data */
    );
 

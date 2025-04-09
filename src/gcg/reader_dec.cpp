@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -46,16 +47,16 @@
 #endif
 #include <ctype.h>
 
-#include "reader_dec.h"
-#include "scip_misc.h"
-#include "pub_gcgvar.h"
+#include "gcg/reader_dec.h"
+#include "gcg/scip_misc.h"
+#include "gcg/pub_gcgvar.h"
 
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "pub_decomp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/pub_decomp.h"
 
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 
 #define READER_NAME             "decreader"
 #define READER_DESC             "file reader for blocks in dec format"
@@ -107,8 +108,9 @@ typedef struct DecInput DECINPUT;
 /** data for dec reader */
 struct SCIP_ReaderData
 {
-
+   GCG* gcg;                                 /**< GCG data structure */
 };
+
 static const int NOVALUE = -1;
 static const int LINKINGVALUE = -2;
 static const char delimchars[] = " \f\n\r\t\v";
@@ -1012,7 +1014,7 @@ SCIP_RETCODE readDECFile(
       assert(decinput->haspresolvesection);
    }
 
-   decinput->partialdec = new gcg::PARTIALDECOMP(scip, !decinput->presolved);
+   decinput->partialdec = new gcg::PARTIALDECOMP(readerdata->gcg, !decinput->presolved);
 
    while( decinput->section != DEC_END && !hasError(decinput) )
    {
@@ -1074,11 +1076,6 @@ SCIP_RETCODE readDECFile(
       }
    }
 
-   decinput->partialdec->prepare();
-
-   if( !decinput->partialdec->isComplete() && !decinput->incomplete )
-      decinput->partialdec->setUsergiven(gcg::USERGIVEN::COMPLETED_CONSTOMASTER);
-
    if( decinput->haserror)
    {
       SCIPinfoMessage(scip, NULL, "error occurred while reading dec file");
@@ -1086,16 +1083,10 @@ SCIP_RETCODE readDECFile(
    }
    else
    {
+      if( !decinput->incomplete )
+         decinput->partialdec->setUsergiven(gcg::USERGIVEN::COMPLETED_CONSTOMASTER);
       SCIPinfoMessage(scip, NULL, "just read dec file:\n");
-      decinput->partialdec->sort();
-      /* if the partialdec was to be completed, add a "vanilla" version as well */
-      if( decinput->partialdec->shouldCompletedByConsToMaster() )
-      {
-         gcg::PARTIALDECOMP* partial = new gcg::PARTIALDECOMP(decinput->partialdec);
-         partial->setUsergiven(gcg::USERGIVEN::PARTIAL);
-         GCGconshdlrDecompAddPreexisitingPartialDec(scip, partial);
-      }
-      GCGconshdlrDecompAddPreexisitingPartialDec(scip, decinput->partialdec);
+      GCGconshdlrDecompAddPreexisitingPartialDec(readerdata->gcg, decinput->partialdec, TRUE);
    }
 
    /* close file */
@@ -1317,10 +1308,13 @@ SCIP_DECL_READERREAD(readerReadDec)
 static
 SCIP_DECL_READERWRITE(readerWriteDec)
 {  /*lint --e{715}*/
+   SCIP_READERDATA* readerdata;
    assert(scip != NULL);
    assert(reader != NULL);
 
-   gcg::PARTIALDECOMP* partialdec = GCGgetPartialdecToWrite(scip, transformed);
+   readerdata = SCIPreaderGetData(reader);
+
+   gcg::PARTIALDECOMP* partialdec = GCGgetPartialdecToWrite(readerdata->gcg, transformed);
 
    if(partialdec == NULL) {
       SCIPwarningMessage(scip, "There is no writable partialdec!\n");
@@ -1338,16 +1332,19 @@ SCIP_DECL_READERWRITE(readerWriteDec)
 
 /** includes the dec file reader in SCIP */
 SCIP_RETCODE GCGincludeReaderDec(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_READERDATA* readerdata = NULL;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    /* create dec reader data */
-   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &readerdata) );
+   readerdata->gcg = gcg;
 
    /* include dec reader */
-   SCIP_CALL(SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
+   SCIP_CALL(SCIPincludeReader(origprob, READER_NAME, READER_DESC, READER_EXTENSION, NULL,
            readerFreeDec, readerReadDec, readerWriteDec, readerdata));
 
    return SCIP_OKAY;

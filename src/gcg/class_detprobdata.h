@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -52,12 +53,12 @@ using std::tr1::unordered_map;
 #include <functional>
 #include <string>
 #include <utility>
-#include "gcg.h"
+#include "gcg/gcg.h"
 
-#include "def.h"
-#include "class_partialdecomp.h"
-#include "class_conspartition.h"
-#include "class_varpartition.h"
+
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_conspartition.h"
+#include "gcg/class_varpartition.h"
 
 /** constraint type */
 enum SCIP_Constype_orig
@@ -109,6 +110,7 @@ class DETPROBDATA
 { /*lint -esym(1712,DETPROBDATA)*/
 
 private:
+   GCG* gcg;                                             /**< GCG data structure */
    SCIP* scip;                                           /**< SCIP data structure */
    std::vector<PARTIALDECOMP*> openpartialdecs;          /**< vector of open partialdecs */
    std::vector<PARTIALDECOMP*> finishedpartialdecs;      /**< vector of finished partialdecs */
@@ -176,7 +178,8 @@ private:
        std::vector<int>& rowthistoother,   /** constraint index mapping new to old detprobdata */
        std::vector<int>& colothertothis,   /** variable index mapping from old to new detprobdata */
        std::vector<int>& colthistoother,   /** variable index mapping from new to old detprobdata */
-       std::vector<PARTIALDECOMP*>& translatedpartialdecs   /**< will contain translated partialdecs */
+       std::vector<PARTIALDECOMP*>& translatedpartialdecs,   /**< will contain translated partialdecs */
+       SCIP_Bool translatesymmetry  /**< translate symmetry information (the old/original information must be valid for each translated partialdec!) */
        );
 
 public:
@@ -188,7 +191,7 @@ public:
     */
    GCG_EXPORT
    DETPROBDATA(
-      SCIP* scip,
+      GCG* gcgstruct,
       SCIP_Bool _originalProblem
       );
 
@@ -213,7 +216,7 @@ public:
    void addCandidatesNBlocksNVotes(
       int candidate, /**< candidate for block size */
       int nvotes     /**< number of votes this candidates will get */
-   );
+      );
 
    /**
     * @brief adds a partialdec to ancestor partialdecs
@@ -346,6 +349,13 @@ public:
       );
 
    /**
+    * @brief returns the corresponding gcg data structure
+    * @return the corresponding gcg data structure
+    */
+   GCG_EXPORT
+   GCG* getGcg();
+
+   /**
     * @brief determines all partialdecs from current (open) partialdec data structure
     * @returns  all partialdecs in current (open) partialdec data structure
     */
@@ -386,7 +396,7 @@ public:
    GCG_EXPORT
    int getIndexForCons(
       const char* consname
-   );
+      );
 
    /**
     * @brief returns the variable index related to a SCIP variable
@@ -406,7 +416,7 @@ public:
    GCG_EXPORT
    int getIndexForVar(
       const char* varname
-   );
+      );
 
    /**
     * @brief returns size of ancestor partialdec data structure
@@ -596,8 +606,8 @@ public:
     */
    GCG_EXPORT
    bool isConsCardinalityCons(
-         int  consindexd
-         );
+      int  consindexd
+      );
 
    /**
     * @brief determines whether or not the constraint-constraint adjacency data structure is initilized
@@ -633,9 +643,8 @@ public:
     */
    GCG_EXPORT
    SCIP_Bool isFiniteNonnegativeIntegral(
-      SCIP*                 scip,               /**< SCIP data structure */
       SCIP_Real             x                   /**< value */
-   );
+      );
 
    /**
     * @brief check if partialdec is a duplicate of an existing finished partialdec
@@ -659,10 +668,9 @@ public:
    */
    GCG_EXPORT
    SCIP_Bool isRangedRow(
-      SCIP*                 scip,   /**< SCIP data structure */
       SCIP_Real             lhs,    /**< left hand side */
       SCIP_Real             rhs     /**< right hand side */
-   );
+      );
 
    /**
     * @brief check if partialdec is a duplicate of any given partialdecs
@@ -676,7 +684,7 @@ public:
       PARTIALDECOMP* comppartialdec,
       std::vector<PARTIALDECOMP*> const & partialdecs,
       bool sort
-   );
+      );
 
    /**
     * @brief output method for json file writer to write block candidate information
@@ -685,9 +693,8 @@ public:
     */
    GCG_EXPORT
    void printBlockcandidateInformation(
-    SCIP*                 scip,               /**< SCIP data structure */
-    FILE*                 file                /**< output file or NULL for standard output */
-   );
+      FILE*                 file                 /**< output file or NULL for standard output */
+      );
 
    /**
     * @brief output method for json file writer to write partition candidate information
@@ -695,8 +702,8 @@ public:
     */
    GCG_EXPORT
    void printPartitionInformation(
-    FILE*                 file                /**< output file or NULL for standard output */
-   );
+      FILE*                 file                /**< output file or NULL for standard output */
+      );
 
    /**
     * @brief sorts partialdecs in finished partialdecs data structure according to the current scoretype
@@ -711,7 +718,8 @@ public:
    GCG_EXPORT
    std::vector<PARTIALDECOMP*> translatePartialdecs(
       DETPROBDATA* otherdata,                       /**< old detprobdata */
-      std::vector<PARTIALDECOMP*> otherpartialdecs  /**< partialdecs to be translated */
+      std::vector<PARTIALDECOMP*> otherpartialdecs, /**< partialdecs to be translated */
+      SCIP_Bool translateSymmetry                   /**< translate symmetry information? */
       );
 
    /**
@@ -720,8 +728,9 @@ public:
     */
    GCG_EXPORT
    std::vector<PARTIALDECOMP*> translatePartialdecs(
-      DETPROBDATA* otherdata                        /**< old detprobdata */
-   );
+      DETPROBDATA* otherdata,                       /**< old detprobdata */
+      SCIP_Bool translateSymmetry                   /**< translate symmetry information? */
+      );
 
 
 };

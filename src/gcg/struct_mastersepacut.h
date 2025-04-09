@@ -38,10 +38,9 @@
 
 #include <scip/def.h>
 
-#include "mastercutdata.h"
-#include "type_mastersepacut.h"
-#include "type_varhistory.h"
-#include "type_sepagcg.h"
+#include "gcg/type_mastersepacut.h"
+#include "gcg/type_gcgvarhistory.h"
+#include "gcg/type_sepagcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,7 +70,7 @@ struct GCG_SeparatorMasterCut
 {
    GCG_SEPA*                        sepa;                   /**< GCG Master Separator which generated the mastercut */
    GCG_SEPARATORMASTERCUTTYPE       type;                   /**< type of mastercut */
-   GCG_MASTERCUTDATA*               mastercutdata;          /**< mastercut and pricing modifications */
+   GCG_EXTENDEDMASTERCONSDATA*               mastercutdata;          /**< mastercut and pricing modifications */
    GCG_VARHISTORY*                  knownvarhistory;        /**< pointer to the history of priced variables */
    GCG_SEPARATORMASTERCUTDATA*      data;                   /**< additional data helpful to compute coefficients */
    int                              nuses;                  /**< number of times this separator mastercut is referenced */

@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -38,26 +39,27 @@
 #include "scip/type_retcode.h"
 #include "scip/type_scip.h"
 #include "scip/type_result.h"
-#include "type_classifier.h"
+#include "gcg/type_classifier.h"
+#include "gcg/type_gcg.h"
 
 typedef struct GCG_VarClassifier GCG_VARCLASSIFIER;
 
 /** destructor of classifier to free classifier data (called when GCG is exiting)
  *
  *  input:
- *  - scip            : SCIP main data structure
+ *  - gcg             : GCG data structure
  *  - classifier      : classifier data structure
  */
-#define GCG_DECL_FREEVARCLASSIFIER(x) SCIP_RETCODE x (SCIP* scip, GCG_VARCLASSIFIER* classifier)
+#define GCG_DECL_FREEVARCLASSIFIER(x) SCIP_RETCODE x (GCG* gcg, GCG_VARCLASSIFIER* classifier)
 
 /**
  * Tries to classify variables with data of the according detprobdata and store the classification in the detprobdata
  *
  * input:
- *  - scip                 : SCIP data structure
+ *  - gcg                  : GCG data structure
  *  - classifier           : classifier data structure
  *  - transformed          : should use data from transformed detprobdata or not
  */
-#define GCG_DECL_VARCLASSIFY(x) SCIP_RETCODE x (SCIP* scip, GCG_VARCLASSIFIER* varclassifier, SCIP_Bool transformed)
+#define GCG_DECL_VARCLASSIFY(x) SCIP_RETCODE x (GCG* gcg, GCG_VARCLASSIFIER* varclassifier, SCIP_Bool transformed)
 
 #endif //GCG_TYPE_VARCLASSIFIER_H__

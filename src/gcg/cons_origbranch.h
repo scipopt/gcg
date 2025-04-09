@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -37,8 +38,8 @@
 #define GCG_CONS_ORIGBRANCH_H__
 
 #include "scip/scip.h"
-#include "type_branchgcg.h"
-#include "gcg.h"
+#include "gcg/type_branchgcg.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,14 +47,14 @@ extern "C" {
 
 /** creates the handler for origbranch constraints and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeConshdlrOrigbranch(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeConshdlrOrigbranch(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** creates and captures a origbranch constraint */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateConsOrigbranch(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_CONS**           cons,               /**< pointer to hold the created constraint */
    const char*           name,               /**< name of constraint */
    SCIP_NODE*            node,               /**< the node to which this origbranch constraint belongs */
@@ -66,18 +67,18 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
 /** returns the branch orig constraint of the current node, only needs the pointer to scip */
 GCG_EXPORT
 SCIP_CONS* GCGconsOrigbranchGetActiveCons(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** returns the stack and the number of elements on it */
 GCG_EXPORT
 void GCGconsOrigbranchGetStack(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_CONS***          stack,              /**< return value: pointer to the stack */
    int*                  nstackelements      /**< return value: pointer to int, for number of elements on the stack */
    );
 
-/** set the branching data for a given origbranch constraint */
+/** sets the branching data for a given origbranch constraint */
 GCG_EXPORT
 void GCGconsOrigbranchSetBranchdata(
    SCIP_CONS*            cons,               /**< origbranch constraint for which the branching data is requested */
@@ -150,13 +151,13 @@ SCIP_CONS* GCGconsOrigbranchGetMastercons(
 /** adds initial constraint to root node */
 GCG_EXPORT
 SCIP_RETCODE GCGconsOrigbranchAddRootCons(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** checks the consistency of the origbranch constraints in the problem */
 GCG_EXPORT
 void GCGconsOrigbranchCheckConsistency(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 #ifdef __cplusplus

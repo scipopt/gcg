@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -41,12 +42,12 @@
 #endif
 #include <ctype.h>
 
-#include "reader_cls.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "class_detprobdata.h"
-#include "class_conspartition.h"
-#include "class_varpartition.h"
+#include "gcg/reader_cls.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/class_detprobdata.h"
+#include "gcg/class_conspartition.h"
+#include "gcg/class_varpartition.h"
 
 
 #define READER_NAME             "clsreader"
@@ -60,9 +61,10 @@ struct SCIP_ConshdlrData
 
 
 
-/** data for dec reader */
+/** data for cls reader */
 struct SCIP_ReaderData
 {
+   GCG* gcg;
    SCIP_Bool usetransform;
 };
 
@@ -72,15 +74,19 @@ struct SCIP_ReaderData
 
 
 /** write classification data */
-SCIP_RETCODE GCGwriteCls(
-   SCIP*                 scip,               /**< SCIP data structure */
+static
+SCIP_RETCODE writeCls(
+   GCG*                  gcg,                /**< GCG data structure */
    FILE*                 file                /**< File pointer to write to */
    )
 {
+   SCIP* scip;
    SCIP_Bool transformed;
    gcg::DETPROBDATA* detprobdata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
+
+   scip = GCGgetOrigprob(gcg);
 
    SCIP_CALL( SCIPgetBoolParam(scip,
          "reading/clsreader/usetransform", &transformed));
@@ -89,14 +95,14 @@ SCIP_RETCODE GCGwriteCls(
       transformed = FALSE;
 
    if( !transformed )
-      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataOrig(gcg);
    else
-      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(scip);
+      detprobdata = GCGconshdlrDecompGetDetprobdataPresolved(gcg);
 
    if( detprobdata->conspartitioncollection.empty() )
    {
-      GCGconshdlrDecompClassify(scip, !detprobdata->isAssignedToOrigProb());
-      GCGconshdlrDecompCalcCandidatesNBlocks(scip, !detprobdata->isAssignedToOrigProb());
+      GCGconshdlrDecompClassify(gcg, !detprobdata->isAssignedToOrigProb());
+      GCGconshdlrDecompCalcCandidatesNBlocks(gcg, !detprobdata->isAssignedToOrigProb());
    }
 
    SCIPinfoMessage(scip, file, "# a1) <number of partitions>\n" );
@@ -205,7 +211,11 @@ static
 SCIP_DECL_READERWRITE(readerWriteCls)
 {
    /*lint --e{715}*/
-   SCIP_CALL( GCGwriteCls( scip, file ) );
+   SCIP_READERDATA* readerdata;
+
+   readerdata = SCIPreaderGetData( reader );
+   assert( readerdata != NULL );
+   SCIP_CALL( writeCls( readerdata->gcg, file ) );
 
    *result = SCIP_SUCCESS;
    return SCIP_OKAY;
@@ -213,20 +223,23 @@ SCIP_DECL_READERWRITE(readerWriteCls)
 
 
 /** includes the cls reader into SCIP */
-SCIP_RETCODE SCIPincludeReaderCls(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeReaderCls(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_READERDATA* readerdata = NULL;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    /* create cls reader data */
-   SCIP_CALL( SCIPallocMemory(scip, &readerdata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &readerdata) );
+   readerdata->gcg = gcg;
 
    /* include cls reader */
-   SCIP_CALL( SCIPincludeReader(scip, READER_NAME, READER_DESC, READER_EXTENSION,
+   SCIP_CALL( SCIPincludeReader(origprob, READER_NAME, READER_DESC, READER_EXTENSION,
       readerCopyCls, readerFreeCls, readerReadCls, readerWriteCls, readerdata) );
 
-   SCIP_CALL( SCIPaddBoolParam(scip,
+   SCIP_CALL( SCIPaddBoolParam(origprob,
       "reading/clsreader/usetransform",
       "should the transformed (and possibly presolved problem) be use or original one",
       &readerdata->usetransform, FALSE, DEFAULT_USETRANSFORM, NULL, NULL) );

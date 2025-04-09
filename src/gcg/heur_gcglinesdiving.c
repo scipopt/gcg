@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -36,9 +37,10 @@
 #include <assert.h>
 #include <string.h>
 
-#include "heur_gcglinesdiving.h"
-#include "heur_origdiving.h"
-#include "gcg.h"
+#include "gcg/heur_gcglinesdiving.h"
+#include "gcg/heur_origdiving.h"
+#include "gcg/gcg.h"
+#include "gcg/pricer_gcg.h"
 
 
 #define HEUR_NAME             "gcglinesdiving"
@@ -71,7 +73,7 @@ struct GCG_DivingData
 /** get relaxation solution of root node (in original variables) */
 static
 SCIP_RETCODE getRootRelaxSol(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP_SOL**            rootsol             /**< pointer to store root relaxation solution */
    )
 {
@@ -82,7 +84,7 @@ SCIP_RETCODE getRootRelaxSol(
    int i;
 
    /* get master problem */
-   masterprob = GCGgetMasterprob(scip);
+   masterprob = GCGgetMasterprob(gcg);
    assert(masterprob != NULL);
 
    /* allocate memory for master root LP solution */
@@ -98,7 +100,7 @@ SCIP_RETCODE getRootRelaxSol(
       SCIP_CALL( SCIPsetSolVal(masterprob, masterrootsol, mastervars[i], SCIPvarGetRootSol(mastervars[i])) );
 
    /* calculate original root LP solution */
-   SCIP_CALL( GCGtransformMastersolToOrigsol(scip, masterrootsol, rootsol) );
+   SCIP_CALL( GCGtransformMastersolToOrigsol(gcg, masterrootsol, rootsol, TRUE, NULL) );
 
    /* free memory */
    SCIP_CALL( SCIPfreeSol(masterprob, &masterrootsol) );
@@ -118,12 +120,11 @@ GCG_DECL_DIVINGFREE(heurFreeGcglinesdiving) /*lint --e{715}*/
    GCG_DIVINGDATA* divingdata;
 
    assert(heur != NULL);
-   assert(scip != NULL);
 
    /* free diving rule specific data */
    divingdata = GCGheurGetDivingDataOrig(heur);
    assert(divingdata != NULL);
-   SCIPfreeMemory(scip, &divingdata);
+   SCIPfreeMemory(GCGgetOrigprob(gcg), &divingdata);
    GCGheurSetDivingDataOrig(heur, NULL);
 
    return SCIP_OKAY;
@@ -155,6 +156,7 @@ static
 GCG_DECL_DIVINGEXIT(heurExitGcglinesdiving) /*lint --e{715}*/
 {  /*lint --e{715}*/
    GCG_DIVINGDATA* divingdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    assert(heur != NULL);
 
@@ -166,7 +168,7 @@ GCG_DECL_DIVINGEXIT(heurExitGcglinesdiving) /*lint --e{715}*/
 
    /* free root relaxation solution */
    if( divingdata->rootsol != NULL )
-      SCIP_CALL( SCIPfreeSol(scip, &divingdata->rootsol) );
+      SCIP_CALL( SCIPfreeSol(origprob, &divingdata->rootsol) );
 
    return SCIP_OKAY;
 }
@@ -188,7 +190,7 @@ GCG_DECL_DIVINGINITEXEC(heurInitexecGcglinesdiving) /*lint --e{715}*/
    if( divingdata->firstrun )
    {
       assert(divingdata->rootsol == NULL);
-      SCIP_CALL( getRootRelaxSol(scip, &divingdata->rootsol) );
+      SCIP_CALL( getRootRelaxSol(gcg, &divingdata->rootsol) );
       assert(divingdata->rootsol != NULL);
       divingdata->firstrun = FALSE;
    }
@@ -212,9 +214,10 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcglinesdiving) /*lint --e{715}*/
    int nlpcands;
    SCIP_Real bestdistquot;
    int c;
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* check preconditions */
-   assert(scip != NULL);
+   assert(origprob != NULL);
    assert(heur != NULL);
    assert(bestcand != NULL);
    assert(bestcandmayround != NULL);
@@ -226,12 +229,12 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcglinesdiving) /*lint --e{715}*/
    assert(divingdata->rootsol != NULL);
 
    /* get fractional variables that should be integral */
-   SCIP_CALL( SCIPgetExternBranchCands(scip, &lpcands, &lpcandssol, NULL, &nlpcands, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetExternBranchCands(origprob, &lpcands, &lpcandssol, NULL, &nlpcands, NULL, NULL, NULL, NULL) );
    assert(lpcands != NULL);
    assert(lpcandssol != NULL);
 
    *bestcandmayround = TRUE;
-   bestdistquot = SCIPinfinity(scip);
+   bestdistquot = SCIPinfinity(origprob);
 
    /* get best candidate */
    for( c = 0; c < nlpcands; ++c )
@@ -254,22 +257,22 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcglinesdiving) /*lint --e{715}*/
           continue;
 
       solval = lpcandssol[c];
-      rootsolval = SCIPgetSolVal(scip, divingdata->rootsol, var);
+      rootsolval = SCIPgetSolVal(origprob, divingdata->rootsol, var);
 
       /* calculate distance to integral value divided by distance to root solution */
-      if( SCIPisLT(scip, solval, rootsolval) )
+      if( SCIPisLT(origprob, solval, rootsolval) )
       {
          roundup = FALSE;
-         distquot = (solval - SCIPfeasFloor(scip, solval)) / (rootsolval - solval);
+         distquot = (solval - SCIPfeasFloor(origprob, solval)) / (rootsolval - solval);
 
          /* avoid roundable candidates */
          if( SCIPvarMayRoundDown(var) )
             distquot *= 1000.0;
       }
-      else if( SCIPisGT(scip, solval, rootsolval) )
+      else if( SCIPisGT(origprob, solval, rootsolval) )
       {
          roundup = TRUE;
-         distquot = (SCIPfeasCeil(scip, solval) - solval) / (solval - rootsolval);
+         distquot = (SCIPfeasCeil(origprob, solval) - solval) / (solval - rootsolval);
 
          /* avoid roundable candidates */
          if( SCIPvarMayRoundUp(var) )
@@ -278,7 +281,7 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcglinesdiving) /*lint --e{715}*/
       else
       {
          roundup = FALSE;
-         distquot = SCIPinfinity(scip);
+         distquot = SCIPinfinity(origprob);
       }
 
       /* check, if candidate is new best candidate */
@@ -301,17 +304,17 @@ GCG_DECL_DIVINGSELECTVAR(heurSelectVarGcglinesdiving) /*lint --e{715}*/
 
 /** creates the gcglinesdiving heuristic and includes it in GCG */
 SCIP_RETCODE GCGincludeHeurGcglinesdiving(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_HEUR* heur;
    GCG_DIVINGDATA* divingdata;
 
    /* create gcglinesdiving primal heuristic data */
-   SCIP_CALL( SCIPallocMemory(scip, &divingdata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &divingdata) );
 
    /* include diving heuristic */
-   SCIP_CALL( GCGincludeDivingHeurOrig(scip, &heur,
+   SCIP_CALL( GCGincludeDivingHeurOrig(gcg, &heur,
          HEUR_NAME, HEUR_DESC, HEUR_DISPCHAR, HEUR_PRIORITY, HEUR_FREQ, HEUR_FREQOFS,
          HEUR_MAXDEPTH, heurFreeGcglinesdiving, heurInitGcglinesdiving, heurExitGcglinesdiving, NULL, NULL,
          heurInitexecGcglinesdiving, NULL, heurSelectVarGcglinesdiving, divingdata) );

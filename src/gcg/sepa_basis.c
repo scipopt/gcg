@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -40,12 +41,12 @@
 
 #include "scip/scip.h"
 #include "scip/scipdefplugins.h"
-#include "sepa_basis.h"
-#include "sepa_original.h"
-#include "gcg.h"
-#include "relax_gcg.h"
-#include "pricer_gcg.h"
-#include "pub_gcgvar.h"
+#include "gcg/sepa_basis.h"
+#include "gcg/sepa_original.h"
+#include "gcg/gcg.h"
+#include "gcg/relax_gcg.h"
+#include "gcg/pricer_gcg.h"
+#include "gcg/pub_gcgvar.h"
 
 
 
@@ -73,6 +74,7 @@
 /** separator data */
 struct SCIP_SepaData
 {
+   GCG*                  gcg;                /**< GCG data structure */
    SCIP_ROW**            mastercuts;         /**< cuts in the master problem */
    SCIP_ROW**            origcuts;           /**< cuts in the original problem */
    int                   norigcuts;          /**< number of cuts in the original problem */
@@ -709,7 +711,7 @@ SCIP_RETCODE getEqualityRankGsl(
  *  (stating that the reduced cost are non-negative) */
 static
 SCIP_RETCODE addPPObjConss(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    SCIP_SEPA*           sepa,               /**< separator basis */
    int                  ppnumber,           /**< number of pricing problem */
    SCIP_Real            dualsolconv,        /**< dual solution corresponding to convexity constraint */
@@ -718,7 +720,7 @@ SCIP_RETCODE addPPObjConss(
 )
 {
    SCIP_SEPADATA* sepadata;
-
+   SCIP* origprob;
    SCIP* pricingscip;
 
    SCIP_VAR** pricingvars;
@@ -736,25 +738,25 @@ SCIP_RETCODE addPPObjConss(
    SCIP_Real rhs;
 
    sepadata = SCIPsepaGetData(sepa);
-
+   origprob = GCGgetOrigprob(gcg);
    nvars = 0;
-   pricingscip = GCGgetPricingprob(scip, ppnumber);
+   pricingscip = GCGgetPricingprob(gcg, ppnumber);
    pricingvars = SCIPgetOrigVars(pricingscip);
    npricingvars = SCIPgetNOrigVars(pricingscip);
 
-   if( !GCGisPricingprobRelevant(scip, ppnumber) || pricingscip == NULL )
+   if( !GCGisPricingprobRelevant(gcg, ppnumber) || pricingscip == NULL )
       return SCIP_OKAY;
 
    lhs = dualsolconv;
-   rhs = SCIPinfinity(scip);
+   rhs = SCIPinfinity(origprob);
 
-   for( k = 0; k < GCGgetNIdenticalBlocks(scip, ppnumber); ++k )
+   for( k = 0; k < GCGgetNIdenticalBlocks(gcg, ppnumber); ++k )
    {
       SCIP_ROW* origcut;
 
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "newconstraint_%d_%d_%d", SCIPsepaGetNCalls(sepa), ppnumber, k);
 
-      SCIP_CALL( SCIPcreateEmptyRowUnspec(scip, &origcut, name, lhs, rhs, FALSE, FALSE, TRUE) );
+      SCIP_CALL( SCIPcreateEmptyRowUnspec(origprob, &origcut, name, lhs, rhs, FALSE, FALSE, TRUE) );
 
       nvars = 0;
 
@@ -762,11 +764,11 @@ SCIP_RETCODE addPPObjConss(
       {
          assert(GCGvarIsPricing(pricingvars[j]));
 
-         if( !SCIPisEQ(scip, SCIPvarGetObj(pricingvars[j]), 0.0) )
+         if( !SCIPisEQ(origprob, SCIPvarGetObj(pricingvars[j]), 0.0) )
          {
             var = GCGpricingVarGetOrigvars(pricingvars[j])[k];
             assert(var != NULL);
-            SCIP_CALL( SCIPaddVarToRow(scip, origcut, var, SCIPvarGetObj(pricingvars[j])) );
+            SCIP_CALL( SCIPaddVarToRow(origprob, origcut, var, SCIPvarGetObj(pricingvars[j])) );
             ++nvars;
          }
       }
@@ -775,29 +777,29 @@ SCIP_RETCODE addPPObjConss(
       {
          if( newcuts )
          {
-            SCIP_CALL( ensureSizeNewCuts(scip, sepadata, sepadata->nnewcuts + 1) );
+            SCIP_CALL( ensureSizeNewCuts(origprob, sepadata, sepadata->nnewcuts + 1) );
 
             sepadata->newcuts[sepadata->nnewcuts] = origcut;
-            SCIP_CALL( SCIPcaptureRow(scip, sepadata->newcuts[sepadata->nnewcuts]) );
+            SCIP_CALL( SCIPcaptureRow(origprob, sepadata->newcuts[sepadata->nnewcuts]) );
             ++(sepadata->nnewcuts);
 
             SCIPdebugMessage("cut added to new cuts in relaxdata\n");
          }
          else
          {
-            SCIP_CALL( SCIPaddPoolCut(scip, origcut) );
+            SCIP_CALL( SCIPaddPoolCut(origprob, origcut) );
             SCIPdebugMessage("cut added to orig cut pool\n");
          }
 
          if( probing )
          {
-            SCIP_CALL( SCIPaddRowProbing(scip, origcut) );
+            SCIP_CALL( SCIPaddRowProbing(origprob, origcut) );
             SCIPdebugMessage("cut added to probing\n");
          }
 
 
       }
-      SCIP_CALL( SCIPreleaseRow(scip, &origcut) );
+      SCIP_CALL( SCIPreleaseRow(origprob, &origcut) );
    }
 
    return SCIP_OKAY;
@@ -842,12 +844,12 @@ SCIP_DECL_SEPAINIT(sepaInitBasis)
    SCIP_Bool enableobj;
 
    assert(scip != NULL);
-   SCIPinfoMessage(scip, NULL, "sepainit\n");
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
+
+   origscip = GCGgetOrigprob(sepadata->gcg);
+   assert(origscip != NULL);
 
    origvars = SCIPgetVars(origscip);
    norigvars = SCIPgetNVars(origscip);
@@ -907,7 +909,7 @@ SCIP_DECL_SEPAEXIT(sepaExitBasis)
    enableobj = sepadata->enableobj;
    assert(sepadata->nmastercuts == sepadata->norigcuts);
 
-   origscip = GCGmasterGetOrigprob(scip);
+   origscip = GCGgetOrigprob(sepadata->gcg);
    assert(origscip != NULL);
 
    for( i = 0; i < sepadata->norigcuts; i++ )
@@ -957,7 +959,7 @@ SCIP_DECL_SEPAEXITSOL(sepaExitsolBasis)
    assert(sepadata != NULL);
    assert(sepadata->nmastercuts == sepadata->norigcuts);
 
-   assert(GCGmasterGetOrigprob(scip) != NULL);
+   assert(GCGgetOrigprob(sepadata->gcg) != NULL);
 
    for( i = 0; i < sepadata->nmastercuts; i++ )
    {
@@ -1053,6 +1055,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
    SCIP* origscip;
    SCIP_SEPADATA* sepadata;
+   GCG* gcg;
 
    SCIP_ROW** cuts;
    SCIP_ROW* mastercut;
@@ -1112,11 +1115,12 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    assert(scip != NULL);
    assert(result != NULL);
 
-   origscip = GCGmasterGetOrigprob(scip);
-   assert(origscip != NULL);
-
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
+   gcg = sepadata->gcg;
+
+   origscip = GCGgetOrigprob(sepadata->gcg);
+   assert(origscip != NULL);
 
    SCIPdebugMessage("calling sepaExeclpBasis\n");
 
@@ -1145,7 +1149,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    }
 
    /* ensure pricing problems were not aggregated */
-   if( GCGgetNRelPricingprobs(origscip) < GCGgetNPricingprobs(origscip) )
+   if( GCGgetNRelPricingprobs(gcg) < GCGgetNPricingprobs(gcg) )
    {
       SCIPdebugMessage("aggregated pricing problems, do no separation!\n");
       *result = SCIP_DIDNOTRUN;
@@ -1153,10 +1157,10 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    }
 
    /* ensure to separate current sol */
-   SCIP_CALL( GCGrelaxUpdateCurrentSol(origscip) );
+   SCIP_CALL( GCGrelaxUpdateCurrentSol(gcg) );
 
    /* do not separate if current solution is feasible */
-   if( GCGrelaxIsOrigSolFeasible(origscip) )
+   if( GCGrelaxIsOrigSolFeasible(gcg) )
    {
       SCIPdebugMessage("Current solution is feasible, no separation necessary!\n");
       *result = SCIP_DIDNOTRUN;
@@ -1180,7 +1184,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
       maxrounds = INT_MAX;
 
    /* get current original solution */
-   origsol = GCGrelaxGetCurrentOrigSol(origscip);
+   origsol = GCGrelaxGetCurrentOrigSol(gcg);
 
    /* get trans objective value */
    obj = SCIPgetSolTransObj(origscip, origsol);
@@ -1205,10 +1209,10 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
    SCIP_CALL( SCIPconstructLP(origscip, &cutoff) );
 
    /* add origcuts to probing lp */
-   for( i = 0; i < GCGsepaGetNOriginalSepaCuts(scip); ++i )
+   for( i = 0; i < GCGsepaGetNOriginalSepaCuts(gcg); ++i )
    {
-      if( SCIProwGetLPPos(GCGsepaGetOriginalSepaOrigcuts(scip)[i]) == -1 )
-         SCIP_CALL( SCIPaddRowProbing(origscip, GCGsepaGetOriginalSepaOrigcuts(scip)[i]) );
+      if( SCIProwGetLPPos(GCGsepaGetOriginalSepaOrigcuts(gcg)[i]) == -1 )
+         SCIP_CALL( SCIPaddRowProbing(origscip, GCGsepaGetOriginalSepaOrigcuts(gcg)[i]) );
    }
 
    /* add new cuts which did not cut off master sol to probing lp */
@@ -1260,12 +1264,12 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
 
          SCIPdebugMessage("add reduced cost cut for relevant pricing problems\n");
 
-         SCIP_CALL( SCIPallocBufferArray(scip, &dualsolconv, GCGgetNPricingprobs(origscip)) );
-         SCIP_CALL( GCGsetPricingObjs(scip, dualsolconv) );
+         SCIP_CALL( SCIPallocBufferArray(scip, &dualsolconv, GCGgetNPricingprobs(gcg)) );
+         SCIP_CALL( GCGsetPricingObjs(gcg, dualsolconv) );
 
-         for( i = 0; i < GCGgetNPricingprobs(origscip); ++i )
+         for( i = 0; i < GCGgetNPricingprobs(gcg); ++i )
          {
-            SCIP_CALL( addPPObjConss(origscip, sepa, i, dualsolconv[i], FALSE, TRUE) );
+            SCIP_CALL( addPPObjConss(sepadata->gcg, sepa, i, dualsolconv[i], FALSE, TRUE) );
          }
 
          SCIPfreeBufferArray(scip, &dualsolconv);
@@ -1462,7 +1466,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          colvarused = FALSE;
          origcut = cuts[i];
 
-         if( GCGsepaOriginalSepaOrigcutExists(scip, origcut) )
+         if( GCGsepaOriginalSepaOrigcutExists(gcg, origcut) )
             continue;
 
          /* if cut is violated by LP solution, increase nviolatedcuts */
@@ -1512,7 +1516,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          sepadata->norigcuts++;
 
          /* transform the original variables to master variables */
-         shift = GCGtransformOrigvalsToMastervals(origscip, roworigvars, vals, ncols, mastervars, mastervals, nmastervars);
+         shift = GCGtransformOrigvalsToMastervals(sepadata->gcg, roworigvars, vals, ncols, mastervars, mastervals, nmastervars);
 
          /* create new cut in the master problem */
          (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "mc_basis_%s", SCIProwGetName(origcut));
@@ -1531,7 +1535,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
          sepadata->mastercuts[sepadata->nmastercuts] = mastercut;
          SCIP_CALL( SCIPcaptureRow(scip, sepadata->mastercuts[sepadata->nmastercuts]) );
          sepadata->nmastercuts++;
-         SCIP_CALL( GCGsepaAddOriginalSepaCuts(scip, origcut, mastercut) );
+         SCIP_CALL( GCGsepaAddOriginalSepaCuts(gcg, origcut, mastercut) );
 
          SCIP_CALL( SCIPreleaseRow(scip, &mastercut) );
          SCIPfreeBufferArray(scip, &roworigvars);
@@ -1605,15 +1609,18 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpBasis)
  */
 
 /** creates the basis separator and includes it in SCIP */
-SCIP_RETCODE SCIPincludeSepaBasis(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeSepaBasis(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_SEPADATA* sepadata;
+   SCIP* masterprob = GCGgetMasterprob(gcg);
+   SCIP* origprob = GCGgetOrigprob(gcg);
 
    /* create master separator data */
-   SCIP_CALL( SCIPallocBlockMemory(scip, &sepadata) );
+   SCIP_CALL( SCIPallocBlockMemory(masterprob, &sepadata) );
 
+   sepadata->gcg = gcg;
    sepadata->mastercuts = NULL;
    sepadata->origcuts = NULL;
    sepadata->norigcuts = 0;
@@ -1628,68 +1635,68 @@ SCIP_RETCODE SCIPincludeSepaBasis(
    sepadata->sepaidx = 0;
 
    /* include separator */
-   SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
+   SCIP_CALL( SCIPincludeSepa(masterprob, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
          SEPA_USESSUBSCIP, SEPA_DELAY,
          sepaCopyBasis, sepaFreeBasis, sepaInitBasis, sepaExitBasis, sepaInitsolBasis, sepaExitsolBasis, sepaExeclpBasis, sepaExecsolBasis,
          sepadata) );
 
    /* add basis separator parameters */
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enable", "is basis separator enabled?",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "sepa/" SEPA_NAME "/enable", "is basis separator enabled?",
          &(sepadata->enable), FALSE, TRUE, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enableobj", "is objective constraint of separator enabled?",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "sepa/" SEPA_NAME "/enableobj", "is objective constraint of separator enabled?",
          &(sepadata->enableobj), FALSE, FALSE, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enableobjround", "round obj rhs/lhs of obj constraint if obj is int?",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "sepa/" SEPA_NAME "/enableobjround", "round obj rhs/lhs of obj constraint if obj is int?",
          &(sepadata->enableobjround), FALSE, FALSE, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enableppcuts", "add cuts generated during pricing to newconss array?",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "sepa/" SEPA_NAME "/enableppcuts", "add cuts generated during pricing to newconss array?",
          &(sepadata->enableppcuts), FALSE, FALSE, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enableppobjconss", "is objective constraint for redcost of each pp of "
+   SCIP_CALL( SCIPaddBoolParam(origprob, "sepa/" SEPA_NAME "/enableppobjconss", "is objective constraint for redcost of each pp of "
       "separator enabled?", &(sepadata->enableppobjconss), FALSE, FALSE, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enableppobjcg", "is objective constraint for redcost of each pp during "
+   SCIP_CALL( SCIPaddBoolParam(origprob, "sepa/" SEPA_NAME "/enableppobjcg", "is objective constraint for redcost of each pp during "
       "pricing of separator enabled?", &(sepadata->enableppobjcg), FALSE, FALSE, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/genobjconvex", "generated obj convex dynamically",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "sepa/" SEPA_NAME "/genobjconvex", "generated obj convex dynamically",
          &(sepadata->genobjconvex), FALSE, FALSE, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/enableposslack", "should positive slack influence the probing objective "
+   SCIP_CALL( SCIPaddBoolParam(origprob, "sepa/" SEPA_NAME "/enableposslack", "should positive slack influence the probing objective "
       "function?", &(sepadata->enableposslack), FALSE, FALSE, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/posslackexp", "exponent of positive slack usage",
+   SCIP_CALL( SCIPaddIntParam(origprob, "sepa/" SEPA_NAME "/posslackexp", "exponent of positive slack usage",
          &(sepadata->posslackexp), FALSE, 1, 1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/posslackexpgen", "automatically generated exponent?",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "sepa/" SEPA_NAME "/posslackexpgen", "automatically generated exponent?",
             &(sepadata->posslackexpgen), FALSE, FALSE, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/posslackexpgenfactor", "factor for automatically generated exponent",
-            &(sepadata->posslackexpgenfactor), FALSE, 0.1, SCIPepsilon(GCGmasterGetOrigprob(scip)),
-            SCIPinfinity(GCGmasterGetOrigprob(scip)), NULL, NULL) );
+   SCIP_CALL( SCIPaddRealParam(origprob, "sepa/" SEPA_NAME "/posslackexpgenfactor", "factor for automatically generated exponent",
+            &(sepadata->posslackexpgenfactor), FALSE, 0.1, SCIPepsilon(GCGgetOrigprob(gcg)),
+            SCIPinfinity(origprob), NULL, NULL) );
 
-   SCIP_CALL( SCIPaddRealParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/objconvex", "convex combination factor (= 0.0, use original objective; = 1.0, use face objective)",
+   SCIP_CALL( SCIPaddRealParam(origprob, "sepa/" SEPA_NAME "/objconvex", "convex combination factor (= 0.0, use original objective; = 1.0, use face objective)",
          &(sepadata->objconvex), FALSE, 0.0, 0.0, 1.0, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/paramsetting", "parameter returns which parameter setting is used for "
+   SCIP_CALL( SCIPaddIntParam(origprob, "sepa/" SEPA_NAME "/paramsetting", "parameter returns which parameter setting is used for "
       "separation (default = 0, aggressive = 1, fast = 2", &(sepadata->separationsetting), FALSE, 0, 0, 2, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/chgobj", "parameter returns if basis is searched with different objective",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "sepa/" SEPA_NAME "/chgobj", "parameter returns if basis is searched with different objective",
       &(sepadata->chgobj), FALSE, TRUE, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/maxrounds", "parameter returns maximum number of separation rounds in probing LP (-1 if unlimited)",
+   SCIP_CALL( SCIPaddIntParam(origprob, "sepa/" SEPA_NAME "/maxrounds", "parameter returns maximum number of separation rounds in probing LP (-1 if unlimited)",
       &(sepadata->maxrounds), FALSE, -1, -1, INT_MAX , NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/maxroundsroot", "parameter returns maximum number of separation rounds in probing LP in root node (-1 if unlimited)",
+   SCIP_CALL( SCIPaddIntParam(origprob, "sepa/" SEPA_NAME "/maxroundsroot", "parameter returns maximum number of separation rounds in probing LP in root node (-1 if unlimited)",
       &(sepadata->maxroundsroot), FALSE, -1, -1, INT_MAX , NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/mincuts", "parameter returns number of minimum cuts needed to "
+   SCIP_CALL( SCIPaddIntParam(origprob, "sepa/" SEPA_NAME "/mincuts", "parameter returns number of minimum cuts needed to "
       "return *result = SCIP_Separated", &(sepadata->mincuts), FALSE, 50, 1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/chgobjallways", "parameter returns if obj is changed not only in the "
+   SCIP_CALL( SCIPaddBoolParam(origprob, "sepa/" SEPA_NAME "/chgobjallways", "parameter returns if obj is changed not only in the "
       "first round", &(sepadata->chgobjallways), FALSE, FALSE, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddBoolParam(GCGmasterGetOrigprob(scip), "sepa/" SEPA_NAME "/forcecuts", "parameter returns if cuts are forced to enter the LP ",
+   SCIP_CALL( SCIPaddBoolParam(origprob, "sepa/" SEPA_NAME "/forcecuts", "parameter returns if cuts are forced to enter the LP ",
       &(sepadata->forcecuts), FALSE, FALSE, NULL, NULL) );
 
    return SCIP_OKAY;
@@ -1698,15 +1705,15 @@ SCIP_RETCODE SCIPincludeSepaBasis(
 
 /** returns the array of original cuts saved in the separator data */
 SCIP_ROW** GCGsepaBasisGetOrigcuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   sepa = SCIPfindSepa(GCGgetMasterprob(gcg), SEPA_NAME);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
@@ -1717,15 +1724,15 @@ SCIP_ROW** GCGsepaBasisGetOrigcuts(
 
 /** returns the number of original cuts saved in the separator data */
 int GCGsepaBasisGetNOrigcuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   sepa = SCIPfindSepa(GCGgetMasterprob(gcg), SEPA_NAME);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
@@ -1736,15 +1743,15 @@ int GCGsepaBasisGetNOrigcuts(
 
 /** returns the array of master cuts saved in the separator data */
 SCIP_ROW** GCGsepaBasisGetMastercuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   sepa = SCIPfindSepa(GCGgetMasterprob(gcg), SEPA_NAME);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
@@ -1755,15 +1762,15 @@ SCIP_ROW** GCGsepaBasisGetMastercuts(
 
 /** returns the number of master cuts saved in the separator data */
 int GCGsepaBasisGetNMastercuts(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   sepa = SCIPfindSepa(GCGgetMasterprob(gcg), SEPA_NAME);
    assert(sepa != NULL);
 
    sepadata = SCIPsepaGetData(sepa);
@@ -1774,12 +1781,13 @@ int GCGsepaBasisGetNMastercuts(
 
 /** transforms cut in pricing variables to cut in original variables and adds it to newcuts array */
 SCIP_RETCODE GCGsepaBasisAddPricingCut(
-   SCIP*                scip,
+   GCG*                 gcg,
    int                  ppnumber,
    SCIP_ROW*            cut
    )
 {
-   SCIP* origscip;
+   SCIP* masterprob;
+   SCIP* origprob;
    SCIP_SEPA* sepa;
    SCIP_SEPADATA* sepadata;
 
@@ -1795,9 +1803,8 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
 
    char name[SCIP_MAXSTRLEN];
 
-   assert(GCGisMaster(scip));
-
-   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   masterprob = GCGgetMasterprob(gcg);
+   sepa = SCIPfindSepa(masterprob, SEPA_NAME);
 
    if( sepa == NULL )
    {
@@ -1806,8 +1813,9 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
    }
 
    sepadata = SCIPsepaGetData(sepa);
-   origscip = GCGmasterGetOrigprob(scip);
-   pricingprob = GCGgetPricingprob(origscip, ppnumber);
+   origprob = GCGgetOrigprob(gcg);
+   masterprob = GCGgetMasterprob(sepadata->gcg);
+   pricingprob = GCGgetPricingprob(gcg, ppnumber);
 
    if( !sepadata->enableppcuts )
    {
@@ -1825,7 +1833,7 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( SCIPallocBufferArray(scip, &pricingvars, nvars) );
+   SCIP_CALL( SCIPallocBufferArray(masterprob, &pricingvars, nvars) );
 
    for( i = 0; i < nvars; ++i )
    {
@@ -1833,17 +1841,17 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
       assert(pricingvars[i] != NULL);
    }
 
-   for( k = 0; k < GCGgetNIdenticalBlocks(origscip, ppnumber); ++k )
+   for( k = 0; k < GCGgetNIdenticalBlocks(gcg, ppnumber); ++k )
    {
       SCIP_ROW* origcut;
 
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "ppcut_%d_%d_%d", SCIPsepaGetNCalls(sepa), ppnumber, k);
 
-      SCIP_CALL( SCIPcreateEmptyRowUnspec(origscip, &origcut, name,
+      SCIP_CALL( SCIPcreateEmptyRowUnspec(origprob, &origcut, name,
          ( SCIPisInfinity(pricingprob, -SCIProwGetLhs(cut)) ?
-            -SCIPinfinity(origscip) : SCIProwGetLhs(cut) - SCIProwGetConstant(cut)),
+            -SCIPinfinity(origprob) : SCIProwGetLhs(cut) - SCIProwGetConstant(cut)),
          ( SCIPisInfinity(pricingprob, SCIProwGetRhs(cut)) ?
-            SCIPinfinity(origscip) : SCIProwGetRhs(cut) - SCIProwGetConstant(cut)),
+            SCIPinfinity(origprob) : SCIProwGetRhs(cut) - SCIProwGetConstant(cut)),
              FALSE, FALSE, TRUE) );
 
       for( j = 0; j < nvars ; ++j )
@@ -1860,23 +1868,23 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
          var = GCGpricingVarGetOrigvars(pricingvars[j])[k];
          assert(var != NULL);
 
-         SCIP_CALL( SCIPaddVarToRow(origscip, origcut, var, vals[j]) );
+         SCIP_CALL( SCIPaddVarToRow(origprob, origcut, var, vals[j]) );
       }
 
       if( nvars > 0 )
       {
-         SCIP_CALL( ensureSizeNewCuts(scip, sepadata, sepadata->nnewcuts + 1) );
+         SCIP_CALL( ensureSizeNewCuts(masterprob, sepadata, sepadata->nnewcuts + 1) );
 
          sepadata->newcuts[sepadata->nnewcuts] = origcut;
-         SCIP_CALL( SCIPcaptureRow(scip, sepadata->newcuts[sepadata->nnewcuts]) );
+         SCIP_CALL( SCIPcaptureRow(masterprob, sepadata->newcuts[sepadata->nnewcuts]) );
          ++(sepadata->nnewcuts);
 
          SCIPdebugMessage("cut added to orig cut pool\n");
       }
-      SCIP_CALL( SCIPreleaseRow(origscip, &origcut) );
+      SCIP_CALL( SCIPreleaseRow(origprob, &origcut) );
    }
 
-   SCIPfreeBufferArray(scip, &pricingvars);
+   SCIPfreeBufferArray(masterprob, &pricingvars);
 
    return SCIP_OKAY;
 }
@@ -1884,7 +1892,7 @@ SCIP_RETCODE GCGsepaBasisAddPricingCut(
 /** add cuts which are due to the latest objective function of the pricing problems
  *  (reduced cost non-negative) */
 SCIP_RETCODE SCIPsepaBasisAddPPObjConss(
-   SCIP*                scip,               /**< SCIP data structure */
+   GCG*                 gcg,                /**< GCG data structure */
    int                  ppnumber,           /**< number of pricing problem */
    SCIP_Real            dualsolconv,        /**< dual solution corresponding to convexity constraint */
    SCIP_Bool            newcuts             /**< add cut to newcuts in sepadata? (otherwise add it just to the cutpool) */
@@ -1892,9 +1900,7 @@ SCIP_RETCODE SCIPsepaBasisAddPPObjConss(
 {
    SCIP_SEPA* sepa;
 
-   assert(GCGisMaster(scip));
-
-   sepa = SCIPfindSepa(scip, SEPA_NAME);
+   sepa = SCIPfindSepa(GCGgetMasterprob(gcg), SEPA_NAME);
 
    if( sepa == NULL )
    {
@@ -1902,7 +1908,7 @@ SCIP_RETCODE SCIPsepaBasisAddPPObjConss(
       return SCIP_OKAY;
    }
 
-   SCIP_CALL( addPPObjConss(GCGmasterGetOrigprob(scip), sepa, ppnumber, dualsolconv, newcuts, FALSE) );
+   SCIP_CALL( addPPObjConss(gcg, sepa, ppnumber, dualsolconv, newcuts, FALSE) );
 
    return SCIP_OKAY;
 }

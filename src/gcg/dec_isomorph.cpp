@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -42,16 +43,16 @@
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /* #define SCIP_DEBUG */
 
-#include "dec_isomorph.h"
-#include "pub_decomp.h"
-#include "cons_decomp.h"
-#include "scip_misc.h"
-#include "gcg.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/dec_isomorph.h"
+#include "gcg/pub_decomp.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/scip_misc.h"
+#include "gcg/gcg.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include "scip/clock.h"
 
-#include "pub_gcgvar.h"
+#include "gcg/pub_gcgvar.h"
 #include <cstring>
 #include <cassert>
 #include <algorithm>
@@ -811,7 +812,7 @@ GCG_DECL_FREEDETECTOR(detectorFreeIsomorph)
 { /*lint --e{715}*/
    GCG_DETECTORDATA *detectordata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(detector != NULL);
 
    assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
@@ -819,7 +820,7 @@ GCG_DECL_FREEDETECTOR(detectorFreeIsomorph)
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   SCIPfreeMemory(scip, &detectordata);
+   SCIPfreeMemory(GCGgetOrigprob(gcg), &detectordata);
 
    return SCIP_OKAY;
 }
@@ -830,7 +831,7 @@ GCG_DECL_INITDETECTOR(detectorInitIsomorph)
 { /*lint --e{715}*/
    GCG_DETECTORDATA *detectordata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(detector != NULL);
 
    assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
@@ -921,26 +922,28 @@ std::vector< std::vector<int> > getAllSubsets(std::vector<int> set)
 
 /** reorder such that the best permutation is represented by 0, the second best by 1, etc. */
 SCIP_RETCODE reorderPermutations(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    gcg::DETPROBDATA*     detprobdata,        /**< detection process information and data */
    int*                  permutation,        /**< the permutation */
    int                   permsize,           /**< size of the permutation */
    int                   nperms              /**< number of permutations */
 )
 {
+   SCIP* scip;
    int i;
    int* count = NULL;
    int* order = NULL;
    int* invorder = NULL;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(permutation != NULL);
    assert(permsize > 0);
    assert(nperms > 0);
 
-   SCIP_CALL( SCIPallocMemoryArray(scip, &count, nperms) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &order, nperms) );
-   SCIP_CALL( SCIPallocMemoryArray(scip, &invorder, nperms) );
+   scip = GCGgetOrigprob(gcg);
+   SCIP_CALL( SCIPallocBufferArray(scip, &count, nperms) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &order, nperms) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &invorder, nperms) );
    BMSclearMemoryArray(count, nperms);
    BMSclearMemoryArray(order, nperms);
    BMSclearMemoryArray(invorder, nperms);
@@ -1008,7 +1011,7 @@ SCIP_RETCODE reorderPermutations(
 
       if( orbitsizesIter  == orbitsizes.end()  )
       {
-         GCGconshdlrDecompAddCandidatesNBlocks(scip, detprobdata->isAssignedToOrigProb(), orbitsize);
+         GCGconshdlrDecompAddCandidatesNBlocks(gcg, detprobdata->isAssignedToOrigProb(), orbitsize);
 
          orbitsizes.push_back(orbitsize);
       }
@@ -1029,13 +1032,12 @@ SCIP_RETCODE reorderPermutations(
          greatestCD = gcd( greatestCD, subsetsOfOrbitsizes[subset][j] );
       }
 
-      GCGconshdlrDecompAddCandidatesNBlocks(scip, detprobdata->isAssignedToOrigProb(), greatestCD);
+      GCGconshdlrDecompAddCandidatesNBlocks(gcg, detprobdata->isAssignedToOrigProb(), greatestCD);
    }
 
-
-   SCIPfreeMemoryArray(scip, &count);
-   SCIPfreeMemoryArray(scip, &order);
-   SCIPfreeMemoryArray(scip, &invorder);
+   SCIPfreeBufferArray(scip, &invorder);
+   SCIPfreeBufferArray(scip, &order);
+   SCIPfreeBufferArray(scip, &count);
 
    return SCIP_OKAY;
 }
@@ -1044,7 +1046,7 @@ SCIP_RETCODE reorderPermutations(
 /** detection function of isomorph detector for partialdecs */
 static
 SCIP_RETCODE detectIsomorph(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    PARTIALDEC_DETECTION_DATA* detectiondata, /**< detection data */
    GCG_DETECTORDATA*     detectordata,       /**< detector data structure */
    SCIP_RESULT*          result,             /**< pointer to store result */
@@ -1053,6 +1055,7 @@ SCIP_RETCODE detectIsomorph(
    )
 {
    SCIP_CLOCK* temporaryClock;
+   SCIP* scip = GCGgetOrigprob(gcg);
    SCIP_CALL_ABORT( SCIPcreateClock(scip, &temporaryClock) );
    SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
 
@@ -1104,7 +1107,7 @@ SCIP_RETCODE detectIsomorph(
       nperms = renumberPermutations(ptrhook->conssperm, nconss);
 
       // reorder decomposition (corresponding to orbit size)
-      SCIP_CALL( reorderPermutations(scip, detprobdata, ptrhook->conssperm, nconss, nperms) );
+      SCIP_CALL( reorderPermutations(gcg, detprobdata, ptrhook->conssperm, nconss, nperms) );
 
       SCIP_CALL( SCIPreallocMemoryArray(scip, &(detectiondata->newpartialdecs), detectiondata->nnewpartialdecs + MIN(maxdecomps, nperms)) ); /*lint !e506*/
 
@@ -1215,10 +1218,10 @@ GCG_DECL_PROPAGATEPARTIALDEC(detectorPropagatePartialdecIsomorph)
    }
 
    if( detectordata->maxdecompsextend > 0 )
-      SCIP_CALL( detectIsomorph(scip, partialdecdetectiondata, detectordata, result, TRUE, detectordata->maxdecompsextend) );
+      SCIP_CALL( detectIsomorph(gcg, partialdecdetectiondata, detectordata, result, TRUE, detectordata->maxdecompsextend) );
 
    if( detectordata->maxdecompsexact > 0 )
-      SCIP_CALL( detectIsomorph(scip, partialdecdetectiondata, detectordata, result, FALSE, detectordata->maxdecompsexact) );
+      SCIP_CALL( detectIsomorph(gcg, partialdecdetectiondata, detectordata, result, FALSE, detectordata->maxdecompsexact) );
 
    for( int i = 0; i < partialdecdetectiondata->nnewpartialdecs; ++i )
    {
@@ -1240,6 +1243,7 @@ GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveIsomorph)
    const char* name = GCGdetectorGetName(detector);
    int newval;
    SCIP_Real modifier;
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE) );
@@ -1305,8 +1309,8 @@ GCG_DECL_SETPARAMDEFAULT(setParamDefaultIsomorph)
    char setstr[SCIP_MAXSTRLEN];
    int newval;
    SCIP_Real modifier;
-
    const char* name = GCGdetectorGetName(detector);
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
@@ -1359,8 +1363,8 @@ GCG_DECL_SETPARAMFAST(setParamFastIsomorph)
 {
    char setstr[SCIP_MAXSTRLEN];
    int newval;
-
    const char* name = GCGdetectorGetName(detector);
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
    SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
@@ -1407,12 +1411,12 @@ GCG_DECL_SETPARAMFAST(setParamFastIsomorph)
 
 /** creates the handler for isomorph subproblems and includes it in SCIP */
 extern "C"
-SCIP_RETCODE SCIPincludeDetectorIsomorphism(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorIsomorphism(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_DETECTORDATA* detectordata;
-
+   SCIP* scip = GCGgetOrigprob(gcg);
    detectordata = NULL;
 
    SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
@@ -1420,7 +1424,7 @@ SCIP_RETCODE SCIPincludeDetectorIsomorphism(
 
 
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
+   SCIP_CALL( GCGincludeDetector(gcg, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL,
                                  detectordata, detectorFreeIsomorph, detectorInitIsomorph, detectorExitIsomorph, detectorPropagatePartialdecIsomorph, detectorFinishPartialdecIsomorph, detectorPostprocessPartialdecIsomorph, setParamAggressiveIsomorph, setParamDefaultIsomorph, setParamFastIsomorph) );
 
    /* add isomorph constraint handler parameters */

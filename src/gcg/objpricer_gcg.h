@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -36,13 +37,13 @@
 #define GCG_OBJPRICER_GCG_H_
 
 #include "objscip/objscip.h"
-#include "class_pricingtype.h"
-#include "class_pricingcontroller.h"
-#include "class_stabilization.h"
-#include "pub_gcgcol.h"
-#include "pub_colpool.h"
-#include "pricestore_gcg.h"
-#include "type_branchgcg.h"
+#include "gcg/class_pricingtype.h"
+#include "gcg/class_pricingcontroller.h"
+#include "gcg/class_stabilization.h"
+#include "gcg/pub_gcgcol.h"
+#include "gcg/pub_colpool.h"
+#include "gcg/pricestore_gcg.h"
+#include "gcg/type_branchgcg.h"
 
 using gcg::Pricingcontroller;
 using gcg::Stabilization;
@@ -56,21 +57,20 @@ class ObjPricerGcg : public scip::ObjPricer
 public:
    /*lint --e{1540}*/
 
+   GCG*                   gcg;                /**< GCG data structure */
    SCIP*                  origprob;           /**< the original program */
    SCIP_PRICERDATA*       pricerdata;         /**< pricerdata data structure */
    GCG_COLPOOL*           colpool;            /**< column pool */
    GCG_PRICESTORE*        pricestore;         /**< price storage */
-   static int             threads;
 
    /** default constructor */
    ObjPricerGcg(
-         SCIP* scip, /**< SCIP data structure */
-         SCIP*              origscip,           /**< SCIP data structure of original problem */
+         GCG* gcgstruct, /**< GCG data structure */
          const char* name, /**< name of variable pricer */
          const char* desc, /**< description of variable pricer */
          int priority, /**< priority of the variable pricer */
          unsigned int delay, /**< should the pricer be delayed until no other pricers or already existing*/
-         SCIP_PRICERDATA *pricerdata /**< pricerdata data structure */
+         SCIP_PRICERDATA* p_pricerdata /**< pricerdata data structure */
    );
    /** destructor */
    virtual ~ObjPricerGcg()
@@ -90,7 +90,7 @@ public:
    virtual SCIP_DECL_PRICERREDCOST(scip_redcost);
    /** farkas pricing method of variable pricer for infeasible LPs */
    virtual SCIP_DECL_PRICERFARKAS(scip_farkas);
-   inline SCIP_PRICERDATA *getPricerdata()
+   inline SCIP_PRICERDATA* getPricerdata()
    {
       return pricerdata;
    }
@@ -126,7 +126,6 @@ public:
 
    /** creates a new master variable corresponding to the given solution and problem */
    SCIP_RETCODE createNewMasterVar(
-      SCIP*              scip,               /**< SCIP data structure */
       PricingType*       pricetype,          /**< type of the pricing */
       SCIP_SOL*          sol,                /**< solution to compute reduced cost for */
       SCIP_VAR**         solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
@@ -141,7 +140,6 @@ public:
 
    /** creates a new master variable corresponding to the given gcg column */
    SCIP_RETCODE createNewMasterVarFromGcgCol(
-      SCIP*                 scip,               /**< SCIP data structure */
       PricingType*          pricetype,          /**< type of pricing */
       GCG_COL*              gcgcol,             /**< GCG column data structure */
       SCIP_Bool             force,              /**< should the given variable be added also if it has non-negative reduced cost? */
@@ -188,9 +186,14 @@ public:
       return reducedcostpricing;
    }
 
-   SCIP* getOrigprob()
+   SCIP* getOrigprob() const
    {
       return origprob;
+   }
+
+   GCG* getGcg() const
+   {
+      return gcg;
    }
 
    /** get the number of columns to be added to the master LP in the current pricing round */
@@ -228,12 +231,12 @@ public:
       int*                  nimpcols            /**< pointer to store number of improving columns */
       );
 
-   /** add a new column to the pricing storage */
+   /** add a new column to the pricer's column buffer that will be added to the pricing storage */
    SCIP_RETCODE addColToPricestore(
-      GCG_COL*              col,                 /**< priced col */
-      SCIP_Bool             checkcol
+      GCG_COL*              col,                /**< priced col */
+      SCIP_Bool*            added               /**< pointer to var that indicates whether the col was added */
       );
-
+   
    /** for each pricing problem, get the best found column from the pricing storage */
    void getBestCols(
       GCG_COL**             pricingprobcols     /**< array to be filled with best column per pricing problem */
@@ -286,6 +289,15 @@ public:
       SCIP_Real*            solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
       int                   nsolvars            /**< number of variables in array solvars */
       );
+
+   /** compute generic extended master cons coefficients of column */
+   SCIP_RETCODE computeColExtendedMasterconss(
+      GCG_COL*              gcgcol              /**< GCG column data structure */
+      );
+
+   GCG_SOLVER** getSolvers() const;
+
+   int getNumSolvers() const;
 
 private:
    ReducedCostPricing*    reducedcostpricing;
@@ -366,8 +378,8 @@ private:
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
-   /** add variable to the master cuts */
-   SCIP_RETCODE addVariableToMastercuts(
+   /** add variable to the extended master conss */
+   SCIP_RETCODE addVariableToExtendedmastercons(
       SCIP_VAR*             newvar              /**< The new variable to add */
       );
 
@@ -438,6 +450,34 @@ private:
 
    /** calls the exitsol method of all solvers */
    SCIP_RETCODE solversExitsol();
+
+   /** frees all pricing callback plugins */
+   SCIP_RETCODE pricingcbsFree();
+
+   /** calls the init method on all pricing callback plugins */
+   SCIP_RETCODE pricingcbsInit();
+
+   /** calls the exit method on all pricing callback plugins */
+   SCIP_RETCODE pricingcbsExit();
+
+   /** calls the initsol method on all pricing callback plugins */
+   SCIP_RETCODE pricingcbsInitsol();
+
+   /** calls the exitsol method of all pricing callback plugins */
+   SCIP_RETCODE pricingcbsExitsol();
+
+   /** calls pre-pricing method of the pricing callback plugins */
+   SCIP_RETCODE pricingcbsPrepricing(
+      SCIP_PRICER*          pricer,             /**< the pointer to the calling pricer */
+      GCG_PRICETYPE         type,               /**< the type of pricing, either redcost or farkas */
+      SCIP_Bool*            abort               /**< flag to set whether the pricing should be aborted */
+      );
+
+   /** calls post-pricing method of the pricing callback plugins */
+   SCIP_RETCODE pricingcbsPostpricing(
+      SCIP_PRICER*          pricer,             /**< the pointer to the calling pricer */
+      GCG_PRICETYPE         type                /**< the type of pricing, either redcost or farkas */
+      );
 
    /** computes the stack of masterbranch constraints up to the last generic branching node
     * @note This method has to be threadsafe!

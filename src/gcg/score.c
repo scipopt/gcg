@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -33,11 +34,11 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "pub_score.h"
-#include "gcg.h"
+#include "gcg/pub_score.h"
+#include "gcg/gcg.h"
 #include "scip/scip.h"
-#include "struct_score.h"
-#include "cons_decomp.h"
+#include "gcg/struct_score.h"
+#include "gcg/cons_decomp.h"
 
 #include <assert.h>
 
@@ -47,7 +48,7 @@
  * @returns scip return code
  */
 SCIP_RETCODE GCGincludeScore(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    const char*           name,               /**< name of score */
    const char*           shortname,          /**< shortname of score */
    const char*           description,        /**< description of score */
@@ -57,13 +58,13 @@ SCIP_RETCODE GCGincludeScore(
    )
 {
    /* check whether score is already present */
-   if( GCGfindScore(scip, name) != NULL || GCGfindScoreByShortname(scip, shortname) != NULL )
+   if( GCGfindScore(gcg, name) != NULL || GCGfindScoreByShortname(gcg, shortname) != NULL )
    {
       SCIPerrorMessage("Score <%s> is already included.\n", name);
       return SCIP_INVALIDDATA;
    }
 
-   SCIP_CALL( GCGconshdlrDecompIncludeScore(scip, name, shortname, description, scoredata, scorefree, scorecalc) );
+   SCIP_CALL( GCGconshdlrDecompIncludeScore(gcg, name, shortname, description, scoredata, scorefree, scorecalc) );
 
    return SCIP_OKAY;
 }
@@ -73,14 +74,14 @@ SCIP_RETCODE GCGincludeScore(
  * @returns score pointer or NULL if score with given name is not found
  */
 GCG_SCORE* GCGfindScore(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    const char*           name                /**< name of score */
    )
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(name != NULL);
 
-   return GCGconshdlrDecompFindScore(scip, name);
+   return GCGconshdlrDecompFindScore(gcg, name);
 }
 
 /**
@@ -88,34 +89,34 @@ GCG_SCORE* GCGfindScore(
  * @returns score pointer or NULL if score with given shortname is not found
  */
 GCG_SCORE* GCGfindScoreByShortname(
-   SCIP*                 scip,               /**< SCIP data structure */
+   GCG*                  gcg,                /**< GCG data structure */
    const char*           shortname           /**< shortname of score */
    )
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(shortname != NULL);
 
-   return GCGconshdlrDecompFindScoreByShortname(scip, shortname);
+   return GCGconshdlrDecompFindScoreByShortname(gcg, shortname);
 }
 
 /** returns the array of currently available scores */
 GCG_SCORE** GCGgetScores(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   return GCGconshdlrDecompGetScores(scip);
+   return GCGconshdlrDecompGetScores(gcg);
 }
 
 /** returns the number of currently available scores */
 int GCGgetNScores(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
-   return GCGconshdlrDecompGetNScores(scip);
+   return GCGconshdlrDecompGetNScores(gcg);
 }
 
 /** gets user data of score */

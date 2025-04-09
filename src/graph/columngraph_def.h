@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -36,7 +37,7 @@
 #ifndef GCG_COLUMNGRAPH_DEF_H_
 #define GCG_COLUMNGRAPH_DEF_H_
 
-#include "columngraph.h"
+#include "graph/columngraph.h"
 #include <algorithm>
 #include <utility>
 #include <vector>
@@ -45,9 +46,9 @@ namespace gcg {
 
 template <class T>
 ColumnGraph<T>::ColumnGraph(
-   SCIP*                 scip,              /**< SCIP data structure */
+   GCG*                  gcgstruct,         /**< GCG data structure */
    Weights               w                  /**< weights for the given graph */
-   ) : MatrixGraph<T>(scip, w), graph(scip)
+   ) : MatrixGraph<T>(gcgstruct, w), graph(gcgstruct)
 {
    this->graphiface = &graph;
    this->name = std::string("columngraph");
@@ -66,19 +67,19 @@ SCIP_RETCODE ColumnGraph<T>::createDecompFromPartition(
 {
    int nblocks;
    SCIP_HASHMAP* constoblock = NULL;
-
+   SCIP* scip = GCGgetOrigprob(this->gcg);
    int* nsubscipconss = NULL;
    int i;
    SCIP_CONS **conss;
    SCIP_Bool emptyblocks = FALSE;
    std::vector<int> partition = graph.getPartition();
-   conss = SCIPgetConss(this->scip_);
+   conss = SCIPgetConss(scip);
    nblocks = *(std::max_element(partition.begin(), partition.end()))+1;
 
-   SCIP_CALL( SCIPallocBufferArray(this->scip_, &nsubscipconss, nblocks) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &nsubscipconss, nblocks) );
    BMSclearMemoryArray(nsubscipconss, nblocks);
 
-   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(this->scip_), this->nconss) );
+   SCIP_CALL( SCIPhashmapCreate(&constoblock, SCIPblkmem(scip), this->nconss) );
 
    /* assign constraints to partition */
    for( i = 0; i < this->nconss; i++ )
@@ -100,15 +101,15 @@ SCIP_RETCODE ColumnGraph<T>::createDecompFromPartition(
 
    if( !emptyblocks )
    {
-      SCIP_CALL( GCGdecompCreate(this->scip_, decomp) );
-      SCIP_CALL( GCGfilloutDecompFromConstoblock(this->scip_, *decomp, constoblock, nblocks, FALSE) );
+      SCIP_CALL( GCGdecompCreate(this->gcg, decomp) );
+      SCIP_CALL( GCGfilloutDecompFromConstoblock(this->gcg, *decomp, constoblock, nblocks, FALSE) );
    }
    else {
       SCIPhashmapFree(&constoblock);
       *decomp = NULL;
    }
 
-   SCIPfreeBufferArray(this->scip_, &nsubscipconss);
+   SCIPfreeBufferArray(scip, &nsubscipconss);
    return SCIP_OKAY;
 }
 
@@ -127,6 +128,7 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
    SCIP_Bool success;
    std::pair< int, int> edge;
    std::vector< std::pair< int, int> > edges;
+   SCIP* scip = GCGgetOrigprob(this->gcg);
 
    assert(conss != NULL);
    assert(vars != NULL);
@@ -153,7 +155,7 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
       SCIP_VAR** curvars = NULL;
 
       int ncurvars;
-      SCIP_CALL( SCIPgetConsNVars(this->scip_, conss[i], &ncurvars, &success) );
+      SCIP_CALL( SCIPgetConsNVars(scip, conss[i], &ncurvars, &success) );
       assert(success);
       if( ncurvars == 0 )
          continue;
@@ -162,8 +164,8 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
        * may work as is, as we are copying the constraint later regardless
        * if there are variables in it or not
        */
-      SCIP_CALL( SCIPallocBufferArray(this->scip_, &curvars, ncurvars) );
-      SCIP_CALL( SCIPgetConsVars(this->scip_, conss[i], curvars, ncurvars, &success) );
+      SCIP_CALL( SCIPallocBufferArray(scip, &curvars, ncurvars) );
+      SCIP_CALL( SCIPgetConsVars(scip, conss[i], curvars, ncurvars, &success) );
       assert(success);
 
       /** @todo skip all variables that have a zero coeffient or where all coefficients add to zero */
@@ -174,7 +176,7 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
          SCIP_VAR* var1;
          int varIndex1;
 
-         if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+         if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
             var1 = SCIPvarGetProbvar(curvars[j]);
          else
             var1 = curvars[j];
@@ -192,7 +194,7 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
             SCIP_VAR* var2;
             int varIndex2;
 
-            if( SCIPgetStage(this->scip_) >= SCIP_STAGE_TRANSFORMED)
+            if( SCIPgetStage(scip) >= SCIP_STAGE_TRANSFORMED)
                var2 = SCIPvarGetProbvar(curvars[k]);
             else
                var2 = curvars[k];
@@ -217,7 +219,7 @@ SCIP_RETCODE ColumnGraph<T>::createFromMatrix(
             }
          }
       }
-      SCIPfreeBufferArray(this->scip_, &curvars);
+      SCIPfreeBufferArray(scip, &curvars);
    }
 
    this->graph.flush();

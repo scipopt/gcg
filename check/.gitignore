@@ -1,4 +1,4 @@
 locks/
-results/
+results*/
 *.tex
 runcluster_tmp.sh

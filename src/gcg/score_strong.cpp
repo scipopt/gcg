@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -36,13 +37,13 @@
 
 #include <scip/scipdefplugins.h>
 
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
-#include "cons_decomp.h"
-#include "cons_decomp.hpp"
-#include "scip_misc.h"
-#include "score.h"
-#include "score_strong.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/cons_decomp.hpp"
+#include "gcg/scip_misc.h"
+#include "gcg/score.h"
+#include "gcg/score_strong.h"
 
 
 /* score properties */
@@ -95,13 +96,13 @@ typedef enum GCG_Random_dual_methods GCG_RANDOM_DUAL_METHOD;
  */
 static
 SCIP_RETCODE shuffleDualvalsRandom(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    GCG_SCORE* score,       /**< score */
    SCIP_Bool transformed   /**< whether the problem is tranformed yet */
    )
 {
    GCG_SCOREDATA* scoredata = GCGscoreGetData(score);
-
+   SCIP* scip = GCGgetOrigprob(gcg);
    GCG_RANDOM_DUAL_METHOD usedmethod;
    SCIP_RANDNUMGEN* randnumgen;
 
@@ -127,7 +128,7 @@ SCIP_RETCODE shuffleDualvalsRandom(
    // TODO ref replace default for random partialdec with parameter
    SCIP_CALL( SCIPcreateRandom(scip, &randnumgen, DEFAULT_RANDPARTIALDEC, TRUE) );
 
-   gcg::DETPROBDATA* detprobdata = (transformed) ? GCGconshdlrDecompGetDetprobdataPresolved(scip) : GCGconshdlrDecompGetDetprobdataOrig(scip);
+   gcg::DETPROBDATA* detprobdata = (transformed) ? GCGconshdlrDecompGetDetprobdataPresolved(gcg) : GCGconshdlrDecompGetDetprobdataOrig(gcg);
 
    /* shuffle dual multipliers of constraints*/
 
@@ -259,7 +260,7 @@ SCIP_RETCODE shuffleDualvalsRandom(
  */
 static
 SCIP_Real getDualvalRandom(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    GCG_SCORE* score,       /**< score */
    int  consindex,         /**< consindex  index of constraint the value is asked for */
    SCIP_Bool transformed   /**< is the problem transformed yet */
@@ -268,7 +269,7 @@ SCIP_Real getDualvalRandom(
    GCG_SCOREDATA* scoredata = GCGscoreGetData(score);
 
    if( !scoredata->dualvalsrandomset )
-      shuffleDualvalsRandom(scip, score, transformed);
+      shuffleDualvalsRandom(gcg, score, transformed);
    scoredata->dualvalsrandomset = TRUE;
 
    return (*scoredata->dualvalsrandom)[consindex];
@@ -280,13 +281,13 @@ SCIP_Real getDualvalRandom(
  */
 static
 SCIP_RETCODE calculateDualvalsOptimalOrigLP(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    GCG_SCORE* score,       /**< score */
    SCIP_Bool transformed   /**< whether the problem is transormed yet */
    )
 {
    GCG_SCOREDATA* scoredata = GCGscoreGetData(score);
-
+   SCIP* scip = GCGgetOrigprob(gcg);
    SCIP* scipcopy;
    SCIP_HASHMAP* origtocopiedconss;
    SCIP_Bool valid;
@@ -345,7 +346,7 @@ SCIP_RETCODE calculateDualvalsOptimalOrigLP(
 
    SCIPsolve(scipcopy);
 
-   gcg::DETPROBDATA* detprobdata = (transformed) ? GCGconshdlrDecompGetDetprobdataPresolved(scip) : GCGconshdlrDecompGetDetprobdataOrig(scip);
+   gcg::DETPROBDATA* detprobdata = (transformed) ? GCGconshdlrDecompGetDetprobdataPresolved(gcg) : GCGconshdlrDecompGetDetprobdataOrig(gcg);
 
    for( int c = 0; c < nconss; ++c )
    {
@@ -396,7 +397,7 @@ SCIP_RETCODE calculateDualvalsOptimalOrigLP(
  */
 static
 SCIP_Real getDualvalOptimalLP(
-   SCIP* scip,             /**< SCIP data structure */
+   GCG* gcg,               /**< GCG data structure */
    GCG_SCORE* score,       /**< score */
    int  consindex,         /**< consindex index of constraint the value is asked for */
    SCIP_Bool transformed   /**< is the problem transformed yet */
@@ -405,7 +406,7 @@ SCIP_Real getDualvalOptimalLP(
    GCG_SCOREDATA* scoredata = GCGscoreGetData(score);
 
    if( !scoredata->dualvalsoptimaloriglpcalculated )
-      calculateDualvalsOptimalOrigLP(scip, score, transformed);
+      calculateDualvalsOptimalOrigLP(gcg, score, transformed);
    scoredata->dualvalsoptimaloriglpcalculated = TRUE;
 
    return (*scoredata->dualvalsoptimaloriglp)[consindex];
@@ -430,82 +431,11 @@ SCIP_RETCODE setTestpricingProblemParameters(
 {
    assert(scip != NULL);
 
-   /* disable conflict analysis */
-   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/useprop", FALSE) );
-   SCIP_CALL( SCIPsetCharParam(scip, "conflict/useinflp", 'o') );
-   SCIP_CALL( SCIPsetCharParam(scip, "conflict/useboundlp", 'o') );
-   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/usesb", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "conflict/usepseudo", FALSE) );
+   GCGsetPricingProblemParameters(GCG_DECTYPE_UNKNOWN, scip, clocktype, infinity, epsilon, sumepsilon, feastol, lpfeastolfactor,
+      dualfeastol, enableppcuts);
 
-   /* reduce the effort spent for hash tables */
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/usevartable", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/useconstable", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/usesmalltables", TRUE) );
-
-   /* disable expensive presolving */
-   /* @todo test whether this really helps, perhaps set presolving emphasis to fast? */
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/linear/presolpairwise", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/setppc/presolpairwise", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/logicor/presolpairwise", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/linear/presolusehashing", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/setppc/presolusehashing", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "constraints/logicor/presolusehashing", FALSE) );
-
-   /* disable dual fixing presolver for the moment, because we want to avoid variables fixed to infinity */
-   SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/freq", -1) );
-   SCIP_CALL( SCIPsetIntParam(scip, "propagating/dualfix/maxprerounds", 0) );
-   SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/freq") );
-   SCIP_CALL( SCIPfixParam(scip, "propagating/dualfix/maxprerounds") );
-
-   /* disable solution storage ! */
-   SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
    SCIP_CALL( SCIPsetRealParam(scip, "limits/time", timelimit ) );
 
-   /* disable multiaggregation because of infinite values */
-   SCIP_CALL( SCIPsetBoolParam(scip, "presolving/donotmultaggr", TRUE) );
-
-   /* @todo enable presolving and propagation of xor constraints if bug is fixed */
-
-   /* disable presolving and propagation of xor constraints as work-around for a SCIP bug */
-   SCIP_CALL( SCIPsetIntParam(scip, "constraints/xor/maxprerounds", 0) );
-   SCIP_CALL( SCIPsetIntParam(scip, "constraints/xor/propfreq", -1) );
-
-   /* disable output to console */
-   SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", (int)SCIP_VERBLEVEL_NORMAL) );
-#if SCIP_VERSION > 210
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/printreason", FALSE) );
-#endif
-   SCIP_CALL( SCIPsetIntParam(scip, "limits/maxorigsol", 0) );
-   SCIP_CALL( SCIPfixParam(scip, "limits/maxorigsol") );
-
-   /* do not abort subproblem on CTRL-C */
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/catchctrlc", FALSE) );
-
-   /* set clock type */
-   SCIP_CALL( SCIPsetIntParam(scip, "timing/clocktype", clocktype) );
-
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/calcintegral", FALSE) );
-   SCIP_CALL( SCIPsetBoolParam(scip, "misc/finitesolutionstore", TRUE) );
-
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/infinity", infinity) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/epsilon", epsilon) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/sumepsilon", sumepsilon) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/feastol", feastol) );
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/lpfeastolfactor", lpfeastolfactor) ); // canged from "numerics/lpfeastol"
-   SCIP_CALL( SCIPsetRealParam(scip, "numerics/dualfeastol", dualfeastol) );
-
-   /* jonas' stuff */
-   if( enableppcuts )
-   {
-      int pscost;
-      int prop;
-
-      SCIP_CALL( SCIPgetIntParam(scip, "branching/pscost/priority", &pscost) );
-      SCIP_CALL( SCIPgetIntParam(scip, "propagating/maxroundsroot", &prop) );
-      SCIP_CALL( SCIPsetIntParam(scip, "branching/pscost/priority", 11000) );
-      SCIP_CALL( SCIPsetIntParam(scip, "propagating/maxroundsroot", 0) );
-      SCIP_CALL( SCIPsetPresolving(scip, SCIP_PARAMSETTING_OFF, TRUE) );
-   }
    return SCIP_OKAY;
 }
 
@@ -597,7 +527,7 @@ GCG_DECL_SCOREFREE(scoreFreeStrong)
 {
    GCG_SCOREDATA* scoredata;
 
-   assert(scip != NULL);
+   assert(gcg != NULL);
 
    scoredata = GCGscoreGetData(score);
    assert(scoredata != NULL);
@@ -606,7 +536,7 @@ GCG_DECL_SCOREFREE(scoreFreeStrong)
    delete scoredata->dualvalsoptimaloriglp;
    delete scoredata->dualvalsrandom;
 
-   SCIPfreeMemory(scip, &scoredata);
+   SCIPfreeMemory(GCGgetOrigprob(gcg), &scoredata);
 
    return SCIP_OKAY;
 }
@@ -621,6 +551,7 @@ GCG_DECL_SCORECALC(scoreCalcStrong)
    /* SCIP_Real gaplimitbeneficial; */
 
    GCG_SCOREDATA* scoredata = GCGscoreGetData(score);
+   SCIP* scip = GCGgetOrigprob(gcg);
 
    SCIP_Bool hittimelimit;
    SCIP_Bool errorpricing;
@@ -641,7 +572,7 @@ GCG_DECL_SCORECALC(scoreCalcStrong)
    SCIP_Real dualvalmethodcoef;
 
    /* score works only on presolved  */
-   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(scip, partialdecid);
+   gcg::PARTIALDECOMP* partialdec = GCGconshdlrDecompGetPartialdecFromID(gcg, partialdecid);
    if( partialdec->isAssignedToOrigProb() )
    {
       *scorevalue = 0;
@@ -746,11 +677,11 @@ GCG_DECL_SCORECALC(scoreCalcStrong)
             if ( partialdec->isConsMastercons(consid) )
             {
                if( SCIPisEQ( scip, dualvalmethodcoef, 0.0) )
-                  dualval = getDualvalRandom(scip, score, consid, partialdec->isAssignedToOrigProb());
+                  dualval = getDualvalRandom(gcg, score, consid, partialdec->isAssignedToOrigProb());
                else if( SCIPisEQ( scip, dualvalmethodcoef, 1.0) )
-                  dualval = getDualvalOptimalLP(scip, score, consid, partialdec->isAssignedToOrigProb());
+                  dualval = getDualvalOptimalLP(gcg, score, consid, partialdec->isAssignedToOrigProb());
                else
-                  dualval = dualvalmethodcoef * getDualvalOptimalLP(scip, score, consid, partialdec->isAssignedToOrigProb()) + (1. - dualvalmethodcoef) * getDualvalRandom(scip, score, consid, partialdec->isAssignedToOrigProb());
+                  dualval = dualvalmethodcoef * getDualvalOptimalLP(gcg, score, consid, partialdec->isAssignedToOrigProb()) + (1. - dualvalmethodcoef) * getDualvalRandom(gcg, score, consid, partialdec->isAssignedToOrigProb());
                obj -= dualval * detprobdata->getVal(consid, varid);
             }
          }
@@ -848,11 +779,11 @@ GCG_DECL_SCORECALC(scoreCalcStrong)
 
 /** creates the strong decomposition score and includes it in SCIP */
 SCIP_RETCODE GCGincludeScoreStrongDecomp(
-   SCIP*                 scip                /**< SCIP data structure */
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_SCOREDATA* scoredata = NULL;
-
+   SCIP* scip = GCGgetOrigprob(gcg);
    SCIP_CALL( SCIPallocMemory(scip, &scoredata) );
 
    scoredata->dualvalsrandom = new std::vector<SCIP_Real>();
@@ -863,7 +794,7 @@ SCIP_RETCODE GCGincludeScoreStrongDecomp(
    assert(scoredata != NULL);
 
    SCIP_CALL(
-      GCGincludeScore(scip, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata,
+      GCGincludeScore(gcg, SCORE_NAME, SCORE_SHORTNAME, SCORE_DESC, scoredata,
          scoreFreeStrong, scoreCalcStrong) );
 
    SCIP_CALL( SCIPaddRealParam(scip, "detection/scores/strong/timelimit",

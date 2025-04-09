@@ -219,5 +219,5 @@ The BRANCHDATADELETE callback is called when a branch-and-bound node is freed an
 ### BRANCHNEWCOL
 The BRANCHNEWCOL callback is called whenever a new column is added to the master problem. It can be used to update any branching constraints that were added to the master problem, e.g. to determine and add the coefficient of the new master variable to the corresponding branching constraint.
 
-### BRANCHGETMASTERCUT
-If the branching rule branches in the master problem, generating a constraint that can be enforced only if the pricing problem is modified, then the BRANCHGETMASTERCUT callback will be used by GCG to retrieve the master branching constraint as well as the corresponding modifications to be applied in the pricing problems.
+### BRANCHGETEXTENDEDMASTERCONS
+If the branching rule branches in the master problem, generating a constraint that can be enforced only if the pricing problem is modified, then the BRANCHGETEXTENDEDMASTERCONS callback will be used by GCG to retrieve the master branching constraint as well as the corresponding modifications to be applied in the pricing problems.

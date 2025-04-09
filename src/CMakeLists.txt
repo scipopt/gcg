@@ -22,7 +22,6 @@ set(gcgsources
     gcg/branch_orig.c
     gcg/branch_relpsprob.c
     gcg/branch_ryanfoster.c
-    gcg/branch_staticvar.c
     gcg/class_conspartition.cpp
     gcg/class_detprobdata.cpp
     gcg/class_indexpartition.cpp
@@ -82,6 +81,7 @@ set(gcgsources
     gcg/event_relaxsol.c
     gcg/event_sepacuts.c
     gcg/event_solvingstats.c
+    gcg/gcg.cpp
     gcg/gcg_general.c
     gcg/gcgcol.c
     gcg/gcggithash.c
@@ -91,6 +91,7 @@ set(gcgsources
     gcg/gcgsepa.c
     gcg/gcgsort.c
     gcg/gcgvar.c
+    gcg/gcgvarhistory.c
     gcg/heur_gcgcoefdiving.c
     gcg/heur_gcgdins.c
     gcg/heur_gcgfeaspump.c
@@ -106,6 +107,7 @@ set(gcgsources
     gcg/heur_gcgveclendiving.c
     gcg/heur_gcgzirounding.c
     gcg/heur_greedycolsel.c
+    gcg/heur_ipcolgen.c
     gcg/heur_mastercoefdiving.c
     gcg/heur_masterdiving.c
     gcg/heur_masterfracdiving.c
@@ -117,10 +119,9 @@ set(gcgsources
     gcg/heur_setcover.c
     gcg/heur_xpcrossover.c
     gcg/heur_xprins.c
-    gcg/mastercutdata.c
     gcg/mastersepacut.c
+    gcg/extendedmasterconsdata.c
     gcg/masterplugins.c
-    gcg/misc_varhistory.c
     gcg/misc.c
     gcg/miscvisualization.cpp
     gcg/nodesel_master.c
@@ -129,6 +130,7 @@ set(gcgsources
     gcg/presol_roundbound.c
     gcg/pricer_gcg.cpp
     gcg/pricestore_gcg.c
+    gcg/pricingcb.c
     gcg/pricingjob.c
     gcg/pricingprob.c
     gcg/reader_blk.cpp
@@ -152,6 +154,7 @@ set(gcgsources
     gcg/sepa_basis.c
     gcg/sepa_original.c
     gcg/sepa_subsetrow.c
+    gcg/solver_gcg.cpp
     gcg/solver_knapsack.c
     gcg/solver_mip.c
     gcg/solver.c
@@ -174,10 +177,9 @@ set(gcgheaders
     gcg/branch_orig.h
     gcg/branch_relpsprob.h
     gcg/branch_ryanfoster.h
-    gcg/branch_staticvar.h
     gcg/class_conspartition.h
     gcg/class_indexpartition.h
-    gcg/misc_varhistory.h
+    gcg/gcgvarhistory.h
     gcg/miscvisualization.h
     gcg/class_pricingcontroller.h
     gcg/class_pricingtype.h
@@ -247,6 +249,7 @@ set(gcgheaders
     gcg/heur_gcgveclendiving.h
     gcg/heur_gcgzirounding.h
     gcg/heur_greedycolsel.h
+    gcg/heur_ipcolgen.h
     gcg/heur_mastercoefdiving.h
     gcg/heur_masterdiving.h
     gcg/heur_masterfracdiving.h
@@ -258,8 +261,8 @@ set(gcgheaders
     gcg/heur_setcover.h
     gcg/heur_xpcrossover.h
     gcg/heur_xprins.h
-    gcg/mastercutdata.h
     gcg/mastersepacut.h
+    gcg/extendedmasterconsdata.h
     gcg/masterplugins.h
     gcg/nodesel_master.h
     gcg/objdialog.h
@@ -268,17 +271,23 @@ set(gcgheaders
     gcg/presol_roundbound.h
     gcg/pricer_gcg.h
     gcg/pricestore_gcg.h
+    gcg/pub_pricingcb.h
     gcg/pricingjob.h
     gcg/pricingprob.h
     gcg/pub_clscons.h
     gcg/pub_clsvar.h
     gcg/pub_colpool.h
     gcg/pub_decomp.h
+    gcg/pub_gcg.h
+    gcg/pub_gcg.hpp
     gcg/pub_gcgcol.h
     gcg/pub_gcgheur.h
     gcg/pub_gcgsepa.h
     gcg/pub_gcgpqueue.h
     gcg/pub_gcgvar.h
+    gcg/pub_extendedmasterconsdata.h
+    gcg/pub_mastersepacut.h
+    gcg/pub_pricingcb.h
     gcg/pub_pricingjob.h
     gcg/pub_pricingprob.h
     gcg/pub_score.h
@@ -306,6 +315,7 @@ set(gcgheaders
     gcg/sepa_subsetrow.h
     gcg/solver.h
     gcg/solver_cliquer.h
+    gcg/solver_gcg.h
     gcg/solver_knapsack.h
     gcg/solver_mip.h
     gcg/solver_xyz.h
@@ -314,32 +324,39 @@ set(gcgheaders
     gcg/struct_colpool.h
     gcg/struct_decomp.h
     gcg/struct_detector.h
+    gcg/struct_gcg.h
     gcg/struct_gcgcol.h
     gcg/struct_gcgpqueue.h
-    gcg/struct_mastercutdata.h
     gcg/struct_mastersepacut.h
+    gcg/struct_extendedmasterconsdata.h
     gcg/struct_pricestore_gcg.h
+    gcg/struct_pricingcb.h
     gcg/struct_pricingjob.h
     gcg/struct_pricingprob.h
     gcg/struct_score.h
     gcg/struct_sepagcg.h
     gcg/struct_solver.h
     gcg/struct_vardata.h
-    gcg/struct_varhistory.h
+    gcg/struct_gcgvarhistory.h
     gcg/type_branchgcg.h
     gcg/type_classifier.h
     gcg/type_colpool.h
     gcg/type_consclassifier.h
     gcg/type_decomp.h
     gcg/type_detector.h
+    gcg/type_gcg.h
     gcg/type_gcgcol.h
     gcg/type_gcgpqueue.h
-    gcg/type_mastercutdata.h
     gcg/type_mastersepacut.h
+    gcg/type_gcgpricer.h
+    gcg/type_locks.h
+    gcg/type_extendedmasterconsdata.h
     gcg/type_masterdiving.h
     gcg/type_origdiving.h
     gcg/type_parameter.h
     gcg/type_pricestore_gcg.h
+    gcg/type_pricetype.h
+    gcg/type_pricingcb.h
     gcg/type_pricingjob.h
     gcg/type_pricingprob.h
     gcg/type_pricingstatus.h
@@ -347,9 +364,8 @@ set(gcgheaders
     gcg/type_score.h
     gcg/type_solver.h
     gcg/type_varclassifier.h
-    gcg/type_varhistory.h
-    gcg/wrapper_partialdecomp.h
     gcg/zerohalf_selector.h
+    gcg/type_gcgvarhistory.h
 )
 
 set(gcggraphheaders
@@ -378,14 +394,14 @@ set(gcggraphheaders
     graph/rowgraph.h
     graph/rowgraph_def.h
     graph/weights.h
-   )
+)
 
 if(NOT SYM STREQUAL "none")
    set(gcgsources ${gcgsources} ${symsources}
       symmetry/automorphism.cpp
       gcg/dec_isomorph.cpp
    )
-   set(gcgheaders ${gcgheaders} 
+   set(gcgheaders ${gcgheaders}
       symmetry/automorphism.h
       symmetry/automorphism.hpp
       symmetry/pub_automorphism.h
@@ -420,22 +436,45 @@ if(CPLEX_FOUND)
    )
 endif()
 
-if(HMETIS_FOUND)
-   if(NOT WIN32)
-      set(gcgsources ${gcgsources}
-         gcg/dec_hcgpartition.cpp
-         gcg/dec_hrcgpartition.cpp
-         gcg/dec_hrgpartition.cpp
-      )
-      set(gcgheaders ${gcgheaders}
-         gcg/dec_hcgpartition.h
-         gcg/dec_hrcgpartition.h
-         gcg/dec_hrgpartition.h
-      )
-      include_directories(${CMAKE_CURRENT_BINARY_DIR})
-      add_definitions(-DHMETIS_HEADER)
-      configure_file(hmetis.h.in hmetis.h)
-   endif()
+if(HIGHS_FOUND)
+   set(gcgsources ${gcgsources}
+      gcg/solver_highs.c
+   )
+   set(gcgheaders ${gcgheaders}
+      gcg/solver_highs.h
+   )
+endif()
+
+if(HMETIS_FOUND AND NOT WIN32)
+    add_definitions(-DHMETIS_HEADER)
+    configure_file(hmetis.h.in gcg/hmetis.h)
+    include_directories(${CMAKE_CURRENT_BINARY_DIR})
+    set(gcgsources ${gcgsources}
+        gcg/dec_hcgpartition.cpp
+        gcg/dec_hrcgpartition.cpp
+        gcg/dec_hrgpartition.cpp
+    )
+    set(gcgheaders ${gcgheaders}
+        gcg/dec_hcgpartition.h
+        gcg/dec_hrcgpartition.h
+        gcg/dec_hrgpartition.h
+        ${CMAKE_CURRENT_BINARY_DIR}/gcg/hmetis.h
+    )
+endif()
+
+if(JANSSON_FOUND)
+    set(gcgsources ${gcgsources}
+        gcg/reader_jdec.cpp
+    )
+    set(gcgheaders ${gcgheaders}
+        gcg/reader_jdec.h
+    )
+endif()
+
+if(OPENMP_FOUND)
+   set(gcgheaders ${gcgheaders}
+      gcg/struct_locks.h
+   )
 endif()
 
 # all source files should be compiled with a c++ compiler
@@ -484,13 +523,18 @@ endif()
 add_executable(GCG::GCG ALIAS gcg)
 add_library(GCG::libgcg ALIAS libgcg)
 
+target_compile_options(gcg PRIVATE ${GCG_COMP_OPTIONS})
+target_compile_options(libgcg PRIVATE ${GCG_COMP_OPTIONS})
+
 include(GenerateExportHeader)
 generate_export_header(libgcg BASE_NAME gcg EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/gcg/gcg_export.h)
 target_compile_definitions(gcg PRIVATE GCG_STATIC_DEFINE)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    find_package(Sanitizers)
-    add_sanitizers(gcg)
+    if (SANITIZE_ADDRESS OR SANITIZE_MEMORY OR SANITIZE_THREAD OR SANITIZE_UNDEFINED)
+       find_package(Sanitizers)
+       add_sanitizers(gcg)
+    endif()
 endif()
 
 target_link_libraries(gcg
@@ -499,7 +543,8 @@ target_link_libraries(gcg
     ${CLIQUER_LIBRARIES}
     ${CPLEX_LIBRARIES}
     $<$<BOOL:${GSL_FOUND}>:GSL::gsl>
-    $<$<BOOL:${JANSSON_FOUND}>:jansson::jansson>)
+    $<$<BOOL:${JANSSON_FOUND}>:jansson::jansson>
+    ${HIGHS_LIBRARIES})
 
 add_dependencies(libgcg gcg_update_githash)
 add_dependencies(gcg gcg_update_githash)
@@ -519,11 +564,6 @@ install(FILES ${gcgheaders} DESTINATION include/gcg)
 # separate installation of graph headers to preserve the folder structure
 # see e.g. here: https://stackoverflow.com/a/11097012
 install(FILES ${gcggraphheaders} DESTINATION include/graph)
-if(NOT WIN32)
-   if(HMETIS_FOUND)
-      install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hmetis.h DESTINATION include/gcg)
-   endif()
-endif()
 
 # install the binary and the library to appropriate locations and add them to an export group
 install(TARGETS gcg libgcg EXPORT gcg-targets

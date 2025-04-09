@@ -1,27 +1,28 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -33,13 +34,13 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#include "dec_connectedbase.h"
-#include "cons_decomp.h"
-#include "gcg.h"
-#include "class_partialdecomp.h"
-#include "class_detprobdata.h"
+#include "gcg/dec_connectedbase.h"
+#include "gcg/cons_decomp.h"
+#include "gcg/gcg.h"
+#include "gcg/class_partialdecomp.h"
+#include "gcg/class_detprobdata.h"
 #include "scip/scip.h"
-#include "scip_misc.h"
+#include "gcg/scip_misc.h"
 #include "scip/clock.h"
 #include <iostream>
 #include <algorithm>
@@ -93,8 +94,6 @@ static
 GCG_DECL_FREEDETECTOR(freeConnectedbase)
 {  /*lint --e{715}*/
    GCG_DETECTORDATA *detectordata;
-
-   assert(scip != NULL);
    assert(detector != NULL);
 
    assert(strcmp(GCGdetectorGetName(detector), DEC_NAME) == 0);
@@ -102,7 +101,7 @@ GCG_DECL_FREEDETECTOR(freeConnectedbase)
    detectordata = GCGdetectorGetData(detector);
    assert(detectordata != NULL);
 
-   SCIPfreeMemory(scip, &detectordata);
+   SCIPfreeMemory(GCGgetOrigprob(gcg), &detectordata);
 
    return SCIP_OKAY;
 }
@@ -129,15 +128,17 @@ GCG_DECL_FINISHPARTIALDEC(finishPartialdecConnectedbase)
 
    gcg::PARTIALDECOMP* partialdec = partialdecdetectiondata->workonpartialdec;
    gcg::DETPROBDATA* detprobdata = partialdecdetectiondata->detprobdata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
    assert(partialdecdetectiondata->workonpartialdec->getDetprobdata() == detprobdata);
 
-   SCIPgetBoolParam(scip, "detection/detectors/connectedbase/useconssadj", &byconssadj);
+   SCIPgetBoolParam(origprob, "detection/detectors/connectedbase/useconssadj", &byconssadj);
 
    if ( byconssadj && !detprobdata->isConssAdjInitialized() )
       detprobdata->createConssAdjacency();
 
-   SCIP_CALL_ABORT(SCIPcreateClock(scip, &temporaryClock) );
-   SCIP_CALL_ABORT( SCIPstartClock(scip, temporaryClock) );
+   SCIP_CALL_ABORT(SCIPcreateClock(origprob, &temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstartClock(origprob, temporaryClock) );
 
    //complete the partialdec by bfs
    if( byconssadj && partialdec->getNLinkingvars() == 0 )
@@ -145,17 +146,17 @@ GCG_DECL_FINISHPARTIALDEC(finishPartialdecConnectedbase)
    else
       partialdec->completeByConnected();
 
-   SCIP_CALL_ABORT( SCIPstopClock(scip, temporaryClock) );
+   SCIP_CALL_ABORT( SCIPstopClock(origprob, temporaryClock) );
 
-   partialdecdetectiondata->detectiontime = SCIPgetClockTime(scip, temporaryClock);
-   SCIP_CALL( SCIPallocMemoryArray(scip, &(partialdecdetectiondata->newpartialdecs), 1) );
+   partialdecdetectiondata->detectiontime = SCIPgetClockTime(origprob, temporaryClock);
+   SCIP_CALL( SCIPallocMemoryArray(origprob, &(partialdecdetectiondata->newpartialdecs), 1) );
    partialdecdetectiondata->newpartialdecs[0] = partialdec;
    partialdecdetectiondata->nnewpartialdecs = 1;
    (void) SCIPsnprintf(decinfo, SCIP_MAXSTRLEN, "connected");
    partialdecdetectiondata->newpartialdecs[0]->addDetectorChainInfo(decinfo);
 
-   partialdecdetectiondata->newpartialdecs[0]->addClockTime( SCIPgetClockTime(scip, temporaryClock)  );
-   SCIP_CALL_ABORT(SCIPfreeClock(scip, &temporaryClock) );
+   partialdecdetectiondata->newpartialdecs[0]->addClockTime( SCIPgetClockTime(origprob, temporaryClock)  );
+   SCIP_CALL_ABORT(SCIPfreeClock(origprob, &temporaryClock) );
    // we used the provided partialdec -> prevent deletion
    partialdecdetectiondata->workonpartialdec = NULL;
 
@@ -172,12 +173,12 @@ static
 GCG_DECL_SETPARAMAGGRESSIVE(setParamAggressiveConnectedbase)
 {
    char setstr[SCIP_MAXSTRLEN];
-
    const char* name = GCGdetectorGetName(detector);
-
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, TRUE ) );
 
 
    return SCIP_OKAY;
@@ -189,14 +190,15 @@ static
 GCG_DECL_SETPARAMDEFAULT(setParamDefaultConnectedbase)
 {
    char setstr[SCIP_MAXSTRLEN];
-
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLED) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLED) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, DEC_ENABLEDFINISHING ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, DEC_ENABLEDFINISHING ) );
 
    return SCIP_OKAY;
 
@@ -207,14 +209,15 @@ static
 GCG_DECL_SETPARAMFAST(setParamFastConnectedbase)
 {
    char setstr[SCIP_MAXSTRLEN];
-
    const char* name = GCGdetectorGetName(detector);
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/enabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, FALSE) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, FALSE) );
 
    (void) SCIPsnprintf(setstr, SCIP_MAXSTRLEN, "detection/detectors/%s/finishingenabled", name);
-   SCIP_CALL( SCIPsetBoolParam(scip, setstr, TRUE ) );
+   SCIP_CALL( SCIPsetBoolParam(origprob, setstr, TRUE ) );
 
    return SCIP_OKAY;
 
@@ -226,24 +229,26 @@ GCG_DECL_SETPARAMFAST(setParamFastConnectedbase)
  */
 
 /** creates the handler for connectedbase detector and includes it in SCIP */
-SCIP_RETCODE SCIPincludeDetectorConnectedbase(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeDetectorConnectedbase(
+   GCG*                  gcg                 /**< GCG data structure */
    )
 {
    GCG_DETECTORDATA* detectordata;
+   SCIP* origprob = GCGgetOrigprob(gcg);
+   assert(origprob != NULL);
 
    /**@todo create connectedbase detector data here*/
    detectordata = NULL;
-   SCIP_CALL( SCIPallocMemory(scip, &detectordata) );
+   SCIP_CALL( SCIPallocMemory(origprob, &detectordata) );
    assert(detectordata != NULL);
 
    detectordata->useconssadj = TRUE;
 
-   SCIP_CALL( GCGincludeDetector(scip, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeConnectedbase, initConnectedbase, exitConnectedbase, propagatePartialdecConnectedbase, finishPartialdecConnectedbase, detectorPostprocessPartialdecConnectedbase, setParamAggressiveConnectedbase, setParamDefaultConnectedbase, setParamFastConnectedbase) );
+   SCIP_CALL( GCGincludeDetector(gcg, DEC_NAME, DEC_DECCHAR, DEC_DESC, DEC_FREQCALLROUND, DEC_MAXCALLROUND, DEC_MINCALLROUND, DEC_FREQCALLROUNDORIGINAL, DEC_MAXCALLROUNDORIGINAL, DEC_MINCALLROUNDORIGINAL, DEC_PRIORITY, DEC_ENABLED, DEC_ENABLEDFINISHING, DEC_ENABLEDPOSTPROCESSING, DEC_SKIP, DEC_USEFULRECALL, detectordata, freeConnectedbase, initConnectedbase, exitConnectedbase, propagatePartialdecConnectedbase, finishPartialdecConnectedbase, detectorPostprocessPartialdecConnectedbase, setParamAggressiveConnectedbase, setParamDefaultConnectedbase, setParamFastConnectedbase) );
 
    /* add consname detector parameters */
       /**@todo add connectedbase detector parameters */
-   SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/connectedbase/useconssadj", "should the constraint adjacency be used", &detectordata->useconssadj, FALSE, DEFAULT_USECONSSADJ, NULL, NULL) );
+   SCIP_CALL( SCIPaddBoolParam(origprob, "detection/detectors/connectedbase/useconssadj", "should the constraint adjacency be used", &detectordata->useconssadj, FALSE, DEFAULT_USECONSSADJ, NULL, NULL) );
 
    return SCIP_OKAY;
 }

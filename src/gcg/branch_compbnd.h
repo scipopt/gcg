@@ -1,34 +1,44 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                           */
-/*                  This file is part of the program                         */
+/*                  This file is part of the program and library             */
 /*          GCG --- Generic Column Generation                                */
 /*                  a Dantzig-Wolfe decomposition based extension            */
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2024 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
-/* This program is free software; you can redistribute it and/or             */
-/* modify it under the terms of the GNU Lesser General Public License        */
-/* as published by the Free Software Foundation; either version 3            */
-/* of the License, or (at your option) any later version.                    */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
 /*                                                                           */
-/* This program is distributed in the hope that it will be useful,           */
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of            */
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
-/* GNU Lesser General Public License for more details.                       */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
 /*                                                                           */
-/* You should have received a copy of the GNU Lesser General Public License  */
-/* along with this program; if not, write to the Free Software               */
-/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.*/
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file    branch_compbnd.h
  * @ingroup BRANCHINGRULES-GCG
- * @brief   branching rule based on vanderbeck's component bound branching
+ * @brief   component bound branching rule
  * @author  Til Mohr
+ *
+ * This is an implementation of the component bound branching rule based on the papers:
+ *
+ * J. Desrosiers, M. L¨ubbecke, G. Desaulniers,
+ * J. B. Gauthier (Juin 2024). Branch-and-Price, Technical report,
+ * Les Cahiers du GERAD G–2024–36, GERAD, HEC Montr´eal, Canada.
+ *
+ * Vanderbeck, François, and Laurence A. Wolsey. "An exact algorithm for IP column generation."
+ * Operations research letters 19.4 (1996): 151-159.
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -38,8 +48,7 @@
 
 
 #include "scip/scip.h"
-#include "def.h"
-#include "type_branchgcg.h"
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,21 +69,14 @@ struct ComponentBound
 {
    SCIP_VAR*             component;          /**< variable to which this bound belongs */
    GCG_COMPBND_SENSE     sense;              /**< sense of the bound */
-   SCIP_Real             bound;              /**< bound value */
+   int                   bound;              /**< bound value */
 };
 typedef struct ComponentBound GCG_COMPBND;
 
 /** creates the component bound branching rule and includes it in SCIP */
 GCG_EXPORT
-SCIP_RETCODE SCIPincludeBranchruleCompBnd(
-   SCIP*                 scip                /**< SCIP data structure */
-   );
-
-/** prepares informations for using the component bound branching scheme */
-SCIP_RETCODE GCGbranchCompBndInitbranch(
-   SCIP*                 masterscip,              /**< SCIP data structure */
-   SCIP_BRANCHRULE*      branchrule,              /**< branching rule */
-   SCIP_RESULT*          result                   /**< pointer to store the result of the branching call */
+SCIP_RETCODE GCGincludeBranchruleCompBnd(
+   GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** returns true when the branch rule is the generic branchrule */
