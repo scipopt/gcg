@@ -69,7 +69,7 @@ void nautyhook(
       || (nautydata.searchnodelimit > 0 && nautydata.stats->numnodes >= nautydata.searchnodelimit))
       return;
    else
-      (*nautydata.staticfhook)(nautydata.staticuserdata, count, (unsigned int*)perm);
+      (*nautydata.staticfhook)(nautydata.staticuserdata, n, (unsigned int*)perm);
 }
 
 SCIP_RETCODE struct_graph::init(
