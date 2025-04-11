@@ -2394,7 +2394,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       {
          SCIPdebugMessage("  add %g (<%s>, dualsol: %g, bnds: [%g, %g] - %g)\n",
             boundval * dualsol, GCGextendedmasterconsGetName(branchextendedmasterconsdata[i]),
-            dualsol, lhs, rhs, GCGextendedmasterconsGetConstant(scip_, branchextendedmasterconsdata[i]));
+            dualsol, lhs, rhs, GCGextendedmasterconsGetConstant(gcg, branchextendedmasterconsdata[i]));
       }
 #endif
       *stabdualval += boundval * dualsol;
@@ -5954,7 +5954,7 @@ SCIP_RETCODE GCGmasterTransOrigSolToMasterVars(
    }
 
 #ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPtrySolFree(scip, &mastersol, TRUE, TRUE, TRUE, TRUE, TRUE, &added) );
+   SCIP_CALL( SCIPtrySolFree(masterprob, &mastersol, TRUE, TRUE, TRUE, TRUE, TRUE, &added) );
 #else
    SCIP_CALL( SCIPtrySolFree(masterprob, &mastersol, FALSE, FALSE, TRUE, TRUE, TRUE, &added) );
 #endif

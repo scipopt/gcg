@@ -3665,7 +3665,7 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
    pos = relaxdata->nbranchrules;
 
    /* store callback functions */
-   SCIP_CALL( SCIPallocMemory(origprob, &(relaxdata->branchrules[pos])) ); /*lint !e866*/
+   SCIP_CALL( SCIPallocMemory(GCGgetOrigprob(gcg), &(relaxdata->branchrules[pos])) );
    relaxdata->branchrules[pos]->branchrule = branchrule;
    relaxdata->branchrules[pos]->branchactivemaster = branchactivemaster;
    relaxdata->branchrules[pos]->branchdeactivemaster = branchdeactivemaster;
