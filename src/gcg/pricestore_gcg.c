@@ -400,7 +400,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
       SCIP_Real val;
       SCIP_SOL* sol;
       SCIP_Bool feasible;
-      if( SCIPgetStage(col->pricingprob) < SCIP_STAGE_PRESOLVING )
+      if( SCIPgetStage(col->pricingprob) < SCIP_STAGE_PRESOLVING && GCGgetNActiveCuts(pricestore->gcg) == 0 )
       {
          SCIP_CALL( SCIPcreateOrigSol(col->pricingprob, &sol, NULL) );
          SCIP_CALL( SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals) );

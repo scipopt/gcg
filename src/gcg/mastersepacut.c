@@ -165,7 +165,7 @@ SCIP_RETCODE GCGcreateMasterSepaCut(
    GCG_SEPARATORMASTERCUT**     mastersepacut,       /**< pointer to store separator master cut */
    GCG_SEPARATORMASTERCUTTYPE   mastersepacuttype,   /**< type of separator master cut */
    GCG_SEPA*                    sepa,                /**< separator creating this cut */
-   GCG_EXTENDEDMASTERCONSDATA*           mastercutdata,       /**< master cut data */
+   GCG_EXTENDEDMASTERCONSDATA*  mastercutdata,       /**< master cut data */
    GCG_VARHISTORY*              varhistory,          /**< variable history */
    GCG_SEPARATORMASTERCUTDATA*  mastersepacutdata    /**< separator master cut data */
    )
@@ -520,24 +520,22 @@ SCIP_RETCODE GCGchvatalGomorySetPricingObjectives(
 SCIP_RETCODE GCGchvatalGomoryAdjustGCGColumn(
    GCG*                       gcg,        /**< GCG data structure */
    GCG_SEPARATORMASTERCUT*    cut,        /**< separator master cut */
-   GCG_COL**                  gcgcol      /**< gcg column */
+   GCG_COL*                   gcgcol      /**< gcg column */
    )
 {
-   SCIP* scip;
    GCG_PRICINGMODIFICATION* pricemod;
    GCG_EXTENDEDMASTERCONSDATA* mastercutdata;
 
    assert(gcg != NULL);
    assert(cut != NULL);
 
-   scip = GCGgetMasterprob(gcg);
    mastercutdata = GCGmastersepacutGetMasterCutData(cut);
    assert(mastercutdata != NULL);
 
    if( !GCGextendedmasterconsIsActive(mastercutdata) )
       return SCIP_OKAY;
 
-   pricemod = GCGextendedmasterconsGetPricingModification(gcg, mastercutdata, GCGcolGetProbNr(*gcgcol));
+   pricemod = GCGextendedmasterconsGetPricingModification(gcg, mastercutdata, GCGcolGetProbNr(gcgcol));
    if( pricemod != NULL )
    {
       SCIP_VAR* coefvar;
@@ -549,17 +547,13 @@ SCIP_RETCODE GCGchvatalGomoryAdjustGCGColumn(
       coefvar = GCGpricingmodificationGetCoefVar(pricemod);
       assert(coefvar != NULL);
 
-      /* cut (and by extension its pricing modifications) is currently not active (or its dual is zero) */
-      if( SCIPvarGetIndex(coefvar) == -1 )
-         return SCIP_OKAY;
-
       /* we compute the value of y */
-      if( GCGcolGetInitializedCoefs(*gcgcol) )
-         SCIP_CALL( GCGchvatalGomoryCutGetColumnCoefficient(gcg, cut, *gcgcol, &coefvarval) );
+      if( GCGcolGetInitializedCoefs(gcgcol) )
+         SCIP_CALL( GCGchvatalGomoryCutGetColumnCoefficient(gcg, cut, gcgcol, &coefvarval) );
       else
          SCIP_CALL(
-            GCGchvatalGomoryCutGetVariableCoefficient(gcg, cut, (*gcgcol)->vars, (*gcgcol)->vals, (*gcgcol)->nvars,
-                                                      (*gcgcol)->probnr, &coefvarval) );
+            GCGchvatalGomoryCutGetVariableCoefficient(gcg, cut, gcgcol->vars, gcgcol->vals, gcgcol->nvars,
+                                                      gcgcol->probnr, &coefvarval) );
 
       /* if the computed coefficient is zero, we do not need to modify the column */
       if( coefvarval == 0.0 )
@@ -569,7 +563,7 @@ SCIP_RETCODE GCGchvatalGomoryAdjustGCGColumn(
        * 2. variable not yet in column:
        *    a. variable can be appended and variable order (based on index) remains correct
        *    b. variable has to be inserted to maintain the correct order */
-      if( SCIPvarCompare((*gcgcol)->vars[(*gcgcol)->nvars - 1], coefvar) == -1 )
+      if( SCIPvarCompare(gcgcol->vars[gcgcol->nvars - 1], coefvar) == -1 )
          append = TRUE; // variable can simply be appended (2.a)
       else
       {
@@ -578,60 +572,58 @@ SCIP_RETCODE GCGchvatalGomoryAdjustGCGColumn(
          SCIP_Bool found;
          int nvars;
 
-         vars = (*gcgcol)->vars;
-         nvars = (*gcgcol)->nvars;
+         vars = gcgcol->vars;
+         nvars = gcgcol->nvars;
 
          /* search position variable should be at */
          found = SCIPsortedvecFindPtr((void**) vars, SCIPvarComp, (void*) coefvar, nvars, &pos);
          if( found )
-            (*gcgcol)->vals[pos] = coefvarval; // variable already in column (1)
+            gcgcol->vals[pos] = coefvarval; // variable already in column (1)
          else
             insert = TRUE; // variable needs to be inserted in column at position pos (2.b)
       }
 
       /* cases 2.a and 2.b */
-      if( !SCIPisZero((*gcgcol)->pricingprob, coefvarval) && (append || insert))
+      if( !SCIPisZero(gcgcol->pricingprob, coefvarval) && (append || insert))
       {
          /* ensure column has enough space to include variable */
-         if( (*gcgcol)->maxvars < (*gcgcol)->nvars + 1 )
+         if( gcgcol->maxvars < gcgcol->nvars + 1 )
          {
-            int newmaxvars = SCIPcalcMemGrowSize((*gcgcol)->pricingprob, (*gcgcol)->nvars + 1);
-            SCIP_CALL( SCIPreallocBlockMemoryArray((*gcgcol)->pricingprob, &((*gcgcol)->vars), (*gcgcol)->maxvars,
+            int newmaxvars = SCIPcalcMemGrowSize(gcgcol->pricingprob, gcgcol->nvars + 1);
+            SCIP_CALL( SCIPreallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->vars), gcgcol->maxvars,
                                                    newmaxvars) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray((*gcgcol)->pricingprob, &((*gcgcol)->vals), (*gcgcol)->maxvars,
+            SCIP_CALL( SCIPreallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->vals), gcgcol->maxvars,
                                                    newmaxvars) );
-            (*gcgcol)->maxvars = newmaxvars;
+            gcgcol->maxvars = newmaxvars;
          }
 
          if( append )
          {
             /* variable can simply be appended to array and order remains correct */
-            (*gcgcol)->vars[(*gcgcol)->nvars] = coefvar;
-            (*gcgcol)->vals[(*gcgcol)->nvars] = coefvarval;
-            SCIPcaptureVar((*gcgcol)->pricingprob, (*gcgcol)->vars[(*gcgcol)->nvars]);
+            gcgcol->vars[gcgcol->nvars] = coefvar;
+            gcgcol->vals[gcgcol->nvars] = coefvarval;
+            SCIPcaptureVar(gcgcol->pricingprob, gcgcol->vars[gcgcol->nvars]);
          }
          else if( insert )
          {
             int i = 0;
 
             /* we have to move all the variables (& and their values) stored behind pos */
-            for( i = (*gcgcol)->nvars; i > pos ; i-- )
+            for( i = gcgcol->nvars; i > pos ; i-- )
             {
-               (*gcgcol)->vars[i] = (*gcgcol)->vars[i - 1];
-               (*gcgcol)->vals[i] = (*gcgcol)->vals[i - 1];
+               gcgcol->vars[i] = gcgcol->vars[i - 1];
+               gcgcol->vals[i] = gcgcol->vals[i - 1];
             }
 
             /* add variable at correct position */
-            (*gcgcol)->vars[pos] = coefvar;
-            (*gcgcol)->vals[pos] = coefvarval;
-            SCIPcaptureVar((*gcgcol)->pricingprob, (*gcgcol)->vars[pos]);
+            gcgcol->vars[pos] = coefvar;
+            gcgcol->vals[pos] = coefvarval;
+            SCIPcaptureVar(gcgcol->pricingprob, gcgcol->vars[pos]);
          }
 
-         ((*gcgcol)->nvars)++;
+         (gcgcol->nvars)++;
       }
    }
-   else
-      SCIPinfoMessage(scip, NULL, "pricemod not found!\n");
 
    return SCIP_OKAY;
 }

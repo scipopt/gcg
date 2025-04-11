@@ -165,12 +165,6 @@ void GCGfreeGcgCol(
    for( i = 0; i < (*gcgcol)->nvars; ++i )
       SCIPreleaseVar((*gcgcol)->pricingprob, &(*gcgcol)->vars[i]);
    assert((*gcgcol)->nvars == 0 || (*gcgcol)->vars != NULL);
-   for( i = 0; i < (*gcgcol)->nvars; i++ )
-   {
-      /* release inferred vars as they were captured */
-      if( GCGvarIsInferredPricing((*gcgcol)->vars[i]) )
-         SCIPreleaseVar((*gcgcol)->pricingprob, &((*gcgcol)->vars[i]));
-   }
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vars, (*gcgcol)->maxvars);
    assert((*gcgcol)->nvars == 0 || (*gcgcol)->vals != NULL);
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vals, (*gcgcol)->maxvars);
@@ -697,7 +691,6 @@ SCIP_RETCODE GCGcolAppendSepaMastercutCoeffs(
       gcgcol->sepamastercutcoeffs[gcgcol->nsepamastercutcoeffs] = sepamastercoeffs[i];
       ++(gcgcol->nsepamastercutcoeffs);
    }
-   assert(gcgcol->nsepamastercutcoeffs == gcgcol->nsepamastercutcoeffs + nsepamastercoeffs);
 
    return SCIP_OKAY;
 }

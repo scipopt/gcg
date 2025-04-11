@@ -547,12 +547,15 @@ GCG_EXTENDEDMASTERCONSDATA* createMastercutData(
    SCIP* masterscip;
    GCG_EXTENDEDMASTERCONSDATA*         mastercutdata = NULL;         // master cut data for subset row cut
    GCG_PRICINGMODIFICATION**  pricingmodifications = NULL;  // pricing modifications associated with cut
+   GCG_PRICINGMODIFICATION**  pricingmodificationsbuffer = NULL;
    SCIP_Bool                  success;
    char                       name[SCIP_MAXSTRLEN];         // name of the subset row cut
    int                        npricingmodifications = 0;    // counter for number of pricing modifications
    int                        j;
 
    masterscip = GCGgetMasterprob(gcg);
+
+   SCIPallocBufferArray(masterscip, &pricingmodificationsbuffer, GCGgetNRelPricingprobs(gcg));
 
    /* create the pricing modification for every (relevant) pricing problem */
    for( j = 0; j < npricingproblems; j++ )
@@ -623,13 +626,18 @@ GCG_EXTENDEDMASTERCONSDATA* createMastercutData(
       assert(GCGgetNRelPricingprobs(gcg) > npricingmodifications);
 
       /* create pricing modifications containing y as the coeffvar and the single constraint we created */
-      GCGpricingmodificationCreate(gcg, &pricingmodifications[npricingmodifications], j, coeffvar, NULL, 0, pricingconss, 1); // released in GCGpricingmodificationFree
+      GCGpricingmodificationCreate(gcg, &pricingmodificationsbuffer[npricingmodifications], j, coeffvar, NULL, 0, pricingconss, 1); // released in GCGpricingmodificationFree
 
       npricingmodifications++;
    }
    SCIPdebugMessage("number of pricing mods: %i\n", npricingmodifications);
 
-   SCIPreallocBlockMemoryArray(masterscip, &pricingmodifications, GCGgetNRelPricingprobs(gcg), npricingmodifications);
+   if( npricingmodifications > 0 )
+   {
+      SCIPallocBlockMemoryArray(masterscip, &pricingmodifications, npricingmodifications);
+      SCIPduplicateMemoryArray(masterscip, &pricingmodifications, pricingmodificationsbuffer, npricingmodifications);
+   }
+   SCIPfreeBufferArray(masterscip, &pricingmodificationsbuffer);
 
    /* create master cut data containing y, ssrc and the pricing modifications */
    GCGextendedmasterconsCreateFromRow(gcg, &mastercutdata, ssrc, pricingmodifications, npricingmodifications, NULL, NULL); // freed in GCGextendedmasterconsFree

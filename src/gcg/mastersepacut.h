@@ -25,6 +25,7 @@
 #ifndef GCG_MASTERSEPACUT_H__
 #define GCG_MASTERSEPACUT_H__
 
+#include "scip/scip.h"
 #include "gcg/gcg.h"
 
 #ifdef __cplusplus

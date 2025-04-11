@@ -1910,6 +1910,7 @@ SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
 {
    GCG_SEPARATORMASTERCUT** activecuts = NULL;
    SCIP_Real* coeffs = NULL;
+   int i;
    int j;
    int nactivecuts;
    int ncurrentsepamastercutcoeffs;
@@ -1934,19 +1935,19 @@ SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
 
    /* compute coefficient for each (active) cut */
    SCIP_CALL( SCIPallocBufferArray(origprob, &coeffs, nactivecuts - ncurrentsepamastercutcoeffs) );
-   for( j = ncurrentsepamastercutcoeffs; j < nactivecuts; j++ )
+   for( j = ncurrentsepamastercutcoeffs, i = 0; j < nactivecuts; j++, i++ )
    {
       GCG_EXTENDEDMASTERCONSDATA* mastercutdata = NULL;
       GCG_SEPA* sepa;
 
-      coeffs[j] = 0.0;
+      coeffs[i] = 0.0;
       mastercutdata = GCGmastersepacutGetMasterCutData(activecuts[j]);
       assert(mastercutdata != NULL);
 
       sepa = GCGmastersepacutGetSeparator(activecuts[j]);
       assert(sepa != NULL);
       if( GCGextendedmasterconsIsActive(mastercutdata) && sepa->gcgsepagetcolcoefficient != NULL )
-         SCIP_CALL( sepa->gcgsepagetcolcoefficient(gcg, sepa, activecuts[j], gcgcol, &coeffs[j]) );
+         SCIP_CALL( sepa->gcgsepagetcolcoefficient(gcg, sepa, activecuts[j], gcgcol, &coeffs[i]) );
    }
 
    /* transfer the computed coefficients to the gcg column */
@@ -2595,6 +2596,55 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
 #endif
       *stabdualval += boundval * dualsol;
    }
+
+   /* separator master cuts */
+   nactivecuts = GCGsepacutGetNActiveCuts(gcg, pricerdata->mastersepacuthdlr);
+   activecuts = GCGsepacutGetActiveCuts(gcg, pricerdata->mastersepacuthdlr);
+
+   for( j = 0; j < nactivecuts; j++ )
+   {
+      GCG_EXTENDEDMASTERCONSDATA* mastercutdata;
+      SCIP_ROW* mastercutrow;
+
+      mastercutdata = GCGmastersepacutGetMasterCutData(activecuts[j]);
+      assert(mastercutdata != NULL);
+      mastercutrow = GCGextendedmasterconsGetRow(mastercutdata);
+      assert(mastercutrow != NULL);
+
+      SCIP_Real lhs = SCIProwGetLhs(mastercutrow);
+      SCIP_Real rhs = SCIProwGetRhs(mastercutrow);
+
+      /* @todo stabilize */
+      if( stabilize )
+      {
+         dualsol = pricetype->rowGetDual(mastercutrow);
+      }
+      else
+      {
+         dualsol = pricetype->rowGetDual(mastercutrow);
+      }
+
+      if( !SCIPisZero(scip_, dualsol) || (!SCIPisInfinity(scip_, -lhs) && !SCIPisInfinity(scip_, rhs)) )
+         boundval = dualsol > 0.0 ? lhs : rhs;
+      else if( !SCIPisInfinity(scip_, -lhs) )
+         boundval = lhs;
+      else if( !SCIPisInfinity(scip_, rhs) )
+         boundval = rhs;
+      else
+         continue;
+
+      boundval -= SCIProwGetConstant(mastercutrow);
+
+#ifdef PRINTDUALSOLS
+      if( !SCIPisZero(scip_, boundval * dualsol) )
+      {
+         SCIPdebugMessage("  add %g (<%s>, dualsol: %g, bnds: [%g, %g] - %g)\n",
+            boundval * dualsol, SCIProwGetName(mastercutrow), dualsol, lhs, rhs, SCIProwGetConstant(mastercutrow));
+      }
+#endif
+      *stabdualval += boundval * dualsol;
+   }
+
 
    /* get master variables that were directly transferred or that are linking */
    staticvars = SCIPgetOrigVars(scip_);
@@ -3752,6 +3802,20 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    {
       assert(GCGextendedmasterconsIsActive(branchextendedmasterconsdata[i]));
       SCIP_CALL( GCGextendedmasterconsApplyPricingModifications(gcg, branchextendedmasterconsdata[i]) );
+   }
+
+   /* master separator cuts: modify pricing problems for active master cuts */
+   for( j = 0; j < nactivecuts; j++ )
+   {
+      GCG_EXTENDEDMASTERCONSDATA* mastercutdata = GCGmastersepacutGetMasterCutData(activecuts[j]);
+      assert(mastercutdata != NULL);
+      if( GCGextendedmasterconsIsActive(mastercutdata) )
+      {
+         SCIP_Real dual = pricetype->extendedmasterconsGetDual(mastercutdata);
+         /* if dual is zero, modifications are superfluous since the effect on the objective value is zero */
+         if( dual != 0.0 )
+            SCIP_CALL( GCGextendedmasterconsApplyPricingModifications(gcg, mastercutdata) );
+      }
    }
 
    pricerdata->npricingloopiters = 0;

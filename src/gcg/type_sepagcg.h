@@ -98,7 +98,7 @@ typedef struct GCG_Sepa GCG_SEPA;             /**< separator for master problem*
  *    cut             : cut which has to be altered
  *    gcgcol          : GCG column
  */
-#define GCG_DECL_SEPAADJUSTCOL(x) SCIP_RETCODE x (GCG* gcg, GCG_SEPA* sepa, GCG_SEPARATORMASTERCUT* cut, GCG_COL** gcgcol)
+#define GCG_DECL_SEPAADJUSTCOL(x) SCIP_RETCODE x (GCG* gcg, GCG_SEPA* sepa, GCG_SEPARATORMASTERCUT* cut, GCG_COL* gcgcol)
 
 #ifdef __cplusplus
 }

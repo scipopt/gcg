@@ -40,6 +40,7 @@
 #include "gcg/event_sepacuts.h"
 #include "gcg/gcg.h"
 #include "gcg/mastersepacut.h"
+#include "gcg/pricer_gcg.h"
 
 
 #define EVENTHDLR_NAME         "mastersepacut"
@@ -125,6 +126,20 @@ SCIP_RETCODE ensureActiveSize(
    return SCIP_OKAY;
 }
 
+static
+SCIP_RETCODE addToActiveCuts(
+   GCG*                       gcg,                  /**< GCG data structure */
+   GCG_SEPARATORMASTERCUT*    mastersepacut,        /**< global master separator cut */
+   SCIP_EVENTHDLRDATA*        eventhdlrdata         /**< event handler data */
+   )
+{
+   SCIP_CALL( ensureActiveSize(GCGgetMasterprob(gcg), eventhdlrdata, eventhdlrdata->nactivecuts + 1) );
+   eventhdlrdata->activecuts[eventhdlrdata->nactivecuts] = mastersepacut;
+   SCIP_CALL( GCGcaptureMasterSepaCut(mastersepacut) );
+   (eventhdlrdata->nactivecuts)++;
+   return SCIP_OKAY;
+}
+
 /** re-inserts the separator mastercut of a global row (in case it was re-added to the separation storage) to generated cuts */
 static
 SCIP_RETCODE reinsertGlobalMasterSepaCut(
@@ -206,9 +221,7 @@ SCIP_RETCODE eventRowAddedToLP(
          if( GCGmastersepacutGetVarHistory(generatedcut) == NULL )
             SCIP_CALL( GCGmastersepacutSetVarHistory(gcg, &generatedcut) );
 
-         eventhdlrdata->activecuts[eventhdlrdata->nactivecuts] = generatedcut;
-         SCIP_CALL( GCGcaptureMasterSepaCut(eventhdlrdata->activecuts[eventhdlrdata->nactivecuts]) );
-         (eventhdlrdata->nactivecuts)++;
+         addToActiveCuts(gcg, generatedcut, eventhdlrdata);
       }
    }
 
@@ -681,10 +694,7 @@ SCIP_RETCODE GCGsepacutAddCutToActiveCuts(
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
 
-   SCIP_CALL( ensureActiveSize(GCGgetMasterprob(gcg), eventhdlrdata, eventhdlrdata->nactivecuts + 1) );
-   eventhdlrdata->activecuts[eventhdlrdata->nactivecuts] = mastersepacut;
-   SCIP_CALL( GCGcaptureMasterSepaCut(mastersepacut) );
-   (eventhdlrdata->nactivecuts)++;
+   addToActiveCuts(gcg, mastersepacut, eventhdlrdata);
 
    return SCIP_OKAY;
 }
