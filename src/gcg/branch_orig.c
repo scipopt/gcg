@@ -831,8 +831,8 @@ SCIP_DECL_BRANCHINIT(branchInitOrig)
 
    SCIPdebugMessage("Init orig branching rule\n");
 
-   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, branchrule, branchActiveMasterOrig,
-         branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolvedOrig, branchDataDeleteOrig, NULL, NULL) );
+   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, branchrule, NULL, branchActiveMasterOrig,
+         branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolvedOrig, branchDataDeleteOrig, NULL, NULL, NULL) );
 
    return SCIP_OKAY;
 }

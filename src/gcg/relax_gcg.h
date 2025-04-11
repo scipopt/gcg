@@ -63,13 +63,15 @@ GCG_EXPORT
 SCIP_RETCODE GCGrelaxIncludeBranchrule(
    GCG*                  gcg,                /**< GCG data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule for which callback methods are saved */
+   GCG_BRANCHRULE**      gcgbranchrule,      /**< pointer to store created GCG branch rule (can be NULL) */
    GCG_DECL_BRANCHACTIVEMASTER((*branchactivemaster)),/**<  activation method for branchrule */
    GCG_DECL_BRANCHDEACTIVEMASTER((*branchdeactivemaster)),/**<  deactivation method for branchrule */
    GCG_DECL_BRANCHPROPMASTER((*branchpropmaster)),/**<  propagation method for branchrule */
    GCG_DECL_BRANCHMASTERSOLVED((*branchmastersolved)),/**<  master solved method for branchrule */
    GCG_DECL_BRANCHDATADELETE((*branchdatadelete)),/**<  branchdata deletion method for branchrule */
    GCG_DECL_BRANCHNEWCOL ((*branchnewcol)),  /**< new column handler method of branching rule */
-   GCG_DECL_BRANCHGETEXTENDEDMASTERCONS((*branchgetextendedmastercons))/**< extended master cons getter of branching rule */
+   GCG_DECL_BRANCHGETEXTENDEDMASTERCONS((*branchgetextendedmastercons)), /**< extended master cons getter of branching rule */
+   GCG_DECL_BRANCHGETEXTENDEDMASTERCONSCOEFF((*branchgetextendedmasterconscoeff)) /**< column coefficient calculation method for extended master conss */
    );
 
 /** perform activation method of the given branchrule for the given branchdata */

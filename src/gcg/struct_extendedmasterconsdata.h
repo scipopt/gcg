@@ -70,12 +70,11 @@ union GCG_ExtendedMasterCons
 /** data for extended master conss */
 struct GCG_ExtendedMasterConsData
 {
-   GCG_EXTENDEDMASTERCONSTYPE type;                                     /**< type of the extended master cons */
-   GCG_EXTENDEDMASTERCONS     cons;                                     /**< constraint or row in the master problem that represents the extended master cons */
-   GCG_PRICINGMODIFICATION**  pricingmodifications;                     /**< array of pricing modifications for the extended master cons */
-   int                        npricingmodifications;                    /**< number of pricing modifications for the extended master cons */
-   void*                      data;                                     /**< any data that might be required to calculate the coefficient of a column solution */
-   GCG_DECL_EXTENDEDMASTERCONSGETCOEFF ((*extendedmasterconsGetCoeff)); /**< callback to calculate the coefficient of a column solution */
+   GCG_EXTENDEDMASTERCONSTYPE       type;                      /**< type of the extended master cons */
+   GCG_EXTENDEDMASTERCONS           cons;                      /**< constraint or row in the master problem that represents the extended master cons */
+   GCG_PRICINGMODIFICATION**        pricingmodifications;      /**< array of pricing modifications for the extended master cons */
+   int                              npricingmodifications;     /**< number of pricing modifications for the extended master cons */
+   GCG_EXTENDEDMASTERCONSDATADATA*  data;                      /**< any data that might be required to calculate the coefficient of a column solution */
 };
 
 #ifdef __cplusplus

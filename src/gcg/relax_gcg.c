@@ -3636,13 +3636,15 @@ SCIP_RETCODE GCGincludeRelaxGcg(
 SCIP_RETCODE GCGrelaxIncludeBranchrule(
    GCG*                  gcg,                /**< SCIP data structure */
    SCIP_BRANCHRULE*      branchrule,         /**< branching rule for which callback methods are saved */
+   GCG_BRANCHRULE**      gcgbranchrule,      /**< pointer to store created GCG branch rule (can be NULL) */
    GCG_DECL_BRANCHACTIVEMASTER((*branchactivemaster)),/**<  activation method for branchrule */
    GCG_DECL_BRANCHDEACTIVEMASTER((*branchdeactivemaster)),/**<  deactivation method for branchrule */
    GCG_DECL_BRANCHPROPMASTER((*branchpropmaster)),/**<  propagation method for branchrule */
    GCG_DECL_BRANCHMASTERSOLVED((*branchmastersolved)),/**<  master solved method for branchrule */
    GCG_DECL_BRANCHDATADELETE((*branchdatadelete)),/**<  branchdata deletion method for branchrule */
    GCG_DECL_BRANCHNEWCOL ((*branchnewcol)),  /**< new column handler method of branching rule */
-   GCG_DECL_BRANCHGETEXTENDEDMASTERCONS ((*branchgetextendedmastercons))/**< extended master cons getter of branching rule */
+   GCG_DECL_BRANCHGETEXTENDEDMASTERCONS ((*branchgetextendedmastercons)), /**< extended master cons getter of branching rule */
+   GCG_DECL_BRANCHGETEXTENDEDMASTERCONSCOEFF((*branchgetextendedmasterconscoeff)) /**< column coefficient calculation method for extended master conss */
    )
 {
    SCIP_RELAX* relax;
@@ -3672,7 +3674,11 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
    relaxdata->branchrules[pos]->branchdatadelete = branchdatadelete;
    relaxdata->branchrules[pos]->branchnewcol = branchnewcol;
    relaxdata->branchrules[pos]->branchgetextendedmastercons = branchgetextendedmastercons;
+   relaxdata->branchrules[pos]->branchgetextendedmasterconscoeff = branchgetextendedmasterconscoeff;
    relaxdata->nbranchrules++;
+
+   if( gcgbranchrule != NULL )
+      *gcgbranchrule = relaxdata->branchrules[pos];
 
    return SCIP_OKAY;
 }

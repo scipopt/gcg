@@ -257,6 +257,7 @@ LIBOBJ = \
 			gcg/branch_empty.o \
 			gcg/branch_generic.o \
 			gcg/benders_gcg.o \
+			gcg/branchgcg.o \
 			gcg/branch_orig.o \
 			gcg/branch_relpsprob.o \
 			gcg/branch_ryanfoster.o \

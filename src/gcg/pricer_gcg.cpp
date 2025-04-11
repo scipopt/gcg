@@ -1870,7 +1870,7 @@ SCIP_RETCODE ObjPricerGcg::computeColExtendedMasterconss(
       }
       else
       {
-         coef = GCGextendedmasterconsGetCoeff(gcg, branchextendedmasterconsdata[i], solvars, solvals, nsolvars, probnr);
+         SCIP_CALL( GCGextendedmasterconsGetCoeff(gcg, branchextendedmasterconsdata[i], solvars, solvals, nsolvars, probnr, &coef) );
       }
 
       extendedmasterconscoeffs[i] = coef;
@@ -2593,7 +2593,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       /* get columns and vals of the cons */
       switch( GCGextendedmasterconsGetType(branchextendedmasterconsdata[i]) )
       {
-      case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+      case GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS:
          extendedmasterconscons = GCGextendedmasterconsGetCons(branchextendedmasterconsdata[i]);
          assert(extendedmasterconscons != NULL);
          nconsvars = GCGconsGetNVars(origprob, extendedmasterconscons);
@@ -2602,7 +2602,7 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
          GCGconsGetVars(origprob, extendedmasterconscons, consvars, nconsvars);
          GCGconsGetVals(origprob, extendedmasterconscons, consvals, nconsvars);
          break;
-      case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+      case GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW:
          extendedmasterconsrow = GCGextendedmasterconsGetRow(branchextendedmasterconsdata[i]);
          assert(extendedmasterconsrow != NULL);
          nconsvars = SCIProwGetNNonz(extendedmasterconsrow);
@@ -2648,11 +2648,11 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       }
       switch( GCGextendedmasterconsGetType(branchextendedmasterconsdata[i]) )
       {
-      case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+      case GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS:
          SCIPfreeBufferArray(scip_, &consvals);
          SCIPfreeBufferArray(scip_, &consvars);
          break;
-      case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+      case GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW:
          SCIPfreeBufferArray(scip_, &consvars);
          break;
       default:
