@@ -241,12 +241,6 @@ SCIP_RETCODE buildProblem(
       case SCIP_VARTYPE_INTEGER:
          vartype[varidx] = 1;
          break;
-      case SCIP_VARTYPE_IMPLINT:
-         /* NOTE: HiGHS has an kImplicitInteger = 4 variable type, but this is not current accepted as input. So the
-          * implicit integers are set to continuous
-          */
-         vartype[varidx] = 0;
-         break;
       default:
          SCIPerrorMessage("invalid variable type\n");
          return SCIP_INVALIDDATA;

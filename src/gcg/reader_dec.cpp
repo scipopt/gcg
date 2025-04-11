@@ -41,10 +41,6 @@
 
 #include <assert.h>
 #include <string.h>
-#if defined(_WIN32) || defined(_WIN64)
-#else
-#include <strings.h> /*lint --e{766}*/ /* needed for strcasecmp() */
-#endif
 #include <ctype.h>
 
 #include "gcg/reader_dec.h"
@@ -392,7 +388,7 @@ SCIP_Bool isInt(
 
    assert(decinput != NULL);
    assert(value != NULL);
-   assert(!(strcasecmp(decinput->token, "INFINITY") == 0) && !(strcasecmp(decinput->token, "INF") == 0));
+   assert(!(SCIPstrcasecmp(decinput->token, "INFINITY") == 0) && !(SCIPstrcasecmp(decinput->token, "INF") == 0));
 
    val = strtol(decinput->token, &endptr, 0);
    if( endptr != decinput->token && * endptr == '\0' )
@@ -429,28 +425,28 @@ SCIP_Bool isNewSection(
    /* reinstall the previous token by swapping back the token buffer */
    swapTokenBuffer(decinput);
 
-   if( strcasecmp(decinput->token, "INCOMPLETE") == 0 )
+   if( SCIPstrcasecmp(decinput->token, "INCOMPLETE") == 0 )
    {
       SCIPdebugMessage("(line %d) new section: INCOMPLETE\n", decinput->linenumber);
       decinput->section = DEC_INCOMPLETE;
       return TRUE;
    }
 
-   if( strcasecmp(decinput->token, "PRESOLVED") == 0 )
+   if( SCIPstrcasecmp(decinput->token, "PRESOLVED") == 0 )
    {
       SCIPdebugMessage("(line %d) new section: PRESOLVED\n", decinput->linenumber);
       decinput->section = DEC_PRESOLVED;
       return TRUE;
    }
 
-   if( strcasecmp(decinput->token, "NBLOCKS") == 0 )
+   if( SCIPstrcasecmp(decinput->token, "NBLOCKS") == 0 )
    {
       SCIPdebugMessage("(line %d) new section: NBLOCKS\n", decinput->linenumber);
       decinput->section = DEC_NBLOCKS;
       return TRUE;
    }
 
-   if( strcasecmp(decinput->token, "BLOCK") == 0 || strcasecmp(decinput->token, "BLOCKCONSS") == 0 || strcasecmp(decinput->token, "BLOCKCONS") == 0)
+   if( SCIPstrcasecmp(decinput->token, "BLOCK") == 0 || SCIPstrcasecmp(decinput->token, "BLOCKCONSS") == 0 || SCIPstrcasecmp(decinput->token, "BLOCKCONS") == 0)
    {
       int blocknr;
 
@@ -478,7 +474,7 @@ SCIP_Bool isNewSection(
 
    }
 
-   if( strcasecmp(decinput->token, "MASTERCONSS") == 0 || strcasecmp(decinput->token, "MASTERCONS") == 0 )
+   if( SCIPstrcasecmp(decinput->token, "MASTERCONSS") == 0 || SCIPstrcasecmp(decinput->token, "MASTERCONS") == 0 )
    {
       decinput->section = DEC_MASTERCONSS;
 
@@ -487,7 +483,7 @@ SCIP_Bool isNewSection(
       return TRUE;
    }
 
-   if( strcasecmp(decinput->token, "BLOCKVARS") == 0 || strcasecmp(decinput->token, "BLOCKVAR") == 0 )
+   if( SCIPstrcasecmp(decinput->token, "BLOCKVARS") == 0 || SCIPstrcasecmp(decinput->token, "BLOCKVAR") == 0 )
    {
       int blocknr;
 
@@ -515,8 +511,8 @@ SCIP_Bool isNewSection(
 
    }
 
-   if( strcasecmp(decinput->token, "MASTERVARS") == 0 || strcasecmp(decinput->token, "MASTERVAR") == 0
-      || strcasecmp(decinput->token, "STATICVAR") == 0 || strcasecmp(decinput->token, "STATICVARS") == 0 )
+   if( SCIPstrcasecmp(decinput->token, "MASTERVARS") == 0 || SCIPstrcasecmp(decinput->token, "MASTERVAR") == 0
+      || SCIPstrcasecmp(decinput->token, "STATICVAR") == 0 || SCIPstrcasecmp(decinput->token, "STATICVARS") == 0 )
    {
       decinput->section = DEC_MASTERVARS;
 
@@ -525,7 +521,7 @@ SCIP_Bool isNewSection(
       return TRUE;
    }
 
-   if( strcasecmp(decinput->token, "LINKINGVARS") == 0 || strcasecmp(decinput->token, "LINKINGVAR") == 0 )
+   if( SCIPstrcasecmp(decinput->token, "LINKINGVARS") == 0 || SCIPstrcasecmp(decinput->token, "LINKINGVAR") == 0 )
    {
       decinput->section = DEC_LINKINGVARS;
 

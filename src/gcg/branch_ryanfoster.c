@@ -209,7 +209,7 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
    int i;
    int j;
 
-   assert(masterprob != NULL);
+   assert(gcg != NULL);
    assert(branchdata != NULL);
    assert(branchdata->var1 != NULL);
    assert(branchdata->var2 != NULL);

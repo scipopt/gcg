@@ -2855,7 +2855,7 @@ void incVarsData(
       ++(nintvars[i]);
       assert(nintvars[i] > 0);
    }
-   if( nimplvars != NULL && (SCIPvarGetType(var) == SCIP_VARTYPE_IMPLINT) )
+   if( nimplvars != NULL && (SCIPvarGetImplType(var) != SCIP_IMPLINTTYPE_NONE) )
    {
       ++(nimplvars[i]);
       assert(nimplvars[i] > 0);
