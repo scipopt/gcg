@@ -45,6 +45,7 @@
 #include "scip/type_misc.h"
 #include "gcg/def.h"
 #include "gcg/type_gcg.h"
+#include "gcg/type_extendedmasterconsdata.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,6 +63,7 @@ extern "C" {
 /** create a gcg column */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateGcgCol(
+   GCG*                 gcg,                /**< GCG data structure */
    SCIP*                pricingprob,        /**< SCIP data structure */
    GCG_COL**            gcgcol,             /**< pointer to store gcg column */
    int                  prob,               /**< number of corresponding pricing problem */
@@ -74,13 +76,14 @@ SCIP_RETCODE GCGcreateGcgCol(
 
 /** free a gcg column */
 GCG_EXPORT
-void GCGfreeGcgCol(
+SCIP_RETCODE GCGfreeGcgCol(
    GCG_COL**            gcgcol              /**< pointer to store gcg column */
 );
 
 /** create a gcg column from a solution to a pricing problem */
 GCG_EXPORT
 SCIP_RETCODE GCGcreateGcgColFromSol(
+   GCG*                 gcg,                /**< GCG data structure */
    SCIP*                pricingprob,        /**< SCIP data structure (pricing problem) */
    SCIP*                subproblem,         /**< SCIP data structure that contains the actual solution (if NULL pricingprob will be used) */
    SCIP_HASHMAP*        varmap,             /**< mapping of pricingprob vars to subproblem vars (can be NULL if subproblem is NULL) */
@@ -163,13 +166,6 @@ SCIP_Real GCGcolGetSolVal(
    SCIP_VAR*            var                 /**< variable */
    );
 
-/** returns true if the gcg column knows the solution value of the variable */
-GCG_EXPORT
-SCIP_Bool GCGcolKnowsSolVar(
-   GCG_COL*             gcgcol,             /**< gcg column */
-   SCIP_VAR*            var                 /**< variable */
-   );
-
 /** get master coefficients of column */
 GCG_EXPORT
 SCIP_Real* GCGcolGetMastercoefs(
@@ -199,7 +195,7 @@ void GCGcolSetNorm(
 
 /** get norm of column */
 GCG_EXPORT
-void GCGcolComputeNorm(
+SCIP_RETCODE GCGcolComputeNorm(
    GCG*                 gcg,                /**< GCG data structure */
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
@@ -248,18 +244,6 @@ int GCGcolGetNOriginalSepaMastercuts(
    GCG_COL*             gcgcol              /**< gcg column structure */
    );
 
-/** get extended master cons coefficients of column in the master problem */
-GCG_EXPORT
-SCIP_Real* GCGcolGetExtendedmastercons(
-   GCG_COL*             gcgcol              /**< gcg column structure */
-   );
-
-/** get number of extended master cons coefficients of column in the master problem */
-GCG_EXPORT
-int GCGcolGetNExtendedmasterconss(
-   GCG_COL*             gcgcol              /**< gcg column structure */
-   );
-
 /** get norm of column */
 GCG_EXPORT
 SCIP_Real GCGcolGetNorm(
@@ -300,17 +284,36 @@ SCIP_Bool GCGcolIsAged(
 
 /** compute parallelism of column to dual objective */
 GCG_EXPORT
-SCIP_Real GCGcolComputeDualObjPara(
+SCIP_RETCODE GCGcolComputeDualObjPara(
    GCG*                 gcg,                /**< GCG data structure */
-   GCG_COL*             gcgcol              /**< gcg column */
+   GCG_COL*             gcgcol,             /**< gcg column */
+   SCIP_Real*           para                /**< pointer to store the parallelism of column to dual objective */
    );
 
 /** compute orthogonality of two gcg columns */
 GCG_EXPORT
-SCIP_Real GCGcolComputeOrth(
+SCIP_RETCODE GCGcolComputeOrth(
    GCG*                 gcg,                /**< GCG data structure */
    GCG_COL*             gcgcol1,            /**< first gcg column */
-   GCG_COL*             gcgcol2             /**< second gcg column */
+   GCG_COL*             gcgcol2,            /**< second gcg column */
+   SCIP_Real*           orth                /**< pointer to store the orthogonality of two gcg columns */
+   );
+
+/** returns the inferred (coefficient) pricing variables solution values */
+GCG_EXPORT
+SCIP_Real* GCGcolGetInferredPricingVals(
+   GCG_COL*              gcgcol             /**< gcgcol */
+   );
+
+/** returns the inferred (coefficient) pricing variables */
+GCG_EXPORT
+SCIP_VAR** GCGcolGetInferredPricingVars(
+   GCG_COL*              gcgcol             /**< gcgcol */
+   );
+
+/** returns the number of inferred (coefficient) pricing variables */
+int GCGcolGetNInferredPricingVars(
+   GCG_COL*              gcgcol             /**< gcgcol */
    );
 
 /** gets the hash key of a col */

@@ -91,7 +91,7 @@ SCIP_RETCODE solveKnapsack(
       {
          *lowerbound = exactly ? solval : -SCIPinfinity(pricingprob);
 
-         SCIP_CALL( GCGcreateGcgCol(pricingprob, &col, probnr, solvars, solvals, nsolvars, FALSE, SCIPinfinity(pricingprob)) );
+         SCIP_CALL( GCGcreateGcgCol(gcg, pricingprob, &col, probnr, solvars, solvals, nsolvars, FALSE, SCIPinfinity(pricingprob)) );
          SCIP_CALL( GCGpricerAddCol(gcg, col) );
       }
 

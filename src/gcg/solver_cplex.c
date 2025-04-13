@@ -765,7 +765,7 @@ SCIP_RETCODE solveCplex(
          CHECK_ZERO( cpxretval );
       }
 
-      SCIP_CALL( GCGcreateGcgCol(pricingprob, &col, probnr, solverdata->pricingvars[probnr], cplexsolvals, numcols, TRUE, SCIPinfinity(pricingprob)) );
+      SCIP_CALL( GCGcreateGcgCol(gcg, pricingprob, &col, probnr, solverdata->pricingvars[probnr], cplexsolvals, numcols, TRUE, SCIPinfinity(pricingprob)) );
       SCIP_CALL( GCGpricerAddCol(gcg, col) );
       ++(*ncols);
 
@@ -897,7 +897,7 @@ SCIP_RETCODE solveCplex(
 
       if( feasible )
       {
-         SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, NULL, NULL, &col, probnr, sol, FALSE, SCIPinfinity(pricingprob)) );
+         SCIP_CALL( GCGcreateGcgColFromSol(gcg, pricingprob, NULL, NULL, &col, probnr, sol, FALSE, SCIPinfinity(pricingprob)) );
          SCIP_CALL( GCGpricerAddCol(gcg, col) );
          ++(*ncols);
       }

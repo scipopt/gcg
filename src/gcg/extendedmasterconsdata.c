@@ -40,6 +40,7 @@
 #include "gcg/scip_misc.h"
 #include "gcg/pricer_gcg.h"
 #include "gcg/struct_extendedmasterconsdata.h"
+#include "gcg/struct_vardata.h"
 
 #include "scip/scip.h"
 #include "scip/cons_linear.h"
@@ -109,7 +110,7 @@ SCIP_RETCODE GCGpricingmodificationCreate(
 
    assert(blocknr < GCGgetNPricingprobs(gcg));
 
-   assert(coefvar != NULL);
+   assert(coefvar != NULL && GCGinferredPricingVarIsCoefVar(coefvar));
    assert(GCGvarIsInferredPricing(coefvar));
    assert(additionalvars != NULL || nadditionalvars == 0);
    assert(additionalconss != NULL || nadditionalconss == 0);
@@ -476,6 +477,17 @@ int GCGpricingmodificationGetNAdditionalConss(
    assert(pricingmodification != NULL);
 
    return pricingmodification->nadditionalconss;
+}
+#endif
+
+#ifndef NDEBUG
+/** get the number of the block the modification belongs to */
+int GCGpricingmodificationGetBlock(
+   GCG_PRICINGMODIFICATION*      pricingmodification           /**< pricing modification */
+   )
+{
+   assert(pricingmodification != NULL);
+   return pricingmodification->blocknr;
 }
 #endif
 

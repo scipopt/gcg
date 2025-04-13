@@ -189,6 +189,16 @@ int GCGpricingmodificationGetNAdditionalConss(
    );
 #endif
 
+#ifdef NDEBUG
+#define GCGpricingmodificationGetBlock(pricingmodification) pricingmodification->blocknr
+#else
+/** get the number of the block the modification belongs to */
+GCG_EXPORT
+int GCGpricingmodificationGetBlock(
+   GCG_PRICINGMODIFICATION*      pricingmodification           /**< pricing modification */
+   );
+#endif
+
 /** get the pricing modification for a block, if exists, else NULL */
 GCG_EXPORT
 GCG_PRICINGMODIFICATION* GCGextendedmasterconsGetPricingModification(

@@ -264,7 +264,7 @@ SCIP_RETCODE solveProblem(
       }
 
       SCIPdebugMessage("  -> unbounded, creating column from ray\n");
-      SCIP_CALL( createColumnFromRay(pricingprob, NULL, NULL, probnr, &col) );
+      SCIP_CALL( createColumnFromRay(gcg, pricingprob, NULL, NULL, probnr, &col) );
       SCIP_CALL( GCGpricerAddCol(gcg, col) );
 
       break;
@@ -504,6 +504,7 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
 
 /** extracts ray from a subproblem used to solve a pricing problem pricing problem (or directly from the pricing problem if no subproblem is specified) */
 SCIP_RETCODE createColumnFromRay(
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
    SCIP*                 subproblem,         /**< SCIP data structure that contains the actual solution (if NULL pricingprob will be used) */
    SCIP_HASHMAP*         varmap,             /**< mapping of pricingprob vars to subproblem vars (can be NULL if subproblem is NULL) */
@@ -563,7 +564,7 @@ SCIP_RETCODE createColumnFromRay(
    SCIP_CALL( SCIPtransformProb(solprob) );
 
    /* todo: is it okay to write pricingprob into column structure? */
-   SCIP_CALL( GCGcreateGcgCol(pricingprob, newcol, probnr, solvars, solvals, nsolvars, TRUE, SCIPinfinity(pricingprob)) );
+   SCIP_CALL( GCGcreateGcgCol(gcg, pricingprob, newcol, probnr, solvars, solvals, nsolvars, TRUE, SCIPinfinity(pricingprob)) );
 
    SCIPfreeBufferArray(pricingprob, &solvals);
    SCIPfreeBufferArray(pricingprob, &solvars);
@@ -684,7 +685,7 @@ SCIP_RETCODE getColumnsFromPricingprob(
       /* Check whether the pricing problem solution has infinite values; if not, transform it to a column */
       if( !solutionHasInfiniteValue(solprob, probsols[s]) )
       {
-         SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, subproblem, varmap, &col, probnr, probsols[s], FALSE, SCIPinfinity(solprob)) );
+         SCIP_CALL( GCGcreateGcgColFromSol(gcg, pricingprob, subproblem, varmap, &col, probnr, probsols[s], FALSE, SCIPinfinity(solprob)) );
          SCIP_CALL( GCGpricerAddCol(gcg, col) );
       }
       /* If the best solution has infinite values, try to repair it */
@@ -702,7 +703,7 @@ SCIP_RETCODE getColumnsFromPricingprob(
          assert(success);
          assert(newsol != NULL);
 
-         SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, subproblem, varmap, &col, probnr, newsol, FALSE, SCIPinfinity(solprob)) );
+         SCIP_CALL( GCGcreateGcgColFromSol(gcg, pricingprob, subproblem, varmap, &col, probnr, newsol, FALSE, SCIPinfinity(solprob)) );
          SCIP_CALL( GCGpricerAddCol(gcg, col) );
       }
    }

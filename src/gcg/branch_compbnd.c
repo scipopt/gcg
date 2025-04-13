@@ -510,7 +510,7 @@ SCIP_RETCODE createBranchingCons(
    (void) SCIPsnprintf(pricingvarname, SCIP_MAXSTRLEN, "g(%s)", name);
 
    // create the g_x variable
-   SCIP_CALL( GCGcreateInferredPricingVar(pricingscip, &coefvar, pricingvarname, 0.0, 1.0, 0.0, SCIP_VARTYPE_BINARY, branchdata->blocknr) );
+   SCIP_CALL( GCGcreateInferredPricingVar(pricingscip, &coefvar, pricingvarname, 0.0, 1.0, TRUE, 0.0, SCIP_VARTYPE_BINARY, branchdata->blocknr) );
 
    // create the y_j variables
 
@@ -523,7 +523,7 @@ SCIP_RETCODE createBranchingCons(
    for (i = 0; i < branchdata->compBndSeqSize; ++i)
    {
       (void) SCIPsnprintf(pricingvarname, SCIP_MAXSTRLEN, "y(%s,%s_%s_%d)", name, SCIPvarGetName(branchdata->compBndSeq[i].component), branchdata->compBndSeq[i].sense == GCG_COMPBND_SENSE_GE ? "GE" : "LE", branchdata->compBndSeq[i].bound);
-      SCIP_CALL( GCGcreateInferredPricingVar(pricingscip, &additionalvars[i], pricingvarname, 0.0, 1.0, 0.0, SCIP_VARTYPE_BINARY, branchdata->blocknr) );
+      SCIP_CALL( GCGcreateInferredPricingVar(pricingscip, &additionalvars[i], pricingvarname, 0.0, 1.0, FALSE, 0.0, SCIP_VARTYPE_BINARY, branchdata->blocknr) );
    }
 
    // create the pricing constraints
