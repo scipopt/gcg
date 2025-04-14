@@ -13,7 +13,7 @@
           <li> <a href="http://soplex.zib.de">SoPlex</a></li>
           <li> <a href="http://zimpl.zib.de">ZIMPL</a></li>
           <li> <a href="http://ug.zib.de">UG</a></li>
-          <li class="active"> <a href="http://www.or.rwth-aachen.de/gcg">GCG</a></li>
+          <li class="active"> <a href="https://www.gcg.or.rwth-aachen.de">GCG</a></li>
         </ul>
         <ul class="nav navbar-nav navbar-right">
           <li class="dropdown"> <a href="doc/html" class="dropdown-toggle" data-toggle="dropdown">Documentation <b class="caret"></b></a>
