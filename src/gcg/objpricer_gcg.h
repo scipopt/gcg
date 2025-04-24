@@ -270,11 +270,6 @@ public:
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
-   /** compute generic extended master cons coefficients of column */
-   SCIP_RETCODE computeColExtendedMasterconss(
-      GCG_COL*              gcgcol              /**< GCG column data structure */
-      );
-
    GCG_SOLVER** getSolvers() const;
 
    int getNumSolvers() const;

@@ -108,6 +108,7 @@ typedef struct GCG_MasterVarData GCG_MASTERVARDATA;
 struct GCG_InferredPricingVarData
 {
    GCG_EXTENDEDMASTERCONSDATA*    extendedmasterconsdata;      /**< extended master cons data that was used to infer the pricing variable */
+   SCIP_Bool                      iscoefvar;                   /**< is this a coefficient variable? */
 };
 typedef struct GCG_InferredPricingVarData GCG_INFERREDPRICINGVARDATA;
 

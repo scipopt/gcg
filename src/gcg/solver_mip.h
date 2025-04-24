@@ -60,6 +60,7 @@ GCG_PRICINGSTATUS getPricingstatus(
 /** extracts ray from a subproblem used to solve a pricing problem pricing problem (or directly from the pricing problem if no subproblem is specified) */
 GCG_EXPORT
 SCIP_RETCODE createColumnFromRay(
+   GCG*                  gcg,                /**< GCG data structure */
    SCIP*                 pricingprob,        /**< pricing problem SCIP data structure */
    SCIP*                 subproblem,         /**< SCIP data structure that contains the actual solution (if NULL pricingprob will be used) */
    SCIP_HASHMAP*         varmap,             /**< mapping of pricingprob vars to subproblem vars (can be NULL if subproblem is NULL) */

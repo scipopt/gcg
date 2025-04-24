@@ -257,7 +257,7 @@ void GCGpricestoreEndForceCols(
 
 /** removes a non-forced col from the price storage */
 static
-void pricestoreDelCol(
+SCIP_RETCODE pricestoreDelCol(
    GCG_PRICESTORE*       pricestore,          /**< price storage */
    int                   arrayindex,          /**< index of the arrays */
    int                   pos,                 /**< position of col to delete */
@@ -273,7 +273,7 @@ void pricestoreDelCol(
 
    /* free the column */
    if( freecol )
-      GCGfreeGcgCol(&(pricestore->cols[arrayindex][pos]));
+      SCIP_CALL( GCGfreeGcgCol(&(pricestore->cols[arrayindex][pos])) );
 
    pricestore->ncols[arrayindex]--;
    if( pos != pricestore->ncols[arrayindex] )
@@ -285,6 +285,7 @@ void pricestoreDelCol(
       pricestore->scores[arrayindex][pos] = pricestore->scores[arrayindex][pricestore->ncols[arrayindex]];
       pricestore->cols[arrayindex][pos]->pos = pos;
    }
+   return SCIP_OKAY;
 }
 
 /** for a given column, check if an identical column already exists in the price storage;
@@ -302,25 +303,6 @@ int pricestoreFindEqualCol(
       return othercol->pos;
    else
       return -1;
-}
-
-/**< re-computes the values of inferred pricing variables of column from column pool
- * (in case the cut was not yet present during creation of of column) */
-static
-SCIP_RETCODE correctInferredPricingVariables(
-   SCIP*                 scip,               /**<* SCIP data structure */
-   GCG_COL*              gcgcol,             /**<* GCG column */
-   GCG_PRICESTORE*       pricestore         /**< price storage */
-   )
-{
-   SCIP_Real redcost;
-
-   /* update gcgcol */
-   SCIP_CALL( GCGcomputeColMastercoefs(pricestore->gcg, gcgcol) );
-   redcost = GCGcomputeRedCostGcgCol(pricestore->gcg, pricestore->infarkas, gcgcol, NULL);
-   GCGcolUpdateRedcost(gcgcol, redcost, FALSE);
-
-   return SCIP_OKAY;
 }
 
 /** adds col to price storage;
@@ -349,15 +331,6 @@ SCIP_RETCODE GCGpricestoreAddCol(
    arrayindex = pricestoreGetArrayIndex(pricestore, col);
    assert(pricestore->nforcedcols[arrayindex] <= pricestore->ncols[arrayindex]);
 
-   if( fromcolpool )
-   {
-      /*
-         Some inferred pricing variables might not have existed when the column was created
-         As a consequence, some column related data (e.g. norm) might be invalid
-      */
-      SCIP_CALL( correctInferredPricingVariables(pricestore->masterprob, col, pricestore) );
-   }
-
    /* a col is forced to enter the LP if
     *  - we construct the initial LP, or
     *  - it has infinite score factor, or
@@ -365,7 +338,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
     */
    forcecol = forcecol || pricestore->forcecols;
 
-   GCGcolComputeNorm(pricestore->gcg, col);
+   SCIP_CALL( GCGcolComputeNorm(pricestore->gcg, col) );
 
    if( forcecol )
    {
@@ -378,7 +351,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
       colscore = SCIP_INVALID;
 
       if( SCIPisPositive(pricestore->masterprob, pricestore->objparalfac) )
-         colobjparallelism = GCGcolComputeDualObjPara(pricestore->gcg, col);
+         SCIP_CALL( GCGcolComputeDualObjPara(pricestore->gcg, col, &colobjparallelism) );
       else
          colobjparallelism = 0.0; /* no need to calculate it */
    }
@@ -457,7 +430,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
    else if( forcecol && oldpos >= pricestore->nforcedcols[arrayindex] )
    {
       assert(GCGcolIsEq(pricestore->cols[arrayindex][oldpos], col));
-      GCGfreeGcgCol(&pricestore->cols[arrayindex][oldpos]);
+      SCIP_CALL( GCGfreeGcgCol(&pricestore->cols[arrayindex][oldpos]) );
       pricestore->cols[arrayindex][oldpos] = pricestore->cols[arrayindex][pricestore->nforcedcols[arrayindex]];
       pricestore->objparallelisms[arrayindex][oldpos] = pricestore->objparallelisms[arrayindex][pricestore->nforcedcols[arrayindex]];
       pricestore->orthogonalities[arrayindex][oldpos] = pricestore->orthogonalities[arrayindex][pricestore->nforcedcols[arrayindex]];
@@ -472,7 +445,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
       assert(GCGcolIsEq(pricestore->cols[arrayindex][oldpos], col));
       /* @todo: This is a little dangerous */
       assert(col->pos == -1);
-      GCGfreeGcgCol(&col);
+      SCIP_CALL( GCGfreeGcgCol(&col) );
    }
 
    if( pos > -1 )
@@ -525,7 +498,7 @@ SCIP_RETCODE pricestoreUpdateOrthogonalities(
          SCIP_Real thisortho;
 
          /* update orthogonality */
-         thisortho = GCGcolComputeOrth(pricestore->gcg, col, pricestore->cols[i][pos]);
+         SCIP_CALL( GCGcolComputeOrth(pricestore->gcg, col, pricestore->cols[i][pos], &thisortho) );
 
          if( thisortho < pricestore->orthogonalities[i][pos] )
          {
@@ -534,7 +507,7 @@ SCIP_RETCODE pricestoreUpdateOrthogonalities(
                /* col is too parallel: delete the col */
                SCIPdebugMessage("    -> deleting parallel col %p after adding %p (pos=%d, orthogonality=%g, score=%g)\n",
                   (void*) pricestore->cols[i][pos], (void*) col, pos, thisortho, pricestore->scores[i][pos]);
-               pricestoreDelCol(pricestore, i, pos, TRUE);
+               SCIP_CALL( pricestoreDelCol(pricestore, i, pos, TRUE) );
                continue;
             }
             else
@@ -598,7 +571,7 @@ SCIP_RETCODE pricestoreApplyCol(
    if( !force )
    {
       assert(pricestore->cols[arrayindex][col->pos] == col);
-      pricestoreDelCol(pricestore, arrayindex, col->pos, FALSE);
+      SCIP_CALL( pricestoreDelCol(pricestore, arrayindex, col->pos, FALSE) );
    }
 
    /* update the orthogonalities if needed */
@@ -607,7 +580,7 @@ SCIP_RETCODE pricestoreApplyCol(
 
    if( !force )
    {
-      GCGfreeGcgCol(&col);
+      SCIP_CALL( GCGfreeGcgCol(&col) );
    }
 
    return SCIP_OKAY;
@@ -821,19 +794,19 @@ SCIP_RETCODE GCGpricestoreApplyCols(
       }
       else if( usecolpool )
       {
-         pricestoreDelCol(pricestore, i, bestpos, FALSE);
+         SCIP_CALL( pricestoreDelCol(pricestore, i, bestpos, FALSE) );
          SCIP_CALL( GCGcolpoolAddCol(colpool, col, TRUE) );
       }
       else
       {
-         pricestoreDelCol(pricestore, i, bestpos, TRUE);
+         SCIP_CALL( pricestoreDelCol(pricestore, i, bestpos, TRUE) );
       }
    }
 
    *nfoundvars = ncolsapplied;
 
    /* clear the price storage and reset statistics for price round */
-   GCGpricestoreClearCols(pricestore);
+   SCIP_CALL( GCGpricestoreClearCols(pricestore) );
 
    SCIPfreeBufferArray(masterprob, &ncolsappliedprob);
 
@@ -841,7 +814,7 @@ SCIP_RETCODE GCGpricestoreApplyCols(
 }
 
 /** clears the price storage without adding the cols to the LP */
-void GCGpricestoreClearCols(
+SCIP_RETCODE GCGpricestoreClearCols(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    )
 {
@@ -857,7 +830,7 @@ void GCGpricestoreClearCols(
    {
       for( c = 0; c < pricestore->ncols[i]; ++c )
       {
-         GCGfreeGcgCol(&(pricestore->cols[i][c]));
+         SCIP_CALL( GCGfreeGcgCol(&(pricestore->cols[i][c])) );
       }
       /* reset counters */
       pricestore->ncols[i] = 0;
@@ -883,6 +856,7 @@ void GCGpricestoreClearCols(
          pricestore->colssize[i] = 0;
       }
    }
+   return SCIP_OKAY;
 }
 
 /** get cols in the price storage */

@@ -46,6 +46,7 @@ We advise using the following interfaces:
  - create modifications with `GCGpricingmodificationCreate()`
  - create an extended master constraint around a `SCIP_CONS` with `GCGextendedmasterconsCreateFromCons()`
  - create an extended master constraint around a `SCIP_ROW` with `GCGextendedmasterconsCreateFromRow()`
+ - to create an extended master constraint for branching use `GCGbranchCreateExtendedmastercons` that uses `GCGextendedmasterconsCreateFromCons()`
 
 
 ## Usage
@@ -63,7 +64,7 @@ SCIP_VAR* coefvar = NULL;
 char coefvarName[SCIP_MAXSTRLEN];
 (void) SCIPsnprintf(coefvarName, SCIP_MAXSTRLEN, "y");
 // here, we create a binary variable
-SCIP_CALL( GCGcreateInferredPricingVar(pricingscip, coefvar, coefvarName, 0.0, 1.0, 0.0, SCIP_VARTYPE_BINARY, blocknr) );
+SCIP_CALL( GCGcreateInferredPricingVar(pricingscip, coefvar, coefvarName, 0.0, 1.0, TRUE, 0.0, SCIP_VARTYPE_BINARY, blocknr) );
 
 /* create additional constraints (and inferred pricing variables) */
 SCIP_CONS** additionalcons = NULL;
@@ -96,14 +97,14 @@ SCIP_CALL( GCGpricingmodificationCreate(
 
 /* create the extended master constraint */
 GCG_EXTENDEDMASTERCONSDATA* extendedmasterconsdata = NULL;
-SCIP_CALL( GCGextendedmasterconsCreateFromCons(
-   masterscip,
+SCIP_CALL( GCGbranchCreateExtendedmastercons(
+   gcg,
+   gcgbranchrule,
    extendedmasterconsdata,
    mastercons,
    pricingmods,
    npricingmods,
-   branchdata,
-   extendedmasterconsGetCoeffCompBnd
+   branchdata
 ) );
 ```
 
@@ -112,8 +113,42 @@ SCIP_CALL( GCGextendedmasterconsCreateFromCons(
 static
 GCG_DECL_BRANCHGETEXTENDEDMASTERCONS(branchGetExtendedmasterconsCompBnd)
 {
-   // grab the extended master cons, e.g. from the branchdata
-   *extendedmasterconsdata = branchdata->extendedmasterconsdata;
+   assert(gcg != NULL);
+
+   assert(branchdata != NULL);
+   assert(branchdata->mastercons != NULL);
+
+   *extendedmasterconsdata = branchdata->mastercons;
+
+   return SCIP_OKAY;
+}
+```
+
+Furthermore, we implement a callback that calculates the coefficient of a column solution in the extended master constraint:
+```C
+static
+GCG_DECL_BRANCHGETEXTENDEDMASTERCONSCOEFF(branchGetExtendedmasterconsCoeffCompBnd)
+{
+   SCIP* masterprob;
+
+   masterprob = GCGgetMasterprob(gcg);
+
+   assert(masterprob != NULL);
+   assert(GCGisMaster(masterprob));
+
+   assert(branchdata != NULL);
+   assert(branchdata->mastercons == extendedmasterconsdata);
+
+   *coef = 0.0;
+
+   if( probnr == -1 || probnr != branchdata->blocknr )
+      return SCIP_OKAY;
+
+   if( !isColInCompBndSeq(masterprob, solvars, solvals, nsolvars, branchdata->compBndSeq, branchdata->compBndSeqSize) )
+      return SCIP_OKAY;
+
+   *coef = 1.0;
+
    return SCIP_OKAY;
 }
 ```

@@ -125,7 +125,7 @@ SCIP_RETCODE GCGpricestoreApplyCols(
 
 /** clears the price storage without adding the cols to priced vars */
 GCG_EXPORT
-void GCGpricestoreClearCols(
+SCIP_RETCODE GCGpricestoreClearCols(
    GCG_PRICESTORE*       pricestore           /**< price storage */
    );
 

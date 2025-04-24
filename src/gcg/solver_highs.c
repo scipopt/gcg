@@ -749,7 +749,7 @@ SCIP_RETCODE solveHighs(
          }
 
 
-         SCIP_CALL( GCGcreateGcgCol(pricingprob, &col, probnr, solverdata->pricingvars[probnr], highssolvals, numcols, TRUE, SCIPinfinity(pricingprob)) );
+         SCIP_CALL( GCGcreateGcgCol(gcg, pricingprob, &col, probnr, solverdata->pricingvars[probnr], highssolvals, numcols, TRUE, SCIPinfinity(pricingprob)) );
          SCIP_CALL( GCGpricerAddCol(gcg, col) );
          ++(*ncols);
 
@@ -895,7 +895,7 @@ SCIP_RETCODE solveHighs(
 
    if( feasible )
    {
-      SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, NULL, NULL, &col, probnr, sol, FALSE, SCIPinfinity(pricingprob)) );
+      SCIP_CALL( GCGcreateGcgColFromSol(gcg, pricingprob, NULL, NULL, &col, probnr, sol, FALSE, SCIPinfinity(pricingprob)) );
       SCIP_CALL( GCGpricerAddCol(gcg, col) );
       ++(*ncols);
    }

@@ -698,7 +698,7 @@ SCIP_RETCODE solveProblem(
       }
 
       SCIPdebugMessage("  -> unbounded, creating column from ray\n");
-      SCIP_CALL( createColumnFromRay(pricingprob, subgcgorig, varmap, probnr, &col) );
+      SCIP_CALL( createColumnFromRay(gcg, pricingprob, subgcgorig, varmap, probnr, &col) );
       SCIP_CALL( GCGpricerAddCol(gcg, col) );
       break;
 

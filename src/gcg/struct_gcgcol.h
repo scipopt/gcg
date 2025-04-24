@@ -56,6 +56,10 @@ struct GCG_Col
    SCIP_Real*           vals;               /**< array of solution values (belonging to vars) */
    int                  nvars;              /**< number of variables */
    int                  maxvars;            /**< capacity of vars */
+   SCIP_VAR**           inferredpricingvars;/**< (sorted) array of inferrred (coefficient) pricing variables */
+   SCIP_Real*           inferredpricingvals;/**< inferred (coefficient) pricing variables solution values */
+   int                  ninferredpricingvars;/**< number of inferred pricing variables */
+   int                  maxinferredpricingvars;/**< capacity of inferred pricing variables array */
    SCIP_Bool            isray;              /**< is the column a ray? */
    SCIP_Real            redcost;            /**< last known reduced cost */
    int                  age;                /**< age of column (number of iterations since it was created;
@@ -67,9 +71,6 @@ struct GCG_Col
    SCIP_Real*           originalsepamastercuts;/**< array of original seperator cut coefficients in the master problem */
    int                  noriginalsepamastercuts;/**< number of original seperator cut coefficients in the master problem */
    int                  maxoriginalsepamastercuts;/**< capacity of originalsepamastercuts */
-   SCIP_Real*           extendedmasterconscoefs;/**< array of extended master cons coefficient values */
-   SCIP_Real*           extendedmasterconsbounds;/**< array of extended master cons bounds */
-   int                  nextendedmasterconss; /**< number of extended master conss */
    SCIP_Real            norm;               /**< norm of the coefficients in the master */
    int*                 linkvars;           /**< array of indices of variables in var-array which are linking variables */
    int                  nlinkvars;          /**< number of variables in var-array which are linking variables */

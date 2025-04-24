@@ -134,6 +134,20 @@ typedef enum GCG_BoundType GCG_BOUNDTYPE;
  */
 #define GCG_DECL_BRANCHGETEXTENDEDMASTERCONS(x) SCIP_RETCODE x (GCG* gcg, GCG_BRANCHDATA* branchdata, GCG_EXTENDEDMASTERCONSDATA** extendedmasterconsdata)
 
+/** determine the coefficient of a column solution in the extended master cons
+ *
+ *  input:
+ *    gcg             : GCG data structure
+ *    branchdata      : branch data created by the branch rule
+ *    extendedmasterconsdata   : the extended master cons data
+ *    solvars         : array of column solution variables
+ *    solvals         : array of column solution values
+ *    nsolvars        : number of column solution variables and values
+ *    probnr          : the pricing problem that the column belongs to
+ *    coef            : the calculated coefficient
+ */
+#define GCG_DECL_BRANCHGETEXTENDEDMASTERCONSCOEFF(x) SCIP_RETCODE x (GCG* gcg, GCG_BRANCHDATA* branchdata, GCG_EXTENDEDMASTERCONSDATA* extendedmasterconsdata, SCIP_VAR** solvars, SCIP_Real* solvals, int nsolvars, int probnr, SCIP_Real* coef)
+
 #ifdef __cplusplus
 }
 #endif

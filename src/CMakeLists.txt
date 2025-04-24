@@ -15,6 +15,7 @@ set(CMAKE_C_STANDARD_REQUIRED on)
 set(gcgsources
     gcg/benders_gcg.c
     gcg/bendersplugins.c
+    gcg/branchgcg.c
     gcg/branch_bpstrong.c
     gcg/branch_compbnd.c
     gcg/branch_empty.c
@@ -166,6 +167,7 @@ set(gcggraphsources
 )
 
 set(gcgheaders
+    gcg/branchgcg.h
     gcg/branch_empty.h
     gcg/branch_bpstrong.h
     gcg/branch_compbnd.h
@@ -268,6 +270,7 @@ set(gcgheaders
     gcg/pub_pricingcb.h
     gcg/pricingjob.h
     gcg/pricingprob.h
+    gcg/pub_branchgcg.h
     gcg/pub_clscons.h
     gcg/pub_clsvar.h
     gcg/pub_colpool.h

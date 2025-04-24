@@ -56,6 +56,7 @@ struct GCG_Branchrule
    GCG_DECL_BRANCHDATADELETE ((*branchdatadelete));         /**< deinitialization method of branching rule */
    GCG_DECL_BRANCHNEWCOL ((*branchnewcol));                 /**< new column handler method of branching rule */
    GCG_DECL_BRANCHGETEXTENDEDMASTERCONS ((*branchgetextendedmastercons));     /**< extended master cons getter of branching rule */
+   GCG_DECL_BRANCHGETEXTENDEDMASTERCONSCOEFF ((*branchgetextendedmasterconscoeff));             /**< column coefficient calculation method for extended master conss */
 };
 
 #ifdef __cplusplus

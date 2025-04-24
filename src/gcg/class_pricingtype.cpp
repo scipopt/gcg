@@ -147,9 +147,9 @@ SCIP_Real FarkasPricing::extendedmasterconsGetDual(
    assert(extendedmasterconsdata != NULL);
    switch( GCGextendedmasterconsGetType(extendedmasterconsdata) )
    {
-   case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+   case GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS:
       return SCIPgetDualfarkasLinear(masterprob, GCGextendedmasterconsGetCons(extendedmasterconsdata));
-   case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+   case GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW:
       return SCIProwGetDualfarkas(GCGextendedmasterconsGetRow(extendedmasterconsdata));
    default:
       SCIP_CALL_ABORT( SCIP_ERROR );
@@ -223,9 +223,9 @@ SCIP_Real ReducedCostPricing::extendedmasterconsGetDual(
    assert(extendedmasterconsdata != NULL);
    switch( GCGextendedmasterconsGetType(extendedmasterconsdata) )
    {
-   case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+   case GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS:
       return SCIPgetDualsolLinear(masterprob, GCGextendedmasterconsGetCons(extendedmasterconsdata));
-   case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+   case GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW:
       return SCIProwGetDualsol(GCGextendedmasterconsGetRow(extendedmasterconsdata));
    default:
       SCIP_CALL_ABORT( SCIP_ERROR );

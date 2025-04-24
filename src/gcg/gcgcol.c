@@ -50,6 +50,7 @@
 
 /** create a gcg column */
 SCIP_RETCODE GCGcreateGcgCol(
+   GCG*                 gcg,                /**< GCG data structure */
    SCIP*                pricingprob,        /**< SCIP data structure (pricing problem) */
    GCG_COL**            gcgcol,             /**< pointer to store gcg column */
    int                  probnr,             /**< number of corresponding pricing problem */
@@ -61,15 +62,29 @@ SCIP_RETCODE GCGcreateGcgCol(
    )
 {
    int i;
-   int nnonz;
-   int size;
+   int ninferredpricingvars;
 
    /* WARNING: this function has to be threadsafe!*/
 
-   size = SCIPcalcMemGrowSize(pricingprob, nvars);
+   ninferredpricingvars = GCGcountInferredCoefPricingVars(vars, nvars);
+
    SCIP_CALL( SCIPallocBlockMemory(pricingprob, gcgcol) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vars), size) );
-   SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vals), size) );
+   (*gcgcol)->maxvars = SCIPcalcMemGrowSize(pricingprob, nvars - ninferredpricingvars);
+   SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vars), (*gcgcol)->maxvars) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vals), (*gcgcol)->maxvars) );
+
+   if( ninferredpricingvars > 0 )
+   {
+      (*gcgcol)->maxinferredpricingvars = SCIPcalcMemGrowSize(pricingprob, ninferredpricingvars);
+      SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->inferredpricingvars), (*gcgcol)->maxinferredpricingvars) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->inferredpricingvals), (*gcgcol)->maxinferredpricingvars) );
+   }
+   else
+   {
+      (*gcgcol)->inferredpricingvars = NULL;
+      (*gcgcol)->inferredpricingvals = NULL;
+      (*gcgcol)->maxinferredpricingvars = 0;
+   }
 
    (*gcgcol)->pricingprob = pricingprob;
    (*gcgcol)->probnr = probnr;
@@ -83,15 +98,13 @@ SCIP_RETCODE GCGcreateGcgCol(
    (*gcgcol)->noriginalsepamastercuts = 0;
    (*gcgcol)->maxmastercoefs = 0;
    (*gcgcol)->maxoriginalsepamastercuts = 0;
-   (*gcgcol)->extendedmasterconscoefs = NULL;
-   (*gcgcol)->extendedmasterconsbounds = NULL;
-   (*gcgcol)->nextendedmasterconss = 0;
    (*gcgcol)->nlinkvars = 0;
    (*gcgcol)->initcoefs = FALSE;
    (*gcgcol)->pos = -1;
-   (*gcgcol)->maxvars = size;
 
-   nnonz = 0;
+
+   (*gcgcol)->nvars = 0;
+   (*gcgcol)->ninferredpricingvars = 0;
    for( i = 0; i < nvars; ++i )
    {
       SCIP_VAR* origvar;
@@ -104,7 +117,6 @@ SCIP_RETCODE GCGcreateGcgCol(
 
       origvar = vars[i];
 
-      /* todo: capture vars? */
       SCIP_CALL( SCIPvarGetOrigvarSum(&origvar, &scalar, &constant) );
 
       assert( !SCIPisZero(pricingprob, scalar) );
@@ -118,30 +130,50 @@ SCIP_RETCODE GCGcreateGcgCol(
       if( SCIPisZero(pricingprob, origval) )
          continue;
 
-      assert((GCGvarIsPricing(origvar) && GCGpricingVarGetNOrigvars(origvar) > 0 && GCGpricingVarGetOrigvars(origvar)[0] != NULL) || GCGvarIsInferredPricing(origvar));
-
-      SCIPcaptureVar(pricingprob, origvar);
-      (*gcgcol)->vars[nnonz] = origvar;
-      (*gcgcol)->vals[nnonz] = origval;
-      ++nnonz;
+      if( GCGvarIsInferredPricing(origvar) && GCGinferredPricingVarIsCoefVar(origvar) )
+      {
+         assert((*gcgcol)->inferredpricingvars != NULL);
+         assert((*gcgcol)->ninferredpricingvars < (*gcgcol)->maxinferredpricingvars);
+         (*gcgcol)->inferredpricingvars[(*gcgcol)->ninferredpricingvars] = origvar;
+         (*gcgcol)->inferredpricingvals[(*gcgcol)->ninferredpricingvars] = origval;
+         ++(*gcgcol)->ninferredpricingvars;
+         SCIPcaptureVar(pricingprob, origvar);
+      }
+      else if( GCGvarIsPricing(origvar) )
+      {
+         assert(GCGvarIsPricing(origvar) && GCGpricingVarGetNOrigvars(origvar) > 0 && GCGpricingVarGetOrigvars(origvar)[0] != NULL);
+         assert((*gcgcol)->nvars < (*gcgcol)->maxvars);
+         (*gcgcol)->vars[(*gcgcol)->nvars] = origvar;
+         (*gcgcol)->vals[(*gcgcol)->nvars] = origval;
+         ++(*gcgcol)->nvars;
+         SCIPcaptureVar(pricingprob, origvar);
+      }
    }
-
-   (*gcgcol)->nvars = nnonz;
+   assert(ninferredpricingvars == (*gcgcol)->ninferredpricingvars);
 
    /* sort vars and vals array w.r.t. variable index */
-   SCIPsortPtrReal((void**)(*gcgcol)->vars, (double*)(*gcgcol)->vals, SCIPvarComp, nnonz);
+   SCIPsortPtrReal((void**)(*gcgcol)->vars, (double*)(*gcgcol)->vals, SCIPvarComp, (*gcgcol)->nvars);
+   if( (*gcgcol)->inferredpricingvars != NULL )
+   {
+      SCIPsortPtrReal((void**)(*gcgcol)->inferredpricingvars, (double*)(*gcgcol)->inferredpricingvals,
+         SCIPvarComp, (*gcgcol)->ninferredpricingvars);
+   }
 
 #ifndef NDEBUG
    for( i = 1 ; i < (*gcgcol)->nvars; ++i )
    {
       assert( SCIPvarCompare((*gcgcol)->vars[i-1], (*gcgcol)->vars[i]) < 0 );
    }
+   for( i = 1 ; i < (*gcgcol)->ninferredpricingvars; ++i )
+   {
+      assert( SCIPvarCompare((*gcgcol)->inferredpricingvars[i-1], (*gcgcol)->inferredpricingvars[i]) < 0 );
+   }
 #endif
    return SCIP_OKAY;
 }
 
 /** free a gcg column */
-void GCGfreeGcgCol(
+SCIP_RETCODE GCGfreeGcgCol(
    GCG_COL**            gcgcol              /**< pointer to store gcg column */
    )
 {
@@ -152,21 +184,27 @@ void GCGfreeGcgCol(
    /* WARNING: this function has to be threadsafe!*/
 
    for( i = 0; i < (*gcgcol)->nvars; ++i )
-      SCIPreleaseVar((*gcgcol)->pricingprob, &(*gcgcol)->vars[i]);
+      SCIP_CALL( SCIPreleaseVar((*gcgcol)->pricingprob, &(*gcgcol)->vars[i]) );
    assert((*gcgcol)->nvars == 0 || (*gcgcol)->vars != NULL);
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vars, (*gcgcol)->maxvars);
    assert((*gcgcol)->nvars == 0 || (*gcgcol)->vals != NULL);
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->vals, (*gcgcol)->maxvars);
+   for( i = 0; i < (*gcgcol)->ninferredpricingvars; ++i )
+      SCIP_CALL( SCIPreleaseVar((*gcgcol)->pricingprob, &(*gcgcol)->inferredpricingvars[i]) );
+   assert((*gcgcol)->ninferredpricingvars == 0 || (*gcgcol)->inferredpricingvars != NULL);
+   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->inferredpricingvars, (*gcgcol)->maxinferredpricingvars);
+   assert((*gcgcol)->ninferredpricingvars == 0 || (*gcgcol)->inferredpricingvals != NULL);
+   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->inferredpricingvals, (*gcgcol)->maxinferredpricingvars);
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->mastercoefs, (*gcgcol)->maxmastercoefs);
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->linkvars, (*gcgcol)->maxlinkvars);
    SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->originalsepamastercuts, (*gcgcol)->maxoriginalsepamastercuts);
-   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->extendedmasterconscoefs, (*gcgcol)->nextendedmasterconss);
-   SCIPfreeBlockMemoryArrayNull((*gcgcol)->pricingprob, &(*gcgcol)->extendedmasterconsbounds, (*gcgcol)->nextendedmasterconss);
    SCIPfreeBlockMemory((*gcgcol)->pricingprob, gcgcol);
+   return SCIP_OKAY;
 }
 
 /** create a gcg column from a solution to a pricing problem */
 SCIP_RETCODE GCGcreateGcgColFromSol(
+   GCG*                 gcg,                /**< GCG data structure */
    SCIP*                pricingprob,        /**< SCIP data structure (pricing problem) */
    SCIP*                subproblem,         /**< SCIP data structure that contains the actual solution (if NULL pricingprob will be used) */
    SCIP_HASHMAP*        varmap,             /**< mapping of pricingprob vars to subproblem vars (can be NULL if subproblem is NULL) */
@@ -226,7 +264,7 @@ SCIP_RETCODE GCGcreateGcgColFromSol(
       ++ncolvars;
    }
 
-   SCIP_CALL( GCGcreateGcgCol(pricingprob, gcgcol, prob, colvars, colvals, ncolvars, isray, redcost) );
+   SCIP_CALL( GCGcreateGcgCol(gcg, pricingprob, gcgcol, prob, colvars, colvals, ncolvars, isray, redcost) );
 
    SCIPfreeBufferArray(pricingprob, &colvals);
    SCIPfreeBufferArray(pricingprob, &colvars);
@@ -282,34 +320,40 @@ SCIP_Bool GCGcolIsEq(
    SCIP_Real* vals1;
    SCIP_Real* vals2;
 
-   int nvars1;
-   int nvars2;
-   int probnr1;
-   int probnr2;
-
    int i;
 
-
-   probnr1 = GCGcolGetProbNr(gcgcol1);
-   probnr2 = GCGcolGetProbNr(gcgcol2);
-
-   if( probnr1 != probnr2 )
+   if( gcgcol1->probnr != gcgcol2->probnr )
       return FALSE;
 
-   nvars1 = GCGcolGetNVars(gcgcol1);
-   nvars2 = GCGcolGetNVars(gcgcol2);
-
-   if( nvars1 != nvars2 )
+   if( gcgcol1->nvars != gcgcol2->nvars )
+      return FALSE;
+   
+   if( gcgcol1->ninferredpricingvars != gcgcol2->ninferredpricingvars )
       return FALSE;
 
    pricingprob = GCGcolGetPricingProb(gcgcol1);
+
    vars1 = GCGcolGetVars(gcgcol1);
    vars2 = GCGcolGetVars(gcgcol2);
 
    vals1 = GCGcolGetVals(gcgcol1);
    vals2 = GCGcolGetVals(gcgcol2);
 
-   for( i = 0; i < nvars1; ++i )
+   for( i = 0; i < gcgcol1->nvars; ++i )
+   {
+      if( vars1[i] != vars2[i] || !SCIPisEQ(pricingprob, vals1[i], vals2[i]) )
+      {
+         return FALSE;
+      }
+   }
+
+   vars1 = gcgcol1->inferredpricingvars;
+   vars2 = gcgcol2->inferredpricingvars;
+
+   vals1 = gcgcol1->inferredpricingvals;
+   vals2 = gcgcol2->inferredpricingvals;
+
+   for( i = 0; i < gcgcol1->ninferredpricingvars; ++i )
    {
       if( vars1[i] != vars2[i] || !SCIPisEQ(pricingprob, vals1[i], vals2[i]) )
       {
@@ -457,7 +501,7 @@ void GCGcolSetNorm(
 }
 
 /** get norm of column */
-void GCGcolComputeNorm(
+SCIP_RETCODE GCGcolComputeNorm(
    GCG*                 gcg,                /**< GCG data structure */
    GCG_COL*             gcgcol              /**< gcg column structure */
    )
@@ -484,10 +528,10 @@ void GCGcolComputeNorm(
          norm += SQR(gcgcol->originalsepamastercuts[i]);
    }
 
-   for( i = 0; i < gcgcol->nextendedmasterconss; ++i )
+   for( i = 0; i < gcgcol->ninferredpricingvars; ++i )
    {
-      if( !SCIPisZero(scip, gcgcol->extendedmasterconscoefs[i]) )
-         norm += SQR(gcgcol->extendedmasterconscoefs[i]);
+      assert(!SCIPisZero(scip, gcgcol->inferredpricingvals[i]));
+      norm += SQR(gcgcol->inferredpricingvals[i]);
    }
 
    for( i = 0; i < gcgcol->nlinkvars; ++i )
@@ -500,6 +544,7 @@ void GCGcolComputeNorm(
    norm += 1.0;
 
    gcgcol->norm = norm;
+   return SCIP_OKAY;
 }
 
 /** set master coefficients of column as initialized */
@@ -576,33 +621,6 @@ int GCGcolGetNOriginalSepaMastercuts(
    return gcgcol->noriginalsepamastercuts;
 }
 
-/** get extended master cons coefficients of column in the master problem */
-GCG_EXPORT
-SCIP_Real* GCGcolGetExtendedmastercons(
-   GCG_COL*             gcgcol              /**< gcg column structure */
-   )
-{
-   return gcgcol->extendedmasterconscoefs;
-}
-
-/** get extended master cons bounds */
-static
-SCIP_Real* colGetExtendedmasterconsBounds(
-   GCG_COL*             gcgcol              /**< gcg column structure */
-   )
-{
-   return gcgcol->extendedmasterconsbounds;
-}
-
-/** get number of extended master cons coefficients of column in the master problem */
-GCG_EXPORT
-int GCGcolGetNExtendedmasterconss(
-   GCG_COL*             gcgcol              /**< gcg column structure */
-   )
-{
-   return gcgcol->nextendedmasterconss;
-}
-
 /** get norm of column */
 SCIP_Real GCGcolGetNorm(
    GCG_COL*             gcgcol              /**< gcg column structure */
@@ -640,80 +658,34 @@ SCIP_RETCODE GCGcolUpdateOriginalSepaMastercuts(
    return SCIP_OKAY;
 }
 
-/** set extended master cons coefficients information of column in the master problem
- * @note the arrays will be freed by the column, they must be allocated using the pricingscip the column belongs to
- */
-GCG_EXPORT
-SCIP_RETCODE GCGcolSetExtendedmasterconss(
-   GCG_COL*             gcgcol,             /**< gcg column structure */
-   SCIP_Real*           extendedmasterconss,  /**< pointer to array of extended master cons coefficients */
-   SCIP_Real*           extendedmasterconsbounds,/**< pointer to array of extended master cons bounds */
-   int                  nextendedmasterconss  /**< number of extended master cons coefficients */
-   )
-{
-   SCIPdebugMessage("Col set master coefs\n");
-
-   if( gcgcol->nextendedmasterconss > 0 )
-   {
-      SCIPfreeBlockMemoryArrayNull(gcgcol->pricingprob, &(gcgcol->extendedmasterconscoefs), gcgcol->nextendedmasterconss);
-      SCIPfreeBlockMemoryArrayNull(gcgcol->pricingprob, &(gcgcol->extendedmasterconsbounds), gcgcol->nextendedmasterconss);
-   }
-
-   gcgcol->nextendedmasterconss = nextendedmasterconss;
-
-   assert(gcgcol->extendedmasterconscoefs == NULL);
-   assert(gcgcol->extendedmasterconsbounds == NULL);
-
-   if( nextendedmasterconss == 0 )
-      return SCIP_OKAY;
-
-   gcgcol->extendedmasterconscoefs = extendedmasterconss;
-   gcgcol->extendedmasterconsbounds = extendedmasterconsbounds;
-
-   return SCIP_OKAY;
-}
-
 /** return solution value of variable in gcg column */
 SCIP_Real GCGcolGetSolVal(
    GCG_COL*             gcgcol,             /**< gcg column */
    SCIP_VAR*            var                 /**< variable */
    )
 {
-   SCIP_VAR** vars;
+   SCIP_VAR** vars = NULL;
    SCIP_Real* vals;
    int nvars;
    int pos;
-   SCIP_Bool found;
 
-   vars = gcgcol->vars;
-   vals = gcgcol->vals;
-   nvars = gcgcol->nvars;
-
-   found = SCIPsortedvecFindPtr((void**) vars, SCIPvarComp, (void*) var, nvars, &pos);
-
-   if( !found )
+   if( GCGvarIsPricing(var) )
    {
-      return 0.0;
+      vars = gcgcol->vars;
+      vals = gcgcol->vals;
+      nvars = gcgcol->nvars;
+   }
+   else if( GCGvarIsInferredPricing(var) )
+   {
+      vars = gcgcol->inferredpricingvars;
+      vals = gcgcol->inferredpricingvals;
+      nvars = gcgcol->ninferredpricingvars;
    }
 
-   return vals[pos];
-}
+   if( vars != NULL && SCIPsortedvecFindPtr((void**) vars, SCIPvarComp, (void*) var, nvars, &pos) )
+      return vals[pos];
 
-/** returns true if the gcg column knows the solution value of the variable */
-GCG_EXPORT
-SCIP_Bool GCGcolKnowsSolVar(
-   GCG_COL*             gcgcol,             /**< gcg column */
-   SCIP_VAR*            var                 /**< variable */
-   )
-{
-   SCIP_VAR** vars;
-   int nvars;
-   int pos;
-
-   vars = gcgcol->vars;
-   nvars = gcgcol->nvars;
-
-   return SCIPsortedvecFindPtr((void**) vars, SCIPvarComp, (void*) var, nvars, &pos);
+   return 0.0;
 }
 
 /** returns whether the col's age exceeds the age limit */
@@ -728,16 +700,15 @@ SCIP_Bool GCGcolIsAged(
 }
 
 /** compute parallelism of column to dual objective */
-SCIP_Real GCGcolComputeDualObjPara(
+SCIP_RETCODE GCGcolComputeDualObjPara(
    GCG*                 gcg,                /**< GCG data structure */
-   GCG_COL*             gcgcol              /**< gcg column */
+   GCG_COL*             gcgcol,             /**< gcg column */
+   SCIP_Real*           para                /**< pointer to store the parallelism of column to dual objective */
    )
 {
-   SCIP_Real para;
    int i;
    SCIP_CONS** masterconss;
    SCIP_ROW** originalsepamastercuts;
-   SCIP_Real* extendedmasterconsbounds;
    SCIP_Real dualobjnorm;
    SCIP* masterprob;
 
@@ -749,9 +720,8 @@ SCIP_Real GCGcolComputeDualObjPara(
 
    masterconss = GCGgetMasterConss(gcg);
    originalsepamastercuts = GCGsepaGetOriginalSepaMastercuts(gcg);
-   extendedmasterconsbounds = colGetExtendedmasterconsBounds(gcgcol);
 
-   para = 0.0;
+   *para = 0.0;
 
    dualobjnorm = 0.0;
 
@@ -769,14 +739,14 @@ SCIP_Real GCGcolComputeDualObjPara(
          dualobjnorm += SQR(lhs);
 
          if( SCIPisPositive(masterprob, gcgcol->mastercoefs[i]) )
-            para += gcgcol->mastercoefs[i] * lhs;
+            *para += gcgcol->mastercoefs[i] * lhs;
       }
       else if( !SCIPisInfinity(masterprob, rhs) )
       {
          dualobjnorm += SQR(rhs);
 
          if(SCIPisNegative(masterprob, gcgcol->mastercoefs[i] ) )
-            para += gcgcol->mastercoefs[i] * rhs;
+            *para += gcgcol->mastercoefs[i] * rhs;
       }
    }
 
@@ -796,54 +766,70 @@ SCIP_Real GCGcolComputeDualObjPara(
          dualobjnorm += SQR(lhs);
 
          if( SCIPisPositive(masterprob, gcgcol->originalsepamastercuts[i]) )
-            para += gcgcol->originalsepamastercuts[i] * lhs;
+            *para += gcgcol->originalsepamastercuts[i] * lhs;
       }
       else if( !SCIPisInfinity(masterprob, rhs) )
       {
          dualobjnorm += SQR(rhs);
 
          if(SCIPisNegative(masterprob, gcgcol->originalsepamastercuts[i] ) )
-            para += gcgcol->originalsepamastercuts[i] * rhs;
+            *para += gcgcol->originalsepamastercuts[i] * rhs;
       }
    }
 
-   for( i = 0; i < gcgcol->nextendedmasterconss; ++i )
+   for( i = 0; i < gcgcol->ninferredpricingvars; ++i )
    {
-      SCIP_Real bound = extendedmasterconsbounds[i];
+      SCIP_Real lhs;
+      SCIP_Real rhs;
+      SCIP_Real coef;
+      GCG_EXTENDEDMASTERCONSDATA* branchextendedmasterconsdata;
 
-      if( SCIPisInfinity(masterprob, ABS(bound)) )
+      coef = gcgcol->inferredpricingvals[i];
+      assert(!SCIPisZero(masterprob, coef));
+
+      branchextendedmasterconsdata = GCGinferredPricingVarGetExtendedmasterconsdata(gcgcol->inferredpricingvars[i]);
+      lhs = GCGextendedmasterconsGetLhs(gcg, branchextendedmasterconsdata);
+      rhs = GCGextendedmasterconsGetRhs(gcg, branchextendedmasterconsdata);
+
+      if( !SCIPisInfinity(masterprob, -lhs))
       {
-         return SCIP_ERROR;
+         dualobjnorm += SQR(lhs);
+
+         if( SCIPisPositive(masterprob, coef) )
+            *para += coef * lhs;
       }
+      else if( !SCIPisInfinity(masterprob, rhs) )
+      {
+         dualobjnorm += SQR(rhs);
 
-      dualobjnorm += SQR(bound);
-
-      if( SCIPisPositive(masterprob, gcgcol->extendedmasterconscoefs[i]) )
-         para += gcgcol->extendedmasterconscoefs[i] * bound;
+         if( SCIPisPositive(masterprob, coef) )
+            *para += coef * rhs;
+      }
    }
 
    for( i = 0; i < GCGgetNPricingprobs(gcg); ++i )
       dualobjnorm += SQR(GCGgetNIdenticalBlocks(gcg, i));
 
-   para += SQR(GCGgetNIdenticalBlocks(gcg, gcgcol->probnr));
+   *para += SQR(GCGgetNIdenticalBlocks(gcg, gcgcol->probnr));
 
-   assert(!SCIPisInfinity(masterprob, ABS(para)));
+   assert(!SCIPisInfinity(masterprob, ABS(*para)));
 
    dualobjnorm = sqrt(dualobjnorm);
    assert(!SCIPisInfinity(masterprob, dualobjnorm));
    assert(SCIPisPositive(masterprob, dualobjnorm));
    assert(SCIPisPositive(masterprob, gcgcol->norm));
 
-   para = para / (dualobjnorm * gcgcol->norm);
+   *para = (*para) / (dualobjnorm * gcgcol->norm);
 
-   return para;
+   return SCIP_OKAY;
 }
 
 /** compute orthogonality of two gcg columns */
-SCIP_Real GCGcolComputeOrth(
+SCIP_RETCODE GCGcolComputeOrth(
    GCG*                 gcg,                /**< GCG data structure */
    GCG_COL*             gcgcol1,            /**< first gcg column */
-   GCG_COL*             gcgcol2             /**< second gcg column */
+   GCG_COL*             gcgcol2,            /**< second gcg column */
+   SCIP_Real*           orth                /**< pointer to store the orthogonality of two gcg columns */
    )
 {
    SCIP* scip;
@@ -882,15 +868,43 @@ SCIP_Real GCGcolComputeOrth(
          norm2 += SQR(gcgcol2->originalsepamastercuts[i]);
    }
 
-   for( i = 0; i < gcgcol1->nextendedmasterconss; ++i )
+   i = 0;
+   j = 0;
+   while( i < gcgcol1->ninferredpricingvars || j < gcgcol2->ninferredpricingvars )
    {
-      if( SCIPisPositive(scip, gcgcol1->extendedmasterconscoefs[i] * gcgcol2->extendedmasterconscoefs[i]) )
-         para += gcgcol1->extendedmasterconscoefs[i] * gcgcol2->extendedmasterconscoefs[i];
+      if( i < gcgcol1->ninferredpricingvars && j < gcgcol2->ninferredpricingvars &&
+          gcgcol1->inferredpricingvars[i] == gcgcol2->inferredpricingvars[j] )
+      {
+         SCIP_Real coef1 = gcgcol1->inferredpricingvals[i];
+         SCIP_Real coef2 = gcgcol2->inferredpricingvals[j];
 
-      if( SCIPisPositive(scip, gcgcol1->extendedmasterconscoefs[i]) )
-         norm1 += SQR(gcgcol1->extendedmasterconscoefs[i]);
-      if( SCIPisPositive(scip, gcgcol2->extendedmasterconscoefs[i]) )
-         norm2 += SQR(gcgcol2->extendedmasterconscoefs[i]);
+         assert(!SCIPisZero(scip, coef1));
+         
+         if( SCIPisPositive(scip, coef1 * coef2) )
+            para += coef1 * coef2;
+
+         if( SCIPisPositive(scip, coef1) )
+            norm1 += SQR(coef1);
+         if( SCIPisPositive(scip, coef2) )
+            norm2 += SQR(coef2);
+         ++i;
+         ++j;
+      }
+      else if( i < gcgcol1->ninferredpricingvars && 
+               SCIPvarGetIndex(gcgcol1->inferredpricingvars[i]) < SCIPvarGetIndex(gcgcol2->inferredpricingvars[j]) )
+      {
+         if( SCIPisPositive(scip, gcgcol1->inferredpricingvals[i]) )
+            norm1 += SQR(gcgcol1->inferredpricingvals[i]);
+         ++i;
+      }
+      else
+      {
+         assert(j < gcgcol2->ninferredpricingvars);
+         assert(SCIPvarGetIndex(gcgcol1->inferredpricingvars[i]) > SCIPvarGetIndex(gcgcol2->inferredpricingvars[j]));
+         if( SCIPisPositive(scip, gcgcol2->inferredpricingvals[j]) )
+            norm2 += SQR(gcgcol2->inferredpricingvals[j]);
+         ++j;
+      }
    }
 
    for( i = 0; i < gcgcol1->nlinkvars; ++i )
@@ -941,7 +955,32 @@ SCIP_Real GCGcolComputeOrth(
 
    para = para/(norm1*norm2);
 
-   return 1.0 - para;
+   *orth = 1.0 - para;
+   return SCIP_OKAY;
+}
+
+/** returns the inferred (coefficient) pricing variables solution values */
+SCIP_Real* GCGcolGetInferredPricingVals(
+   GCG_COL*              gcgcol             /**< gcgcol */
+   )
+{
+   return gcgcol->inferredpricingvals;
+}
+
+/** returns the inferred (coefficient) pricing variables */
+SCIP_VAR** GCGcolGetInferredPricingVars(
+   GCG_COL*              gcgcol             /**< gcgcol */
+   )
+{
+   return gcgcol->inferredpricingvars;
+}
+
+/** returns the number of inferred (coefficient) pricing variables */
+int GCGcolGetNInferredPricingVars(
+   GCG_COL*              gcgcol             /**< gcgcol */
+   )
+{
+   return gcgcol->ninferredpricingvars;
 }
 
 SCIP_DECL_HASHGETKEY(GCGhashGetKeyCol)
