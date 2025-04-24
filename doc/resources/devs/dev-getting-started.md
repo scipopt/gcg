@@ -41,7 +41,7 @@ which is located in `bin/` and the reason why we always call GCG using `./bin/gc
 This should only recompile the affected files and does not take long (a few seconds).
 
 - If you **change or add code inside `lib/`**, e.g. SCIP code, you have to **recompile the dependencies**
-using `make`. This should still only recompile the affected files and does not take long.
+using `make deps`. This should still only recompile the affected files and does not take long.
 
 - If you **change flags** (e.g. include bliss using the flag `BLISS=true`), it is required to do
 this with both commands, i.e. call `make deps BLISS=true` **and** `make BLISS=true`. Not all flags
@@ -80,7 +80,7 @@ We recommend to start testing as soon as the code is able to run to avoid conseq
 If developing on our Git, an automated CI pipeline will compile and briefly test your code
 upon every push.
 Once the new feature is ready to be tested more thoroughly, there are different guides for each step of testing.
-Again, there are also pages in the [GCG Git Wiki]((https://git.or.rwth-aachen.de/gcg/gcg/-/wikis/GCG-Manuals-and-Guides)
+Again, there are also pages in the [GCG Git Wiki](https://git.or.rwth-aachen.de/gcg/gcg/-/wikis/GCG-Manuals-and-Guides)
 that have to be followed to make the tests run inside the chair's infrastructure, so keep that in mind.
 
 To conduct experiments, **we have a guide** on @ref conduct-experiments. Testing in general requires
