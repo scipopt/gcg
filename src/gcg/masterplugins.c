@@ -65,6 +65,7 @@
 #include "scip/heur_crossover.h"
 #include "scip/heur_dins.h"
 #include "scip/heur_distributiondiving.h"
+#include "scip/heur_dks.h"
 #include "scip/heur_dps.h"
 #include "scip/heur_dualval.h"
 #include "scip/heur_farkasdiving.h"
@@ -265,6 +266,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeHeurCrossover(masterprob) );
    SCIP_CALL( SCIPincludeHeurDins(masterprob) );
    SCIP_CALL( SCIPincludeHeurDistributiondiving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurDKS(masterprob) );
    SCIP_CALL( SCIPincludeHeurDps(masterprob) );
    SCIP_CALL( SCIPincludeHeurDualval(masterprob) );
    SCIP_CALL( SCIPincludeHeurFarkasdiving(masterprob) );

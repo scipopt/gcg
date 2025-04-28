@@ -2690,7 +2690,7 @@ SCIP_RETCODE solveCliquer(
 
    /* Create a column corresponding to our clique result */
  CREATECOLUMN:
-   SCIP_CALL( GCGcreateGcgCol(pricingprob, &col, probnr, pricingprobvars, solvals, npricingprobvars, FALSE, SCIPinfinity(pricingprob)) );
+   SCIP_CALL( GCGcreateGcgCol(gcg, pricingprob, &col, probnr, pricingprobvars, solvals, npricingprobvars, FALSE, SCIPinfinity(pricingprob)) );
    SCIP_CALL( GCGpricerAddCol(gcg, col) );
    *status = GCG_PRICINGSTATUS_UNKNOWN;
    if( indexcount > 0 )

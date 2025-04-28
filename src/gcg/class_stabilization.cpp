@@ -831,6 +831,8 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
    }
 
    /* extended master conss */
+   GCG_PRICINGMODIFICATION** pricingmods;
+   int block;
    for( int i = 0; i < nstabcenterextendedmasterconss; ++i )
    {
       SCIP_COL** cols;
@@ -885,18 +887,15 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
          gradientproduct -= (dual - stabcenterextendedmasterconsvals[i]) * val;
       }
 
-      for( int block = 0; block < GCGgetNPricingprobs(gcg); block++ )
+      pricingmods = GCGextendedmasterconsGetPricingModifications(tmpextendedmasterconsdata);
+      for( int j = 0; j < GCGextendedmasterconsGetNPricingModifications(tmpextendedmasterconsdata); j++ )
       {
-         if( !GCGisPricingprobRelevant(gcg, block) )
-            continue;
-
-         GCG_PRICINGMODIFICATION* pricingmod = GCGextendedmasterconsGetPricingModification(gcg, tmpextendedmasterconsdata, block);
-         if( pricingmod == NULL )
-            continue;
-
+         block = GCGpricingmodificationGetBlock(pricingmods[j]);
+         assert(pricingmods[j] != NULL);
+         assert(GCGisPricingprobRelevant(gcg, block));
          assert(pricingcols[block] != NULL);
 
-         SCIP_VAR* pricingvar = GCGpricingmodificationGetCoefVar(pricingmod);
+         SCIP_VAR* pricingvar = GCGpricingmodificationGetCoefVar(pricingmods[j]);
          assert(GCGvarIsInferredPricing(pricingvar));
          val = GCGcolGetSolVal(pricingcols[block], pricingvar);
          assert(!SCIPisInfinity(masterprob, ABS(val)));
@@ -915,10 +914,10 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
       SCIP_VAR* mastervar;
       SCIP_VAR* pricingvar;
       SCIP_CONS* linkingcons = linkingconss[i];
-      int block = linkingconsblocks[i];
       mastervar = SCIPgetVarsLinear(masterprob, linkingcons)[0];
       assert(GCGvarIsMaster(mastervar));
 
+      block = linkingconsblocks[i];
       pricingvar = GCGlinkingVarGetPricingVars(GCGmasterVarGetOrigvars(mastervar)[0])[block];
       assert(GCGvarIsPricing(pricingvar));
 
@@ -948,7 +947,7 @@ SCIP_Real Stabilization::calculateSubgradientProduct(
 /** calculates the subgradient (with linking variables) */
 SCIP_RETCODE Stabilization::calculateSubgradient(
    GCG_COL**            pricingcols         /**< columns of the pricing problems */
-)
+   )
 {
    SCIP* origprob = GCGgetOrigprob(gcg);
    SCIP_CONS** origmasterconss = GCGgetOrigMasterConss(gcg);
@@ -1109,6 +1108,8 @@ SCIP_RETCODE Stabilization::calculateSubgradient(
    }
 
    /* extended master conss */
+   GCG_PRICINGMODIFICATION** pricingmods;
+   int block;
    for( int i = 0; i < nsubgradientextendedmasterconss; ++i )
    {
       SCIP_COL** cols;
@@ -1149,18 +1150,15 @@ SCIP_RETCODE Stabilization::calculateSubgradient(
          activity += val;
       }
 
-      for( int block = 0; block < GCGgetNPricingprobs(gcg); block++ )
+      pricingmods = GCGextendedmasterconsGetPricingModifications(tmpextendedmasterconsdata);
+      for( int j = 0; j < GCGextendedmasterconsGetNPricingModifications(tmpextendedmasterconsdata); j++ )
       {
-         if( !GCGisPricingprobRelevant(gcg, block) )
-            continue;
-
-         GCG_PRICINGMODIFICATION* pricingmod = GCGextendedmasterconsGetPricingModification(gcg, tmpextendedmasterconsdata, block);
-         if( pricingmod == NULL )
-            continue;
-
+         block = GCGpricingmodificationGetBlock(pricingmods[j]);
+         assert(pricingmods[j] != NULL);
+         assert(GCGisPricingprobRelevant(gcg, block));
          assert(pricingcols[block] != NULL);
 
-         SCIP_VAR* pricingvar = GCGpricingmodificationGetCoefVar(pricingmod);
+         SCIP_VAR* pricingvar = GCGpricingmodificationGetCoefVar(pricingmods[j]);
          assert(GCGvarIsInferredPricing(pricingvar));
          val = GCGcolGetSolVal(pricingcols[block], pricingvar);
          assert(!SCIPisInfinity(masterprob, ABS(val)));
@@ -1193,12 +1191,12 @@ SCIP_RETCODE Stabilization::calculateSubgradient(
       SCIP_VAR* mastervar;
       SCIP_VAR* pricingvar;
       SCIP_CONS* linkingcons = linkingconss[i];
-      int block = linkingconsblocks[i];
       SCIP_Real activity;
       SCIP_Real infeasibility;
       mastervar = SCIPgetVarsLinear(masterprob, linkingcons)[0];
       assert(GCGvarIsMaster(mastervar));
 
+      block = linkingconsblocks[i];
       pricingvar = GCGlinkingVarGetPricingVars(GCGmasterVarGetOrigvars(mastervar)[0])[block];
       assert(GCGvarIsPricing(pricingvar));
       assert(pricingcols[block] != NULL);

@@ -79,6 +79,7 @@ New/modified/removed API functions:
 - added function 'GCGpricingmodificationCreate'
 - added function 'GCGextendedmasterconsCreateFromCons'
 - added function 'GCGextendedmasterconsCreateFromRow'
+- added function 'GCGbranchCreateExtendedmastercons'
 - added function 'GCGextendedmasterconsFree'
 - added function 'GCGrelaxBranchNewCol'
 - added function 'GCGrelaxBranchGetExtendedMasterCons'
@@ -87,6 +88,7 @@ New/modified/removed API functions:
 - added callback 'GCG_DECL_BRANCHGETEXTENDEDMASTERCONS' to 'GCG_BRANCHRULE'
 - added parameter 'GCG_DECL_BRANCHNEWCOL ((*branchnewcol));' to 'GCGrelaxIncludeBranchrule'
 - added parameter 'GCG_DECL_BRANCHGETEXTENDEDMASTERCONS((*branchgetextendedmastercons))' to 'GCGrelaxIncludeBranchrule'
+- added parameter 'GCG_DECL_BRANCHGETEXTENDEDMASTERCONSCOEFF((*branchgetextendedmasterconscoeff))' to 'GCGrelaxIncludeBranchrule'
 - moved function 'SCIPincludeSepaMaster' to 'SCIPincludeSepaOriginal'
 - moved function 'GCGsepaGetOrigcuts' to 'GCGsepaGetOriginalSepaOrigcuts'
 - moved function 'GCGsepaGetNCuts' to 'GCGsepaGetNOriginalSepaCuts'
@@ -190,6 +192,7 @@ Bug fixes
 
 - store pending global bound changes only once (for the same variable) and update older ones
 - prohibits subproblem merging during CONSCHECK calls in Benders' decomposition
+- fix bug in symmetry detection that could lead to wrong results
 
 
 @section RN371 GCG 3.7.1

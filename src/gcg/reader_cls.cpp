@@ -36,10 +36,6 @@
 
 #include <assert.h>
 #include <string.h>
-#if defined(_WIN32) || defined(_WIN64)
-#else
-#include <strings.h> /*lint --e{766}*/ /* needed for strcasecmp() */
-#endif
 #include <ctype.h>
 
 #include "gcg/reader_cls.h"

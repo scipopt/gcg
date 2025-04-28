@@ -290,11 +290,6 @@ public:
       int                   nsolvars            /**< number of variables in array solvars */
       );
 
-   /** compute generic extended master cons coefficients of column */
-   SCIP_RETCODE computeColExtendedMasterconss(
-      GCG_COL*              gcgcol              /**< GCG column data structure */
-      );
-
    GCG_SOLVER** getSolvers() const;
 
    int getNumSolvers() const;

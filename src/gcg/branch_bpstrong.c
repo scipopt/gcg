@@ -1548,9 +1548,9 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
 
    SCIPdebugMessage("Init BPStrong branching rule\n");
 
-   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, branchrule, branchActiveMasterBPStrong,
+   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, branchrule, NULL, branchActiveMasterBPStrong,
          branchDeactiveMasterBPStrong, branchPropMasterBPStrong, branchMasterSolvedBPStrong,
-         branchDataDeleteBPStrong, NULL, NULL) );
+         branchDataDeleteBPStrong, NULL, NULL, NULL) );
 
    /* free data if we already solved another instance but branchFreeBPStrong was not called inbetween */
    if( branchruledata->initialized )

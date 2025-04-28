@@ -209,7 +209,7 @@ GCG_DECL_BRANCHPROPMASTER(branchPropMasterRyanfoster)
    int i;
    int j;
 
-   assert(masterprob != NULL);
+   assert(gcg != NULL);
    assert(branchdata != NULL);
    assert(branchdata->var1 != NULL);
    assert(branchdata->var2 != NULL);
@@ -946,8 +946,8 @@ SCIP_DECL_BRANCHINIT(branchInitRyanfoster)
    branchruledata = SCIPbranchruleGetData(branchrule);
    assert(branchruledata != NULL);
 
-   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, branchrule, branchActiveMasterRyanfoster,
-         branchDeactiveMasterRyanfoster, branchPropMasterRyanfoster, NULL, branchDataDeleteRyanfoster, NULL, NULL) );
+   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, branchrule, NULL, branchActiveMasterRyanfoster,
+         branchDeactiveMasterRyanfoster, branchPropMasterRyanfoster, NULL, branchDataDeleteRyanfoster, NULL, NULL, NULL) );
 
    return SCIP_OKAY;
 }

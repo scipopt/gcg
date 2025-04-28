@@ -108,27 +108,6 @@ SCIP_DECL_BRANCHFREE(branchFreeXyz)
 #endif
 
 
-/** initialization method of branching rule (called after problem was transformed) */
-#ifdef SCIP_DISABLED_CODE
-static
-SCIP_DECL_BRANCHINIT(branchInitXyz)
-{  /*lint --e{715}*/
-
-   /* inform relaxator of GCG about the branching rule */
-   SCIP_CALL( GCGrelaxIncludeBranchrule(scip, branchrule, branchActiveMasterOrig,
-         branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolvedOrig, branchDataDeleteOrig,
-         branchNewColXyz, branchGetExtendedMasterConsXyz) );
-
-   SCIPerrorMessage("method of xyz branching rule not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-#else
-#define branchInitXyz NULL
-#endif
-
-
 /** deinitialization method of branching rule (called before transformed problem is freed) */
 #ifdef SCIP_DISABLED_CODE
 static
@@ -328,6 +307,43 @@ GCG_DECL_BRANCHGETEXTENDEDMASTERCONS(branchGetExtendedMasterConsXyz)
 #else
 #define branchGetExtendedmasterconsXyz NULL
 #endif
+
+/** call to determine the coefficient of a column solution in the extended master cons */
+#ifdef SCIP_DISABLED_CODE
+static
+GCG_DECL_BRANCHGETEXTENDEDMASTERCONSCOEFF(branchGetExtendedmasterconsCoeffXyz)
+{  /*lint --e{715}*/
+   SCIPerrorMessage("method of xyz branching rule not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
+#else
+#define branchGetExtendedmasterconsCoeffXyz NULL
+#endif
+
+
+/** initialization method of branching rule (called after problem was transformed) */
+#ifdef SCIP_DISABLED_CODE
+static
+SCIP_DECL_BRANCHINIT(branchInitXyz)
+{  /*lint --e{715}*/
+   GCG_BRANCHRULE* gcgbranchrule = NULL;
+
+   /* inform relaxator of GCG about the branching rule */
+   SCIP_CALL( GCGrelaxIncludeBranchrule(scip, branchrule, &gcgbranchrule, branchActiveMasterOrig,
+         branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolvedOrig, branchDataDeleteOrig,
+         branchNewColXyz, branchGetExtendedMasterConsXyz, branchGetExtendedmasterconsCoeff) );
+
+   SCIPerrorMessage("method of xyz branching rule not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
+#else
+#define branchInitXyz NULL
+#endif
+
 
 /*
  * branching rule specific interface methods

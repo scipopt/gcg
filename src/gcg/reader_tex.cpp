@@ -36,10 +36,6 @@
 #include <cassert>
 #include <cstring>
 
-#if defined(_WIN32) || defined(_WIN64)
-#else
-#include <strings.h> /*lint --e{766}*/ /* needed for strcasecmp() */
-#endif
 #include <cstdio>
 #include <vector>
 #include <sstream>
@@ -964,7 +960,7 @@ SCIP_RETCODE GCGincludeReaderTex(
    GCG*                  gcg                 /*< GCG data structure */
    )
 {
-   SCIP_READERDATA* readerdata;
+   SCIP_READERDATA* readerdata = NULL;
    SCIP* origprob = GCGgetOrigprob(gcg);
    assert(origprob != NULL);
    /* create dec reader data */

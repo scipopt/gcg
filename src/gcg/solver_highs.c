@@ -241,12 +241,6 @@ SCIP_RETCODE buildProblem(
       case SCIP_VARTYPE_INTEGER:
          vartype[varidx] = 1;
          break;
-      case SCIP_VARTYPE_IMPLINT:
-         /* NOTE: HiGHS has an kImplicitInteger = 4 variable type, but this is not current accepted as input. So the
-          * implicit integers are set to continuous
-          */
-         vartype[varidx] = 0;
-         break;
       default:
          SCIPerrorMessage("invalid variable type\n");
          return SCIP_INVALIDDATA;
@@ -755,7 +749,7 @@ SCIP_RETCODE solveHighs(
          }
 
 
-         SCIP_CALL( GCGcreateGcgCol(pricingprob, &col, probnr, solverdata->pricingvars[probnr], highssolvals, numcols, TRUE, SCIPinfinity(pricingprob)) );
+         SCIP_CALL( GCGcreateGcgCol(gcg, pricingprob, &col, probnr, solverdata->pricingvars[probnr], highssolvals, numcols, TRUE, SCIPinfinity(pricingprob)) );
          SCIP_CALL( GCGpricerAddCol(gcg, col) );
          ++(*ncols);
 
@@ -901,7 +895,7 @@ SCIP_RETCODE solveHighs(
 
    if( feasible )
    {
-      SCIP_CALL( GCGcreateGcgColFromSol(pricingprob, NULL, NULL, &col, probnr, sol, FALSE, SCIPinfinity(pricingprob)) );
+      SCIP_CALL( GCGcreateGcgColFromSol(gcg, pricingprob, NULL, NULL, &col, probnr, sol, FALSE, SCIPinfinity(pricingprob)) );
       SCIP_CALL( GCGpricerAddCol(gcg, col) );
       ++(*ncols);
    }

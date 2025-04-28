@@ -177,7 +177,7 @@ SCIP_RETCODE colpoolDelCol(
 
    /* free the col */
    if( freecol )
-      GCGfreeGcgCol(&colpool->cols[pos]);
+      SCIP_CALL( GCGfreeGcgCol(&colpool->cols[pos]) );
 
    /* move the last col of the pool to the free position */
    if( pos < colpool->ncols-1 )
@@ -229,7 +229,7 @@ SCIP_RETCODE GCGcolpoolAddCol(
    else if( freeduplicate )
    {
       assert(col->pos == -1);
-      GCGfreeGcgCol(&col);
+      SCIP_CALL( GCGfreeGcgCol(&col) );
    }
 
    return SCIP_OKAY;
@@ -500,9 +500,6 @@ SCIP_RETCODE GCGcolpoolPropagateGlobalBounds(
 
       for( i = 0; i < col->nvars; ++i )
       {
-         if( GCGvarIsInferredPricing(col->vars[i]) )
-            continue;
-
          assert(GCGvarIsPricing(col->vars[i]) && GCGpricingVarGetNOrigvars(col->vars[i]) > 0 && GCGpricingVarGetOrigvars(col->vars[i])[0] != NULL);
          if( SCIPisFeasLT(col->pricingprob, col->vals[i], SCIPvarGetLbGlobal(GCGpricingVarGetOrigvars(col->vars[i])[0])) ||
              SCIPisFeasGT(col->pricingprob, col->vals[i], SCIPvarGetUbGlobal(GCGpricingVarGetOrigvars(col->vars[i])[0])) )

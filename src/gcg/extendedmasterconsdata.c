@@ -40,6 +40,7 @@
 #include "gcg/scip_misc.h"
 #include "gcg/pricer_gcg.h"
 #include "gcg/struct_extendedmasterconsdata.h"
+#include "gcg/struct_vardata.h"
 
 #include "scip/scip.h"
 #include "scip/cons_linear.h"
@@ -109,7 +110,7 @@ SCIP_RETCODE GCGpricingmodificationCreate(
 
    assert(blocknr < GCGgetNPricingprobs(gcg));
 
-   assert(coefvar != NULL);
+   assert(coefvar != NULL && GCGinferredPricingVarIsCoefVar(coefvar));
    assert(GCGvarIsInferredPricing(coefvar));
    assert(additionalvars != NULL || nadditionalvars == 0);
    assert(additionalconss != NULL || nadditionalconss == 0);
@@ -140,13 +141,13 @@ SCIP_RETCODE GCGpricingmodificationCreate(
 
 /** create an extended master cons, taking ownership over pricingmodifications */
 SCIP_RETCODE GCGextendedmasterconsCreateFromCons(
-   GCG*                          gcg,                             /**< GCG data structure */
-   GCG_EXTENDEDMASTERCONSDATA**  extendedmasterconsdata,          /**< pointer to store the extended master cons data */
-   SCIP_CONS*                    cons,                            /**< constraint in the master problem that represents the extended master cons */
-   GCG_PRICINGMODIFICATION**     pricingmodifications,            /**< pricing modifications for the extended master cons */
-   int                           npricingmodifications,           /**< number of pricing modifications for the extended master cons */
-   void*                         data,                            /**< any data that might be required to calculate the coefficient of a column solution */
-   GCG_DECL_EXTENDEDMASTERCONSGETCOEFF((*extendedmasterconsGetCoeff))   /**< callback to calculate the coefficient of a column solution */
+   GCG*                             gcg,                             /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA**     extendedmasterconsdata,          /**< pointer to store the extended master cons data */
+   GCG_EXTENDEDMASTERCONSTYPE       type,                            /**< type of the extended master cons */
+   SCIP_CONS*                       cons,                            /**< constraint in the master problem that represents the extended master cons */
+   GCG_PRICINGMODIFICATION**        pricingmodifications,            /**< pricing modifications for the extended master cons */
+   int                              npricingmodifications,           /**< number of pricing modifications for the extended master cons */
+   GCG_EXTENDEDMASTERCONSDATADATA*  data                             /**< any data that might be required to calculate the coefficient of a column solution */
    )
 {
 #ifndef NDEBUG
@@ -165,7 +166,7 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromCons(
    assert(pricingmodifications != NULL || npricingmodifications == 0);
 
 #ifndef NDEBUG
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &seenblocks, GCGgetNPricingprobs(gcg)) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &seenblocks, GCGgetNPricingprobs(gcg)) );
    for( i = 0; i < GCGgetNPricingprobs(gcg); i++ )
       seenblocks[i] = FALSE;
 #endif
@@ -182,18 +183,16 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromCons(
    }
 
 #ifndef NDEBUG
-   SCIPfreeBlockMemoryArray(scip, &seenblocks, GCGgetNPricingprobs(gcg));
-   assert(seenblocks == NULL);
+   SCIPfreeBufferArray(scip, &seenblocks);
 #endif
 
    SCIP_CALL( SCIPallocBlockMemory(scip, extendedmasterconsdata) );
 
-   (*extendedmasterconsdata)->type = GCG_EXTENDEDMASTERCONSTYPE_CONS;
+   (*extendedmasterconsdata)->type = type;
    (*extendedmasterconsdata)->cons.cons = cons;
    (*extendedmasterconsdata)->pricingmodifications = pricingmodifications;
    (*extendedmasterconsdata)->npricingmodifications = npricingmodifications;
    (*extendedmasterconsdata)->data = data;
-   (*extendedmasterconsdata)->extendedmasterconsGetCoeff = extendedmasterconsGetCoeff;
 
    for( i = 0; i < npricingmodifications; i++ ) {
       SCIPvarGetData(pricingmodifications[i]->coefvar)->data.inferredpricingvardata.extendedmasterconsdata = *extendedmasterconsdata;
@@ -209,11 +208,11 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromCons(
 SCIP_RETCODE GCGextendedmasterconsCreateFromRow(
    GCG*                             gcg,                          /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA**     extendedmasterconsdata,       /**< pointer to store the extended master cons data */
+   GCG_EXTENDEDMASTERCONSTYPE       type,                            /**< type of the extended master cons */
    SCIP_ROW*                        row,                          /**< row in the master problem that represents the extended master cons cut */
    GCG_PRICINGMODIFICATION**        pricingmodifications,         /**< pricing modifications for the extended master cons */
    int                              npricingmodifications,        /**< number of pricing modifications for the extended master cons */
-   void*                            data,                         /**< any data that might be required to calculate the coefficient of a column solution */
-   GCG_DECL_EXTENDEDMASTERCONSGETCOEFF((*extendedmasterconsGetCoeff))   /**< callback to calculate the coefficient of a column solution */
+   GCG_EXTENDEDMASTERCONSDATADATA*  data                          /**< any data that might be required to calculate the coefficient of a column solution */
    )
 {
 #ifndef NDEBUG
@@ -232,7 +231,7 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromRow(
    assert(pricingmodifications != NULL || npricingmodifications == 0);
 
 #ifndef NDEBUG
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &seenblocks, GCGgetNPricingprobs(gcg)) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &seenblocks, GCGgetNPricingprobs(gcg)) );
    for( i = 0; i < GCGgetNPricingprobs(gcg); i++ )
       seenblocks[i] = FALSE;
 #endif
@@ -249,17 +248,16 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromRow(
    }
 
 #ifndef NDEBUG
-   SCIPfreeBlockMemoryArray(scip, &seenblocks, GCGgetNPricingprobs(gcg));
+   SCIPfreeBufferArray(scip, &seenblocks);
 #endif
 
    SCIP_CALL( SCIPallocBlockMemory(scip, extendedmasterconsdata) );
 
-   (*extendedmasterconsdata)->type = GCG_EXTENDEDMASTERCONSTYPE_ROW;
+   (*extendedmasterconsdata)->type = type;
    (*extendedmasterconsdata)->cons.row = row;
    (*extendedmasterconsdata)->pricingmodifications = pricingmodifications;
    (*extendedmasterconsdata)->npricingmodifications = npricingmodifications;
    (*extendedmasterconsdata)->data = data;
-   (*extendedmasterconsdata)->extendedmasterconsGetCoeff = extendedmasterconsGetCoeff;
 
    for( i = 0; i < npricingmodifications; i++ ) {
       SCIPvarGetData(pricingmodifications[i]->coefvar)->data.inferredpricingvardata.extendedmasterconsdata = *extendedmasterconsdata;
@@ -288,11 +286,12 @@ SCIP_RETCODE GCGextendedmasterconsFree(
 
    switch( (*extendedmasterconsdata)->type )
    {
-   case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+   case GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS:
       assert((*extendedmasterconsdata)->cons.cons != NULL);
       SCIP_CALL( SCIPreleaseCons(scip, &(*extendedmasterconsdata)->cons.cons) );
+      SCIP_CALL( GCGbranchFreeExtendedmasterconsBranchData(gcg, *extendedmasterconsdata) );
       break;
-   case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+   case GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW:
       assert((*extendedmasterconsdata)->cons.row != NULL);
       SCIP_CALL( SCIPreleaseRow(scip, &(*extendedmasterconsdata)->cons.row) );
       break;
@@ -323,10 +322,10 @@ SCIP_Bool GCGextendedmasterconsIsActive(
 
    switch( extendedmasterconsdata->type )
    {
-   case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+   case GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS:
       assert(extendedmasterconsdata->cons.cons != NULL);
       return SCIPconsIsActive(extendedmasterconsdata->cons.cons);
-   case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+   case GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW:
       assert(extendedmasterconsdata->cons.row != NULL);
       return SCIProwIsInLP(extendedmasterconsdata->cons.row);
    default:
@@ -352,11 +351,11 @@ SCIP_RETCODE GCGextendedmasterconsAddMasterVar(
 
    switch( extendedmasterconsdata->type )
    {
-   case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+   case GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS:
       assert(extendedmasterconsdata->cons.cons != NULL);
       SCIP_CALL( SCIPaddCoefLinear(masterscip, extendedmasterconsdata->cons.cons, var, coef) );
       break;
-   case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+   case GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW:
       assert(extendedmasterconsdata->cons.row != NULL);
       SCIP_CALL( SCIPaddVarToRow(masterscip, extendedmasterconsdata->cons.row, var, coef) );
       break;
@@ -400,7 +399,7 @@ SCIP_CONS* GCGextendedmasterconsGetCons(
    )
 {
    assert(extendedmasterconsdata != NULL);
-   assert(extendedmasterconsdata->type == GCG_EXTENDEDMASTERCONSTYPE_CONS);
+   assert(extendedmasterconsdata->type == GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS);
    assert(extendedmasterconsdata->cons.cons != NULL);
 
    return extendedmasterconsdata->cons.cons;
@@ -414,7 +413,7 @@ SCIP_ROW* GCGextendedmasterconsGetRow(
    )
 {
    assert(extendedmasterconsdata != NULL);
-   assert(extendedmasterconsdata->type == GCG_EXTENDEDMASTERCONSTYPE_ROW);
+   assert(extendedmasterconsdata->type == GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW);
    assert(extendedmasterconsdata->cons.row != NULL);
 
    return extendedmasterconsdata->cons.row;
@@ -687,10 +686,10 @@ const char* GCGextendedmasterconsGetName(
 
    switch( extendedmasterconsdata->type )
    {
-   case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+   case GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS:
       assert(extendedmasterconsdata->cons.cons != NULL);
       return SCIPconsGetName(extendedmasterconsdata->cons.cons);
-   case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+   case GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW:
       assert(extendedmasterconsdata->cons.row != NULL);
       return SCIProwGetName(extendedmasterconsdata->cons.row);
    default:
@@ -710,10 +709,10 @@ SCIP_Real GCGextendedmasterconsGetLhs(
 
    switch( extendedmasterconsdata->type )
    {
-   case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+   case GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS:
       assert(extendedmasterconsdata->cons.cons != NULL);
       return GCGconsGetLhs(scip, extendedmasterconsdata->cons.cons);
-   case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+   case GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW:
       assert(extendedmasterconsdata->cons.row != NULL);
       return SCIProwGetLhs(extendedmasterconsdata->cons.row);
    default:
@@ -733,10 +732,10 @@ SCIP_Real GCGextendedmasterconsGetRhs(
 
    switch( extendedmasterconsdata->type )
    {
-   case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+   case GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS:
       assert(extendedmasterconsdata->cons.cons != NULL);
       return GCGconsGetRhs(scip, extendedmasterconsdata->cons.cons);
-   case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+   case GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW:
       assert(extendedmasterconsdata->cons.row != NULL);
       return SCIProwGetRhs(extendedmasterconsdata->cons.row);
    default:
@@ -755,9 +754,9 @@ SCIP_Real GCGextendedmasterconsGetConstant(
 
    switch( extendedmasterconsdata->type )
    {
-   case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+   case GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS:
       return 0.0;
-   case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+   case GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW:
       assert(extendedmasterconsdata->cons.row != NULL);
       return SCIProwGetConstant(extendedmasterconsdata->cons.row);
    default:
@@ -777,10 +776,10 @@ int GCGextendedmasterconsGetNNonz(
 
    switch( extendedmasterconsdata->type )
    {
-   case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+   case GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS:
       assert(extendedmasterconsdata->cons.cons != NULL);
       return SCIProwGetNNonz(SCIPconsGetRow(scip, extendedmasterconsdata->cons.cons));
-   case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+   case GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW:
       assert(extendedmasterconsdata->cons.row != NULL);
       return SCIProwGetNNonz(extendedmasterconsdata->cons.row);
    default:
@@ -800,10 +799,10 @@ SCIP_COL** GCGextendedmasterconsGetCols(
 
    switch( extendedmasterconsdata->type )
    {
-   case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+   case GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS:
       assert(extendedmasterconsdata->cons.cons != NULL);
       return SCIProwGetCols(SCIPconsGetRow(scip, extendedmasterconsdata->cons.cons));
-   case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+   case GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW:
       assert(extendedmasterconsdata->cons.row != NULL);
       return SCIProwGetCols(extendedmasterconsdata->cons.row);
    default:
@@ -823,10 +822,10 @@ SCIP_Real* GCGextendedmasterconsGetVals(
 
    switch( extendedmasterconsdata->type )
    {
-   case GCG_EXTENDEDMASTERCONSTYPE_CONS:
+   case GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS:
       assert(extendedmasterconsdata->cons.cons != NULL);
       return SCIProwGetVals(SCIPconsGetRow(scip, extendedmasterconsdata->cons.cons));
-   case GCG_EXTENDEDMASTERCONSTYPE_ROW:
+   case GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW:
       assert(extendedmasterconsdata->cons.row != NULL);
       return SCIProwGetVals(extendedmasterconsdata->cons.row);
    default:
@@ -837,7 +836,7 @@ SCIP_Real* GCGextendedmasterconsGetVals(
 
 #ifndef NDEBUG
 /** get the additional data */
-void* GCGextendedmasterconsGetData(
+GCG_EXTENDEDMASTERCONSDATADATA* GCGextendedmasterconsGetData(
    GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    )
 {
@@ -848,22 +847,32 @@ void* GCGextendedmasterconsGetData(
 #endif
 
 /** calculate the coefficient of a column solution in the extended master cons */
-SCIP_Real GCGextendedmasterconsGetCoeff(
+SCIP_RETCODE GCGextendedmasterconsGetCoeff(
    GCG*                             gcg,                          /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata,       /**< extended master cons data */
    SCIP_VAR**                       solvars,                      /**< array of column solution variables */
    SCIP_Real*                       solvals,                      /**< array of column solution values */
    int                              nsolvars,                     /**< number of column solution variables and values */
-   int                              probnr                        /**< the pricing problem that the column belongs to */
+   int                              probnr,                       /**< the pricing problem that the column belongs to */
+   SCIP_Real*                       coeff                         /**< pointer to store the coefficient */
    )
 {
-   SCIP_Real coef;
-
    assert(extendedmasterconsdata != NULL);
 
-   SCIP_CALL( extendedmasterconsdata->extendedmasterconsGetCoeff(gcg, extendedmasterconsdata, solvars, solvals, nsolvars, probnr, &coef) );
+   switch( extendedmasterconsdata->type )
+   {
+   case GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS:
+      SCIP_CALL( GCGbranchGetExtendedmasterconsCoeff(gcg, extendedmasterconsdata, solvars, solvals, nsolvars, probnr, coeff) );
+      break;
+   case GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW:
+      return SCIP_NOTIMPLEMENTED;
+      break;
+   default:
+      SCIPerrorMessage("Cannot handle the extended master constraint type.\n");
+      return SCIP_INVALIDDATA;
+   }
 
-   return coef;
+   return SCIP_OKAY;
 }
 
 #ifndef NDEBUG

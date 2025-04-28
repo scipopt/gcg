@@ -49,6 +49,15 @@
  * Vardata methods
  */
 
+/** callback method called when a GCG variable is copied */
+static
+SCIP_DECL_VARCOPY(gcgvarcopy)
+{
+   /* do not copy the vardata (since SCIP 10 the vardata pointer will be copied if no callback is registered) */
+   *targetdata = NULL;
+   return SCIP_OKAY;
+}
+
 /** callback method called when an original GCG variable is deleted */
 static
 SCIP_DECL_VARDELORIG(GCGvarDelOrig)
@@ -195,8 +204,8 @@ SCIP_Bool GCGvarIsInferredPricing(
 }
 #endif
 
-/** count the number of inferred pricing variables in a array of variables */
-int GCGcountInferredPricingVars(
+/** count the number of inferred (coefficient) pricing variables in a array of variables */
+int GCGcountInferredCoefPricingVars(
    SCIP_VAR**             vars,               /**< array of variables */
    int                    nvars               /**< number of variables */
    )
@@ -208,7 +217,7 @@ int GCGcountInferredPricingVars(
 
    for( i = 0; i < nvars; i++ )
    {
-      if( GCGvarIsInferredPricing(vars[i]) )
+      if( GCGvarIsInferredPricing(vars[i]) && GCGinferredPricingVarIsCoefVar(vars[i]) )
          count++;
    }
 
@@ -406,6 +415,9 @@ SCIP_RETCODE GCGorigVarCreateData(
       SCIP_CALL( GCGvarDelOrig(scip, var, &oldvardata) );
    }
    SCIPvarSetData(var, vardata);
+
+   SCIPvarSetCopyData(var, gcgvarcopy);
+
    if( SCIPvarIsOriginal(var) )
    {
       SCIPvarSetDelorigData(var, GCGvarDelOrig);
@@ -1316,7 +1328,7 @@ SCIP_RETCODE GCGoriginalVarCreatePricingVar(
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", pricingprobnr, SCIPvarGetName(origvar));
    SCIP_CALL( SCIPcreateVar(pricingprob, var, name, SCIPvarGetLbGlobal(origvar),
          SCIPvarGetUbGlobal(origvar), 0.0, SCIPvarGetType(origvar),
-         TRUE, FALSE, GCGvarDelOrig, NULL, NULL, NULL, vardata) );
+         TRUE, FALSE, GCGvarDelOrig, NULL, NULL, gcgvarcopy, vardata) );
 
    return SCIP_OKAY;
 }
@@ -1351,7 +1363,7 @@ SCIP_RETCODE GCGlinkingVarCreatePricingVar(
    (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pr%d_%s", pricingprobnr, SCIPvarGetName(origvar));
    SCIP_CALL( SCIPcreateVar(pricingscip, var, name, SCIPvarGetLbGlobal(origvar),
          SCIPvarGetUbGlobal(origvar), 0.0, SCIPvarGetType(origvar),
-         TRUE, FALSE, GCGvarDelOrig, NULL, NULL, NULL, vardata) );
+         TRUE, FALSE, GCGvarDelOrig, NULL, NULL, gcgvarcopy, vardata) );
 
    return SCIP_OKAY;
 }
@@ -1467,7 +1479,7 @@ SCIP_RETCODE GCGcreateMasterVar(
    {
       npricingvars = SCIPgetNOrigVars(pricingscip);
       pricingvars = SCIPgetOrigVars(pricingscip);
-      newvardata->data.mastervardata.norigvars = npricingvars - GCGcountInferredPricingVars(pricingvars, npricingvars);
+      newvardata->data.mastervardata.norigvars = npricingvars - GCGcountInferredCoefPricingVars(pricingvars, npricingvars);
       trivialsol = TRUE;
    }
 
@@ -1640,8 +1652,8 @@ SCIP_RETCODE GCGcreateArtificialVar(
    newvardata->data.mastervardata.index = -1;
 
    /* create variable in the master problem */
-   SCIP_CALL( SCIPcreateVar(scip, newvar, name,
-         0.0, SCIPinfinity(scip), objcoef, SCIP_VARTYPE_IMPLINT,
+   SCIP_CALL( SCIPcreateVarImpl(scip, newvar, name,
+         0.0, SCIPinfinity(scip), objcoef, SCIP_VARTYPE_CONTINUOUS, SCIP_IMPLINTTYPE_WEAK,
          TRUE, TRUE, NULL, NULL, gcgvardeltrans, NULL, newvardata) );
 
    return SCIP_OKAY;
@@ -1655,6 +1667,7 @@ SCIP_RETCODE GCGcreateInferredPricingVar(
    const char*           varname,            /**< new variable name */
    SCIP_Real             lb,                 /**< new variable lower bound */
    SCIP_Real             ub,                 /**< new variable lower bound */
+   SCIP_Bool             iscoefvar,          /**< is this a coefficient variable? (objcoeff can be 0 if TRUE but not != 0 if FALSE) */
    SCIP_Real             objcoeff,           /**< new objective coefficient */
    SCIP_VARTYPE          vartype,            /**< new variable type */
    int                   prob                /**< number of pricing problem that created this variable */
@@ -1665,11 +1678,13 @@ SCIP_RETCODE GCGcreateInferredPricingVar(
    assert(pricingscip != NULL);
    assert(newvar != NULL);
    assert(varname != NULL);
+   assert(iscoefvar || SCIPisZero(pricingscip, objcoeff));
 
    SCIP_CALL( SCIPallocBlockMemory(pricingscip, &newvardata) );
    newvardata->vartype = GCG_VARTYPE_INFERREDPRICING;
    newvardata->blocknr = prob;
    newvardata->data.inferredpricingvardata.extendedmasterconsdata = NULL; // will be set in GCGextendedmasterconsCreateFrom*
+   newvardata->data.inferredpricingvardata.iscoefvar = iscoefvar;
 
    /* create variable in the master problem */
    SCIP_CALL( SCIPcreateVar(pricingscip, newvar, varname, lb, ub,
@@ -2039,3 +2054,33 @@ void GCGmasterVarSetIndex(
    vardata = SCIPvarGetData(var);
    vardata->data.mastervardata.index = index;
 }
+
+#ifndef NDEBUG
+/* returns the extended master cons data of the inferred pricing var */
+GCG_EXTENDEDMASTERCONSDATA* GCGinferredPricingVarGetExtendedmasterconsdata(
+   SCIP_VAR*             var                 /**< SCIP variable structure */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsInferredPricing(var));
+
+   vardata = SCIPvarGetData(var);
+   return vardata->data.inferredpricingvardata.extendedmasterconsdata;
+}
+#endif
+
+#ifndef NDEBUG
+/* returns whether the inferred pricing variable is a coefficient variable */
+SCIP_Bool GCGinferredPricingVarIsCoefVar(
+   SCIP_VAR*             var                 /**< SCIP variable structure */
+   )
+{
+   SCIP_VARDATA* vardata;
+   assert(var != NULL);
+   assert(GCGvarIsInferredPricing(var));
+
+   vardata = SCIPvarGetData(var);
+   return vardata->data.inferredpricingvardata.iscoefvar;
+}
+#endif

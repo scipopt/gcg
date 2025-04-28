@@ -153,7 +153,7 @@ SCIP_RETCODE selectExtremePoints(
    int j;
 
    /* check preconditions */
-   assert(scip != NULL);
+   assert(gcg != NULL);
    assert(heurdata != NULL);
    assert(selection != NULL);
    assert(success != NULL);

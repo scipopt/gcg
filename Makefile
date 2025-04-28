@@ -257,6 +257,7 @@ LIBOBJ = \
 			gcg/branch_empty.o \
 			gcg/branch_generic.o \
 			gcg/benders_gcg.o \
+			gcg/branchgcg.o \
 			gcg/branch_orig.o \
 			gcg/branch_relpsprob.o \
 			gcg/branch_ryanfoster.o \
@@ -674,13 +675,13 @@ $(GCGLIBLINK):	$(GCGLIBFILE)
 		cd $(dir $@) && $(LN_s) $(notdir $(GCGLIBFILE)) $(notdir $@)
 
 
-$(MAINFILE):	$(SCIPLIBBASEFILE) $(LPILIBFILE) $(TPILIBFILE) $(MAINOBJFILES) $(GCGLIBFILE) | $(BINDIR)
+$(MAINFILE):	$(SCIPLIBBASEFILE) $(OBJSCIPLIBFILE) $(LPILIBFILE) $(LPIEXLIBFILE) $(TPILIBFILE) $(MAINOBJFILES) $(GCGLIBFILE) | $(BINDIR)
 		@echo "-> linking $@"
 		$(LINKCXX) $(MAINOBJFILES) \
 		$(LINKCXX_l)$(GCGLIB)$(LINKLIBSUFFIX) \
 		$(LINKCXX_L)$(SCIPDIR)/lib/static $(LINKCXX_l)$(SCIPLIBBASE)$(LINKLIBSUFFIX) \
 		$(LINKCXX_l)$(OBJSCIPLIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(LPILIB)$(LINKLIBSUFFIX) \
-		$(LINKCXX_l)$(TPILIB)$(LINKLIBSUFFIX) \
+		$(LINKCXX_l)$(LPIEXLIB)$(LINKLIBSUFFIX) $(LINKCXX_l)$(TPILIB)$(LINKLIBSUFFIX) \
 		$(OFLAGS) $(LPSLDFLAGS) \
 		$(LDFLAGS) $(LINKCXX_o)$@
 

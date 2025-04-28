@@ -543,7 +543,7 @@ SCIP_RETCODE GCGincludeReaderGp(
    GCG*                  gcg                 /**< GCG data structure */
    )
 {
-   SCIP_READERDATA* readerdata;
+   SCIP_READERDATA* readerdata = NULL;
    SCIP* origprob = GCGgetOrigprob(gcg);
    assert(origprob != NULL);
    /* create cls reader data */

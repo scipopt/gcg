@@ -1136,7 +1136,7 @@ void JDecDecompositionElementParser::handleValue(
    {
       if( json_is_object(value) )
       {
-         decdata_.blocks.emplace_back(decdata_.blocks.size());
+         decdata_.blocks.emplace_back(static_cast<int>(decdata_.blocks.size()));
          JDecBlockElementParser blockparser(gcg, filehandler_, decdata_.blocks.back());
          if( !filehandler_.parseElement(blockparser, value) )
          {

@@ -51,10 +51,6 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-#if defined(_WIN32) || defined(_WIN64)
-#else
-#include <strings.h> /*lint --e{766}*/ /* needed for strcasecmp() */
-#endif
 #include <ctype.h>
 
 #include "gcg/reader_blk.h"
@@ -434,7 +430,7 @@ SCIP_Bool isInt(
 
    assert(blkinput != NULL);
    assert(value != NULL);
-   assert(!(strcasecmp(blkinput->token, "INFINITY") == 0) && !(strcasecmp(blkinput->token, "INF") == 0));
+   assert(!(SCIPstrcasecmp(blkinput->token, "INFINITY") == 0) && !(SCIPstrcasecmp(blkinput->token, "INF") == 0));
 
    val = strtol(blkinput->token, &endptr, 0);
    if( endptr != blkinput->token && *endptr == '\0' )
@@ -478,21 +474,21 @@ SCIP_Bool isNewSection(
    if( iscolon )
       return FALSE;
 
-   if( strcasecmp(blkinput->token, "PRESOLVED") == 0 )
+   if( SCIPstrcasecmp(blkinput->token, "PRESOLVED") == 0 )
    {
       SCIPdebugMessage("(line %d) new section: PRESOLVED\n", blkinput->linenumber);
       blkinput->section = BLK_PRESOLVED;
       return TRUE;
    }
 
-   if( strcasecmp(blkinput->token, "NBLOCKS") == 0 )
+   if( SCIPstrcasecmp(blkinput->token, "NBLOCKS") == 0 )
    {
       SCIPdebugMessage("(line %d) new section: NBLOCKS\n", blkinput->linenumber);
       blkinput->section = BLK_NBLOCKS;
       return TRUE;
    }
 
-   if( strcasecmp(blkinput->token, "BLOCK") == 0 )
+   if( SCIPstrcasecmp(blkinput->token, "BLOCK") == 0 )
    {
       int blocknr;
 
@@ -520,7 +516,7 @@ SCIP_Bool isNewSection(
 
    }
 
-   if( strcasecmp(blkinput->token, "MASTERCONSS") == 0 )
+   if( SCIPstrcasecmp(blkinput->token, "MASTERCONSS") == 0 )
    {
       blkinput->section = BLK_MASTERCONSS;
 
@@ -529,7 +525,7 @@ SCIP_Bool isNewSection(
       return TRUE;
    }
 
-   if( strcasecmp(blkinput->token, "END") == 0 )
+   if( SCIPstrcasecmp(blkinput->token, "END") == 0 )
    {
       SCIPdebugMessage("(line %d) new section: END\n", blkinput->linenumber);
       blkinput->section = BLK_END;

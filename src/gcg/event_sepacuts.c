@@ -36,6 +36,7 @@
 //#define SCIP_DEBUG
 
 #include "scip/struct_scip.h"
+#include "scip/type_rational.h"
 #include "scip/struct_tree.h"
 #include "gcg/event_sepacuts.h"
 #include "gcg/gcg.h"

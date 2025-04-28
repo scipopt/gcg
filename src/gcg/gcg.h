@@ -70,6 +70,7 @@
 #include "gcg/pub_clscons.h"
 #include "gcg/pub_clsvar.h"
 #include "gcg/pub_colpool.h"
+#include "gcg/pub_branchgcg.h"
 #include "gcg/pub_decomp.h"
 #include "gcg/pub_extendedmasterconsdata.h"
 #include "gcg/pub_gcg.h"

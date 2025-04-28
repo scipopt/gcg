@@ -616,7 +616,7 @@ GCG_EXTENDEDMASTERCONSDATA* createMastercutData(
       SCIPdebugMessage("create new (inferred) pricing variable y for pricing problem %i\n", j);
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pp%i_y_ssrc_%i", j, sepadata->ngeneratedcut);
       GCGcreateInferredPricingVar(pricingproblem, &coeffvar, name, -SCIPinfinity(pricingproblem),
-                                  SCIPinfinity(pricingproblem), -1.0, SCIP_VARTYPE_INTEGER, j) ; // released in GCGpricingmodificationFree
+                                  SCIPinfinity(pricingproblem), TRUE, -1.0, SCIP_VARTYPE_INTEGER, j) ; // released in GCGpricingmodificationFree
       assert(coeffvar != NULL);
 
       /* add y to constraint such that: -inf <= w^TAx - y <= 1 - EPSILON  <=> w^TAx - 1 + EPSILON <= y */
@@ -640,7 +640,7 @@ GCG_EXTENDEDMASTERCONSDATA* createMastercutData(
    SCIPfreeBufferArray(masterscip, &pricingmodificationsbuffer);
 
    /* create master cut data containing y, ssrc and the pricing modifications */
-   GCGextendedmasterconsCreateFromRow(gcg, &mastercutdata, ssrc, pricingmodifications, npricingmodifications, NULL, NULL); // freed in GCGextendedmasterconsFree
+   GCGextendedmasterconsCreateFromRow(gcg, &mastercutdata, GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW, ssrc, pricingmodifications, npricingmodifications, NULL); // freed in GCGextendedmasterconsFree
    sepadata->ngeneratedcut++;
 
    return mastercutdata;

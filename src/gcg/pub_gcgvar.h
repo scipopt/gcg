@@ -41,7 +41,9 @@
 #include "gcg/type_decomp.h"
 #include "scip/scip.h"
 
+#ifdef NDEBUG
 #include "gcg/struct_vardata.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -95,8 +97,8 @@ SCIP_Bool GCGvarIsInferredPricing(
    );
 #endif
 
-/** count the number of inferred pricing variables in a array of variables */
-int GCGcountInferredPricingVars(
+/** count the number of inferred (coefficient) pricing variables in a array of variables */
+int GCGcountInferredCoefPricingVars(
    SCIP_VAR**             vars,               /**< array of variables */
    int                    nvars               /**< number of variables */
    );
@@ -551,6 +553,7 @@ SCIP_RETCODE GCGcreateInferredPricingVar(
    const char*           varname,            /**< new variable name */
    SCIP_Real             lb,                 /**< new variable lower bound */
    SCIP_Real             ub,                 /**< new objective coefficient */
+   SCIP_Bool             iscoefvar,          /**< is this a coefficient variable? (objcoeff can be 0 if TRUE but not != 0 if FALSE) */
    SCIP_Real             objcoeff,           /**< new objective coefficient */
    SCIP_VARTYPE          vartype,            /**< new variable type */
    int                   prob                /**< number of pricing problem that created this variable */
@@ -704,6 +707,26 @@ void GCGmasterVarSetIndex(
    SCIP_VAR*             var,                /**< SCIP variable structure */
    int                   index               /**< index */
    );
+
+#ifdef NDEBUG
+#define GCGinferredPricingVarGetExtendedmasterconsdata(var)            (SCIPvarGetData(var)->data.inferredpricingvardata.extendedmasterconsdata)
+#else
+/* returns the extended master cons data of the inferred pricing var */
+GCG_EXPORT
+GCG_EXTENDEDMASTERCONSDATA* GCGinferredPricingVarGetExtendedmasterconsdata(
+   SCIP_VAR*             var                 /**< SCIP variable structure */
+   );
+#endif
+
+#ifdef NDEBUG
+#define GCGinferredPricingVarIsCoefVar(var)            (SCIPvarGetData(var)->data.inferredpricingvardata.iscoefvar)
+#else
+/* returns whether the inferred pricing variable is a coefficient variable */
+GCG_EXPORT
+SCIP_Bool GCGinferredPricingVarIsCoefVar(
+   SCIP_VAR*             var                 /**< SCIP variable structure */
+   );
+#endif
 
 #ifdef __cplusplus
 }

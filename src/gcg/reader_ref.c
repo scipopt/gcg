@@ -38,10 +38,6 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-#if defined(_WIN32) || defined(_WIN64)
-#else
-#include <strings.h> /*lint --e{766}*/ /* needed for strcasecmp() */
-#endif
 #include <ctype.h>
 
 #include "gcg/reader_ref.h"
@@ -380,7 +376,7 @@ SCIP_Bool isInt(
 
    assert(refinput != NULL);
    assert(value != NULL);
-   assert(!(strcasecmp(refinput->token, "INFINITY") == 0) && !(strcasecmp(refinput->token, "INF") == 0));
+   assert(!(SCIPstrcasecmp(refinput->token, "INFINITY") == 0) && !(SCIPstrcasecmp(refinput->token, "INF") == 0));
 
    val = strtol(refinput->token, &endptr, 0);
    if( endptr != refinput->token && *endptr == '\0' )

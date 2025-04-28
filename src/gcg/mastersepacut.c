@@ -552,7 +552,7 @@ SCIP_RETCODE GCGchvatalGomoryAdjustGCGColumn(
          SCIP_CALL( GCGchvatalGomoryCutGetColumnCoefficient(gcg, cut, gcgcol, &coefvarval) );
       else
          SCIP_CALL(
-            GCGchvatalGomoryCutGetVariableCoefficient(gcg, cut, gcgcol->vars, gcgcol->vals, gcgcol->nvars,
+            GCGchvatalGomoryCutGetVariableCoefficient(gcg, cut, gcgcol->inferredpricingvars, gcgcol->inferredpricingvals, gcgcol->ninferredpricingvars,
                                                       gcgcol->probnr, &coefvarval) );
 
       /* if the computed coefficient is zero, we do not need to modify the column */
@@ -563,7 +563,7 @@ SCIP_RETCODE GCGchvatalGomoryAdjustGCGColumn(
        * 2. variable not yet in column:
        *    a. variable can be appended and variable order (based on index) remains correct
        *    b. variable has to be inserted to maintain the correct order */
-      if( SCIPvarCompare(gcgcol->vars[gcgcol->nvars - 1], coefvar) == -1 )
+      if( SCIPvarCompare(gcgcol->inferredpricingvars[gcgcol->ninferredpricingvars - 1], coefvar) == -1 )
          append = TRUE; // variable can simply be appended (2.a)
       else
       {
@@ -572,13 +572,13 @@ SCIP_RETCODE GCGchvatalGomoryAdjustGCGColumn(
          SCIP_Bool found;
          int nvars;
 
-         vars = gcgcol->vars;
-         nvars = gcgcol->nvars;
+         vars = gcgcol->inferredpricingvars;
+         nvars = gcgcol->ninferredpricingvars;
 
          /* search position variable should be at */
          found = SCIPsortedvecFindPtr((void**) vars, SCIPvarComp, (void*) coefvar, nvars, &pos);
          if( found )
-            gcgcol->vals[pos] = coefvarval; // variable already in column (1)
+            gcgcol->inferredpricingvals[pos] = coefvarval; // variable already in column (1)
          else
             insert = TRUE; // variable needs to be inserted in column at position pos (2.b)
       }
@@ -587,12 +587,12 @@ SCIP_RETCODE GCGchvatalGomoryAdjustGCGColumn(
       if( !SCIPisZero(gcgcol->pricingprob, coefvarval) && (append || insert))
       {
          /* ensure column has enough space to include variable */
-         if( gcgcol->maxvars < gcgcol->nvars + 1 )
+         if( gcgcol->maxvars < gcgcol->ninferredpricingvars + 1 )
          {
-            int newmaxvars = SCIPcalcMemGrowSize(gcgcol->pricingprob, gcgcol->nvars + 1);
-            SCIP_CALL( SCIPreallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->vars), gcgcol->maxvars,
+            int newmaxvars = SCIPcalcMemGrowSize(gcgcol->pricingprob, gcgcol->ninferredpricingvars + 1);
+            SCIP_CALL( SCIPreallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->inferredpricingvars), gcgcol->maxvars,
                                                    newmaxvars) );
-            SCIP_CALL( SCIPreallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->vals), gcgcol->maxvars,
+            SCIP_CALL( SCIPreallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->inferredpricingvals), gcgcol->maxvars,
                                                    newmaxvars) );
             gcgcol->maxvars = newmaxvars;
          }
@@ -600,28 +600,28 @@ SCIP_RETCODE GCGchvatalGomoryAdjustGCGColumn(
          if( append )
          {
             /* variable can simply be appended to array and order remains correct */
-            gcgcol->vars[gcgcol->nvars] = coefvar;
-            gcgcol->vals[gcgcol->nvars] = coefvarval;
-            SCIPcaptureVar(gcgcol->pricingprob, gcgcol->vars[gcgcol->nvars]);
+            gcgcol->inferredpricingvars[gcgcol->ninferredpricingvars] = coefvar;
+            gcgcol->inferredpricingvals[gcgcol->ninferredpricingvars] = coefvarval;
+            SCIPcaptureVar(gcgcol->pricingprob, gcgcol->inferredpricingvars[gcgcol->ninferredpricingvars]);
          }
          else if( insert )
          {
             int i = 0;
 
             /* we have to move all the variables (& and their values) stored behind pos */
-            for( i = gcgcol->nvars; i > pos ; i-- )
+            for( i = gcgcol->ninferredpricingvars; i > pos ; i-- )
             {
-               gcgcol->vars[i] = gcgcol->vars[i - 1];
-               gcgcol->vals[i] = gcgcol->vals[i - 1];
+               gcgcol->inferredpricingvars[i] = gcgcol->inferredpricingvars[i - 1];
+               gcgcol->inferredpricingvals[i] = gcgcol->inferredpricingvals[i - 1];
             }
 
             /* add variable at correct position */
-            gcgcol->vars[pos] = coefvar;
-            gcgcol->vals[pos] = coefvarval;
-            SCIPcaptureVar(gcgcol->pricingprob, gcgcol->vars[pos]);
+            gcgcol->inferredpricingvars[pos] = coefvar;
+            gcgcol->inferredpricingvals[pos] = coefvarval;
+            SCIPcaptureVar(gcgcol->pricingprob, gcgcol->inferredpricingvars[pos]);
          }
 
-         (gcgcol->nvars)++;
+         (gcgcol->ninferredpricingvars)++;
       }
    }
 
