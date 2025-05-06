@@ -120,7 +120,7 @@ SCIP_RETCODE GCGextendedmasterconsAddMasterVar(
    );
 
 #ifdef NDEBUG
-#define GCGextendedmasterconsGetCons(extendedmasterconsdata) extendedmasterconsdata->cons.cons
+#define GCGextendedmasterconsGetCons(extendedmasterconsdata) (extendedmasterconsdata)->cons.cons
 #else
 /** get the constraint that is the extended master cons */
 GCG_EXPORT
@@ -130,7 +130,7 @@ SCIP_CONS* GCGextendedmasterconsGetCons(
 #endif
 
 #ifdef NDEBUG
-#define GCGextendedmasterconsGetRow(extendedmasterconsdata) extendedmasterconsdata->cons.row
+#define GCGextendedmasterconsGetRow(extendedmasterconsdata) (extendedmasterconsdata)->cons.row
 #else
 /** get the row that is the extended master cons */
 GCG_EXPORT
@@ -140,7 +140,7 @@ SCIP_ROW* GCGextendedmasterconsGetRow(
 #endif
 
 #ifdef NDEBUG
-#define GCGpricingmodificationGetCoefVar(pricingmodification) pricingmodification->coefvar
+#define GCGpricingmodificationGetCoefVar(pricingmodification) (pricingmodification)->coefvar
 #else
 /** get the variable that determines the coefficient of a column in the extended master cons */
 GCG_EXPORT
@@ -150,7 +150,7 @@ SCIP_VAR* GCGpricingmodificationGetCoefVar(
 #endif
 
 #ifdef NDEBUG
-#define GCGpricingmodificationGetAdditionalVars(pricingmodification) pricingmodification->additionalvars
+#define GCGpricingmodificationGetAdditionalVars(pricingmodification) (pricingmodification)->additionalvars
 #else
 /** get the additional variables that are inferred by the extended master cons */
 GCG_EXPORT
@@ -160,7 +160,7 @@ SCIP_VAR** GCGpricingmodificationGetAdditionalVars(
 #endif
 
 #ifdef NDEBUG
-#define GCGpricingmodificationGetNAdditionalVars(pricingmodification) pricingmodification->nadditionalvars
+#define GCGpricingmodificationGetNAdditionalVars(pricingmodification) (pricingmodification)->nadditionalvars
 #else
 /** get the number of additional variables that are inferred by the extended master cons */
 GCG_EXPORT
@@ -170,7 +170,7 @@ int GCGpricingmodificationGetNAdditionalVars(
 #endif
 
 #ifdef NDEBUG
-#define GCGpricingmodificationGetAdditionalConss(pricingmodification) pricingmodification->additionalconss
+#define GCGpricingmodificationGetAdditionalConss(pricingmodification) (pricingmodification)->additionalconss
 #else
 /** get the additional constraints that are inferred by the extended master cons */
 GCG_EXPORT
@@ -180,7 +180,7 @@ SCIP_CONS** GCGpricingmodificationGetAdditionalConss(
 #endif
 
 #ifdef NDEBUG
-#define GCGpricingmodificationGetNAdditionalConss(pricingmodification) pricingmodification->nadditionalconss
+#define GCGpricingmodificationGetNAdditionalConss(pricingmodification) (pricingmodification)->nadditionalconss
 #else
 /** get the number of additional constraints that are inferred by the extended master cons */
 GCG_EXPORT
@@ -190,7 +190,7 @@ int GCGpricingmodificationGetNAdditionalConss(
 #endif
 
 #ifdef NDEBUG
-#define GCGpricingmodificationGetBlock(pricingmodification) pricingmodification->blocknr
+#define GCGpricingmodificationGetBlock(pricingmodification) (pricingmodification)->blocknr
 #else
 /** get the number of the block the modification belongs to */
 GCG_EXPORT
@@ -208,7 +208,7 @@ GCG_PRICINGMODIFICATION* GCGextendedmasterconsGetPricingModification(
    );
 
 #ifdef NDEBUG
-#define GCGextendedmasterconsGetPricingModifications(extendedmasterconsdata) extendedmasterconsdata->pricingmodifications
+#define GCGextendedmasterconsGetPricingModifications(extendedmasterconsdata) (extendedmasterconsdata)->pricingmodifications
 #else
 /** get the pricing modifications for the extended master cons */
 GCG_EXPORT
@@ -218,7 +218,7 @@ GCG_PRICINGMODIFICATION** GCGextendedmasterconsGetPricingModifications(
 #endif
 
 #ifdef NDEBUG
-#define GCGextendedmasterconsGetNPricingModifications(extendedmasterconsdata) extendedmasterconsdata->npricingmodifications
+#define GCGextendedmasterconsGetNPricingModifications(extendedmasterconsdata) (extendedmasterconsdata)->npricingmodifications
 #else
 /** get the number of pricing modifications for the extended master cons */
 GCG_EXPORT
@@ -290,7 +290,7 @@ SCIP_Real* GCGextendedmasterconsGetVals(
    );
 
 #ifdef NDEBUG
-#define GCGextendedmasterconsGetData(extendedmasterconsdata) extendedmasterconsdata->data
+#define GCGextendedmasterconsGetData(extendedmasterconsdata) ((extendedmasterconsdata)->data)
 #else
 /** get the additional data */
 GCG_EXPORT
@@ -312,7 +312,7 @@ SCIP_RETCODE GCGextendedmasterconsGetCoeff(
    );
 
 #ifdef NDEBUG
-#define GCGextendedmasterconsGetType(extendedmasterconsdata) extendedmasterconsdata->type
+#define GCGextendedmasterconsGetType(extendedmasterconsdata) (extendedmasterconsdata)->type
 #else
 /** gets the type of the extended master cons */
 GCG_EXPORT

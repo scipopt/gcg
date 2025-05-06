@@ -86,15 +86,17 @@ SCIP_RETCODE GCGbranchGetExtendedmasterconsCoeff(
 /** frees the branch data stored in the extened master cons data */
 SCIP_RETCODE GCGbranchFreeExtendedmasterconsBranchData(
     GCG*                             gcg,                          /**< GCG data structure */
-    GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
+    GCG_EXTENDEDMASTERCONSDATA**     extendedmasterconsdata        /**< extended master cons data */
     )
 {
     GCG_EXTENDEDMASTERCONSDATADATA* data;
     assert(extendedmasterconsdata != NULL);
-    assert(GCGextendedmasterconsGetType(extendedmasterconsdata) == GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS);
+    assert(*extendedmasterconsdata != NULL);
+    assert(GCGextendedmasterconsGetType(*extendedmasterconsdata) == GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS);
 
-    data = GCGextendedmasterconsGetData(extendedmasterconsdata);
+    data = GCGextendedmasterconsGetData(*extendedmasterconsdata);
     assert(data != NULL);
     SCIPfreeBlockMemory(GCGgetMasterprob(gcg), &data);
+    SCIP_CALL( GCGextendedmasterconsFree(gcg, extendedmasterconsdata) );
     return SCIP_OKAY;
 }

@@ -2018,7 +2018,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteCompBnd)
 
    /* release constraint that enforces the branching decision */
    assert((*branchdata)->mastercons != NULL);
-   SCIP_CALL( GCGextendedmasterconsFree(gcg, &(*branchdata)->mastercons) );
+   SCIP_CALL( GCGbranchFreeExtendedmasterconsBranchData(gcg, &(*branchdata)->mastercons) );
    assert((*branchdata)->mastercons == NULL);
 
    assert((*branchdata)->compBndSeq != NULL && (*branchdata)->compBndSeqSize > 0);
