@@ -74,7 +74,7 @@ SCIP_RETCODE GCGbranchGetExtendedmasterconsCoeff(
 GCG_EXPORT
 SCIP_RETCODE GCGbranchFreeExtendedmasterconsBranchData(
     GCG*                             gcg,                          /**< GCG data structure */
-    GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
+    GCG_EXTENDEDMASTERCONSDATA**     extendedmasterconsdata        /**< extended master cons data */
     );
 
 #ifdef __cplusplus

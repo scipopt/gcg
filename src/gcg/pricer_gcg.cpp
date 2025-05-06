@@ -2602,7 +2602,8 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
    {
       if( stabilize )
       {
-         SCIP_CALL( stabilization->consGetDual(i, &dualsol) );
+         SCIP_CALL( stabilization->
+            consGetDual(i, &dualsol) );
       }
       else
       {

@@ -289,7 +289,6 @@ SCIP_RETCODE GCGextendedmasterconsFree(
    case GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS:
       assert((*extendedmasterconsdata)->cons.cons != NULL);
       SCIP_CALL( SCIPreleaseCons(scip, &(*extendedmasterconsdata)->cons.cons) );
-      SCIP_CALL( GCGbranchFreeExtendedmasterconsBranchData(gcg, *extendedmasterconsdata) );
       break;
    case GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW:
       assert((*extendedmasterconsdata)->cons.row != NULL);
@@ -305,7 +304,7 @@ SCIP_RETCODE GCGextendedmasterconsFree(
       assert((*extendedmasterconsdata)->pricingmodifications[i] == NULL);
    }
 
-   SCIPfreeBlockMemoryArray(scip, &(*extendedmasterconsdata)->pricingmodifications, (*extendedmasterconsdata)->npricingmodifications);
+   SCIPfreeBlockMemoryArrayNull(scip, &(*extendedmasterconsdata)->pricingmodifications, (*extendedmasterconsdata)->npricingmodifications);
    assert((*extendedmasterconsdata)->pricingmodifications == NULL);
    SCIPfreeBlockMemory(scip, extendedmasterconsdata);
    assert(*extendedmasterconsdata == NULL);
