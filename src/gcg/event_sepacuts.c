@@ -56,15 +56,15 @@
 /** event handler data */
 struct SCIP_EventhdlrData
 {
-   GCG*                       gcg;                    /**< GCG data structure */
-   GCG_SEPARATORMASTERCUT**   generatedcuts;          /**< arrays of newly generated separator mastercuts: corresponding rows were added to sepa store */
-   GCG_SEPARATORMASTERCUT**   activecuts;             /**< arrays of active separator mastercuts: corresponding rows are part of the current LP */
-   SCIP_HASHMAP*              rowxgeneratedmap;       /**< maps a row to the index of its separator mastercut in generated cuts */
-   int                        nactivecuts;            /**< number of active separator mastercuts */
-   int                        ngeneratedcuts;         /**< number of newly generated separator mastercuts */
-   int                        activecutssize;         /**< size of memory allocated in active cuts */
-   int                        generatedcutssize;      /**< size of memory allocated in generated cuts */
-   SCIP_Bool                  globalcutsreinserted;   /**< have global cuts been re-inserted */
+   GCG*                          gcg;                    /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA**  generatedcuts;          /**< arrays of newly generated separator mastercuts: corresponding rows were added to sepa store */
+   GCG_EXTENDEDMASTERCONSDATA**  activecuts;             /**< arrays of active separator mastercuts: corresponding rows are part of the current LP */
+   SCIP_HASHMAP*                 rowxgeneratedmap;       /**< maps a row to the index of its separator mastercut in generated cuts */
+   int                           nactivecuts;            /**< number of active separator mastercuts */
+   int                           ngeneratedcuts;         /**< number of newly generated separator mastercuts */
+   int                           activecutssize;         /**< size of memory allocated in active cuts */
+   int                           generatedcutssize;      /**< size of memory allocated in generated cuts */
+   SCIP_Bool                     globalcutsreinserted;   /**< have global cuts been re-inserted */
 };
 
 /*
@@ -110,7 +110,6 @@ SCIP_RETCODE ensureActiveSize(
    assert(masterscip != NULL);
    assert(eventhdlrdata != NULL);
    assert(eventhdlrdata->activecuts != NULL);
-   assert(eventhdlrdata->activecuts!= NULL);
    assert(eventhdlrdata->nactivecuts <= eventhdlrdata->activecutssize);
    assert(eventhdlrdata->nactivecuts >= 0);
 
@@ -129,11 +128,13 @@ SCIP_RETCODE ensureActiveSize(
 
 static
 SCIP_RETCODE addToActiveCuts(
-   GCG*                       gcg,                  /**< GCG data structure */
-   GCG_SEPARATORMASTERCUT*    mastersepacut,        /**< global master separator cut */
-   SCIP_EVENTHDLRDATA*        eventhdlrdata         /**< event handler data */
+   GCG*                          gcg,                  /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*   mastersepacut,        /**< global master separator cut */
+   SCIP_EVENTHDLRDATA*           eventhdlrdata         /**< event handler data */
    )
 {
+   assert(GCGextendedmasterconsGetType(mastersepacut) == GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW);
+   assert(GCGextendedmasterconsGetRow(mastersepacut) != NULL);
    SCIP_CALL( ensureActiveSize(GCGgetMasterprob(gcg), eventhdlrdata, eventhdlrdata->nactivecuts + 1) );
    eventhdlrdata->activecuts[eventhdlrdata->nactivecuts] = mastersepacut;
    SCIP_CALL( GCGcaptureMasterSepaCut(mastersepacut) );
@@ -144,21 +145,18 @@ SCIP_RETCODE addToActiveCuts(
 /** re-inserts the separator mastercut of a global row (in case it was re-added to the separation storage) to generated cuts */
 static
 SCIP_RETCODE reinsertGlobalMasterSepaCut(
-   GCG*                       gcg,                  /**< GCG data structure */
-   GCG_SEPARATORMASTERCUT*    mastersepacut,        /**< global master separator cut */
-   SCIP_EVENTHDLRDATA*        eventhdlrdata         /**< event handler data */
+   GCG*                          gcg,                  /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*   mastersepacut,        /**< global master separator cut */
+   SCIP_EVENTHDLRDATA*           eventhdlrdata         /**< event handler data */
    )
 {
-   GCG_EXTENDEDMASTERCONSDATA* mastercutdata;
    SCIP_ROW*          row;
 
    assert(gcg != NULL);
    assert(mastersepacut != NULL);
    assert(eventhdlrdata != NULL);
 
-   mastercutdata = GCGmastersepacutGetMasterCutData(mastersepacut);
-   assert(mastercutdata != NULL);
-   row = GCGextendedmasterconsGetRow(mastercutdata);
+   row = GCGextendedmasterconsGetRow(mastersepacut);
    assert(!SCIProwIsLocal(row));
 
    SCIPdebugMessage("re-add global cuts: row %s is added to generated guts\n", SCIProwGetName(row));
@@ -180,7 +178,7 @@ SCIP_RETCODE eventRowAddedToLP(
    )
 {
    SCIP* scip;
-   GCG_SEPARATORMASTERCUT* generatedcut;
+   GCG_EXTENDEDMASTERCONSDATA* generatedcut;
    SCIP_SEPA* sepa;
    SCIP_ROW* row;
    int sepaidx;
@@ -214,13 +212,12 @@ SCIP_RETCODE eventRowAddedToLP(
 
          /* transfer cut from generated to active */
          generatedcut = eventhdlrdata->generatedcuts[generatedidx];
-         assert(GCGmastersepacutGetMasterCutData(generatedcut) != NULL);
-         assert(GCGextendedmasterconsGetRow(GCGmastersepacutGetMasterCutData(generatedcut)) == row);
+         assert(GCGextendedmasterconsGetRow(generatedcut) == row);
          SCIP_CALL( ensureActiveSize(scip, eventhdlrdata, eventhdlrdata->nactivecuts + 1) );
 
          /* cut is newly generated (not re-added global cut): set its initial variable history */
-         if( GCGmastersepacutGetVarHistory(generatedcut) == NULL )
-            SCIP_CALL( GCGmastersepacutSetVarHistory(gcg, &generatedcut) );
+         if( GCGmastersepacutGetVarHistory(GCGextendedmasterconsGetSepamastercut(generatedcut)) == NULL )
+            SCIP_CALL( GCGmastersepacutSetVarHistory(gcg, GCGextendedmasterconsGetSepamastercut(generatedcut)) );
 
          addToActiveCuts(gcg, generatedcut, eventhdlrdata);
       }
@@ -426,11 +423,10 @@ SCIP_RETCODE SCIPincludeEventHdlrSepaCuts(
 
 /** adds new separator mastercut to generated cuts */
 SCIP_RETCODE GCGaddCutToGeneratedCuts(
-   GCG*                       gcg,              /**< GCG data structure */
-   GCG_SEPARATORMASTERCUT*    mastersepacut     /**< separator mastercut */
+   GCG*                          gcg,              /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*   mastersepacut     /**< separator mastercut */
    )
 {
-   GCG_EXTENDEDMASTERCONSDATA*   mastercutdata;
    SCIP_EVENTHDLR*      eventhdlr;
    SCIP_EVENTHDLRDATA*  eventhdlrdata;
    SCIP_ROW*            row;
@@ -444,16 +440,15 @@ SCIP_RETCODE GCGaddCutToGeneratedCuts(
    eventhdlrdata = SCIPeventhdlrGetData(eventhdlr);
    assert(eventhdlrdata != NULL);
 
-   mastercutdata = GCGmastersepacutGetMasterCutData(mastersepacut);
-   assert(mastercutdata != NULL);
-
-   row = GCGextendedmasterconsGetRow(mastercutdata);
+   row = GCGextendedmasterconsGetRow(mastersepacut);
    assert(row != NULL);
 
    SCIP_CALL( ensureGeneratedSize(GCGgetMasterprob(gcg), eventhdlrdata, eventhdlrdata->ngeneratedcuts + 1) );
    eventhdlrdata->generatedcuts[eventhdlrdata->ngeneratedcuts] = mastersepacut;
    SCIP_CALL( SCIPhashmapSetImageInt(eventhdlrdata->rowxgeneratedmap, row, eventhdlrdata->ngeneratedcuts) );
    (eventhdlrdata->ngeneratedcuts)++;
+
+   SCIP_CALL( GCGcaptureMasterSepaCut(mastersepacut) );
 
    return SCIP_OKAY;
 }
@@ -514,7 +509,7 @@ SCIP_RETCODE GCGsepacutRemoveNewInactiveRows(
 
    for( j = eventhdlrdata->nactivecuts - 1; j >= startidx; --j )
    {
-      mastercutdata = GCGmastersepacutGetMasterCutData(eventhdlrdata->activecuts[j]);
+      mastercutdata = eventhdlrdata->activecuts[j];
       assert(mastercutdata != NULL);
       row = GCGextendedmasterconsGetRow(mastercutdata);
       assert(row != NULL);
@@ -585,7 +580,7 @@ SCIP_RETCODE GCGsepacutShrinkActiveCuts(
    {
       SCIP_ROW* row;
 
-      mastercutdata = GCGmastersepacutGetMasterCutData(eventhdlrdata->activecuts[j]);
+      mastercutdata = eventhdlrdata->activecuts[j];
       assert(mastercutdata != NULL);
       row = GCGextendedmasterconsGetRow(mastercutdata);
       assert(row != NULL);
@@ -623,7 +618,7 @@ SCIP_RETCODE GCGshrinkActiveCuts(
 }
 
 /** returns active master separator cuts */
-GCG_SEPARATORMASTERCUT** GCGsepacutGetActiveCuts(
+GCG_EXTENDEDMASTERCONSDATA** GCGsepacutGetActiveCuts(
    GCG*              gcg,            /**< GCG data structure */
    SCIP_EVENTHDLR*   eventhdlr       /**< mastersepacut event handler*/
    )
@@ -639,7 +634,7 @@ GCG_SEPARATORMASTERCUT** GCGsepacutGetActiveCuts(
 }
 
 /** returns active master separator cuts */
-GCG_SEPARATORMASTERCUT** GCGgetActiveCuts(
+GCG_EXTENDEDMASTERCONSDATA** GCGgetActiveCuts(
    GCG*              gcg            /**< GCG data structure */
    )
 {
@@ -683,9 +678,9 @@ int GCGgetNActiveCuts(
 
 /** adds a mastercut generated by a master separator to active cuts */
 SCIP_RETCODE GCGsepacutAddCutToActiveCuts(
-   GCG*                       gcg,              /**< GCG data structure */
-   GCG_SEPARATORMASTERCUT*    mastersepacut,    /**< separator mastercut */
-   SCIP_EVENTHDLR*            eventhdlr         /**< mastersepacut event handler */
+   GCG*                          gcg,              /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*   mastersepacut,    /**< separator mastercut */
+   SCIP_EVENTHDLR*               eventhdlr         /**< mastersepacut event handler */
    )
 {
    SCIP_EVENTHDLRDATA* eventhdlrdata;
@@ -702,8 +697,8 @@ SCIP_RETCODE GCGsepacutAddCutToActiveCuts(
 
 /** adds a mastercut generated by a master separator to active cuts */
 SCIP_RETCODE GCGaddCutToActiveCuts(
-   GCG*                       gcg,              /**< GCG data structure */
-   GCG_SEPARATORMASTERCUT*    mastersepacut     /**< separator mastercut */
+   GCG*                          gcg,              /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*   mastersepacut     /**< separator mastercut */
    )
 {
    SCIP_EVENTHDLR* eventhdlr;

@@ -124,33 +124,6 @@ SCIP_DECL_SEPAFREE(sepaFreeSubsetrow)
    return SCIP_OKAY;
 }
 
-/**< create a mastersepacut instance for a subset-row cut and add it to the generated cuts */
-static
-SCIP_RETCODE addSubsetRowCutToGeneratedCuts(
-   GCG*                 gcg,              /**< GCG data structure */
-   GCG_EXTENDEDMASTERCONSDATA*   mastercutdata,    /**< master cut data */
-   SCIP_Real*           weights,          /**< weights used to create the cut */
-   int*                 conssindices,     /**< indices of constraints used to create the cut */
-   int                  n,                /**< number of constraints used to create the cut */
-   GCG_SEPA*            sepa              /**< separator which generated the cut */
-   )
-{
-   GCG_SEPARATORMASTERCUT* mastersepacut;
-
-   assert(gcg != NULL);
-   assert(mastercutdata != NULL);
-
-   /* create a subset row cut */
-   SCIP_CALL( GCGcreateChvatalGomoryCut(gcg, &mastersepacut, sepa, mastercutdata, NULL, weights, conssindices, n) );
-   assert(mastersepacut != NULL);
-
-   /* register it with the event handler managing active master separator cuts */
-   SCIP_CALL( GCGaddCutToGeneratedCuts(gcg, mastersepacut) );
-
-   return SCIP_OKAY;
-}
-
-
 /** randomly selects n different constraints from the master problem */
 static
 SCIP_RETCODE selectRandomRows(
@@ -539,6 +512,7 @@ static
 GCG_EXTENDEDMASTERCONSDATA* createMastercutData(
    GCG*           gcg,                    /**< GCG data structure */
    SCIP_ROW*      ssrc,                   /**< subset row cut */
+   GCG_SEPARATORMASTERCUT* mastercut,     /**< sepa master cut */
    int            npricingproblems,       /**< number of pricing problems */
    SCIP_SEPADATA* sepadata,               /**< subset row separator data */
    SCIP_HASHMAP*  mappricingvarxcoeff     /**< map storing the coefficients for the pricing constraints for subset row cut */
@@ -634,13 +608,12 @@ GCG_EXTENDEDMASTERCONSDATA* createMastercutData(
 
    if( npricingmodifications > 0 )
    {
-      SCIPallocBlockMemoryArray(masterscip, &pricingmodifications, npricingmodifications);
-      SCIPduplicateMemoryArray(masterscip, &pricingmodifications, pricingmodificationsbuffer, npricingmodifications);
+      SCIPduplicateBlockMemoryArray(masterscip, &pricingmodifications, pricingmodificationsbuffer, npricingmodifications);
    }
    SCIPfreeBufferArray(masterscip, &pricingmodificationsbuffer);
 
    /* create master cut data containing y, ssrc and the pricing modifications */
-   GCGextendedmasterconsCreateFromRow(gcg, &mastercutdata, GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW, ssrc, pricingmodifications, npricingmodifications, NULL); // freed in GCGextendedmasterconsFree
+   GCGextendedmasterconsCreateForSepamastercut(gcg, &mastercutdata, mastercut, ssrc, pricingmodifications, npricingmodifications); // freed in GCGextendedmasterconsFree
    sepadata->ngeneratedcut++;
 
    return mastercutdata;
@@ -669,6 +642,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    int               ncalls;                       // number of times separator was called in this node
    int               curfound;                     // number of generated subset-row cuts
    int               i;
+   GCG_SEPARATORMASTERCUT* mastercut;
 
    assert(scip != NULL);
    assert(result != NULL);
@@ -756,7 +730,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
 
 
    /* select which constraints to use for new subset row cuts */
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &cutindices, maxcuts) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &cutindices, maxcuts) );
    SCIP_CALL( SCIPhashmapCreate(&mappricingvarxcoeff, SCIPblkmem(scip), nmastervars) );
    ncutindices = 0;
    if( sepadata->strategy == 0 )
@@ -800,10 +774,11 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
                                                  weights, mappricingvarxcoeff) );
 
       // add cut to separation store and corresponding master separator cut to sepacut event handler
-      mastercutdata = createMastercutData(gcg, ssrc, npricingproblems, sepadata, mappricingvarxcoeff);
+      SCIP_CALL( GCGcreateChvatalGomoryCut(gcg, &mastercut, sepadata->sepa, NULL, weights, cutindices[i]->indices, cutindices[i]->nindices) );
+      assert(mastercut != NULL);
+      mastercutdata = createMastercutData(gcg, ssrc, mastercut, npricingproblems, sepadata, mappricingvarxcoeff);
       SCIP_CALL( SCIPaddRow(scip, ssrc, FALSE, &success) );
-      SCIP_CALL( addSubsetRowCutToGeneratedCuts(gcg, mastercutdata, weights, cutindices[i]->indices,
-                                                cutindices[i]->nindices, sepadata->sepa) );
+      SCIP_CALL( GCGaddCutToGeneratedCuts(gcg, mastercutdata) );
       curfound++;
 
       // cleanup
@@ -812,7 +787,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       SCIPfreeBufferArrayNull(scip, &weights);
    }
 
-   SCIPfreeBlockMemoryArrayNull(scip, &cutindices, maxcuts);
+   SCIPfreeBufferArrayNull(scip, &cutindices);
    SCIPhashmapFree(&mappricingvarxcoeff);
 
    if( curfound > 0 )

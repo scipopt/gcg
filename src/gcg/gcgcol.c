@@ -785,7 +785,7 @@ SCIP_RETCODE GCGcolComputeDualObjPara(
    int i;
    int j;
 
-   GCG_SEPARATORMASTERCUT** activecuts;
+   GCG_EXTENDEDMASTERCONSDATA** activecuts;
    SCIP_CONS** masterconss;
    SCIP_ROW** originalsepamastercuts;
    SCIP_Real dualobjnorm;
@@ -894,10 +894,10 @@ SCIP_RETCODE GCGcolComputeDualObjPara(
       SCIP_Real lhs;
       SCIP_Real rhs;
 
-      if( !GCGextendedmasterconsIsActive(activecuts[j]->mastercutdata) )
+      if( !GCGextendedmasterconsIsActive(activecuts[j]) )
          continue;
 
-      mastercutrow = GCGextendedmasterconsGetRow(activecuts[j]->mastercutdata);
+      mastercutrow = GCGextendedmasterconsGetRow(activecuts[j]);
       lhs = SCIProwGetLhs(mastercutrow);
       rhs = SCIProwGetRhs(mastercutrow);
 

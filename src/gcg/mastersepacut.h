@@ -32,27 +32,6 @@
 extern "C" {
 #endif
 
-/** increases usage counter of separator master cut */
-SCIP_RETCODE GCGcaptureMasterSepaCut(
-   GCG_SEPARATORMASTERCUT*       mastersepacut      /**< separator master cut */
-   );
-
-/** decreases usage counter of separator master cut, and frees memory if necessary */
-SCIP_RETCODE GCGreleaseMasterSepaCut(
-   GCG*                          gcg,             /**< GCG data structure */
-   GCG_SEPARATORMASTERCUT**      mastersepacut    /**< pointer to separator master cut */
-   );
-
-/** creates separator master cut */
-SCIP_RETCODE GCGcreateMasterSepaCut(
-   GCG*                          gcg,                 /**< GCG data structure */
-   GCG_SEPARATORMASTERCUT**      mastersepacut,       /**< pointer to store separator master cut */
-   GCG_SEPARATORMASTERCUTTYPE    mastersepacuttype,   /**< type of separator master cut */
-   GCG_SEPA*                     sepa,                /**< separator creating this cut */
-   GCG_EXTENDEDMASTERCONSDATA*            mastercutdata,       /**< master cut data */
-   GCG_VARHISTORY*               varhistory,          /**< variable history */
-   GCG_SEPARATORMASTERCUTDATA*   mastersepacutdata    /**< separator master cut data */
-   );
 
 #ifdef __cplusplus
 }

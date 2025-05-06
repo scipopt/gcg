@@ -84,24 +84,12 @@ SCIP_RETCODE freeMasterSepaCut(
 
    masterscip = GCGgetMasterprob(gcg);
 
-#ifdef SCIP_DEBUG
-   SCIP_ROW* row;
-   SCIP_CALL( GCGextendedmasterconsGetRow((*mastersepacut)->mastercutdata, &row) );
-   SCIPdebugMessage("free master separator cut: free cut for row %s\n", SCIProwGetName(row));
-#endif
-
    if( (*mastersepacut)->knownvarhistory != NULL )
    {
       SCIPdebugMessage("free mastersepacut: var history is freed\n");
       SCIP_CALL( GCGvarhistoryFreeReference(masterscip, &((*mastersepacut)->knownvarhistory)) );
    }
    assert((*mastersepacut)->knownvarhistory == NULL);
-
-   if( (*mastersepacut)->mastercutdata != NULL )
-   {
-      SCIP_CALL( GCGextendedmasterconsFree(gcg, &((*mastersepacut)->mastercutdata)) );
-   }
-   assert((*mastersepacut)->mastercutdata == NULL);
 
    if((*mastersepacut)->type == GCG_MASTERSEPACUTTYPE_CHVATALGOMORY )
    {
@@ -117,42 +105,41 @@ SCIP_RETCODE freeMasterSepaCut(
 
 /** increases usage counter of separator master cut */
 SCIP_RETCODE GCGcaptureMasterSepaCut(
-   GCG_SEPARATORMASTERCUT*      mastersepacut      /**< separator master cut */
+   GCG_EXTENDEDMASTERCONSDATA*      mastersepacut      /**< separator master cut */
    )
 {
+   GCG_SEPARATORMASTERCUT* cut;
    assert(mastersepacut != NULL);
-   assert(mastersepacut->nuses >= 0);
+   assert(GCGextendedmasterconsGetType(mastersepacut) == GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW);
 
-#ifdef SCIP_DEBUG
-   SCIP_ROW* row;
-   SCIP_CALL( GCGextendedmasterconsGetRow(mastersepacut->mastercutdata, &row) );
-   SCIPdebugMessage("capture master separator cut: row %s now has %i nuses\n", SCIProwGetName(row), mastersepacut->nuses);
-#endif
-   (mastersepacut->nuses)++;
+   cut = (GCG_SEPARATORMASTERCUT*) GCGextendedmasterconsGetData(mastersepacut);
+   assert(cut->nuses >= 0);
+   cut->nuses++;
 
    return SCIP_OKAY;
 }
 
 /** decreases usage counter of separator master cut, and frees memory if necessary */
 SCIP_RETCODE GCGreleaseMasterSepaCut(
-   GCG*                       gcg,             /**< GCG data structure */
-   GCG_SEPARATORMASTERCUT**   mastersepacut    /**< pointer to separator master cut */
+   GCG*                             gcg,             /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA**     mastersepacut    /**< pointer to separator master cut */
    )
 {
+   GCG_SEPARATORMASTERCUT* cut;
    assert(gcg != NULL);
    assert(mastersepacut != NULL);
    assert(*mastersepacut != NULL);
-   assert((*mastersepacut)->nuses >= 0);
+   assert(GCGextendedmasterconsGetType(*mastersepacut) == GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW);
 
-#ifdef SCIP_DEBUG
-   SCIP_ROW* row;
-   SCIP_CALL( GCGextendedmasterconsGetRow((*mastersepacut)->mastercutdata, &row) );
-   SCIPdebugMessage("release master separator cut: row %s now has %i nuses\n", SCIProwGetName(row), (*mastersepacut)->nuses);
-#endif
+   cut = (GCG_SEPARATORMASTERCUT*) GCGextendedmasterconsGetData(*mastersepacut);
+   assert(cut->nuses > 0);
 
-   ((*mastersepacut)->nuses)--;
-   if( (*mastersepacut)->nuses == 0 )
-      SCIP_CALL( freeMasterSepaCut(gcg, mastersepacut) );
+   cut->nuses--;
+   if( cut->nuses == 0 )
+   {
+      SCIP_CALL( GCGextendedmasterconsFree(gcg, mastersepacut) );
+      SCIP_CALL( freeMasterSepaCut(gcg, &cut) );
+   }
 
    *mastersepacut = NULL;
 
@@ -165,36 +152,21 @@ SCIP_RETCODE GCGcreateMasterSepaCut(
    GCG_SEPARATORMASTERCUT**     mastersepacut,       /**< pointer to store separator master cut */
    GCG_SEPARATORMASTERCUTTYPE   mastersepacuttype,   /**< type of separator master cut */
    GCG_SEPA*                    sepa,                /**< separator creating this cut */
-   GCG_EXTENDEDMASTERCONSDATA*  mastercutdata,       /**< master cut data */
    GCG_VARHISTORY*              varhistory,          /**< variable history */
    GCG_SEPARATORMASTERCUTDATA*  mastersepacutdata    /**< separator master cut data */
    )
 {
    assert(gcg != NULL);
-   assert(mastercutdata != NULL);
    assert(mastersepacut != NULL);
 
    SCIP_CALL( SCIPallocBlockMemory(GCGgetMasterprob(gcg), mastersepacut) );
-   (*mastersepacut)->mastercutdata = mastercutdata;
    (*mastersepacut)->nuses = 0;
    (*mastersepacut)->knownvarhistory = varhistory;
    (*mastersepacut)->type = mastersepacuttype;
    (*mastersepacut)->data = mastersepacutdata;
    (*mastersepacut)->sepa = sepa;
 
-   SCIP_CALL( GCGcaptureMasterSepaCut(*mastersepacut) );
-
    return SCIP_OKAY;
-}
-
-/**< returns the master cut data of the separator master cut */
-GCG_EXTENDEDMASTERCONSDATA* GCGmastersepacutGetMasterCutData(
-   GCG_SEPARATORMASTERCUT*      mastersepacut     /**< separator master cut */
-   )
-{
-   assert(mastersepacut != NULL);
-
-   return mastersepacut->mastercutdata;
 }
 
 /**< returns the variable history of the separator master cut */
@@ -240,22 +212,15 @@ GCG_SEPARATORMASTERCUTDATA* GCGmastersepacutGetData(
 /**< set the variable history of separator master cut */
 SCIP_RETCODE GCGmastersepacutSetVarHistory(
    GCG*                         gcg,              /**< GCG data structure */
-   GCG_SEPARATORMASTERCUT**     mastersepacut     /**< pointer to separator master cut */
+   GCG_SEPARATORMASTERCUT*      mastersepacut     /**< pointer to separator master cut */
    )
 {
    SCIP* masterscip;
    assert(gcg != NULL);
    assert(mastersepacut != NULL);
-   assert(*mastersepacut != NULL);
-
-#ifdef SCIP_DEBUG
-   SCIP_ROW* row;
-   SCIP_CALL( GCGextendedmasterconsGetRow((*mastersepacut)->mastercutdata, &row) );
-   SCIPdebugMessage("set var history: set history for row %s\n", SCIProwGetName(row));
-#endif
 
    masterscip = GCGgetMasterprob(gcg);
-   SCIP_CALL( GCGvarhistoryCopyReference(masterscip, &((*mastersepacut)->knownvarhistory), GCGgetCurrentVarhistoryReference(gcg)) );
+   SCIP_CALL( GCGvarhistoryCopyReference(masterscip, &(mastersepacut->knownvarhistory), GCGgetCurrentVarhistoryReference(gcg)) );
    return SCIP_OKAY;
 }
 
@@ -267,7 +232,6 @@ SCIP_RETCODE GCGcreateChvatalGomoryCut(
    GCG*                       gcg,                   /**< GCG data structure */
    GCG_SEPARATORMASTERCUT**   mastersepacut,         /**< pointer to store separator master cut */
    GCG_SEPA*                  sepa,                  /**< separator creating this cut */
-   GCG_EXTENDEDMASTERCONSDATA*         mastercutdata,         /**< mastercutdata associated with the cut */
    GCG_VARHISTORY*            varhistory,            /**< variables history of Chvatal-Gomory cut */
    SCIP_Real*                 weights,               /**< weights which were used to create the cut */
    int*                       indices,               /**< indices of constraints used to create the cut */
@@ -294,8 +258,7 @@ SCIP_RETCODE GCGcreateChvatalGomoryCut(
       SCIP_CALL( SCIPduplicateBlockMemoryArray(masterscip, &(data->data.chvatalgomorycutdata.conssindices), indices, n) );
    }
 
-   SCIP_CALL( GCGcreateMasterSepaCut(gcg, mastersepacut, GCG_MASTERSEPACUTTYPE_CHVATALGOMORY, sepa,
-                                     mastercutdata, varhistory, data) );
+   SCIP_CALL( GCGcreateMasterSepaCut(gcg, mastersepacut, GCG_MASTERSEPACUTTYPE_CHVATALGOMORY, sepa, varhistory, data) );
    return SCIP_OKAY;
 }
 
@@ -359,10 +322,10 @@ int* GCGchvatalGomoryCutGetConssIndices(
 
 /** computes the coefficient of a column for a Chvatal-Gomory cut */
 SCIP_RETCODE GCGchvatalGomoryCutGetColumnCoefficient(
-   GCG*                       gcg,        /**< GCG data structure */
-   GCG_SEPARATORMASTERCUT*    cut,        /**< master separator cut */
-   GCG_COL*                   gcgcol,     /**< gcg column */
-   SCIP_Real*                 coeff       /**< pointer to store the coefficient */
+   GCG*                          gcg,        /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*   mastercutdata,    /**< master separator cut */
+   GCG_COL*                      gcgcol,     /**< gcg column */
+   SCIP_Real*                    coeff       /**< pointer to store the coefficient */
    )
 {
    SCIP* scip;
@@ -371,12 +334,14 @@ SCIP_RETCODE GCGchvatalGomoryCutGetColumnCoefficient(
    int*           conssindices;
    int            n;
    int            i;
+   GCG_SEPARATORMASTERCUT* cut;
 
    assert(gcg != NULL);
    assert(gcgcol != NULL);
    assert(GCGcolGetInitializedCoefs(gcgcol));
 
    scip = GCGgetMasterprob(gcg);
+   cut = GCGextendedmasterconsGetSepamastercut(mastercutdata);
    mastercoeffs = GCGcolGetMastercoefs(gcgcol);
    weights = GCGchvatalGomoryCutGetWeights(cut);
    conssindices = GCGchvatalGomoryCutGetConssIndices(cut);
@@ -400,19 +365,18 @@ SCIP_RETCODE GCGchvatalGomoryCutGetColumnCoefficient(
 
 /** computes the coefficient of a master variable for a Chvatal-Gomory cut */
 SCIP_RETCODE GCGchvatalGomoryCutGetVariableCoefficient(
-   GCG*                       gcg,        /**< GCG data structure */
-   GCG_SEPARATORMASTERCUT*    cut,        /**< master separator cut */
-   SCIP_VAR**                 vars,       /**< pricing variables which define the master variable */
-   SCIP_Real*                 vals,       /**< values of the pricing variables which define the master variables */
-   int                        nvars,      /**< number of pricing variables which define the master variable */
-   int                        probnr,     /**< index of the pricing problem which generated the master variable */
-   SCIP_Real*                 coef        /**< pointer to store the coefficient */
+   GCG*                          gcg,              /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*   mastercutdata,    /**< master separator cut */
+   SCIP_VAR**                    vars,             /**< pricing variables which define the master variable */
+   SCIP_Real*                    vals,             /**< values of the pricing variables which define the master variables */
+   int                           nvars,            /**< number of pricing variables which define the master variable */
+   int                           probnr,           /**< index of the pricing problem which generated the master variable */
+   SCIP_Real*                    coef              /**< pointer to store the coefficient */
    )
 {
    SCIP*                      scip;
    SCIP*                      pricingscip;
    GCG_PRICINGMODIFICATION*   pricingmod;
-   GCG_EXTENDEDMASTERCONSDATA*         mastercutdata;
    SCIP_CONS**                pricingconss;
    SCIP_VAR**                 pricingconsvars;
    SCIP_Bool                  success;
@@ -423,12 +387,10 @@ SCIP_RETCODE GCGchvatalGomoryCutGetVariableCoefficient(
    int                        pos;
 
    assert(gcg != NULL);
-   assert(cut != NULL);
+   assert(mastercutdata != NULL);
 
    scip = GCGgetMasterprob(gcg);
    *coef = 0.0;
-   mastercutdata = GCGmastersepacutGetMasterCutData(cut);
-   assert(mastercutdata != NULL);
    pricingmod = GCGextendedmasterconsGetPricingModification(gcg, mastercutdata, probnr);
 
    /* no pricing modification for this problem: coefficient is zero */
@@ -478,15 +440,14 @@ SCIP_RETCODE GCGchvatalGomoryCutGetVariableCoefficient(
 
 /** adapts the objectives of all the necessary pricing problems such that they consider the Chvatal-Gomory cut */
 SCIP_RETCODE GCGchvatalGomorySetPricingObjectives(
-   GCG*                       gcg,     /**< GCG data structure */
-   GCG_SEPARATORMASTERCUT*    cut,     /**< separator master cut */
-   SCIP_Real                  dual     /**< the dual value of the separator master cut */
+   GCG*                          gcg,     /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*   cut,     /**< separator master cut */
+   SCIP_Real                     dual     /**< the dual value of the separator master cut */
    )
 {
    SCIP*                      pricingproblem;
    SCIP_VAR*                  coeffvar;
    GCG_PRICINGMODIFICATION**  pricingmodifications;
-   GCG_EXTENDEDMASTERCONSDATA*         mastercutdata;
    int                        npricingmodifications;
    int                        pricingblocknr;
    int                        i;
@@ -495,10 +456,8 @@ SCIP_RETCODE GCGchvatalGomorySetPricingObjectives(
    assert(cut != NULL);
 
    /* get all the pricing modifications associated with this master cut */
-   mastercutdata = GCGmastersepacutGetMasterCutData(cut);
-   assert(mastercutdata != NULL);
-   npricingmodifications = GCGextendedmasterconsGetNPricingModifications(mastercutdata);
-   pricingmodifications = GCGextendedmasterconsGetPricingModifications(mastercutdata);
+   npricingmodifications = GCGextendedmasterconsGetNPricingModifications(cut);
+   pricingmodifications = GCGextendedmasterconsGetPricingModifications(cut);
 
    /* set the objective value of each coefficient variable y to -dual of the cut it is associated with */
    for( i = 0; i < npricingmodifications; i++ )
@@ -518,24 +477,20 @@ SCIP_RETCODE GCGchvatalGomorySetPricingObjectives(
 
 /** adapts a GCG column such that it respects the pricing modification imposed by the Chvatal-Gomory cut */
 SCIP_RETCODE GCGchvatalGomoryAdjustGCGColumn(
-   GCG*                       gcg,        /**< GCG data structure */
-   GCG_SEPARATORMASTERCUT*    cut,        /**< separator master cut */
-   GCG_COL*                   gcgcol      /**< gcg column */
+   GCG*                          gcg,        /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*   cut,        /**< separator master cut */
+   GCG_COL*                      gcgcol      /**< gcg column */
    )
 {
    GCG_PRICINGMODIFICATION* pricemod;
-   GCG_EXTENDEDMASTERCONSDATA* mastercutdata;
 
    assert(gcg != NULL);
    assert(cut != NULL);
 
-   mastercutdata = GCGmastersepacutGetMasterCutData(cut);
-   assert(mastercutdata != NULL);
-
-   if( !GCGextendedmasterconsIsActive(mastercutdata) )
+   if( !GCGextendedmasterconsIsActive(cut) )
       return SCIP_OKAY;
 
-   pricemod = GCGextendedmasterconsGetPricingModification(gcg, mastercutdata, GCGcolGetProbNr(gcgcol));
+   pricemod = GCGextendedmasterconsGetPricingModification(gcg, cut, GCGcolGetProbNr(gcgcol));
    if( pricemod != NULL )
    {
       SCIP_VAR* coefvar;
@@ -549,11 +504,13 @@ SCIP_RETCODE GCGchvatalGomoryAdjustGCGColumn(
 
       /* we compute the value of y */
       if( GCGcolGetInitializedCoefs(gcgcol) )
-         SCIP_CALL( GCGchvatalGomoryCutGetColumnCoefficient(gcg, cut, gcgcol, &coefvarval) );
+         SCIP_CALL( GCGchvatalGomoryCutGetColumnCoefficient(gcg, cut, gcgcol,
+                                                            &coefvarval) );
       else
          SCIP_CALL(
-            GCGchvatalGomoryCutGetVariableCoefficient(gcg, cut, gcgcol->inferredpricingvars, gcgcol->inferredpricingvals, gcgcol->ninferredpricingvars,
-                                                      gcgcol->probnr, &coefvarval) );
+            GCGchvatalGomoryCutGetVariableCoefficient(gcg, cut,
+               gcgcol->inferredpricingvars, gcgcol->inferredpricingvals, gcgcol->ninferredpricingvars, gcgcol->probnr,
+               &coefvarval) );
 
       /* if the computed coefficient is zero, we do not need to modify the column */
       if( coefvarval == 0.0 )
@@ -625,5 +582,35 @@ SCIP_RETCODE GCGchvatalGomoryAdjustGCGColumn(
       }
    }
 
+   return SCIP_OKAY;
+}
+
+#ifndef NDEBUG
+/** returns the corresponding sepamastercut */
+GCG_SEPARATORMASTERCUT* GCGextendedmasterconsGetSepamastercut(
+   GCG_EXTENDEDMASTERCONSDATA* extendedmasterconsdata
+   )
+{
+   assert(extendedmasterconsdata != NULL);
+   assert(GCGextendedmasterconsGetType(extendedmasterconsdata) == GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW);
+   return (GCG_SEPARATORMASTERCUT*) GCGextendedmasterconsGetData(extendedmasterconsdata);
+}
+#endif
+
+/** creates extended master cons data for a given master cut */
+SCIP_RETCODE GCGextendedmasterconsCreateForSepamastercut(
+   GCG*                          gcg,                       /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA**  extendedmastercons,        /**< pointer to store the create extended master cons data */
+   GCG_SEPARATORMASTERCUT*       cut,                       /**< master cut data structure */
+   SCIP_ROW*                     row,                       /**< corresponding row object */
+   GCG_PRICINGMODIFICATION**     pricingmodifications,      /**< related pricing modifications */
+   int                           npricingmodifications      /**< number of pricing modifications */
+   )
+{
+   assert(cut != NULL);
+   assert(row != NULL);
+   assert(pricingmodifications != NULL || npricingmodifications == 0);
+   assert(extendedmastercons != NULL);
+   SCIP_CALL( GCGextendedmasterconsCreateFromRow(gcg, extendedmastercons, GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW, row, pricingmodifications, npricingmodifications, (GCG_EXTENDEDMASTERCONSDATADATA*) cut) );
    return SCIP_OKAY;
 }

@@ -110,7 +110,6 @@ New/modified/removed API functions:
 - added function 'GCGcaptureMasterSepaCut'
 - added function 'GCGreleaseMasterSepaCut'
 - added function 'GCGcreateMasterSepaCut'
-- added function 'GCGmastersepacutGetMasterCutData'
 - added function 'GCGmastersepacutGetVarHistory'
 - added function 'GCGmastersepacutGetCutType'
 - added function 'GCGmastersepacutGetSeparator'
