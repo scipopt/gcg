@@ -75,9 +75,9 @@ SCIP_RETCODE GCGpricingmodificationFree(
       SCIP_CALL( SCIPreleaseCons(pricingscip, &(*pricingmodification)->additionalconss[i]) );
    }
 
-   SCIPfreeBlockMemoryArrayNull(pricingscip, &(*pricingmodification)->additionalvars, (*pricingmodification)->nadditionalvars);
+   SCIPfreeBlockMemoryArrayNull(scip, &(*pricingmodification)->additionalvars, (*pricingmodification)->nadditionalvars);
    assert((*pricingmodification)->additionalvars == NULL);
-   SCIPfreeBlockMemoryArrayNull(pricingscip, &(*pricingmodification)->additionalconss, (*pricingmodification)->nadditionalconss);
+   SCIPfreeBlockMemoryArrayNull(scip, &(*pricingmodification)->additionalconss, (*pricingmodification)->nadditionalconss);
    assert((*pricingmodification)->additionalconss == NULL);
    SCIPfreeBlockMemoryNull(scip, pricingmodification);
 

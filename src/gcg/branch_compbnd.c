@@ -519,7 +519,7 @@ SCIP_RETCODE createBranchingCons(
     */
 
    nadditionalvars = branchdata->compBndSeqSize;
-   SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &additionalvars, nadditionalvars) );
+   SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &additionalvars, nadditionalvars) );
    for (i = 0; i < branchdata->compBndSeqSize; ++i)
    {
       (void) SCIPsnprintf(pricingvarname, SCIP_MAXSTRLEN, "y(%s,%s_%s_%d)", name, SCIPvarGetName(branchdata->compBndSeq[i].component), branchdata->compBndSeq[i].sense == GCG_COMPBND_SENSE_GE ? "GE" : "LE", branchdata->compBndSeq[i].bound);
@@ -530,7 +530,7 @@ SCIP_RETCODE createBranchingCons(
    if( branchdata->branchtype == GCG_BRANCH_DOWN )
    {
       nadditionalcons = branchdata->compBndSeqSize + 1;
-      SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &additionalcons, nadditionalcons) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &additionalcons, nadditionalcons) );
 
       /* g_x >= 1 + sum_{j=1}^{n} y_j - n
          * 1 - n <= g_x - sum_{j=1}^{n} y_j */
@@ -578,7 +578,7 @@ SCIP_RETCODE createBranchingCons(
    else
    {
       nadditionalcons = branchdata->compBndSeqSize * 2;
-      SCIP_CALL( SCIPallocBlockMemoryArray(pricingscip, &additionalcons, nadditionalcons) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &additionalcons, nadditionalcons) );
 
       /* g_x <= y_j
          * 0 <= y_j - g_y*/
