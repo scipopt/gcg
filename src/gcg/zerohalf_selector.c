@@ -165,11 +165,11 @@ SCIP_RETCODE GCGcreateCutIndicesFromRowindex(
    assert(nindices > 0);
    assert(cutindices != NULL);
 
-   SCIP_CALL( SCIPallocBlockMemory(scip, cutindices) );
+   SCIP_CALL( SCIPallocBuffer(scip, cutindices) );
    (*cutindices)->nindices = nindices;
    (*cutindices)->indices = NULL;
 
-   SCIP_CALL( SCIPallocBlockMemoryArray(scip, &((*cutindices)->indices), nindices) );
+   SCIP_CALL( SCIPallocBufferArray(scip, &((*cutindices)->indices), nindices) );
    for( i = 0; i < nindices; i++ )
    {
       (*cutindices)->indices[i] = rowindex[i].index;
@@ -190,7 +190,7 @@ SCIP_RETCODE GCGcreateCutIndicesFromArray(
    assert(nindices > 0);
    assert(cutindices != NULL);
 
-   SCIP_CALL( SCIPallocBlockMemory(scip, cutindices) );
+   SCIP_CALL( SCIPallocBuffer(scip, cutindices) );
    (*cutindices)->nindices = nindices;
    (*cutindices)->indices = indices;
 
@@ -209,14 +209,14 @@ SCIP_RETCODE GCGfreeCutIndices(
 
    if( (*cutindices)->nindices > 0 )
    {
-      SCIPfreeBlockMemoryArrayNull(scip, &((*cutindices)->indices), (*cutindices)->nindices);
+      SCIPfreeBufferArrayNull(scip, &((*cutindices)->indices));
       (*cutindices)->nindices = 0;
    }
 
    assert((*cutindices)->indices == NULL);
    assert((*cutindices)->nindices == 0);
 
-   SCIPfreeBlockMemory(scip, cutindices);
+   SCIPfreeBuffer(scip, cutindices);
    *cutindices = NULL;
 
    return SCIP_OKAY;

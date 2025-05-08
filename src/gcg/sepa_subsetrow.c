@@ -429,7 +429,7 @@ SCIP_RETCODE selectConstraintsRandom(
       GCG_CUTINDICES* cutindex;
       int* selectedindices;
 
-      SCIPallocBlockMemoryArray(masterscip, &selectedindices, nconss);
+      SCIPallocBufferArray(masterscip, &selectedindices, nconss);
       SCIP_CALL( selectRandomRows(randnumgen, nmasterconss, selectedindices, nconss) );
 
       SCIP_CALL( GCGcreateCutIndicesFromArray(masterscip, &cutindex, nconss, selectedindices) );
@@ -484,15 +484,15 @@ SCIP_RETCODE createCut(
    int               nmastervars,   /**< number of variables in the master problem*/
    SCIP_CONS**       masterconss,   /**< constraints of the master problem */
    SCIP_Real**       weights,       /**< sign (1, -1) with which to multiply each selected constraint before adding to cut*/
-   SCIP_ROW**        ssrc           /**< pointer to store subset row cut */
+   SCIP_ROW**        ssrc,          /**< pointer to store subset row cut */
+   SCIP_HASHMAP*     mapmastervarxcoeff /**< temporary map to store coefficients */
    )
 {
-   SCIP_HASHMAP*  mapmastervarxcoeff;
+   
    SCIP_Real      rhs_ssrc;
 
    assert(masterscip != NULL);
    /* determine the master variables, their coefficients and rhs for subset row (non-rounded) */
-   SCIP_CALL( SCIPhashmapCreate(&mapmastervarxcoeff, SCIPblkmem(masterscip), nmastervars) );
    SCIP_CALL( computeSubsetRowCoefficientsAndRHS(masterscip, sepa, masterconss, cutindex->indices, cutindex->nindices,
                                                 weights, &rhs_ssrc, mapmastervarxcoeff) );
 
@@ -500,9 +500,7 @@ SCIP_RETCODE createCut(
    SCIP_CALL( createSubsetRowCut(masterscip, ssrc, mapmastervarxcoeff, rhs_ssrc, sepa) );
    assert(ssrc != NULL);
 
-
-   SCIP_CALL( SCIPhashmapRemoveAll(mapmastervarxcoeff) );
-   SCIPhashmapFree(&mapmastervarxcoeff);
+   SCIPhashmapRemoveAll(mapmastervarxcoeff);
 
    return SCIP_OKAY;
 }
@@ -643,6 +641,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    int               curfound;                     // number of generated subset-row cuts
    int               i;
    GCG_SEPARATORMASTERCUT* mastercut;
+   SCIP_HASHMAP* mapmastervarxcoeff = NULL;
 
    assert(scip != NULL);
    assert(result != NULL);
@@ -731,7 +730,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
 
    /* select which constraints to use for new subset row cuts */
    SCIP_CALL( SCIPallocBufferArray(scip, &cutindices, maxcuts) );
-   SCIP_CALL( SCIPhashmapCreate(&mappricingvarxcoeff, SCIPblkmem(scip), nmastervars) );
+   SCIP_CALL( SCIPhashmapCreate(&mappricingvarxcoeff, SCIPblkmem(scip), sepadata->n) );
    ncutindices = 0;
    if( sepadata->strategy == 0 )
       SCIP_CALL( selectConstraintsRandom(scip, &cutindices, &ncutindices, maxcuts, sepadata->n, nmasterconss, sepadata->randnumgen) );
@@ -744,7 +743,8 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    }
 
    curfound = 0;
-   for( i = 0; i < ncutindices; i++ )
+   SCIP_CALL( SCIPhashmapCreate(&mapmastervarxcoeff, SCIPblkmem(scip), sepadata->n) );
+   for( i = ncutindices - 1; i >= 0; i-- )
    {
       GCG_EXTENDEDMASTERCONSDATA*   mastercutdata = NULL;
       SCIP_ROW*            ssrc = NULL;
@@ -753,14 +753,14 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       SCIPallocBufferArray(scip, &weights, cutindices[i]->nindices);
 
       // create the subset row cut based on the selected indices
-      SCIP_CALL( createCut(scip, cutindices[i], sepa, nmastervars, masterconss, &weights, &ssrc) );
+      SCIP_CALL( createCut(scip, cutindices[i], sepa, nmastervars, masterconss, &weights, &ssrc, mapmastervarxcoeff) );
 
       // row is empty --> useless
       if( ssrc == NULL || SCIProwGetNNonz(ssrc) == 0 )
       {
          SCIPdebugMessage("created an empty row: release row\n");
-         SCIP_CALL( GCGfreeCutIndices(scip, &cutindices[i]) );
          SCIPfreeBufferArrayNull(scip, &weights);
+         SCIP_CALL( GCGfreeCutIndices(scip, &cutindices[i]) );
          if( ssrc != NULL )
             SCIP_CALL( SCIPreleaseRow(scip, &ssrc) );
 
@@ -782,10 +782,12 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       curfound++;
 
       // cleanup
+      SCIPfreeBufferArrayNull(scip, &weights);
       SCIP_CALL( GCGfreeCutIndices(scip, &cutindices[i]) );
       SCIP_CALL( SCIPhashmapRemoveAll(mappricingvarxcoeff) );
-      SCIPfreeBufferArrayNull(scip, &weights);
    }
+
+   SCIPhashmapFree(&mapmastervarxcoeff);
 
    SCIPfreeBufferArrayNull(scip, &cutindices);
    SCIPhashmapFree(&mappricingvarxcoeff);
