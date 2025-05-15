@@ -1703,6 +1703,8 @@ SCIP_RETCODE createMaster(
          /* initialising the master problem */
          SCIP_CALL( SCIPsetIntParam(gcg->bendersmasterprob, "display/verblevel", (int)SCIP_VERBLEVEL_NONE) );
          SCIP_CALL( SCIPsetBoolParam(gcg->bendersmasterprob, "display/relevantstats", FALSE) );
+         SCIPsetMessagehdlrQuiet(gcg->bendersmasterprob, SCIPmessagehdlrIsQuiet(SCIPgetMessagehdlr(origprob)) );
+         
 
          /* disabling unnecessary display columns */
          SCIP_CALL( SCIPsetIntParam(origprob, "display/sumlpiterations/active", 0) );
@@ -1989,6 +1991,7 @@ SCIP_RETCODE solveBlockProblem(
    }
 
    SCIP_CALL( SCIPsetIntParam(blockprob, "display/verblevel", relaxdata->origverblevel) );
+   SCIPsetMessagehdlrQuiet(blockprob, SCIPmessagehdlrIsQuiet(SCIPgetMessagehdlr(scip)) );
 
    /* give the pricing problem 2% more time then the original scip has left */
    if( SCIPgetStage(blockprob) > SCIP_STAGE_PROBLEM )
@@ -3324,6 +3327,7 @@ SCIP_RETCODE solveMasterProblemAndEvaluate(
     */
    SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", relaxdata->origverblevel) );
    SCIP_CALL( SCIPsetIntParam(masterprob, "display/verblevel", relaxdata->origverblevel) );
+   SCIPsetMessagehdlrQuiet(masterprob, SCIPmessagehdlrIsQuiet(SCIPgetMessagehdlr(scip)) );
 
    /* getting the node limit from the original problem. This is because the master problem is solved to optimality in
     * the execution of the relaxator.
