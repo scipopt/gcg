@@ -957,7 +957,7 @@ GCG_DECL_SOLVERSOLVE(solverSolveGcg)
    subgcgorig = GCGgetOrigprob(subgcg);
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   SCIP_CALL( SCIPsetIntParam(subgcg, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
+   SCIP_CALL( SCIPsetIntParam(subgcgorig, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
 #endif
 
    SCIP_CALL( SCIPsetLongintParam(subgcgorig, "limits/stallnodes", -1LL) );
