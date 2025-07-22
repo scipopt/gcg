@@ -41,7 +41,7 @@ endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 if(MSVC)
-   # disable since SCIP requires an OpenMP feature which is not supported by the native MSVC
+   # GCG requires OpenMP features which are not supported by the native MSVC (requires C++ Clang Compiler for Windows)
    set(DEFAULT_OPENMP OFF)
 else()
    set(DEFAULT_OPENMP ON)
