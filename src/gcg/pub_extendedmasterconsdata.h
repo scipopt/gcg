@@ -140,16 +140,6 @@ SCIP_ROW* GCGextendedmasterconsGetRow(
 #endif
 
 #ifdef NDEBUG
-#define GCGpricingmodificationGetBlock(pricingmodification) (pricingmodification)->blocknr
-#else
-/** get the block number of the pricing modification */
-GCG_EXPORT
-int GCGpricingmodificationGetBlock(
-   GCG_PRICINGMODIFICATION*      pricingmodification           /**< pricing modification */
-   );
-#endif
-
-#ifdef NDEBUG
 #define GCGpricingmodificationGetCoefVar(pricingmodification) (pricingmodification)->coefvar
 #else
 /** get the variable that determines the coefficient of a column in the extended master cons */
@@ -195,6 +185,16 @@ SCIP_CONS** GCGpricingmodificationGetAdditionalConss(
 /** get the number of additional constraints that are inferred by the extended master cons */
 GCG_EXPORT
 int GCGpricingmodificationGetNAdditionalConss(
+   GCG_PRICINGMODIFICATION*      pricingmodification           /**< pricing modification */
+   );
+#endif
+
+#ifdef NDEBUG
+#define GCGpricingmodificationGetBlock(pricingmodification) (pricingmodification)->blocknr
+#else
+/** get the number of the block the modification belongs to */
+GCG_EXPORT
+int GCGpricingmodificationGetBlock(
    GCG_PRICINGMODIFICATION*      pricingmodification           /**< pricing modification */
    );
 #endif
