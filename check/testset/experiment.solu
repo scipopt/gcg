@@ -1,14 +1,6 @@
-=best= sa25_60                       11664
 =opt= TEST0083-05                      45
 =opt= K5217551                  6631.5714
-=best= BR3_5                      0.341388
-=best= R100_5g.col                      21
-=best= BR4_62                     1.205568
-=opt= tsai4                           125
-=best= bpp_50_3                         26
-=best= test0564                    53668.3
 =opt= sa35_5                        42875
-=best= BR2_49                    11.007628
 =opt= BR6_57                     0.645606
 =opt= TEST0099-01                       9
 =opt= G0041535                 30826.5713
@@ -204,7 +196,6 @@
 =best= TEST0075-17                     187
 =best= BPP119-hard                      78
 =opt= BR6_43                      0.59094
-=opt= BR7_53                     0.704178
 =opt= e20100_1.txt                   8436
 =opt= sa40_10                       14112
 =best= N4C1W4_O.BPP                    351

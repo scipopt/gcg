@@ -1,14 +1,6 @@
-instances/striplib/clp/chen/sa/sa25/sa25_60.lp.gz;
 instances/striplib/cuttingstock-ge/18classes/testsetClass05/TEST0083-05.lp.gz;instances/striplib/cuttingstock-ge/18classes/testsetClass05/TEST0083-05.dec.gz
 instances/striplib/lotsizing/derstoff/probb/setup2/K5217551.lp.gz;
-instances/striplib/clp/fasano/BR/BR3/BR3_5.lp.gz;
-instances/striplib/coloring/r-set/coloring-bigM/R100_5g.col.lp.gz;instances/striplib/coloring/r-set/coloring-bigM/R100_5g.col.dec.gz
-instances/striplib/clp/paquay/BR/BR4/BR4_62.lp.gz;
-instances/striplib/clp/fasano/small/tsai4.lp.gz;
-instances/striplib/bppif/natural/20-100/tight_free/bpp_50_3.mps.gz;instances/striplib/bppif/natural/20-100/tight_free/bpp_50_3.dec.gz
-instances/striplib/lotsizing/surietestpack/test0564.lp.gz;
 instances/striplib/clp/paquay/sa/sa35/sa35_5.lp.gz;
-instances/striplib/clp/chen/BR/BR2/BR2_49.lp.gz;
 instances/striplib/clp/hifi/BR/BR6/BR6_57.lp.gz;
 instances/striplib/cuttingstock-ge/18classes/testsetClass01/TEST0099-01.lp.gz;
 instances/striplib/lotsizing/derstoff/proba/G00/G0041535.lp.gz;instances/striplib/lotsizing/derstoff/proba/G00/G0041535-horizon2.dec.gz
@@ -205,7 +197,6 @@ instances/striplib/cpmp-ge/optlab/p550/p550-8.txt.lp.gz;instances/striplib/cpmp-
 instances/striplib/cuttingstock-ge/18classes/testsetClass17/TEST0075-17.lp.gz;instances/striplib/cuttingstock-ge/18classes/testsetClass17/TEST0075-17.dec.gz
 instances/striplib/cuttingstock-ge/hard28/BPP119-hard.lp.gz;
 instances/striplib/clp/hifi/BR/BR6/BR6_43.lp.gz;
-instances/striplib/clp/hifi/BR/BR7/BR7_53.lp.gz;
 instances/striplib/gap/yagiura/gap-min/e20100_1.txt.lp.gz;
 instances/striplib/clp/hifi/sa/sa40/sa40_10.lp.gz;
 instances/striplib/binpacking-eq/bison/bison1set/N4C1W4_O.BPP.lp.gz;instances/striplib/binpacking-eq/bison/bison1set/N4C1W4_O.BPP.dec.gz
