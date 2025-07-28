@@ -21,7 +21,7 @@ We recommend using [vcpkg](https://github.com/microsoft/vcpkg) to install requir
 
 ### Install vcpkg (skip this if you have vcpkg already available on your system)
 1. Open a PowerShell window and navigate to a directory that will be used a parent directory for the vcpkg installation.
-2. Clone the repository: `git clone git@git.or.rwth-aachen.de:gcg/gcg.git`
+2. Clone the repository: `git clone https://github.com/microsoft/vcpkg.git`
 3. `cd vcpkg`
 4. `./bootstrap-vcpkg.bat -disableMetrics`
 5. `./vcpkg integrate install`
