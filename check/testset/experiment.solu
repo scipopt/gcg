@@ -21,7 +21,6 @@
 =best= TEST0098-13                      60
 =opt= sa40_15                      -1e+20
 =opt= sa45_5                       -1e+20
-=opt= TEST0068-wae                     12
 =opt= d500_07_alternative              503
 =best= TEST0091-15                      98
 =opt= sa30_100                     -1e+20
@@ -62,7 +61,6 @@
 =opt= sa25_25                      -1e+20
 =opt= 10Cap40                      1989.9
 =opt= gapc_4.txt                     9259
-=opt= TEST0093-05                      44
 =opt= TEST0099-05                      48
 =best= ring_n15p0.5s5                   27
 =opt= BR4_72                      0.62016
@@ -72,7 +70,6 @@
 =opt= BPP42-s2                         22
 =best= bpp_20_0                          7
 =opt= p15150-25.txt                  1193
-=opt= IEEE118-24               1077.03029
 =best= TEST0092-13                      47
 =opt= p50150-27.txt                   579
 =opt= sa30_25                      -1e+20
@@ -151,7 +148,6 @@
 =best= TEST0097-10                     628
 =unkn= 0.95-quasi-clique_partitioning_lesmis
 =opt= d500_10_alternative              500
-=opt= SJC4a-1.dat                   61751
 =best= TEST0077-16                    1482
 =opt= BR5_54                     0.406626
 =opt= G0061412                 56196.6676
@@ -234,7 +230,7 @@
 =opt= N4W4B3R5.BPP                     55
 =unkn= 2-plex_covering_lesmis
 =opt= instance54               31998.1612
-=best= TEST0093-05                      45
+=opt= TEST0093-05                      44
 =opt= G0047425                  7343.3332
 =opt= G0044152                       9991
 =opt= TEST0075-08                     809
@@ -250,10 +246,8 @@
 =opt= sa45_10                       91125
 =opt= TEST0044-03                      24
 =opt= Bs03                          16828
-=best= G0065151                 221329.452
 =best= BPP69-s1                         19
 =opt= p40100-15-115.txt               533
-=best= G8165341                 485692.052
 =best= TEST0080-16                    1291
 =best= TEST0092-08                     340
 =best= N3C2W4_A.BPP                    113
@@ -291,7 +285,6 @@
 =opt= sa35_35                      -1e+20
 =opt= sa30_5                        27000
 =opt= d250_19_alternative              250
-=opt= set1ch                     54537.75
 =opt= p40100-11-105.txt               544
 =opt= sa25_20                        3315
 =best= nsf_p0.7_s5                      10

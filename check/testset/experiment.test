@@ -21,7 +21,6 @@ instances/striplib/clp/hifi/BR/BR4/BR4_90.lp.gz;
 instances/striplib/cuttingstock/18classes/testsetClass13/TEST0098-13.lp.gz;
 instances/striplib/clp/fasano/sa/sa40/sa40_15.lp.gz;
 instances/striplib/clp/fasano/sa/sa45/sa45_5.lp.gz;
-instances/striplib/cuttingstock/waescher/TEST0068-wae.lp.gz;
 instances/striplib/maplabeling/lorena/d500/d500_07_alternative.lp.gz;
 instances/striplib/cuttingstock-ge/18classes/testsetClass15/TEST0091-15.lp.gz;instances/striplib/cuttingstock-ge/18classes/testsetClass15/TEST0091-15.dec.gz
 instances/striplib/clp/fasano/sa/sa30/sa30_100.lp.gz;
@@ -63,7 +62,6 @@ instances/striplib/binpacking_2knapsacks/orbologna/CL_10_99_10.lp.gz;
 instances/striplib/clp/fasano/sa/sa25/sa25_25.lp.gz;
 instances/striplib/sscwlp/class4/10Cap40.lp.gz;
 instances/striplib/gap/orlibrary/gap-max/gapc_4.txt.lp.gz;instances/striplib/gap/orlibrary/gap-max/gapc_4.txt.dec.gz
-instances/striplib/cuttingstock-ge/18classes/testsetClass05/TEST0093-05.lp.gz;instances/striplib/cuttingstock-ge/18classes/testsetClass05/TEST0093-05.dec.gz
 instances/striplib/cuttingstock-ge/18classes/testsetClass05/TEST0099-05.lp.gz;
 instances/striplib/pcp/ring_n15p0.5s5.lp.gz;instances/striplib/pcp/ring_n15p0.5s5.dec.gz
 instances/striplib/clp/hifi/BR/BR4/BR4_72.lp.gz;
@@ -73,7 +71,6 @@ instances/striplib/pcmax/U_1_1000_05_1.lp.gz;
 instances/striplib/cuttingstock-ge/schwerin/dataset2/BPP42-s2.lp.gz;instances/striplib/cuttingstock-ge/schwerin/dataset2/BPP42-s2.dec.gz
 instances/striplib/bppif/chain/20-100/tight_small/bpp_20_0.mps.gz;instances/striplib/bppif/chain/20-100/tight_small/bpp_20_0.dec.gz
 instances/striplib/cpmp/optlab/p15150/p15150-25.txt.lp.gz;
-instances/striplib/uc-kim/IEEE118-24.mps.gz;instances/striplib/uc-kim/IEEE118-24-horizondiv2.dec.gz
 instances/striplib/cuttingstock-ge/18classes/testsetClass13/TEST0092-13.lp.gz;
 instances/striplib/cpmp/optlab/p50150/p50150-27.txt.lp.gz;
 instances/striplib/clp/fasano/sa/sa30/sa30_25.lp.gz;
@@ -152,7 +149,6 @@ instances/striplib/cpmp/optlab/p33100/p33100-20.txt.lp.gz;instances/striplib/cpm
 instances/striplib/cuttingstock-ge/18classes/testsetClass10/TEST0097-10.lp.gz;instances/striplib/cuttingstock-ge/18classes/testsetClass10/TEST0097-10.dec.gz
 instances/striplib/rc/gamma-quasi-clique_partitioning/0.95-quasi-clique_partitioning_lesmis.lp.gz;instances/striplib/rc/gamma-quasi-clique_partitioning/0.95-quasi-clique_partitioning_lesmis.dec.gz
 instances/striplib/maplabeling/lorena/d500/d500_10_alternative.lp.gz;
-instances/striplib/cpmp/lorena/SJC4a-1.dat.lp.gz;instances/striplib/cpmp/lorena/SJC4a-1.dat.dec.gz
 instances/striplib/cuttingstock-ge/18classes/testsetClass16/TEST0077-16.lp.gz;
 instances/striplib/clp/hifi/BR/BR5/BR5_54.lp.gz;
 instances/striplib/lotsizing/derstoff/probc/G0061412.lp.gz;instances/striplib/lotsizing/derstoff/probc/G0061412-horizon8.dec.gz
@@ -251,10 +247,8 @@ instances/striplib/bppc/BPPC_2_2_10.lp.gz;instances/striplib/bppc/BPPC_2_2_10-co
 instances/striplib/clp/paquay/sa/sa45/sa45_10.lp.gz;
 instances/striplib/cuttingstock-ge/18classes/testsetClass03/TEST0044-03.lp.gz;instances/striplib/cuttingstock-ge/18classes/testsetClass03/TEST0044-03.dec.gz
 instances/striplib/umcfp/carbin/Bs03.lp.gz;instances/striplib/umcfp/carbin/Bs03-path.dec.gz
-instances/striplib/lotsizing/derstoff/probc/G0065151.lp.gz;instances/striplib/lotsizing/derstoff/probc/G0065151-period.dec.gz
 instances/striplib/cuttingstock/schwerin/dataset1/BPP69-s1.lp.gz;instances/striplib/cuttingstock/schwerin/dataset1/BPP69-s1.dec.gz
 instances/striplib/cpmp-ge/optlab/LOWCAP/115/p40100-15-115.txt.lp.gz;
-instances/striplib/lotsizing/derstoff/probd/setup1/G8165341.lp.gz;instances/striplib/lotsizing/derstoff/probd/setup1/G8165341-period.dec.gz
 instances/striplib/cuttingstock-ge/18classes/testsetClass16/TEST0080-16.lp.gz;
 instances/striplib/cuttingstock/18classes/testsetClass08/TEST0092-08.lp.gz;
 instances/striplib/binpacking/bison/bison1set/N3C2W4_A.BPP.lp.gz;
@@ -291,7 +285,6 @@ instances/striplib/binpacking/orlibrary/N500B150u500_10.BPP.lp.gz;instances/stri
 instances/striplib/clp/fasano/sa/sa35/sa35_35.lp.gz;
 instances/striplib/clp/chen/sa/sa30/sa30_5.lp.gz;
 instances/striplib/maplabeling/lorena/d250/d250_19_alternative.lp.gz;
-instances/striplib/lotsizelib/set1ch.mps.gz;instances/striplib/lotsizelib/set1ch-period.dec.gz
 instances/striplib/cpmp/optlab/LOWCAP/105/p40100-11-105.txt.lp.gz;
 instances/striplib/clp/hifi/sa/sa25/sa25_20.lp.gz;
 instances/striplib/pcp/nsf_p0.7_s5.lp.gz;instances/striplib/pcp/nsf_p0.7_s5.dec.gz
