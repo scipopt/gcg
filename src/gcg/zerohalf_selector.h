@@ -63,6 +63,9 @@ struct GCG_ZeroHalfData
    int                   maxroundsroot;      /**< maximal number of zerohalf separation rounds in the root node (-1: unlimited) */
    int                   densityoffset;      /**< additional number of variables allowed in row on top of density */
    int                   nreductions;        /**< number of reductions to the mod 2 system found so far */
+   SCIP_CONS**           origmasterconss;    /**< array of orig master conss (is only allocated if not equal to data of relaxator) */
+   SCIP_CONS**           masterconss;        /**< array of master conss (is only allocated if not equal to data of relaxator) */
+   int                   nmasterconss;       /**< number of master conss */
 };
 typedef struct GCG_ZeroHalfData GCG_ZEROHALFDATA;
 

@@ -663,8 +663,8 @@ SCIP_RETCODE mod2MatrixTransformContRows(
    /* OG: SCIP_CALL( SCIPgetLPRowsData(scip, &rows, &nrows) );*/
 
    scip = GCGgetMasterprob(gcg);
-   masterconss = GCGgetMasterConss(gcg);
-   nrows = GCGgetNMasterConss(gcg);
+   masterconss = zhdata->masterconss;
+   nrows = zhdata->nmasterconss;
 
    SCIP_CALL( SCIPallocBufferArray(scip, &rows, nrows) );
 
@@ -1068,7 +1068,7 @@ static
 SCIP_RETCODE buildMod2Matrix(
    GCG*                  gcg,                /**< GCG data structure */
    SCIP_SOL*             sol,                /**< solution to separate, or NULL for LP solution */
-   GCG_ZEROHALFDATA *    zhdata,             /**< zerohalf separator data */
+   GCG_ZEROHALFDATA*     zhdata,             /**< zerohalf separator data */
    BMS_BLKMEM*           blkmem,             /**< block memory shell */
    MOD2_MATRIX*          mod2matrix,         /**< mod 2 matrix */
    SCIP_Bool             allowlocal,         /**< should local cuts be allowed */
@@ -1088,8 +1088,8 @@ SCIP_RETCODE buildMod2Matrix(
    SCIP_CONS** mastercons;
 
    scip = GCGgetMasterprob(gcg);
-   mastercons = GCGgetMasterConss(gcg);
-   nrows = GCGgetNMasterConss(gcg);
+   mastercons = zhdata->masterconss;
+   nrows = zhdata->nmasterconss;
 
    SCIPallocBufferArray(scip, &rows, nrows);
    for( i = 0; i < nrows; i++ )
@@ -1798,7 +1798,7 @@ SCIP_RETCODE GCGselectConstraintsZeroHalf(
    int                   maxcuts,
    GCG_CUTINDICES***     cutindices,
    int*                  ncutindices
-)
+   )
 {
    SCIP* scip;
    int i;
