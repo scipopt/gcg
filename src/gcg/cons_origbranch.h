@@ -59,7 +59,7 @@ SCIP_RETCODE GCGcreateConsOrigbranch(
    const char*           name,               /**< name of constraint */
    SCIP_NODE*            node,               /**< the node to which this origbranch constraint belongs */
    SCIP_CONS*            parentcons,         /**< origbranch constraint associated with the father node */
-   SCIP_BRANCHRULE*      branchrule,         /**< the branching rule that created the b&b node the constraint belongs to */
+   GCG_BRANCHRULE*       branchrule,         /**< the branching rule that created the b&b node the constraint belongs to */
    GCG_BRANCHDATA*       branchdata          /**< branching data storing information about the branching restrictions at the
                                               *   corresponding node */
    );
@@ -93,7 +93,7 @@ GCG_BRANCHDATA* GCGconsOrigbranchGetBranchdata(
 
 /** returns the branching rule for a given origbranch constraint */
 GCG_EXPORT
-SCIP_BRANCHRULE* GCGconsOrigbranchGetBranchrule(
+GCG_BRANCHRULE* GCGconsOrigbranchGetBranchrule(
    SCIP_CONS*            cons                /**< origbranch constraint for which the branchrule is requested */
    );
 

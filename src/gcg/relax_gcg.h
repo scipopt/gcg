@@ -86,7 +86,7 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchActiveMaster(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata          /**< data representing the branching decision */
    );
 
@@ -94,7 +94,7 @@ SCIP_RETCODE GCGrelaxBranchActiveMaster(
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchDeactiveMaster(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata          /**< data representing the branching decision */
    );
 
@@ -102,7 +102,7 @@ SCIP_RETCODE GCGrelaxBranchDeactiveMaster(
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchPropMaster(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
    SCIP_RESULT*          result              /**< pointer to store the result of the propagation call */
    );
@@ -111,7 +111,7 @@ SCIP_RETCODE GCGrelaxBranchPropMaster(
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchMasterSolved(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
    SCIP_Real             newlowerbound       /**< the new local lowerbound */
    );
@@ -120,7 +120,7 @@ SCIP_RETCODE GCGrelaxBranchMasterSolved(
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchDataDelete(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA**      branchdata,         /**< data representing the branching decision */
    SCIP_Bool             origbranch,         /**< true iff an origbranch triggered this call */
    SCIP_Bool             force               /**< branch data must be deleted if true */
@@ -129,15 +129,6 @@ SCIP_RETCODE GCGrelaxBranchDataDelete(
 /** notifies the branching rule that a new mastervariable was created while this node was active */
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchNewCol(
-   GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
-   GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
-   SCIP_VAR*             mastervar           /**< new mastervariable that was created */
-   );
-
-/** notifies the branching rule that a new mastervariable was created while this node was active */
-GCG_EXPORT
-SCIP_RETCODE GCGrelaxBranchNewColWithGCGBranchrule(
    GCG*                  gcg,                /**< GCG data structure */
    GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
@@ -148,7 +139,7 @@ SCIP_RETCODE GCGrelaxBranchNewColWithGCGBranchrule(
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchGetExtendedMasterCons(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
    GCG_EXTENDEDMASTERCONSDATA**   extendedmasterconsdata       /**< the extendedmasterconsdata to grab */
    );
@@ -232,7 +223,7 @@ SCIP_RETCODE GCGrelaxNewProbingnodeMaster(
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxNewProbingnodeMasterCons(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branching rule */
+   GCG_BRANCHRULE*       branchrule,         /**< pointer to the branching rule */
    GCG_BRANCHDATA*       branchdata,         /**< branching data */
    SCIP_CONS**           origbranchconss,    /**< original constraints enforcing the branching decision */
    int                   norigbranchconss,   /**< number of original constraints */

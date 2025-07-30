@@ -100,3 +100,25 @@ SCIP_RETCODE GCGbranchFreeExtendedmasterconsBranchData(
     SCIP_CALL( GCGextendedmasterconsFree(gcg, extendedmasterconsdata) );
     return SCIP_OKAY;
 }
+
+#ifndef NDEBUG
+/** returns the pointer to the SCIP_BRNACHRULE object */
+SCIP_BRANCHRULE* GCGbranchGetScipBranchrule(
+   GCG_BRANCHRULE* branchrule
+   )
+{
+   assert(branchrule != NULL);
+   return branchrule->branchrule;
+}
+#endif
+
+#ifndef NDEBUG
+/** returns the pointer to the SCIP_BRNACHRULEDATA object */
+SCIP_BRANCHRULEDATA* GCGbranchGetScipBranchruledata(
+   GCG_BRANCHRULE* branchrule
+   )
+{
+   assert(branchrule != NULL);
+   return SCIPbranchruleGetData(branchrule->branchrule);
+}
+#endif

@@ -150,7 +150,7 @@ struct SCIP_BranchruleData
 
    int                   initiator;             /**< the identifier of the branching rule that initiated strong
                                                    * branching */
-   SCIP_BRANCHRULE*      initiatorbranchrule;   /**< the branching rule that initiated strong branching */
+   GCG_BRANCHRULE*       initiatorbranchrule;   /**< the branching rule that initiated strong branching */
 
    SCIP_Bool             mostfrac;              /**< should most infeasible/fractional branching be used in phase 0? */
    SCIP_Bool             usepseudocosts;        /**< should pseudocost branching be used in phase 0? */
@@ -502,7 +502,7 @@ static int geq_compare_function(
 static
 SCIP_RETCODE newProbingNodeRyanfosterMaster(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule */
    SCIP_VAR*             ovar1,              /**< first original variable */
    SCIP_VAR*             ovar2,              /**< second original variable */
    int                   blocknr,            /**< number of the pricing block */
@@ -1764,17 +1764,17 @@ SCIP_RETCODE GCGincludeBranchruleBPStrong(
 }
 
 SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingOrig(
-   GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE       *origbranchrule,    /**< pointer storing original branching rule */
-   SCIP_VAR              **branchvar,        /**< pointer to store output var pointer */
-   SCIP_Bool             *upinf,             /**< pointer to store whether strong branching detected infeasibility in
+   GCG*                  gcg,               /**< GCG data structure */
+   GCG_BRANCHRULE*       origbranchrule,    /**< pointer storing original branching rule */
+   SCIP_VAR**            branchvar,         /**< pointer to store output var pointer */
+   SCIP_Bool*            upinf,             /**< pointer to store whether strong branching detected infeasibility in
                                                 * the upbranch */
-   SCIP_Bool             *downinf,           /**< pointer to store whether strong branching detected infeasibility in
+   SCIP_Bool*            downinf,           /**< pointer to store whether strong branching detected infeasibility in
                                                 * the downbranch */
-   SCIP_RESULT           *result,            /**< pointer to store result */
-   SCIP_Bool             *stillusestrong     /**< pointer to store whether strong branching has reached a permanent
+   SCIP_RESULT*          result,            /**< pointer to store result */
+   SCIP_Bool*            stillusestrong     /**< pointer to store whether strong branching has reached a permanent
                                                 * stopping condition for orig */
-)
+   )
 {
    SCIP_BRANCHRULEDATA *branchruledata;
    SCIP_BRANCHRULE *branchrule;
@@ -1820,23 +1820,23 @@ SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingOrig(
 
 /** interface method for Ryan-Foster branching to strong branching heuristics */
 SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingRyanfoster(
-   GCG*                  gcg,               /**< original SCIP data structure */
-   SCIP_BRANCHRULE*      rfbranchrule,       /**< Ryan-Foster branchrule */
-   SCIP_VAR              **ovar1s,           /**< first elements of candidate pairs */
-   SCIP_VAR              **ovar2s,           /**< second elements of candidate pairs */
-   int                   *nspricingblock,    /**< pricing block numbers corresponding to input pairs */
+   GCG*                  gcg,                /**< GCG data structure */
+   GCG_BRANCHRULE*       rfbranchrule,       /**< Ryan-Foster branchrule */
+   SCIP_VAR**            ovar1s,           /**< first elements of candidate pairs */
+   SCIP_VAR**            ovar2s,           /**< second elements of candidate pairs */
+   int*                  nspricingblock,    /**< pricing block numbers corresponding to input pairs */
    int                   npairs,             /**< number of input pairs */
-   SCIP_VAR              **ovar1,            /**< pointer to store output var 1 pointer */
-   SCIP_VAR              **ovar2,            /**< pointer to store output var 2 pointer */
-   int                   *pricingblock,      /**< pointer to store output pricing block number */
-   SCIP_Bool             *sameinf,           /**< pointer to store whether strong branching detected infeasibility in
+   SCIP_VAR**            ovar1,            /**< pointer to store output var 1 pointer */
+   SCIP_VAR**            ovar2,            /**< pointer to store output var 2 pointer */
+   int*                  pricingblock,      /**< pointer to store output pricing block number */
+   SCIP_Bool*            sameinf,           /**< pointer to store whether strong branching detected infeasibility in
                                                 * the same branch */
-   SCIP_Bool             *differinf,         /**< pointer to store whether strong branching detected infeasibility in
+   SCIP_Bool*            differinf,         /**< pointer to store whether strong branching detected infeasibility in
                                                 * the differ branch */
-   SCIP_RESULT           *result,            /**< pointer to store result */
-   SCIP_Bool             *stillusestrong     /**< pointer to store whether strong branching has reached a permanent
+   SCIP_RESULT*          result,            /**< pointer to store result */
+   SCIP_Bool*            stillusestrong     /**< pointer to store whether strong branching has reached a permanent
                                                 * stopping condition for Ryan-Foster */
-)
+   )
 {
    SCIP_BRANCHRULEDATA *branchruledata;
    SCIP_BRANCHRULE *branchrule;

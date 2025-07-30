@@ -104,7 +104,7 @@ SCIP_RETCODE createOrigbranchConstraint(
 {
    SCIP* origprob;
    char* consname;
-   SCIP_BRANCHRULE* branchrule;
+   GCG_BRANCHRULE* branchrule;
    GCG_BRANCHDATA* branchdata;
    SCIP_CONS* origcons;
    SCIP_CONS** origbranchconss;
@@ -303,7 +303,7 @@ SCIP_RETCODE createBranchNodesInOrigprob(
       SCIP_CALL( createOrigbranchConstraint(gcg, childnode, masterbranchchildcons) );
 
       /* get branching rule */
-      branchrule = GCGconsMasterbranchGetBranchrule(masterbranchchildcons);
+      branchrule = GCGbranchGetScipBranchrule(GCGconsMasterbranchGetBranchrule(masterbranchchildcons));
 
       /* If a branching decision on an original variable was made, apply it */
       if( !enforcebycons && branchrule != NULL && strcmp(SCIPbranchruleGetName(branchrule), "orig") == 0 )

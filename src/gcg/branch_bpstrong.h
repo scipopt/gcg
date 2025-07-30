@@ -51,40 +51,40 @@ extern "C"
 /** creates the xyz branching rule and includes it in SCIP */
 GCG_EXPORT
 SCIP_RETCODE GCGincludeBranchruleBPStrong(
-    GCG*                 gcg                 /**< SCIP data structure */
-);
+   GCG*                 gcg                 /**< SCIP data structure */
+   );
 
 SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingOrig(
-   GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE       *origbranchrule,    /**< pointer storing original branching rule */
-   SCIP_VAR              **branchvar,        /**< pointer to store output var pointer */
-   SCIP_Bool             *upinf,             /**< pointer to store whether strong branching detected infeasibility in
+   GCG*                  gcg,               /**< GCG data structure */
+   GCG_BRANCHRULE*       origbranchrule,    /**< pointer storing original branching rule */
+   SCIP_VAR**            branchvar,         /**< pointer to store output var pointer */
+   SCIP_Bool*            upinf,             /**< pointer to store whether strong branching detected infeasibility in
                                                 * the upbranch */
-   SCIP_Bool             *downinf,           /**< pointer to store whether strong branching detected infeasibility in
+   SCIP_Bool*            downinf,           /**< pointer to store whether strong branching detected infeasibility in
                                                 * the downbranch */
-   SCIP_RESULT           *result,            /**< pointer to store result */
-   SCIP_Bool             *stillusestrong     /**< pointer to store whether strong branching has reached a permanent
+   SCIP_RESULT*          result,            /**< pointer to store result */
+   SCIP_Bool*            stillusestrong     /**< pointer to store whether strong branching has reached a permanent
                                                 * stopping condition for orig */
-);
+   );
 
 SCIP_RETCODE GCGbranchSelectCandidateStrongBranchingRyanfoster(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      rfbranchrule,       /**< Ryan-Foster branchrule */
-   SCIP_VAR              **ovar1s,           /**< first elements of candidate pairs */
-   SCIP_VAR              **ovar2s,           /**< second elements of candidate pairs */
-   int                   *nspricingblock,    /**< pricing block numbers corresponding to input pairs */
+   GCG_BRANCHRULE*       rfbranchrule,       /**< Ryan-Foster branchrule */
+   SCIP_VAR**            ovar1s,           /**< first elements of candidate pairs */
+   SCIP_VAR**            ovar2s,           /**< second elements of candidate pairs */
+   int*                  nspricingblock,    /**< pricing block numbers corresponding to input pairs */
    int                   npairs,             /**< number of input pairs */
-   SCIP_VAR              **ovar1,            /**< pointer to store output var 1 pointer */
-   SCIP_VAR              **ovar2,            /**< pointer to store output var 2 pointer */
-   int                   *pricingblock,      /**< pointer to store output pricing block number */
-   SCIP_Bool             *sameinf,           /**< pointer to store whether strong branching detected infeasibility in
+   SCIP_VAR**            ovar1,            /**< pointer to store output var 1 pointer */
+   SCIP_VAR**            ovar2,            /**< pointer to store output var 2 pointer */
+   int*                  pricingblock,      /**< pointer to store output pricing block number */
+   SCIP_Bool*            sameinf,           /**< pointer to store whether strong branching detected infeasibility in
                                                 * the same branch */
-   SCIP_Bool             *differinf,         /**< pointer to store whether strong branching detected infeasibility in
+   SCIP_Bool*            differinf,         /**< pointer to store whether strong branching detected infeasibility in
                                                 * the differ branch */
-   SCIP_RESULT           *result,            /**< pointer to store result */
-   SCIP_Bool             *stillusestrong     /**< pointer to store whether strong branching has reached a permanent
+   SCIP_RESULT*          result,            /**< pointer to store result */
+   SCIP_Bool*            stillusestrong     /**< pointer to store whether strong branching has reached a permanent
                                                 * stopping condition for Ryan-Foster */
-);
+   );
 
 #ifdef __cplusplus
 }

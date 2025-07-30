@@ -1958,7 +1958,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToExtendedmastercons(
    /* compute coef of the variable in the extended master conss */
    for( i = 0; i < nbranchextendedmasterconss; i++ )
    {
-      SCIP_CALL( GCGrelaxBranchNewColWithGCGBranchrule(gcg, branchrules[i], branchdata[i], newvar) );
+      SCIP_CALL( GCGrelaxBranchNewCol(gcg, branchrules[i], branchdata[i], newvar) );
    }
 
    return SCIP_OKAY;

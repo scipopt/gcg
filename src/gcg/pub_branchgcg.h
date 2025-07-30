@@ -42,6 +42,10 @@
 #include "gcg/def.h"
 #include "gcg/type_gcg.h"
 
+#ifdef NDEBUG
+#include "gcg/struct_branchgcg.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -76,6 +80,26 @@ SCIP_RETCODE GCGbranchFreeExtendedmasterconsBranchData(
     GCG*                             gcg,                          /**< GCG data structure */
     GCG_EXTENDEDMASTERCONSDATA**     extendedmasterconsdata        /**< extended master cons data */
     );
+
+#ifdef NDEBUG
+#define GCGbranchGetScipBranchrule(gcgbranchrule) ((gcgbranchrule)->branchrule)
+#else
+/** returns the pointer to the SCIP_BRNACHRULE object */
+GCG_EXPORT
+SCIP_BRANCHRULE* GCGbranchGetScipBranchrule(
+   GCG_BRANCHRULE* branchrule
+   );
+#endif
+
+#ifdef NDEBUG
+#define GCGbranchGetScipBranchruledata(gcgbranchrule) (SCIPbranchruleGetData((gcgbranchrule)->branchrule))
+#else
+/** returns the pointer to the SCIP_BRNACHRULEDATA object */
+GCG_EXPORT
+SCIP_BRANCHRULEDATA* GCGbranchGetScipBranchruledata(
+   GCG_BRANCHRULE* branchrule
+   );
+#endif
 
 #ifdef __cplusplus
 }

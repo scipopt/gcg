@@ -92,7 +92,7 @@ struct SCIP_ConsData
 
    GCG_BRANCHDATA*       branchdata;         /**< branching data stored by the branching rule at the corresponding origcons constraint
                                               *   containing information about the branching restrictions */
-   SCIP_BRANCHRULE*      branchrule;         /**< branching rule that created the corresponding node in the original problem and imposed
+   GCG_BRANCHRULE*       branchrule;         /**< branching rule that created the corresponding node in the original problem and imposed
                                               *   branching restrictions */
 
    /* pointer to the last variable that we have seen, any newer variables are unseen */
@@ -2695,7 +2695,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    const char*           name,               /**< name of the constraint */
    SCIP_NODE*            node,               /**< node at which the constraint should be created */
    SCIP_CONS*            parentcons,         /**< parent constraint */
-   SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branching rule */
+   GCG_BRANCHRULE*       branchrule,         /**< pointer to the branching rule */
    GCG_BRANCHDATA*       branchdata,         /**< branching data */
    SCIP_CONS**           origbranchconss,    /**< original constraints enforcing the branching decision */
    int                   norigbranchconss,   /**< number of original constraints */
@@ -2952,7 +2952,7 @@ void GCGconsMasterbranchSetBranchdata(
 }
 
 /** returns the branching rule of the constraint */
-SCIP_BRANCHRULE* GCGconsMasterbranchGetBranchrule(
+GCG_BRANCHRULE* GCGconsMasterbranchGetBranchrule(
    SCIP_CONS*            cons                /**< masterbranch constraint for which the data is requested */
    )
 {
@@ -3183,7 +3183,7 @@ SCIP_Bool GCGcurrentNodeIsGeneric(
    )
 {
    SCIP_CONS* mastercons;
-   SCIP_BRANCHRULE* branchrule;
+   GCG_BRANCHRULE* branchrule;
 
    assert(gcg != NULL);
 
@@ -3195,7 +3195,7 @@ SCIP_Bool GCGcurrentNodeIsGeneric(
 
    branchrule = GCGconsMasterbranchGetBranchrule(mastercons);
 
-   if( branchrule == NULL || strcmp(SCIPbranchruleGetName(branchrule), "generic") != 0 )
+   if( branchrule == NULL || strcmp(SCIPbranchruleGetName(GCGbranchGetScipBranchrule(branchrule)), "generic") != 0 )
       return FALSE;
 
    return TRUE;

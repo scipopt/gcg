@@ -431,7 +431,7 @@ GCG_DECL_BRANCHGETEXTENDEDMASTERCONSCOEFF(branchGetExtendedmasterconsCoeffCompBn
 static
 SCIP_RETCODE createBranchingCons(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branch rule structure */
+   GCG_BRANCHRULE*       branchrule,         /**< branch rule structure */
    SCIP_NODE*            node,               /**< node to add constraint */
    GCG_BRANCHDATA*       branchdata          /**< branching data structure */
 )
@@ -466,7 +466,7 @@ SCIP_RETCODE createBranchingCons(
    assert(branchdata != NULL);
    assert(branchdata->mastercons == NULL);
 
-   branchruledata = SCIPbranchruleGetData(branchrule);
+   branchruledata = GCGbranchGetScipBranchruledata(branchrule);
    assert(branchruledata != NULL);
 
    uuid = SCIPnodeGetNumber(node);
@@ -653,7 +653,7 @@ SCIP_RETCODE createBranchingCons(
 static
 SCIP_RETCODE createChildNodesCompBndSeq(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule */
    GCG_COMPBND*          compBndSeq,         /**< Component Bound Sequence defining the nodes */
    int                   compBndSeqSize,     /**< size of compBndSeq */
    int                   blocknr             /**< number of the block */
@@ -1589,7 +1589,7 @@ CHOOSE_COMPBNDSEQ(chooseSmallestSize)
 static
 SCIP_RETCODE separation(
    GCG*                  gcg,                     /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,              /**< branching rule */
+   GCG_BRANCHRULE*       branchrule,              /**< branching rule */
    GCG_COMPBND**         compBndSeq,              /**< Component Bound Sequence defining the nodes */
    int*                  compBndSeqSize,                   /**< size of compBndSeq */
    int                   blocknr,                 /**< number of the block */
@@ -1613,7 +1613,7 @@ SCIP_RETCODE separation(
    satisfyingMastervars = NULL;
    satisfyingMastervarsSize = 0;
 
-   branchruledata = SCIPbranchruleGetData(branchrule);
+   branchruledata = SCIPbranchruleGetData(GCGbranchGetScipBranchrule(branchrule));
    assert(branchruledata != NULL);
 
    masterprob = GCGgetMasterprob(gcg);
@@ -1679,7 +1679,7 @@ SCIP_RETCODE separation(
 static
 SCIP_RETCODE initBranch(
    GCG*                  gcg,                     /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,              /**< branching rule */
+   GCG_BRANCHRULE*       branchrule,              /**< branching rule */
    SCIP_RESULT*          result                   /**< pointer to store the result of the branching call */
    )
 {
@@ -1889,7 +1889,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpCompBnd)
 
    *result = SCIP_BRANCHED;
 
-   SCIP_CALL( initBranch(branchruledata->gcg, branchrule, result) );
+   SCIP_CALL( initBranch(branchruledata->gcg, branchruledata->gcgbranchrule, result) );
 
    return SCIP_OKAY;
 }
