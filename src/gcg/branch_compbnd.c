@@ -2067,26 +2067,20 @@ GCG_DECL_BRANCHGETEXTENDEDMASTERCONS(branchGetExtendedmasterconsCompBnd)
 static
 SCIP_DECL_BRANCHINIT(branchInitCompBnd)
 {
-   SCIP_BRANCHRULEDATA* branchruledata;
 #ifdef COMPBND_STATS
+   SCIP_BRANCHRULEDATA* branchruledata;
    SCIP_Bool stabilization_tree;
-#endif
 
    assert(branchrule != NULL);
    branchruledata = SCIPbranchruleGetData(branchrule);
    assert(branchruledata != NULL);
 
-#ifdef COMPBND_STATS
    branchruledata = SCIPbranchruleGetData(branchrule);
    assert(branchruledata != NULL);
    SCIP_CALL( SCIPgetBoolParam(origprob, "pricing/masterpricer/stabilizationtree", &stabilization_tree) );
 #endif
 
    SCIPdebugMessage("Init method of component bound branching\n");
-
-   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, branchrule, &branchruledata->gcgbranchrule, branchActiveMasterCompBnd,
-         branchDeactiveMasterCompBnd, branchPropMasterCompBnd, branchMasterSolvedCompBnd, branchDataDeleteCompBnd,
-         branchNewColCompBnd, branchGetExtendedmasterconsCompBnd, branchGetExtendedmasterconsCoeffCompBnd) );
 
 #ifdef COMPBND_STATS
    /* determine the filename */
@@ -2146,11 +2140,15 @@ SCIP_RETCODE GCGincludeBranchruleCompBnd(
    SCIPdebugMessage("Include method of component bound branching\n");
 
    /* include branching rule */
-   SCIP_CALL( SCIPincludeBranchrule(masterprob, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY, BRANCHRULE_MAXDEPTH,
-         BRANCHRULE_MAXBOUNDDIST,
-         branchCopyCompBnd, branchFreeCompBnd, branchInitCompBnd, branchExitCompBnd, branchInitsolCompBnd, branchExitsolCompBnd,
-         branchExeclpCompBnd, branchExecextCompBnd, branchExecpsCompBnd,
-         branchruledata) );
+   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, &branchrule, &branchruledata->gcgbranchrule, BRANCHRULE_NAME,
+         BRANCHRULE_DESC, BRANCHRULE_PRIORITY, BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata, branchActiveMasterCompBnd,
+         branchDeactiveMasterCompBnd, branchPropMasterCompBnd, branchMasterSolvedCompBnd, branchDataDeleteCompBnd,
+         branchNewColCompBnd, branchGetExtendedmasterconsCompBnd, branchGetExtendedmasterconsCoeffCompBnd) );
+   SCIP_CALL( SCIPsetBranchruleInit(masterprob, branchrule, branchInitCompBnd) );
+   SCIP_CALL( SCIPsetBranchruleFree(masterprob, branchrule, branchFreeCompBnd) );
+   SCIP_CALL( SCIPsetBranchruleExecLp(masterprob, branchrule, branchExeclpCompBnd) );
+   SCIP_CALL( SCIPsetBranchruleExecExt(masterprob, branchrule, branchExecextCompBnd) );
+   SCIP_CALL( SCIPsetBranchruleExecPs(masterprob, branchrule, branchExecpsCompBnd) );
 
    /* add compbnd branching rule parameters */
    SCIP_CALL( SCIPaddBoolParam(origprob, "branching/compbnd/useMRMH",
@@ -2160,8 +2158,6 @@ SCIP_RETCODE GCGincludeBranchruleCompBnd(
 
    branchrule = SCIPfindBranchrule(masterprob, BRANCHRULE_NAME);
    assert(branchrule != NULL);
-
-   SCIP_CALL( GCGconsIntegralorigAddBranchrule(gcg, branchrule) );
 
    return SCIP_OKAY;
 }

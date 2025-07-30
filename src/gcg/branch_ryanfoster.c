@@ -940,15 +940,6 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
 static
 SCIP_DECL_BRANCHINIT(branchInitRyanfoster)
 {
-   SCIP_BRANCHRULEDATA* branchruledata;
-
-   assert(branchrule != NULL);
-   branchruledata = SCIPbranchruleGetData(branchrule);
-   assert(branchruledata != NULL);
-
-   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, branchrule, NULL, branchActiveMasterRyanfoster,
-         branchDeactiveMasterRyanfoster, branchPropMasterRyanfoster, NULL, branchDataDeleteRyanfoster, NULL, NULL, NULL) );
-
    return SCIP_OKAY;
 }
 
@@ -983,6 +974,7 @@ SCIP_RETCODE GCGincludeBranchruleRyanfoster(
    )
 {
    SCIP_BRANCHRULEDATA* branchruledata;
+   SCIP_BRANCHRULE* branchrule;
    SCIP* origprob;
    SCIP* masterprob;
 
@@ -994,11 +986,16 @@ SCIP_RETCODE GCGincludeBranchruleRyanfoster(
    branchruledata->gcg = gcg;
 
    /* include branching rule */
-   SCIP_CALL( SCIPincludeBranchrule(masterprob, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
-         BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchCopyRyanfoster,
-         branchFreeRyanfoster, branchInitRyanfoster, branchExitRyanfoster, branchInitsolRyanfoster,
-         branchExitsolRyanfoster, branchExeclpRyanfoster, branchExecextRyanfoster, branchExecpsRyanfoster,
-         branchruledata) );
+   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, &branchrule, NULL, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
+         BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata, branchActiveMasterRyanfoster,
+         branchDeactiveMasterRyanfoster, branchPropMasterRyanfoster, NULL, branchDataDeleteRyanfoster, NULL, NULL, NULL) );
+   assert(branchrule != NULL);
+   SCIP_CALL( SCIPsetBranchruleInit(masterprob, branchrule, branchInitRyanfoster) );
+   SCIP_CALL( SCIPsetBranchruleExecLp(masterprob, branchrule, branchExeclpRyanfoster) );
+   SCIP_CALL( SCIPsetBranchruleExecExt(masterprob, branchrule, branchExecextRyanfoster) );
+   SCIP_CALL( SCIPsetBranchruleExecPs(masterprob, branchrule, branchExecpsRyanfoster) );
+   SCIP_CALL( SCIPsetBranchruleFree(masterprob, branchrule, branchFreeRyanfoster) );
+   SCIP_CALL( SCIPsetBranchruleCopy(masterprob, branchrule, branchCopyRyanfoster) );
 
    SCIP_CALL( SCIPaddBoolParam(origprob, "branching/ryanfoster/usestrong",
          "should strong branching be used to determine the variables on which the branching is performed?",

@@ -1548,10 +1548,6 @@ SCIP_DECL_BRANCHINIT(branchInitBPStrong)
 
    SCIPdebugMessage("Init BPStrong branching rule\n");
 
-   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, branchrule, NULL, branchActiveMasterBPStrong,
-         branchDeactiveMasterBPStrong, branchPropMasterBPStrong, branchMasterSolvedBPStrong,
-         branchDataDeleteBPStrong, NULL, NULL, NULL) );
-
    /* free data if we already solved another instance but branchFreeBPStrong was not called inbetween */
    if( branchruledata->initialized )
    {
@@ -1650,8 +1646,10 @@ SCIP_RETCODE GCGincludeBranchruleBPStrong(
    branchruledata->gcg = gcg;
 
    /* include branching rule */
-   SCIP_CALL( SCIPincludeBranchruleBasic(masterprob, &branchrule, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
-            BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata) );
+   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, &branchrule, NULL, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
+         BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata, branchActiveMasterBPStrong,
+         branchDeactiveMasterBPStrong, branchPropMasterBPStrong, branchMasterSolvedBPStrong,
+         branchDataDeleteBPStrong, NULL, NULL, NULL) );
    assert(branchrule != NULL);
 
    branchruledata->initialized = FALSE;
@@ -1761,10 +1759,6 @@ SCIP_RETCODE GCGincludeBranchruleBPStrong(
    SCIP_CALL( SCIPaddBoolParam(origscip, "branching/bp_strong/ryanfoster/usemostfrac",
          "should single-variable-fractionality be used as a heuristic for strong branching for Ryan-Foster branching?",
          NULL, FALSE, DEFAULT_RFUSEMOSTFRAC, NULL, NULL) );
-
-
-   /* notify cons_integralorig about the branching rule */
-   SCIP_CALL( GCGconsIntegralorigAddBranchrule(gcg, branchrule) );
 
    return SCIP_OKAY;
 }

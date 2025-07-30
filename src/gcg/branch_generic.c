@@ -2978,16 +2978,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsGeneric)
 static
 SCIP_DECL_BRANCHINIT(branchInitGeneric)
 {
-   SCIP_BRANCHRULEDATA* branchruledata;
-
-   assert(branchrule != NULL);
-   branchruledata = SCIPbranchruleGetData(branchrule);
-   assert(branchruledata != NULL);
-
    SCIPdebugMessage("Init method of Vanderbecks generic branching\n");
-
-   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, branchrule, NULL, NULL,
-         NULL, branchPropMasterGeneric, NULL, branchDataDeleteGeneric, branchNewColGeneric, NULL, NULL) );
 
    return SCIP_OKAY;
 }
@@ -3029,11 +3020,15 @@ SCIP_RETCODE GCGincludeBranchruleGeneric(
    SCIPdebugMessage("Include method of Vanderbecks generic branching\n");
 
    /* include branching rule */
-   SCIP_CALL( SCIPincludeBranchrule(masterprob, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
-         BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchCopyGeneric,
-         branchFreeGeneric, branchInitGeneric, branchExitGeneric, branchInitsolGeneric,
-         branchExitsolGeneric, branchExeclpGeneric, branchExecextGeneric, branchExecpsGeneric,
-         branchruledata) );
+   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, &branchrule, NULL, BRANCHRULE_NAME,
+         BRANCHRULE_DESC, BRANCHRULE_PRIORITY, BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata, NULL,
+         NULL, branchPropMasterGeneric, NULL, branchDataDeleteGeneric, branchNewColGeneric, NULL, NULL) );
+   SCIP_CALL( SCIPsetBranchruleInit(masterprob, branchrule, branchInitGeneric) );
+   SCIP_CALL( SCIPsetBranchruleFree(masterprob, branchrule, branchFreeGeneric) );
+   SCIP_CALL( SCIPsetBranchruleExecLp(masterprob, branchrule, branchExeclpGeneric) );
+   SCIP_CALL( SCIPsetBranchruleExecExt(masterprob, branchrule, branchExecextGeneric) );
+   SCIP_CALL( SCIPsetBranchruleExecPs(masterprob, branchrule, branchExecpsGeneric) );
+   SCIP_CALL( SCIPsetBranchruleCopy(masterprob, branchrule, branchCopyGeneric) );
 
    /* include event handler for adding generated mastervars to the branching constraints */
    SCIP_CALL( SCIPincludeEventhdlr(masterprob, EVENTHDLR_NAME, EVENTHDLR_DESC,
@@ -3043,8 +3038,6 @@ SCIP_RETCODE GCGincludeBranchruleGeneric(
 
    branchrule = SCIPfindBranchrule(masterprob, BRANCHRULE_NAME);
    assert(branchrule != NULL);
-
-   SCIP_CALL( GCGconsIntegralorigAddBranchrule(gcg, branchrule) );
 
    return SCIP_OKAY;
 }

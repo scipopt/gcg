@@ -822,18 +822,6 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
 static
 SCIP_DECL_BRANCHINIT(branchInitOrig)
 {
-   SCIP_BRANCHRULEDATA* branchruledata;
-
-   assert(branchrule != NULL);
-   assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
-   branchruledata = SCIPbranchruleGetData(branchrule);
-   assert(branchruledata != NULL);
-
-   SCIPdebugMessage("Init orig branching rule\n");
-
-   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, branchrule, NULL, branchActiveMasterOrig,
-         branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolvedOrig, branchDataDeleteOrig, NULL, NULL, NULL) );
-
    return SCIP_OKAY;
 }
 
@@ -1027,8 +1015,9 @@ SCIP_RETCODE GCGincludeBranchruleOrig(
    branchruledata->gcg = gcg;
 
    /* include branching rule */
-   SCIP_CALL( SCIPincludeBranchruleBasic(masterprob, &branchrule, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
-            BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata) );
+   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, &branchrule, NULL, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
+         BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata, branchActiveMasterOrig,
+         branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolvedOrig, branchDataDeleteOrig, NULL, NULL, NULL) );
    assert(branchrule != NULL);
 
    /* set non fundamental callbacks via setter functions */
@@ -1096,9 +1085,6 @@ SCIP_RETCODE GCGincludeBranchruleOrig(
    SCIP_CALL( SCIPaddRealParam(origprob, "branching/orig/phase2gapweight",
          "how much impact should the node gap have on the number of precisely evaluated candidates in phase 2 during strong branching?",
          NULL, FALSE, DEFAULT_PHASE2GAPWEIGHT, 0, 1, NULL, NULL) );
-
-   /* notify cons_integralorig about the original variable branching rule */
-   SCIP_CALL( GCGconsIntegralorigAddBranchrule(gcg, branchrule) );
 
    return SCIP_OKAY;
 }

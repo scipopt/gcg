@@ -64,6 +64,7 @@
 #include "gcg/struct_gcg.h"
 #include "gcg/struct_branchgcg.h"
 
+#include "gcg/cons_integralorig.h"
 #include "gcg/cons_origbranch.h"
 #include "gcg/cons_masterbranch.h"
 #include "gcg/pricer_gcg.h"
@@ -2694,6 +2695,16 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
+   /* free array for branchrules*/
+   if( relaxdata->nbranchrules > 0 )
+   {
+      for( i = 0; i < relaxdata->nbranchrules; i++ )
+      {
+         SCIPfreeMemory(scip, &(relaxdata->branchrules[i]));
+      }
+      SCIPfreeMemoryArray(scip, &(relaxdata->branchrules));
+   }
+
    /* free pricing problems */
    if( relaxdata->pricingprobs != NULL )
    {
@@ -2773,16 +2784,6 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
    {
       SCIP_CALL( GCGdecompFree(relaxdata->gcg, &relaxdata->decomp) );
       relaxdata->decomp = NULL;
-   }
-
-   /* free array for branchrules*/
-   if( relaxdata->nbranchrules > 0 )
-   {
-      for( i = 0; i < relaxdata->nbranchrules; i++ )
-      {
-         SCIPfreeMemory(scip, &(relaxdata->branchrules[i]));
-      }
-      SCIPfreeMemoryArray(scip, &(relaxdata->branchrules));
    }
 
    relaxdata->nbranchrules = 0;
@@ -3638,8 +3639,16 @@ SCIP_RETCODE GCGincludeRelaxGcg(
 /** includes a branching rule into the relaxator data */
 SCIP_RETCODE GCGrelaxIncludeBranchrule(
    GCG*                  gcg,                /**< SCIP data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule for which callback methods are saved */
+   SCIP_BRANCHRULE**     branchrule,         /**< branching rule for which callback methods are saved */
    GCG_BRANCHRULE**      gcgbranchrule,      /**< pointer to store created GCG branch rule (can be NULL) */
+   const char*           name,               /**< name of branching rule */
+   const char*           desc,               /**< description of branching rule */
+   int                   priority,           /**< priority of the branching rule */
+   int                   maxdepth,           /**< maximal depth level, up to which this branching rule should be used (or -1) */
+   SCIP_Real             maxbounddist,       /**< maximal relative distance from current node's dual bound to primal bound
+                                              *   compared to best node's dual bound for applying branching rule
+                                              *   (0.0: only on current best node, 1.0: on all nodes) */
+   SCIP_BRANCHRULEDATA*  branchruledata,     /**< branching rule data */
    GCG_DECL_BRANCHACTIVEMASTER((*branchactivemaster)),/**<  activation method for branchrule */
    GCG_DECL_BRANCHDEACTIVEMASTER((*branchdeactivemaster)),/**<  deactivation method for branchrule */
    GCG_DECL_BRANCHPROPMASTER((*branchpropmaster)),/**<  propagation method for branchrule */
@@ -3667,9 +3676,12 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
 
    pos = relaxdata->nbranchrules;
 
+   SCIP_CALL( SCIPincludeBranchruleBasic(GCGgetMasterprob(gcg), branchrule, name, desc, priority,
+         maxdepth, maxbounddist, branchruledata) );
+
    /* store callback functions */
    SCIP_CALL( SCIPallocMemory(GCGgetOrigprob(gcg), &(relaxdata->branchrules[pos])) );
-   relaxdata->branchrules[pos]->branchrule = branchrule;
+   relaxdata->branchrules[pos]->branchrule = *branchrule;
    relaxdata->branchrules[pos]->branchactivemaster = branchactivemaster;
    relaxdata->branchrules[pos]->branchdeactivemaster = branchdeactivemaster;
    relaxdata->branchrules[pos]->branchpropmaster = branchpropmaster;
@@ -3682,6 +3694,8 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
 
    if( gcgbranchrule != NULL )
       *gcgbranchrule = relaxdata->branchrules[pos];
+   
+   SCIP_CALL( GCGconsIntegralorigAddBranchrule(gcg, *branchrule) );
 
    return SCIP_OKAY;
 }

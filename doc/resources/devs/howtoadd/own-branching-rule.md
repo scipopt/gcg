@@ -26,9 +26,8 @@ With the following steps, we explain how you can **add your own branching rule p
 3. **Make GCG use it**
   1. Add it to gcgplugins.c by adding
     1. the line <tt>\#include branch_mybranchrule.h</tt> in the `/* GCG specific stuff */` section.
-    2. the line `SCIP_CALL( SCIPincludeBranchMybranchrule(scip) );`.
-  2. the branching rule and the additional callbacks have to be registered by a call of GCGrelaxIncludeBranchrule(), as it is done in the BRANCHINIT callback of branch_mybranchrule.
-  3. Add it to your build system:
+    2. the line `SCIP_CALL( GCGincludeBranchMybranchrule(scip) );`.
+  2. Add it to your build system:
     1. _Using Makefile:_ Adjust your Makefile such that these files are compiled and linked to your project by adding your branching rule with ending `.o` (`branch_mybranchrule.o`) to the list under `LIBOBJ =` in the file `Makefile` in the root folder.
     2. _Using CMake:_ In `src/CMakeLists.txt`, add your `branch_mybranchrule.cpp` below `set(gcgsources` and your `branch_mybranchrule.h` below the line `set(gcgheaders`.
 

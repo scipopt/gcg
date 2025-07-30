@@ -62,8 +62,16 @@ SCIP_RETCODE GCGincludeRelaxGcg(
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxIncludeBranchrule(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule for which callback methods are saved */
+   SCIP_BRANCHRULE**     branchrule,         /**< branching rule for which callback methods are saved */
    GCG_BRANCHRULE**      gcgbranchrule,      /**< pointer to store created GCG branch rule (can be NULL) */
+   const char*           name,               /**< name of branching rule */
+   const char*           desc,               /**< description of branching rule */
+   int                   priority,           /**< priority of the branching rule */
+   int                   maxdepth,           /**< maximal depth level, up to which this branching rule should be used (or -1) */
+   SCIP_Real             maxbounddist,       /**< maximal relative distance from current node's dual bound to primal bound
+                                              *   compared to best node's dual bound for applying branching rule
+                                              *   (0.0: only on current best node, 1.0: on all nodes) */
+   SCIP_BRANCHRULEDATA*  branchruledata,     /**< branching rule data */
    GCG_DECL_BRANCHACTIVEMASTER((*branchactivemaster)),/**<  activation method for branchrule */
    GCG_DECL_BRANCHDEACTIVEMASTER((*branchdeactivemaster)),/**<  deactivation method for branchrule */
    GCG_DECL_BRANCHPROPMASTER((*branchpropmaster)),/**<  propagation method for branchrule */
