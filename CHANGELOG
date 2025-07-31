@@ -116,7 +116,6 @@ New/modified/removed API functions:
 - added function 'GCGmastersepacutGetData'
 - added function 'GCGmastersepacutSetVarHistory'
 - added function 'GCGcreateChvatalGomoryCut'
-- added function 'GCGmastersepacutIsChvatalGomory'
 - added function 'GCGchvatalGomoryCutGetNWeights'
 - added function 'GCGchvatalGomoryCutGetWeights'
 - added function 'GCGchvatalGomoryCutGetConssIndices'

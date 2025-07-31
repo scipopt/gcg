@@ -46,8 +46,9 @@
 extern "C" {
 #endif
 
-typedef struct GCG_BranchData GCG_BRANCHDATA;   /**< branching data */
-typedef struct GCG_Branchrule GCG_BRANCHRULE;   /**< branching rule */
+typedef struct GCG_BranchData GCG_BRANCHDATA;         /**< branching data */
+typedef struct GCG_Branchrule GCG_BRANCHRULE;         /**< branching rule */
+typedef struct GCG_BranchConsData GCG_BRANCHCONSDATA; /**< branching cons data */
 
 /** type of variable bound: lower or upper bound */
 enum GCG_BoundType

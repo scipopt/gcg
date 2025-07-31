@@ -84,6 +84,7 @@ set(gcgsources
     gcg/event_solvingstats.c
     gcg/gcg.cpp
     gcg/gcg_general.c
+    gcg/gcgcgcut.c
     gcg/gcgcol.c
     gcg/gcggithash.c
     gcg/gcgheur.c

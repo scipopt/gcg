@@ -43,14 +43,6 @@
 extern "C" {
 #endif
 
-/** type of the master separator cut */
-enum GCG_SeparatorMasterCutType
-{
-   GCG_MASTERSEPACUTTYPE_CHVATALGOMORY = 0                /**< cut is a Chvatal-Gomory cut */
-};
-typedef enum GCG_SeparatorMasterCutType GCG_SEPARATORMASTERCUTTYPE;
-
-typedef struct GCG_ChvatalGomoryCutData GCG_CHVATALGOMORYCUTDATA;
 typedef struct GCG_SeparatorMasterCutData GCG_SEPARATORMASTERCUTDATA;
 typedef struct GCG_SeparatorMasterCut GCG_SEPARATORMASTERCUT;
 

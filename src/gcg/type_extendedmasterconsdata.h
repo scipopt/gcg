@@ -55,7 +55,6 @@ typedef union GCG_ExtendedMasterCons GCG_EXTENDEDMASTERCONS;
 
 typedef struct GCG_PricingModification GCG_PRICINGMODIFICATION;
 typedef struct GCG_ExtendedMasterConsData GCG_EXTENDEDMASTERCONSDATA;
-typedef struct GCG_ExtendedMasterConsDataData GCG_EXTENDEDMASTERCONSDATADATA;
 
 #ifdef __cplusplus
 }

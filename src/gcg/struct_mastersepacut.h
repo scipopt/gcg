@@ -48,29 +48,10 @@ extern "C" {
 #endif
 
 
-/** additional data for subset row cuts */
-struct GCG_ChvatalGomoryCutData
-{
-   int*                    conssindices;           /**< indices of constraints used to create cut */
-   SCIP_Real*              weights;                /**< weights used to create cut */
-   int                     nconssindices;          /**< number of constraints used to create cut */
-
-};
-
-/** additional data for master separator cuts */
-struct GCG_SeparatorMasterCutData
-{
-   union
-   {
-      GCG_CHVATALGOMORYCUTDATA    chvatalgomorycutdata;       /**< data for Chvatal-Gomory cut */
-   } data;
-};
-
 /** master separator cut data structure */
 struct GCG_SeparatorMasterCut
 {
    GCG_SEPA*                        sepa;                   /**< GCG Master Separator which generated the mastercut */
-   GCG_SEPARATORMASTERCUTTYPE       type;                   /**< type of mastercut */
    GCG_VARHISTORY*                  knownvarhistory;        /**< pointer to the history of priced variables */
    GCG_SEPARATORMASTERCUTDATA*      data;                   /**< additional data helpful to compute coefficients */
    int                              nuses;                  /**< number of times this separator mastercut is referenced */

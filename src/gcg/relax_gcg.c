@@ -33,7 +33,7 @@
  * @author  Martin Bergner
  * @author  Alexander Gross
  * @author  Michael Bastubbe
- * @author Erik Muehmer
+ * @author  Erik Muehmer
  *
  * \bug
  * - The memory limit is not strictly enforced
@@ -63,6 +63,7 @@
 #include "gcg/gcg.h"
 #include "gcg/struct_gcg.h"
 #include "gcg/struct_branchgcg.h"
+#include "gcg/struct_sepagcg.h"
 
 #include "gcg/cons_integralorig.h"
 #include "gcg/cons_origbranch.h"
@@ -193,6 +194,10 @@ struct SCIP_RelaxData
    SCIP_Real             stashedgaplimit;        /**< stashed gap limit */
    int                   stashedsollimit;        /**< stashed solution limit */
    SCIP_Real             stashedtimelimit;       /**< stashed time limit */
+
+   /* separator data*/
+   GCG_SEPA**            separators;             /**< separators registered to the relaxator */
+   int                   nseparators;            /**< number of separators registered to the relaxator */
 
 #ifdef _OPENMP
    GCG_LOCKS*            locks;                  /** OpenMP locks */
@@ -598,6 +603,28 @@ SCIP_RETCODE ensureSizeBranchrules(
    return SCIP_OKAY;
 }
 
+/** ensures size of branchrules array: enlarges the array by 1 */
+static
+SCIP_RETCODE ensureSizeSeparators(
+   GCG*                  gcg,
+   SCIP_RELAXDATA*       relaxdata
+   )
+{
+   assert(gcg != NULL);
+   assert(relaxdata != NULL);
+   assert((relaxdata->separators == NULL) == (relaxdata->nseparators == 0));
+
+   if( relaxdata->separators == 0 )
+   {
+      SCIP_CALL( SCIPallocMemoryArray(GCGgetOrigprob(gcg), &(relaxdata->separators), 1) ); /*lint !e506*/
+   }
+   else
+   {
+      SCIP_CALL( SCIPreallocMemoryArray(GCGgetOrigprob(gcg), &(relaxdata->separators), (size_t)relaxdata->nseparators+1) );
+   }
+
+   return SCIP_OKAY;
+}
 
 /** check whether the master problem has a set partitioning or set covering structure */
 static
@@ -2627,6 +2654,9 @@ SCIP_RETCODE initRelaxdata(
    relaxdata->nactivebranchextendedmasterconss = 0;
    relaxdata->maxactivebranchextendedmasterconss = 0;
 
+   relaxdata->separators = NULL;
+   relaxdata->nseparators = 0;
+
    SCIP_CALL( GCGcreateParamsVisu(gcg, &(relaxdata->paramsvisu)) );
    assert(relaxdata->paramsvisu != NULL);
 
@@ -2703,6 +2733,16 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
          SCIPfreeMemory(scip, &(relaxdata->branchrules[i]));
       }
       SCIPfreeMemoryArray(scip, &(relaxdata->branchrules));
+   }
+
+   /* free array for separators*/
+   if( relaxdata->nseparators > 0 )
+   {
+      for( i = 0; i < relaxdata->nseparators; i++ )
+      {
+         SCIPfreeMemory(scip, &(relaxdata->separators[i]));
+      }
+      SCIPfreeMemoryArray(scip, &(relaxdata->separators));
    }
 
    /* free pricing problems */
@@ -5718,4 +5758,63 @@ GCG* GCGrelaxGetGcg(
    assert(relaxdata != NULL);
 
    return relaxdata->gcg;
+}
+
+/** includes a separator into the relaxator data */
+SCIP_RETCODE GCGrelaxIncludeSepa(
+   GCG*                  gcg,                /**< SCIP data structure */
+   SCIP_SEPA**           sepa,               /**< pointer to store created scip separator */
+   GCG_SEPA**            gcgsepa,            /**< pointer to store created GCG separator (can be NULL) */
+   const char*           name,               /**< name of separator */
+   const char*           desc,               /**< description of separator */
+   int                   priority,           /**< priority of separator (>= 0: before, < 0: after constraint handlers) */
+   int                   freq,               /**< frequency for calling separator */
+   SCIP_Real             maxbounddist,       /**< maximal relative distance from current node's dual bound to primal bound compared
+                                              *   to best node's dual bound for applying separation */
+   SCIP_Bool             usessubscip,        /**< does the separator use a secondary SCIP instance? */
+   SCIP_Bool             delay,              /**< should separator be delayed, if other separators found cuts? */
+   SCIP_DECL_SEPAEXECLP  ((*sepaexeclp)),    /**< LP solution separation method of separator */
+   SCIP_DECL_SEPAEXECSOL ((*sepaexecsol)),   /**< arbitrary primal solution separation method of separator */
+   SCIP_SEPADATA*        sepadata,           /**< separator data */
+   GCG_DECL_SEPAADJUSTCOL((*sepaadjustcol)), /**< method for modifying the outdated values of a gcg column */
+   GCG_DECL_SEPAGETCOLCOEFFICIENT((*sepagetcolcoef)),/**< method for computing the column coefficient for a cut */
+   GCG_DECL_SEPAGETVARCOEFFICIENT((*sepagetvarcoef)),/**< method for computing the column coefficient for a cut */
+   GCG_DECL_SEPASETOBJECTIVE((*sepasetobjective)),/**< method for modifying the objectives of pricing problems to account for master cut */
+   GCG_DECL_SEPAMASTERCUTDELETE((*sepamastercutdelete))/**< callback to delete the sepamastercutdata */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   int pos;
+
+   assert(gcg != NULL);
+   assert(sepa != NULL);
+
+   relax = GCGgetRelax(gcg);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   SCIP_CALL( ensureSizeSeparators(gcg, relaxdata) );
+
+   pos = relaxdata->nseparators;
+
+   SCIP_CALL( SCIPincludeSepaBasic(GCGgetMasterprob(gcg), sepa, name, desc, priority, freq, maxbounddist, usessubscip,
+                                   delay, sepaexeclp, sepaexecsol, sepadata) );
+
+   /* store callback functions */
+   SCIP_CALL( SCIPallocMemory(GCGgetOrigprob(gcg), &(relaxdata->separators[pos])) );
+   relaxdata->separators[pos]->separator = *sepa;
+   relaxdata->separators[pos]->sepaadjustcol = sepaadjustcol;
+   relaxdata->separators[pos]->sepagetcolcoefficient = sepagetcolcoef;
+   relaxdata->separators[pos]->sepagetvarcoefficient = sepagetvarcoef;
+   relaxdata->separators[pos]->sepasetobjective = sepasetobjective;
+   relaxdata->separators[pos]->sepamastercutdelete = sepamastercutdelete;
+   relaxdata->nseparators++;
+
+   if( gcgsepa != NULL )
+      *gcgsepa = relaxdata->separators[pos];
+
+   return SCIP_OKAY;
 }

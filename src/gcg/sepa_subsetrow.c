@@ -607,7 +607,6 @@ SCIP_DECL_SEPAEXIT(sepaExitSubsetrow)
    SCIP_SEPADATA* sepadata;
    assert(sepa != NULL);
    sepadata = SCIPsepaGetData(sepa);
-   SCIPfreeMemory(scip, &(sepadata->sepa));
 
    if( sepadata->origmasterconss != NULL && sepadata->filteredmasterconss )
    {
@@ -876,31 +875,44 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
 
 /** compute cut coefficient for a column */
 static
-GCG_DECL_SEPAGETCOLCOEFFICIENTS(gcgsepaGetColCoefficientSubsetrow)
+GCG_DECL_SEPAGETCOLCOEFFICIENT(sepaGetColCoefficientSubsetrow)
 {
+   assert(strcmp(SEPA_NAME, SCIPsepaGetName(GCGsepaGetScipSeparator(sepa))) == 0);
    return GCGchvatalGomoryCutGetColumnCoefficient(gcg, cut, gcgcol, coeff);
 }
 
 /** compute cut coefficient for master variable */
 static
-GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientSubsetrow)
+GCG_DECL_SEPAGETVARCOEFFICIENT(sepaGetVarCoefficientSubsetrow)
 {
+   assert(strcmp(SEPA_NAME, SCIPsepaGetName(GCGsepaGetScipSeparator(sepa))) == 0);
    return GCGchvatalGomoryCutGetVariableCoefficient(gcg, cut, vars, vals, nvars, probnr, coef);
 }
 
 /** modifies the objective values of the pricing variables affected by the master cut */
 static
-GCG_DECL_SEPASETOBJECTIVE(gcgsepaSetObjectiveSubsetrow)
+GCG_DECL_SEPASETOBJECTIVE(sepaSetObjectiveSubsetrow)
 {
+   assert(strcmp(SEPA_NAME, SCIPsepaGetName(GCGsepaGetScipSeparator(sepa))) == 0);
    return GCGchvatalGomorySetPricingObjectives(gcg, cut, dual);
 }
 
 /** modifies outdated column to respect cut */
 static
-GCG_DECL_SEPAADJUSTCOL(gcgsepaAdjustCol)
+GCG_DECL_SEPAADJUSTCOL(sepaAdjustColSubsetrow)
 {
+   assert(strcmp(SEPA_NAME, SCIPsepaGetName(GCGsepaGetScipSeparator(sepa))) == 0);
    return GCGchvatalGomoryAdjustGCGColumn(gcg, cut, gcgcol);
 }
+
+/** deletes sepamastercutdata */
+static
+GCG_DECL_SEPAMASTERCUTDELETE(sepaMastercutDeleteSubsetrow)
+{
+   assert(strcmp(SEPA_NAME, SCIPsepaGetName(GCGsepaGetScipSeparator(sepa))) == 0);
+   return GCGfreeChvatalGomoryCutData(gcg, data);
+}
+
 
 /** initialization method of separator (called after problem was transformed) */
 static
@@ -914,14 +926,6 @@ SCIP_DECL_SEPAINIT(sepaInitSubsetrow)
 
    sepadata = SCIPsepaGetData(sepa);
    assert(sepadata != NULL);
-
-   SCIP_CALL( SCIPallocMemory(scip, &(sepadata->sepa)) );
-   sepadata->sepa->separator = sepa;
-   sepadata->sepa->gcgsepagetvarcoefficient = gcgsepaGetVarCoefficientSubsetrow;
-   sepadata->sepa->gcgsepagetcolcoefficient = gcgsepaGetColCoefficientSubsetrow;
-   sepadata->sepa->gcgsepasetobjective = gcgsepaSetObjectiveSubsetrow;
-   sepadata->sepa->gcgsepaadjustcol = gcgsepaAdjustCol;
-   assert(sepadata->sepa != NULL);
 
    sepadata->ngeneratedcut = 0;
 
@@ -941,13 +945,13 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
    SCIP* scip;
    SCIP_SEPADATA* sepadata;
    SCIP_SEPA* sepa;
+   GCG_SEPA* gcgsepa;
    SCIP* origscip;
 
    scip = GCGgetMasterprob(gcg);
 
    /* create subsetrow separator data */
    SCIP_CALL( SCIPallocBlockMemory(scip, &sepadata) );
-   sepa = NULL;
    sepadata->gcg = gcg;
    sepadata->ngeneratedcut = 0;
    sepadata->randnumgen = NULL;
@@ -961,11 +965,13 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
    SCIP_CALL( SCIPcreateRandom(scip, &(sepadata->randnumgen),
                                SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED), TRUE) );
 
-   SCIP_CALL( SCIPincludeSepaBasic(scip, &sepa, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
-                                   SEPA_USESSUBSCIP, SEPA_DELAY,
-                                   sepaExeclpSubsetrow, NULL,
-                                   sepadata) );
+   SCIP_CALL( GCGrelaxIncludeSepa(gcg, &sepa, &gcgsepa, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
+      SEPA_USESSUBSCIP, SEPA_DELAY, sepaExeclpSubsetrow, NULL, sepadata, sepaAdjustColSubsetrow, sepaGetColCoefficientSubsetrow,
+      sepaGetVarCoefficientSubsetrow, sepaSetObjectiveSubsetrow, sepaMastercutDeleteSubsetrow) );
+
    assert(sepa != NULL);
+   assert(gcgsepa != NULL);
+   sepadata->sepa = gcgsepa;
 
    /* set non fundamental callbacks via setter functions */
    SCIP_CALL( SCIPsetSepaFree(scip, sepa, sepaFreeSubsetrow) );

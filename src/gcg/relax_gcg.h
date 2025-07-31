@@ -33,6 +33,7 @@
  * @author  Christian Puchert
  * @author  Martin Bergner
  * @author  Oliver Gaul
+ * @author  Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -328,6 +329,30 @@ SCIP_RETCODE GCGsetPricingProblemParameters(
 GCG_EXPORT
 GCG* GCGrelaxGetGcg(
    SCIP*                 origprob            /**< SCIP data structure */
+   );
+
+/** includes a separator into the relaxator data */
+GCG_EXPORT
+SCIP_RETCODE GCGrelaxIncludeSepa(
+   GCG*                  gcg,                /**< SCIP data structure */
+   SCIP_SEPA**           sepa,               /**< pointer to store created scip separator */
+   GCG_SEPA**            gcgsepa,            /**< pointer to store created GCG separator (can be NULL) */
+   const char*           name,               /**< name of separator */
+   const char*           desc,               /**< description of separator */
+   int                   priority,           /**< priority of separator (>= 0: before, < 0: after constraint handlers) */
+   int                   freq,               /**< frequency for calling separator */
+   SCIP_Real             maxbounddist,       /**< maximal relative distance from current node's dual bound to primal bound compared
+                                              *   to best node's dual bound for applying separation */
+   SCIP_Bool             usessubscip,        /**< does the separator use a secondary SCIP instance? */
+   SCIP_Bool             delay,              /**< should separator be delayed, if other separators found cuts? */
+   SCIP_DECL_SEPAEXECLP  ((*sepaexeclp)),    /**< LP solution separation method of separator */
+   SCIP_DECL_SEPAEXECSOL ((*sepaexecsol)),   /**< arbitrary primal solution separation method of separator */
+   SCIP_SEPADATA*        sepadata,           /**< separator data */
+   GCG_DECL_SEPAADJUSTCOL((*sepaadjustcol)), /**< method for modifying the outdated values of a gcg column */
+   GCG_DECL_SEPAGETCOLCOEFFICIENT((*sepagetcolcoef)),/**< method for computing the column coefficient for a cut */
+   GCG_DECL_SEPAGETVARCOEFFICIENT((*sepagetvarcoef)),/**< method for computing the column coefficient for a cut */
+   GCG_DECL_SEPASETOBJECTIVE((*sepasetobjective)),/**< method for modifying the objectives of pricing problems to account for master cut */
+   GCG_DECL_SEPAMASTERCUTDELETE((*sepamastercutdelete))/**< callback to delete the sepamastercutdata */
    );
 
 #ifdef __cplusplus

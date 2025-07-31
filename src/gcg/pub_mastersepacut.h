@@ -58,12 +58,6 @@ GCG_VARHISTORY* GCGmastersepacutGetVarHistory(
    GCG_SEPARATORMASTERCUT*       mastersepacut     /**< separator master cut */
    );
  
-/** returns the cut type of the separator master cut */
-GCG_EXPORT
-GCG_SEPARATORMASTERCUTTYPE GCGmastersepacutGetCutType(
-   GCG_SEPARATORMASTERCUT*       mastersepacut     /**< separator master cut */
-   );
- 
 /** return the separator which created the cut */
 GCG_EXPORT
 GCG_SEPA* GCGmastersepacutGetSeparator(
@@ -94,11 +88,12 @@ SCIP_RETCODE GCGcreateChvatalGomoryCut(
    int*                          indices,               /**< indices of constraints used to create the cut */
    int                           n                      /**< number of constraints used to create the cut */
    );
- 
-/** returns TRUE or FALSE whether cut is a Chvatal-Gomory cut */
+
+/** frees data of Chvatal-Gomory cut */
 GCG_EXPORT
-SCIP_Bool GCGmastersepacutIsChvatalGomory(
-   GCG_SEPARATORMASTERCUT*       mastersepacut     /**< separator master cut */
+SCIP_RETCODE GCGfreeChvatalGomoryCutData(
+   GCG*                             gcg,           /**< GCG data structure */
+   GCG_SEPARATORMASTERCUTDATA**     data           /**< pointer to data of subset row cut */
    );
  
 /** returns the number of weights of Chvatal-Gomory cut */
@@ -183,7 +178,7 @@ int GCGsepacutGetNActiveCuts(
    );
 
 #ifdef NDEBUG
-#define GCGextendedmasterconsGetSepamastercut(extendedmasterconsdata) ((GCG_SEPARATORMASTERCUT*) ((extendedmasterconsdata)->data))
+#define GCGextendedmasterconsGetSepamastercut(extendedmasterconsdata) ((GCG_SEPARATORMASTERCUT*) ((extendedmasterconsdata)->data.sepamastercut))
 #else
 /** returns the corresponding sepamastercut */
 GCG_EXPORT
@@ -210,7 +205,6 @@ GCG_EXPORT
 SCIP_RETCODE GCGcreateMasterSepaCut(
    GCG*                          gcg,                 /**< GCG data structure */
    GCG_SEPARATORMASTERCUT**      mastersepacut,       /**< pointer to store separator master cut */
-   GCG_SEPARATORMASTERCUTTYPE    mastersepacuttype,   /**< type of separator master cut */
    GCG_SEPA*                     sepa,                /**< separator creating this cut */
    GCG_VARHISTORY*               varhistory,          /**< variable history */
    GCG_SEPARATORMASTERCUTDATA*   mastersepacutdata    /**< separator master cut data */
@@ -226,6 +220,15 @@ SCIP_RETCODE GCGextendedmasterconsCreateForSepamastercut(
    GCG_PRICINGMODIFICATION**     pricingmodifications,      /**< related pricing modifications */
    int                           npricingmodifications      /**< number of pricing modifications */
    );
+
+/** updates the given gcgcol such that it respects the given cut*/
+GCG_EXPORT
+SCIP_RETCODE GCGmastersepacutUpdateCol(
+   GCG*                          gcg,              /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*   mastersepacut,    /**< cut that should be added to the gcgcol */
+   GCG_COL*                      col               /**< gcgcol that should be updated */
+   );
+
 
 #ifdef __cplusplus
 }

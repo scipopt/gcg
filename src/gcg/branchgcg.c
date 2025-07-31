@@ -35,12 +35,7 @@
 
 #include "gcg/branchgcg.h"
 #include "gcg/struct_branchgcg.h"
-
-struct GCG_ExtendedMasterConsDataData
-{
-    GCG_BRANCHRULE* branchrule;
-    GCG_BRANCHDATA* branchdata;
-};
+#include "gcg/struct_extendedmasterconsdata.h"
 
 /** creates an extended master cons for a cons created by a branch rule */
 SCIP_RETCODE GCGbranchCreateExtendedmastercons(
@@ -53,7 +48,7 @@ SCIP_RETCODE GCGbranchCreateExtendedmastercons(
     GCG_BRANCHDATA*                  branchdata                       /**< any data that might be required to calculate the coefficient of a column solution */
     )
 {
-    GCG_EXTENDEDMASTERCONSDATADATA* data = NULL;
+    GCG_BRANCHCONSDATA* data = NULL;
 
     SCIP_CALL( SCIPallocBlockMemory(GCGgetMasterprob(gcg), &data) );
     data->branchrule = branchrule;
@@ -73,11 +68,11 @@ SCIP_RETCODE GCGbranchGetExtendedmasterconsCoeff(
     SCIP_Real*                       coeff                         /**< pointer to store the coefficient */
     )
 {
-    GCG_EXTENDEDMASTERCONSDATADATA* data;
+    GCG_BRANCHCONSDATA* data;
     assert(extendedmasterconsdata != NULL);
     assert(GCGextendedmasterconsGetType(extendedmasterconsdata) == GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS);
 
-    data = GCGextendedmasterconsGetData(extendedmasterconsdata);
+    data = extendedmasterconsdata->data.branchconsdata;
     assert(data != NULL);
     SCIP_CALL( data->branchrule->branchgetextendedmasterconscoeff(gcg, data->branchdata, extendedmasterconsdata, solvars, solvals, nsolvars, probnr, coeff) );
     return SCIP_OKAY;
@@ -89,12 +84,12 @@ SCIP_RETCODE GCGbranchFreeExtendedmasterconsBranchData(
     GCG_EXTENDEDMASTERCONSDATA**     extendedmasterconsdata        /**< extended master cons data */
     )
 {
-    GCG_EXTENDEDMASTERCONSDATADATA* data;
+    GCG_BRANCHCONSDATA* data;
     assert(extendedmasterconsdata != NULL);
     assert(*extendedmasterconsdata != NULL);
     assert(GCGextendedmasterconsGetType(*extendedmasterconsdata) == GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS);
 
-    data = GCGextendedmasterconsGetData(*extendedmasterconsdata);
+    data = (*extendedmasterconsdata)->data.branchconsdata;
     assert(data != NULL);
     SCIPfreeBlockMemory(GCGgetMasterprob(gcg), &data);
     SCIP_CALL( GCGextendedmasterconsFree(gcg, extendedmasterconsdata) );

@@ -50,10 +50,11 @@ extern "C" {
 struct GCG_Sepa
 {
    SCIP_SEPA*                             separator;                     /**< SCIP separator */
-   GCG_DECL_SEPAGETCOLCOEFFICIENTS        ((*gcgsepagetcolcoefficient)); /**< compute cut coefficient using gcg column */
-   GCG_DECL_SEPAGETVARCOEFFICIENT         ((*gcgsepagetvarcoefficient)); /**< compute cut coefficient using variable values */
-   GCG_DECL_SEPASETOBJECTIVE              ((*gcgsepasetobjective));      /**< adapt pricing objectives to consider cut */
-   GCG_DECL_SEPAADJUSTCOL                 ((*gcgsepaadjustcol));         /**< modify outdated column to consider cut */
+   GCG_DECL_SEPAGETCOLCOEFFICIENT         ((*sepagetcolcoefficient));    /**< compute cut coefficient using gcg column */
+   GCG_DECL_SEPAGETVARCOEFFICIENT         ((*sepagetvarcoefficient));    /**< compute cut coefficient using variable values */
+   GCG_DECL_SEPASETOBJECTIVE              ((*sepasetobjective));         /**< adapt pricing objectives to consider cut */
+   GCG_DECL_SEPAADJUSTCOL                 ((*sepaadjustcol));            /**< modify outdated column to consider cut */
+   GCG_DECL_SEPAMASTERCUTDELETE           ((*sepamastercutdelete));      /**< delete sepamastercutdata */
 };
 
 #ifdef __cplusplus

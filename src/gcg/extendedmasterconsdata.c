@@ -29,6 +29,7 @@
 /**@file    extendedmasterconsdata.c
  * @brief   methods for interacting with GCG_EXTENDEDMASTERCONSDATA
  * @author  Til Mohr
+ * @author  Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -147,7 +148,7 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromCons(
    SCIP_CONS*                       cons,                            /**< constraint in the master problem that represents the extended master cons */
    GCG_PRICINGMODIFICATION**        pricingmodifications,            /**< pricing modifications for the extended master cons */
    int                              npricingmodifications,           /**< number of pricing modifications for the extended master cons */
-   GCG_EXTENDEDMASTERCONSDATADATA*  data                             /**< any data that might be required to calculate the coefficient of a column solution */
+   GCG_BRANCHCONSDATA*              data                             /**< branchconsdata that belongs to the cons */
    )
 {
 #ifndef NDEBUG
@@ -192,7 +193,7 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromCons(
    (*extendedmasterconsdata)->cons.cons = cons;
    (*extendedmasterconsdata)->pricingmodifications = pricingmodifications;
    (*extendedmasterconsdata)->npricingmodifications = npricingmodifications;
-   (*extendedmasterconsdata)->data = data;
+   (*extendedmasterconsdata)->data.branchconsdata = data;
 
    for( i = 0; i < npricingmodifications; i++ ) {
       SCIPvarGetData(pricingmodifications[i]->coefvar)->data.inferredpricingvardata.extendedmasterconsdata = *extendedmasterconsdata;
@@ -212,7 +213,7 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromRow(
    SCIP_ROW*                        row,                          /**< row in the master problem that represents the extended master cons cut */
    GCG_PRICINGMODIFICATION**        pricingmodifications,         /**< pricing modifications for the extended master cons */
    int                              npricingmodifications,        /**< number of pricing modifications for the extended master cons */
-   GCG_EXTENDEDMASTERCONSDATADATA*  data                          /**< any data that might be required to calculate the coefficient of a column solution */
+   GCG_SEPARATORMASTERCUT*          data                          /**< sepamastercut that corresponds to the row */
    )
 {
 #ifndef NDEBUG
@@ -257,7 +258,7 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromRow(
    (*extendedmasterconsdata)->cons.row = row;
    (*extendedmasterconsdata)->pricingmodifications = pricingmodifications;
    (*extendedmasterconsdata)->npricingmodifications = npricingmodifications;
-   (*extendedmasterconsdata)->data = data;
+   (*extendedmasterconsdata)->data.sepamastercut = data;
 
    for( i = 0; i < npricingmodifications; i++ ) {
       SCIPvarGetData(pricingmodifications[i]->coefvar)->data.inferredpricingvardata.extendedmasterconsdata = *extendedmasterconsdata;
@@ -832,18 +833,6 @@ SCIP_Real* GCGextendedmasterconsGetVals(
       return NULL;
    }
 }
-
-#ifndef NDEBUG
-/** get the additional data */
-GCG_EXTENDEDMASTERCONSDATADATA* GCGextendedmasterconsGetData(
-   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
-   )
-{
-   assert(extendedmasterconsdata != NULL);
-
-   return extendedmasterconsdata->data;
-}
-#endif
 
 /** calculate the coefficient of a column solution in the extended master cons */
 SCIP_RETCODE GCGextendedmasterconsGetCoeff(

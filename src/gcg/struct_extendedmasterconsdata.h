@@ -42,6 +42,8 @@
 #include <scip/type_lp.h>
 #include <scip/type_var.h>
 #include "gcg/type_extendedmasterconsdata.h"
+#include "gcg/type_branchgcg.h"
+#include "gcg/type_mastersepacut.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,7 +76,10 @@ struct GCG_ExtendedMasterConsData
    GCG_EXTENDEDMASTERCONS           cons;                      /**< constraint or row in the master problem that represents the extended master cons */
    GCG_PRICINGMODIFICATION**        pricingmodifications;      /**< array of pricing modifications for the extended master cons */
    int                              npricingmodifications;     /**< number of pricing modifications for the extended master cons */
-   GCG_EXTENDEDMASTERCONSDATADATA*  data;                      /**< any data that might be required to calculate the coefficient of a column solution */
+   union {
+      GCG_BRANCHCONSDATA*           branchconsdata;            /**< branchconsdata in case the extended master cons is of type GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS */
+      GCG_SEPARATORMASTERCUT*       sepamastercut;             /**< sepamastercut in case the extended master cons is of type GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW */
+   } data;                                                     /**< data required to calculate the coefficient of a column solution */
 };
 
 #ifdef __cplusplus

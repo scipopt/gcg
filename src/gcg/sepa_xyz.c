@@ -37,7 +37,7 @@
 #include <assert.h>
 
 #include "sepa_xyz.h"
-#include "type_sepagcg.h"
+#include "gcg/gcg.h"
 
 
 #define SEPA_NAME              "xyz"
@@ -200,65 +200,80 @@ SCIP_DECL_SEPAEXECSOL(sepaExecsolXyz)
  * Callback methods of MASTER separator
  */
 
-/* TODO: Implement all necessary separator methods. The methods with an #if 0 ... #else #define ... are optional */
-
+/* TODO: Implement separator methods. */
 
 /** method for adding new master variable to cut */
-#if 0
 static
-GCG_DECL_SEPAGETCOLCOEFFICIENT(gcgsepaGetColCoefficientXyz)
+GCG_DECL_SEPAGETCOLCOEFFICIENT(sepagetcolcoefficientXyz)
 {  /*lint --e{715}*/
+   assert(strcmp(SEPA_NAME, SCIPsepaGetName(GCGsepaGetScipSeparator(sepa))) == 0);
    SCIPerrorMessage("method of xyz separator not implemented yet\n");
    SCIPABORT(); /*lint --e{527}*/
 
    return SCIP_OKAY;
 }
-#else
-#define gcgsepaGetColCoefficientXyz NULL
-#endif
 
 
 /** method for adding new master variable to cut */
-#if 0
 static
-GCG_DECL_SEPAGETVARCOEFFICIENT(gcgsepaGetVarCoefficientXyz)
+GCG_DECL_SEPAGETVARCOEFFICIENT(sepagetvarcoefficientXyz)
 {  /*lint --e{715}*/
+   assert(strcmp(SEPA_NAME, SCIPsepaGetName(GCGsepaGetScipSeparator(sepa))) == 0);
    SCIPerrorMessage("method of xyz separator not implemented yet\n");
    SCIPABORT(); /*lint --e{527}*/
 
    return SCIP_OKAY;
 }
-#else
-#define gcgsepaGetVarCoefficientXyz NULL
-#endif
 
 
 /** method for adapting pricing objectives to consider cut */
-#if 0
 static
-GCG_DECL_SEPASETOBJECTIVE(gcgsepaSetObjectiveXyz)
+GCG_DECL_SEPASETOBJECTIVE(sepasetobjectiveXyz)
 {  /*lint --e{715}*/
+   assert(strcmp(SEPA_NAME, SCIPsepaGetName(GCGsepaGetScipSeparator(sepa))) == 0);
    SCIPerrorMessage("method of xyz separator not implemented yet\n");
    SCIPABORT(); /*lint --e{527}*/
 
    return SCIP_OKAY;
 }
-#else
-#define gcgsepaSetObjectiveXyz NULL
-#endif
 
+/** method for modifying the outdated values of a gcg column */
+static
+GCG_DECL_SEPAADJUSTCOL(sepaadjustcolXyz)
+{  /*lint --e{715}*/
+   assert(strcmp(SEPA_NAME, SCIPsepaGetName(GCGsepaGetScipSeparator(sepa))) == 0);
+   SCIPerrorMessage("method of xyz separator not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
+
+/** callback to delete the sepamastercutdata */
+static
+GCG_DECL_SEPAMASTERCUTDELETE(sepamastercutdeleteXyz)
+{  /*lint --e{715}*/
+   assert(strcmp(SEPA_NAME, SCIPsepaGetName(GCGsepaGetScipSeparator(sepa))) == 0);
+   SCIPerrorMessage("method of xyz separator not implemented yet\n");
+   SCIPABORT(); /*lint --e{527}*/
+
+   return SCIP_OKAY;
+}
 
 /*
  * separator specific interface methods
  */
 
 /** creates the xyz separator and includes it in SCIP */
-SCIP_RETCODE SCIPincludeSepaXyz(
-   SCIP*                 scip                /**< SCIP data structure */
+SCIP_RETCODE GCGincludeSepaXyz(
+   GCG*                 gcg                /**< GCG data structure */
 )
 {
    SCIP_SEPADATA* sepadata;
    SCIP_SEPA* sepa;
+   GCG_SEPA* gcgsepa;
+   SCIP* scip;
+
+   scip = GCGgetMasterprob(gcg);
 
    /* create xyz separator data */
    sepadata = NULL;
@@ -266,25 +281,12 @@ SCIP_RETCODE SCIPincludeSepaXyz(
 
    sepa = NULL;
 
-   /* include separator */
-#if 0
-   /* use SCIPincludeSepa() if you want to set all callbacks explicitly and realize (by getting compiler errors) when
-    * new callbacks are added in future SCIP versions
-    */
-   SCIP_CALL( SCIPincludeSepa(scip, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
-         SEPA_USESSUBSCIP, SEPA_DELAY,
-         sepaCopyXyz, sepaFreeXyz, sepaInitXyz, sepaExitXyz, sepaInitsolXyz, sepaExitsolXyz, sepaExeclpXyz, sepaExecsolXyz,
-         sepadata) );
-#else
-   /* use SCIPincludeSepaBasic() plus setter functions if you want to set callbacks one-by-one and your code should
-    * compile independent of new callbacks being added in future SCIP versions
-    */
-   SCIP_CALL( SCIPincludeSepaBasic(scip, &sepa, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
-                                   SEPA_USESSUBSCIP, SEPA_DELAY,
-                                   sepaExeclpXyz, sepaExecsolXyz,
-                                   sepadata) );
+   SCIP_CALL( GCGrelaxIncludeSepa(gcg, &sepa, &gcgsepa, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
+      SEPA_USESSUBSCIP, SEPA_DELAY, sepaExeclpXyz, sepaExecsolXyz, sepadata, sepaadjustcolXyz, sepagetcolcoefficientXyz,
+      sepagetvarcoefficientXyz, sepasetobjectiveXyz, sepamastercutdeleteXyz) );
 
    assert(sepa != NULL);
+   assert(gcgsepa != NULL);
 
    /* set non fundamental callbacks via setter functions */
    SCIP_CALL( SCIPsetSepaCopy(scip, sepa, sepaCopyXyz) );
@@ -293,7 +295,6 @@ SCIP_RETCODE SCIPincludeSepaXyz(
    SCIP_CALL( SCIPsetSepaExit(scip, sepa, sepaExitXyz) );
    SCIP_CALL( SCIPsetSepaInitsol(scip, sepa, sepaInitsolXyz) );
    SCIP_CALL( SCIPsetSepaExitsol(scip, sepa, sepaExitsolXyz) );
-#endif
 
    /* add xyz separator parameters */
    /* TODO: (optional) add separator specific parameters with SCIPaddTypeParam() here */

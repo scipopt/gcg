@@ -1273,8 +1273,8 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
       /* modify the objective of pricing problems affected by this master separator cut */
       sepa = GCGmastersepacutGetSeparator(GCGextendedmasterconsGetSepamastercut(activecuts[j]));
       assert(sepa != NULL);
-      if( sepa->gcgsepasetobjective != NULL )
-         SCIP_CALL( sepa->gcgsepasetobjective(gcg, sepa, activecuts[j], dualsol) );
+      if( sepa->sepasetobjective != NULL )
+         SCIP_CALL( sepa->sepasetobjective(gcg, sepa, activecuts[j], dualsol) );
    }
 
    /* get dual solutions / farkas values of the convexity constraints */
@@ -1776,8 +1776,8 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
       coeff = 0.0;
       sepa = GCGmastersepacutGetSeparator(GCGextendedmasterconsGetSepamastercut(activecuts[j]));
       assert(sepa != NULL);
-      if( sepa->gcgsepagetvarcoefficient != NULL )
-         SCIP_CALL( sepa->gcgsepagetvarcoefficient(gcg, sepa, activecuts[j], solvars, solvals, nsolvars, prob, &coeff) );
+      if( sepa->sepagetvarcoefficient != NULL )
+         SCIP_CALL( sepa->sepagetvarcoefficient(gcg, sepa, activecuts[j], solvars, solvals, nsolvars, prob, &coeff) );
 
       /* add master variable to cut with computed coefficient */
       if( !SCIPisZero(scip_, coeff) )
@@ -1929,8 +1929,8 @@ SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
 
       sepa = GCGmastersepacutGetSeparator(GCGextendedmasterconsGetSepamastercut(activecuts[j]));
       assert(sepa != NULL);
-      if( GCGextendedmasterconsIsActive(activecuts[j]) && sepa->gcgsepagetcolcoefficient != NULL )
-         SCIP_CALL( sepa->gcgsepagetcolcoefficient(gcg, sepa, activecuts[j], gcgcol, &coeffs[i]) );
+      if( GCGextendedmasterconsIsActive(activecuts[j]) && sepa->sepagetcolcoefficient != NULL )
+         SCIP_CALL( sepa->sepagetcolcoefficient(gcg, sepa, activecuts[j], gcgcol, &coeffs[i]) );
    }
 
    /* transfer the computed coefficients to the gcg column */

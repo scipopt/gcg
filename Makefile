@@ -325,6 +325,7 @@ LIBOBJ = \
 			gcg/event_relaxsol.o \
 			gcg/event_sepacuts.o \
 			gcg/event_solvingstats.o \
+			gcg/gcgcgcut.o \
 			gcg/gcgcol.o \
 			gcg/gcg_general.o \
 			gcg/gcggithash.o \

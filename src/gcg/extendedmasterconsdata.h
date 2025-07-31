@@ -30,6 +30,7 @@
  * @ingroup INTERNALAPI-GCG
  * @brief   internal methods for interacting with GCG_EXTENDEDMASTERCONSDATA
  * @author  Til Mohr
+ * @author  Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/

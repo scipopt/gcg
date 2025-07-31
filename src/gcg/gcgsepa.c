@@ -27,9 +27,10 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   gcgsepa.c
- * @brief  public methods for GCG separators
+ * @brief  methods for GCG separators
  * @author Christian Puchert
  * @author Jonas Witt
+ * @author Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -37,6 +38,7 @@
 #include "gcg/gcg.h"
 
 #include "gcg/pub_gcgsepa.h"
+#include "gcg/struct_sepagcg.h"
 
 
 /** resets the parameters to disable separators */
@@ -211,3 +213,14 @@ SCIP_RETCODE GCGsetSeparators(
 
    return SCIP_OKAY;
 }
+
+#ifndef NDEBUG
+/** returns the pointer to the SCIP_SEPA object */
+SCIP_SEPA* GCGsepaGetScipSeparator(
+   GCG_SEPA*             gcgsepa             /**< gcg separator data structure */   
+   )
+{
+   assert(gcgsepa != NULL);
+   return gcgsepa->separator;
+}
+#endif

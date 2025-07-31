@@ -236,7 +236,7 @@ SCIP_RETCODE addMissedVariables(
       if( (npricingvars > 0)  && (nnonzeros > 0) )
       {
          blocknr = GCGvarGetBlock(pricingvars[0]);
-         SCIP_CALL( sepa->gcgsepagetvarcoefficient(gcg, sepa, mastersepacut, pricingvars, pricingvals, npricingvars,
+         SCIP_CALL( sepa->sepagetvarcoefficient(gcg, sepa, mastersepacut, pricingvars, pricingvals, npricingvars,
                                                    blocknr, &coef) );
       }
 
