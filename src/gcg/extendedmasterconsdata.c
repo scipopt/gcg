@@ -421,18 +421,6 @@ SCIP_ROW* GCGextendedmasterconsGetRow(
 #endif
 
 #ifndef NDEBUG
-/** get the block number of the pricing modification */
-int GCGpricingmodificationGetBlock(
-   GCG_PRICINGMODIFICATION*      pricingmodification           /**< pricing modification */
-   )
-{
-   assert(pricingmodification != NULL);
-
-   return pricingmodification->blocknr;
-}
-#endif
-
-#ifndef NDEBUG
 /** get the variable that determines the coefficient of a column in the extended master cons */
 SCIP_VAR* GCGpricingmodificationGetCoefVar(
    GCG_PRICINGMODIFICATION*         pricingmodification           /**< pricing modification */
@@ -489,6 +477,17 @@ int GCGpricingmodificationGetNAdditionalConss(
    assert(pricingmodification != NULL);
 
    return pricingmodification->nadditionalconss;
+}
+#endif
+
+#ifndef NDEBUG
+/** get the number of the block the modification belongs to */
+int GCGpricingmodificationGetBlock(
+   GCG_PRICINGMODIFICATION*      pricingmodification           /**< pricing modification */
+   )
+{
+   assert(pricingmodification != NULL);
+   return pricingmodification->blocknr;
 }
 #endif
 

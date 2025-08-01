@@ -27,7 +27,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /**@file   cons_masterbranch.c
- * 
  * @brief  constraint handler for storing the branching decisions at each node of the tree
  * @author Gerald Gamrath
  * @author Martin Bergner
@@ -37,8 +36,7 @@
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
-//#define SCIP_DEBUG
-#define MASTERSEP_DEBUG
+/* #define SCIP_DEBUG */
 #include <assert.h>
 #include <string.h>
 
@@ -270,7 +268,6 @@ SCIP_RETCODE removeStoredCutsFromActiveCuts(
 
    SCIP_CALL( GCGsepacutShrinkActiveCuts(gcg, consdata->firstnewcut, conshdlrdata->eventhdlr) );
 
-
    return SCIP_OKAY;
 }
 
@@ -290,9 +287,7 @@ SCIP_RETCODE addStoredCutsToActiveCuts(
    assert(consdata->addedcutsinit);
    assert(conshdlrdata != NULL);
 
-#ifndef MASTERSEP_DEBUG
-   SCIPinfoMessage(scip, NULL, "add stored cuts: node %lli of type: %i\n", SCIPnodeGetNumber(consdata->node), SCIPnodeGetType(consdata->node));
-#endif
+   SCIPdebugMessage("add stored cuts: node %lli of type: %i\n", SCIPnodeGetNumber(consdata->node), SCIPnodeGetType(consdata->node));
 
    nactivecuts = GCGsepacutGetNActiveCuts(gcg, conshdlrdata->eventhdlr);
    assert(consdata->firstnewcut == nactivecuts);
@@ -315,15 +310,14 @@ SCIP_RETCODE addStoredCutsToActiveCuts(
       /* we add this cut to activecuts */
       SCIP_CALL( GCGsepacutAddCutToActiveCuts(gcg, consdata->addedcuts[j], conshdlrdata->eventhdlr) );
 
-#ifndef MASTERSEP_DEBUG
+#ifdef SCIP_DEBUG
       SCIP_ROW* mastercutrow = NULL;
 
-      SCIP_CALL( GCGextendedmasterconsGetRow(consdata->addedcuts[j], &mastercutrow) );
+      mastercutrow = GCGextendedmasterconsGetRow(consdata->addedcuts[j]);
       assert(mastercutrow != NULL);
-      SCIPinfoMessage(GCGgetMasterprob(gcg), NULL, "add to active cuts: update row %s from node %lli and add it to active cuts\n",
-                            SCIProwGetName(mastercutrow), SCIPnodeGetNumber(consdata->node));
+      SCIPdebugMessage("add to active cuts: update row %s from node %lli and add it to active cuts\n",
+         SCIProwGetName(mastercutrow), SCIPnodeGetNumber(consdata->node));
 #endif
-
    }
 
    return SCIP_OKAY;
@@ -346,10 +340,9 @@ SCIP_RETCODE initializeAddedCuts(
    assert(!consdata->addedcutsinit);
 
 
-#ifndef MASTERSEP_DEBUG
-   SCIPinfoMessage(scip, NULL, "init added cuts: remove and free new inactive rows from node %lli of type %i\n",
-                      SCIPnodeGetNumber(consdata->node), SCIPnodeGetType(consdata->node));
-#endif
+   SCIPdebugMessage("init added cuts: remove and free new inactive rows from node %lli of type %i\n",
+      SCIPnodeGetNumber(consdata->node), SCIPnodeGetType(consdata->node));
+
    /* cleanup (remove AND free) the rows generated at node which have already been removed from the LP */
    SCIP_CALL( GCGsepacutRemoveNewInactiveRows(gcg, consdata->firstnewcut, conshdlrdata->eventhdlr) );
 
@@ -371,18 +364,15 @@ SCIP_RETCODE initializeAddedCuts(
    /* no cuts were applied at this node --> nothing to store */
    if( consdata->firstnewcut == nactivecuts )
    {
-#ifndef MASTERSEP_DEBUG
-      SCIPinfoMessage(scip, NULL, "init consdata: no cuts to store\n");
-#endif
+      SCIPdebugMessage("init consdata: no cuts to store\n");
       consdata->nodestoredcuts = FALSE;
       consdata->addedcutsinit = TRUE;
       return SCIP_OKAY;
    }
    consdata->naddedcuts = nactivecuts - consdata->firstnewcut;
-#ifndef MASTERSEP_DEBUG
-   SCIPinfoMessage(scip, NULL, "init consdata: store %i cuts for (pseudo)fork/subroot\n",
-                         consdata->naddedcuts);
-#endif
+
+   SCIPdebugMessage("init consdata: store %i cuts for (pseudo)fork/subroot\n",
+      consdata->naddedcuts);
 
    /* copy, store and capture the cuts */
    SCIP_CALL( SCIPduplicateBlockMemoryArray(GCGgetMasterprob(gcg), &(consdata->addedcuts),
@@ -610,14 +600,12 @@ SCIP_RETCODE initializeConsdata(
         *   - parent master cuts have not been stored yet, because the corresponding constraint was not deactivated */
        if( !parentdata->addedcutsinit && SCIPnodeGetType(consdata->node) == SCIP_NODETYPE_FOCUSNODE )
           SCIP_CALL( initializeAddedCuts(gcg, parentdata, conshdlrdata) );
-
    }
 
    /* store the number of activecuts at activation */
    consdata->firstnewcut = GCGsepacutGetNActiveCuts(gcg, conshdlrdata->eventhdlr);
-#ifndef MASTERSEP_DEBUG
-   SCIPinfoMessage(scip, NULL, "init cons data: firstnewcut %i in node %lli\n", consdata->firstnewcut, SCIPnodeGetNumber(consdata->node));
-#endif
+
+   SCIPdebugMessage("init cons data: firstnewcut %i in node %lli\n", consdata->firstnewcut, SCIPnodeGetNumber(consdata->node));
 
    return SCIP_OKAY;
 }
@@ -2024,10 +2012,10 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
       GCGvarhistoryJumpToLatest(scip, &parentconsdata->knownvarhistory);
       parentcons = parentconsdata->parentcons;
    }
-#ifndef MASTERSEP_DEBUG
-   SCIPinfoMessage(scip, NULL, "Activation of node %lli of type %i with cons %s\n", SCIPnodeGetNumber(consdata->node),
-                   SCIPnodeGetType(consdata->node), consdata->name);
-#endif
+
+   SCIPdebugMessage("Activation of node %lli of type %i with cons %s\n", SCIPnodeGetNumber(consdata->node),
+      SCIPnodeGetType(consdata->node), consdata->name);
+
    if( consdata->addedcutsinit )
    {
       assert(SCIPnodeGetType(consdata->node) != SCIP_NODETYPE_FOCUSNODE);
@@ -2092,10 +2080,10 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
    }
 
    GCGvarhistoryJumpToLatest(scip, &consdata->knownvarhistory);
-#ifndef MASTERSEP_DEBUG
-   SCIPinfoMessage(scip, NULL, "Deactivation of node %lli of type %i with cons %s\n", SCIPnodeGetNumber(consdata->node),
-                   SCIPnodeGetType(consdata->node), consdata->name);
-#endif
+
+   SCIPdebugMessage("Deactivation of node %lli of type %i with cons %s\n", SCIPnodeGetNumber(consdata->node),
+      SCIPnodeGetType(consdata->node), consdata->name);
+
    /* node is deactivated without any of its children being activated:
     *    - store the separator mastercuts which were (generated and) applied in this node in the data of its defining branch */
    if( !consdata->addedcutsinit )
@@ -2266,14 +2254,12 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
    if(  (*consdata)->addedcutsinit )
    {
-#ifndef MASTERSEP_DEBUG
-      SCIPinfoMessage(scip, NULL, "delete master: node stored cuts %i\n", (*consdata)->nodestoredcuts);
-#endif
+      SCIPdebugMessage("delete master: node stored cuts %i\n", (*consdata)->nodestoredcuts);
+
       if( (*consdata)->nodestoredcuts )
       {
-#ifndef MASTERSEP_DEBUG
-         SCIPinfoMessage(scip, NULL, "delete master: release %i cuts and free addedcuts\n", i, (*consdata)->naddedcuts);
-#endif
+         SCIPdebugMessage("delete master: release %i cuts and free addedcuts\n", i, (*consdata)->naddedcuts);
+
          for( j = 0; j < (*consdata)->naddedcuts; j++ )
          {
             SCIP_CALL( GCGreleaseMasterSepaCut(conshdlrdata->gcg, &((*consdata)->addedcuts[j])) );
@@ -2650,6 +2636,7 @@ SCIP_RETCODE GCGincludeConshdlrMasterbranch(
    conshdlrdata->nstack = 0;
    conshdlrdata->maxstacksize = 25;
    conshdlrdata->eventhdlr = NULL;
+
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlrBasic(masterprob, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,
          CONSHDLR_ENFOPRIORITY, CONSHDLR_CHECKPRIORITY, CONSHDLR_EAGERFREQ, CONSHDLR_NEEDSCONS,

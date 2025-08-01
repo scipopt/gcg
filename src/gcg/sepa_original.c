@@ -46,7 +46,6 @@
 #include "gcg/struct_gcg.h"
 
 
-
 #define SEPA_NAME         "original"
 #define SEPA_DESC         "separator for separating cuts in the original problem, called in the master"
 #define SEPA_PRIORITY     1000
@@ -74,7 +73,6 @@ struct SCIP_SepaData
    SCIP_Bool             enable;             /**< parameter returns if master separator is enabled */
    int                   separationsetting;  /**< parameter returns which parameter setting is used for separation */
    SCIP_HASHMAP*         origcutidxmap;      /**< origcuts mappend to index */
-   int                   sepaidx;
 };
 
 
@@ -310,6 +308,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
       ncols = SCIProwGetNNonz(origcut);
       cols = SCIProwGetCols(origcut);
       vals = SCIProwGetVals(origcut);
+
       /* get the variables corresponding to the columns in the cut */
       SCIP_CALL( SCIPallocBufferArray(scip, &rowvars, ncols) );
       for( j = 0; j < ncols; j++ )
@@ -320,7 +319,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
       /* transform the original variables to master variables */
       shift = GCGtransformOrigvalsToMastervals(gcg, rowvars, vals, ncols, mastervars, mastervals,
             nmastervars);
-      //SCIProwGetConstant()
 
       /* create new cut in the master problem */
       (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "mc_%s", SCIProwGetName(origcut));
@@ -330,8 +328,10 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
             ( SCIPisInfinity(scip, SCIProwGetRhs(origcut)) ?
               SCIProwGetRhs(origcut) : SCIProwGetRhs(origcut) - SCIProwGetConstant(origcut) - shift),
             SCIProwIsLocal(origcut), TRUE, FALSE) );
+
       /* add master variables to the cut */
       SCIP_CALL( SCIPaddVarsToRow(scip, mastercut, nmastervars, mastervars, mastervals) );
+
       /* add the cut to the master problem */
       SCIP_CALL( SCIPaddRow(scip, mastercut, FALSE, &feasible) );
       sepadata->mastercuts[sepadata->ncuts] = mastercut;
@@ -339,7 +339,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpOriginal)
       SCIP_CALL( SCIPhashmapInsertInt(sepadata->origcutidxmap, origcut, sepadata->ncuts) );
       SCIP_CALL( SCIPcaptureRow(origscip, origcut) );
       sepadata->ncuts++;
-
 
 #ifdef SCIP_DEBUG
       SCIPdebugMessage("Cut %d (efficacious %d):\n", i, SCIPisCutEfficacious(scip, NULL, mastercut));
@@ -386,7 +385,6 @@ SCIP_RETCODE GCGincludeSepaOriginal(
    SCIP_CALL( SCIPallocBlockMemoryArray(masterprob, &(sepadata->mastercuts), sepadata->maxcuts) ); /*lint !e506*/
    SCIP_CALL( SCIPhashmapCreate(&sepadata->origcutidxmap, SCIPblkmem(masterprob), sepadata->maxcuts) );
    sepadata->ncuts = 0;
-   sepadata->sepaidx = 0;
 
    /* include separator */
    SCIP_CALL( SCIPincludeSepa(masterprob, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST, SEPA_USESSUBSCIP, SEPA_DELAY,

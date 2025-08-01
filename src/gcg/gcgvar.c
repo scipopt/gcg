@@ -1499,6 +1499,7 @@ SCIP_RETCODE GCGcreateMasterVar(
 
    /* number of original variables already saved in mastervardata */
    j = 0;
+
    /* update variable datas */
    for( i = 0; i < nsolvars && !trivialsol; i++ )
    {
@@ -1543,7 +1544,8 @@ SCIP_RETCODE GCGcreateMasterVar(
    {
       pricingvars = SCIPgetOrigVars(pricingscip);
       npricingvars = SCIPgetNOrigVars(pricingscip);
-      j = 0;
+      assert(j == 0);
+
       for( i = 0; i < npricingvars; ++i )
       {
          SCIP_VAR* origvar;
@@ -1559,13 +1561,13 @@ SCIP_RETCODE GCGcreateMasterVar(
          assert(newvardata->data.mastervardata.origvals != NULL);
          assert(GCGvarIsOriginal(origvar));
          /* save in the master problem variable's data the quota of the corresponding original variable */
-         newvardata->data.mastervardata.origvars[j] = origvar;
-         newvardata->data.mastervardata.origvals[j] = 0.0;
+         newvardata->data.mastervardata.origvars[i] = origvar;
+         newvardata->data.mastervardata.origvals[i] = 0.0;
          SCIPhashmapInsertReal(newvardata->data.mastervardata.origvar2val, origvar, 0.0);
          /* save the quota in the original variable's data */
          SCIP_CALL( GCGoriginalVarAddMasterVar(gcg, origvar, *newvar, 0.0) );
-         j++;
       }
+      j = i;
    }
    assert(j == newvardata->data.mastervardata.norigvars);
 

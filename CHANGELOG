@@ -9,7 +9,7 @@ New features:
 - Solver plugin for HiGHS. Allows user to select HiGHS as a pricing problem solver.
 - new pricing solver ('gcg') that calls GCG to solve (structured) pricing problems
 - new (JSON formatted) decomposition file format ('jdec') supporting nested/recursive decompositions
-- generic approach to handle cuts and branching constraints in the master problem with no couterpart in the original problem
+- generic approach to handle cuts and branching constraints in the master problem with no counterpart in the original problem
 - created a pricing variable type for variables not corresponding to any original variable, inferred by extended master constraints
 - automatic mastervariable synchronization across the entire search tree through history-tracking
 - component bound branching rule
@@ -38,7 +38,6 @@ New/modified/removed structures, defines, and classes:
 - added struct 'GCG_SEPARATORMASTERCUT'
 - added struct 'GCG_SEPARATORMASTERCUTDATA'
 - added struct 'GCG_CHVATALGOMORYCUTDATA'
-- added struct 'GCG_SEPARATORMASTERCUTTYPE'
 - added struct 'GCG_SEPA'
 
 New/modified/removed API functions:
@@ -46,6 +45,9 @@ New/modified/removed API functions:
 
 - public GCG functions use the new GCG data structure
 - added functions 'GCGcreate', 'GCGfree', 'GCGgetOrigprob', 'GCGgetMasterprob', 'GCGgetBendersMasterprob', 'GCGgetDwMasterprob', 'GCGmasterGetGcg', 'GCGorigGetGcg'
+- 'GCGrelaxIncludeBranchrule' now also calls 'SCIPincludeBranchrule'
+- public branching methods now use pointers to 'GCG_BRANCHRULE' instead of 'SCIP_BRANCHRULE'
+- added functions 'GCGbranchGetScipBranchrule' and 'GCGbranchGetScipBranchruledata'
 - removed 'GCGgetPartialdecToWrite'
 - 'GCGconshdlrDecompAddBasicPartialdec' returns now SCIP_RETCODE and sets a pointer to the created decomposition
 - public C functions working with (partial) decompositions use now 'PARTIALDECOMP_C' pointers instead of the id of the decomposition

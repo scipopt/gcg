@@ -2950,6 +2950,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
             continue;
 
          assert(GCGvarIsPricing(solvars[i]));
+
          origvar = GCGpricingVarGetOrigvars(solvars[i])[0];
 
          if( SCIPisZero(scip_, SCIPvarGetObj(origvar)) )

@@ -49,7 +49,6 @@
 #include "gcg/pub_gcgvar.h"
 
 
-
 #ifdef WITH_GSL
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_permutation.h>
@@ -105,7 +104,6 @@ struct SCIP_SepaData
    int                   maxroundsroot;      /**< parameter returns maximum number of separation rounds in probing LP in root node (-1 if unlimited) */
    int                   mincuts;            /**< parameter returns number of minimum cuts needed to return *result = SCIP_Separated */
    SCIP_Real             objconvex;          /**< parameter return convex combination factor */
-   int                   sepaidx;
 };
 
 /*
@@ -887,8 +885,6 @@ SCIP_DECL_SEPAINIT(sepaInitBasis)
          SCIP_CALL( SCIPaddVarToRow(origscip, sepadata->objrow, origvars[i], obj) );
       }
    }
-   //sepadata->sepaidx = GCGrelaxIncludeSeparator(origscip, sepa, NULL,
-   //                                             NULL, NULL);
 
    return SCIP_OKAY;
 }
@@ -1632,7 +1628,6 @@ SCIP_RETCODE GCGincludeSepaBasis(
    sepadata->objrow = NULL;
    sepadata->round = 0;
    sepadata->currentnodenr = -1;
-   sepadata->sepaidx = 0;
 
    /* include separator */
    SCIP_CALL( SCIPincludeSepa(masterprob, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,

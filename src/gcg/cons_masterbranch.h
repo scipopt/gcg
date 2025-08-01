@@ -210,7 +210,6 @@ void GCGconsMasterbranchCheckConsistency(
    GCG*                  gcg                 /**< GCG data structure */
    );
 
-
 #ifdef __cplusplus
 }
 #endif

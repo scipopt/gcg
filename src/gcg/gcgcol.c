@@ -450,6 +450,7 @@ void GCGcolUpdateRedcost(
    )
 {
    gcgcol->redcost = redcost;
+
    if( !growold )
       return;
 
