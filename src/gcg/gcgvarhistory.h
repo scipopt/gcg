@@ -66,13 +66,13 @@ SCIP_RETCODE GCGvarhistoryNext(
 /** jump to the latest history event */
 SCIP_RETCODE GCGvarhistoryJumpToLatest(
    SCIP*                  scip,              /**< SCIP data structure */
-   GCG_VARHISTORY**       pointer            /**< pointer to the history */
+   GCG_VARHISTORY*        pointer            /**< pointer to the history */
    );
 
 /** jump to the latest history event and retrieve all new variables */
 SCIP_RETCODE GCGvarhistoryJumpAndRetrieveVars(
    SCIP*                  scip,              /**< SCIP data structure */
-   GCG_VARHISTORY**       pointer,           /**< pointer to the history */
+   GCG_VARHISTORY*        pointer,           /**< pointer to the history */
    SCIP_VAR***            vars,              /**< pointer to store the variables */
    int*                   nvars              /**< pointer to store the number of variables */
    );

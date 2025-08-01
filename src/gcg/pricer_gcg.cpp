@@ -49,7 +49,7 @@
 #include "gcg/type_extendedmasterconsdata.h"
 #include "gcg/type_pricingprob.h"
 #include "gcg/struct_gcg.h"
-#include "gcg/struct_mastersepacut.h"
+#include "gcg/pub_mastersepacut.h"
 #include "gcg/struct_sepagcg.h"
 #include "gcg/pub_gcg.hpp"
 #include <cassert>
@@ -1770,7 +1770,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
          continue;
 
       /*  update the variable history of the cut */
-      SCIP_CALL( GCGvarhistoryJumpToLatest(scip_, &(GCGextendedmasterconsGetSepamastercut(activecuts[j])->knownvarhistory)) );
+      SCIP_CALL( GCGvarhistoryJumpToLatest(scip_, GCGmastersepacutGetVarHistory(GCGextendedmasterconsGetSepamastercut(activecuts[j]))) );
 
       /* compute the coefficient for the cut */
       coeff = 0.0;
@@ -4149,7 +4149,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       if( GCGextendedmasterconsIsActive(activecuts[j]) )
       {
          /* update the var history of all the cuts still in the LP */
-         SCIP_CALL( GCGvarhistoryJumpToLatest(scip_, &(GCGextendedmasterconsGetSepamastercut(activecuts[j])->knownvarhistory)) );
+         SCIP_CALL( GCGvarhistoryJumpToLatest(scip_, GCGmastersepacutGetVarHistory(GCGextendedmasterconsGetSepamastercut(activecuts[j]))) );
          SCIP_Real dual = pricetype->extendedmasterconsGetDual(activecuts[j]);
          /* if the dual was zero, the pricing modifications were never applied since they are superfluous */
          if( dual != 0.0 )

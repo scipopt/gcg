@@ -52,11 +52,15 @@
 extern "C" {
 #endif
 
+#ifdef NDEBUG
+#define GCGmastersepacutGetVarHistory(mastersepacut) ((mastersepacut)->knownvarhistory)
+#else
 /** returns the variable history of the separator master cut */
 GCG_EXPORT
 GCG_VARHISTORY* GCGmastersepacutGetVarHistory(
    GCG_SEPARATORMASTERCUT*       mastersepacut     /**< separator master cut */
    );
+#endif
  
 /** return the separator which created the cut */
 GCG_EXPORT
@@ -178,7 +182,7 @@ int GCGsepacutGetNActiveCuts(
    );
 
 #ifdef NDEBUG
-#define GCGextendedmasterconsGetSepamastercut(extendedmasterconsdata) ((GCG_SEPARATORMASTERCUT*) ((extendedmasterconsdata)->data.sepamastercut))
+#define GCGextendedmasterconsGetSepamastercut(extendedmasterconsdata) ((extendedmasterconsdata)->data.sepamastercut)
 #else
 /** returns the corresponding sepamastercut */
 GCG_EXPORT

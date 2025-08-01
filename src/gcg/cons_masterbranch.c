@@ -1705,7 +1705,7 @@ SCIP_RETCODE forwardUpdateSeenHistory(
 
    if( consdata->branchrule == NULL )
    {
-      SCIP_CALL( GCGvarhistoryJumpToLatest(masterprob, &(consdata->knownvarhistory)) );
+      SCIP_CALL( GCGvarhistoryJumpToLatest(masterprob, consdata->knownvarhistory) );
    }
    else
    {
@@ -2009,7 +2009,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    while( parentcons != NULL )
    {
       parentconsdata = SCIPconsGetData(parentcons);
-      GCGvarhistoryJumpToLatest(scip, &parentconsdata->knownvarhistory);
+      GCGvarhistoryJumpToLatest(scip, parentconsdata->knownvarhistory);
       parentcons = parentconsdata->parentcons;
    }
 
@@ -2079,7 +2079,7 @@ SCIP_DECL_CONSDEACTIVE(consDeactiveMasterbranch)
       SCIP_CALL( GCGrelaxBranchDeactiveMaster(conshdlrdata->gcg, consdata->branchrule, consdata->branchdata) );
    }
 
-   GCGvarhistoryJumpToLatest(scip, &consdata->knownvarhistory);
+   GCGvarhistoryJumpToLatest(scip, consdata->knownvarhistory);
 
    SCIPdebugMessage("Deactivation of node %lli of type %i with cons %s\n", SCIPnodeGetNumber(consdata->node),
       SCIPnodeGetType(consdata->node), consdata->name);
@@ -2258,7 +2258,7 @@ SCIP_DECL_CONSDELETE(consDeleteMasterbranch)
 
       if( (*consdata)->nodestoredcuts )
       {
-         SCIPdebugMessage("delete master: release %i cuts and free addedcuts\n", i, (*consdata)->naddedcuts);
+         SCIPdebugMessage("delete master: release %i cuts and free addedcuts\n", (*consdata)->naddedcuts);
 
          for( j = 0; j < (*consdata)->naddedcuts; j++ )
          {

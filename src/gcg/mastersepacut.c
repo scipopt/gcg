@@ -146,6 +146,7 @@ SCIP_RETCODE GCGcreateMasterSepaCut(
    return SCIP_OKAY;
 }
 
+#ifndef NDEBUG
 /**< returns the variable history of the separator master cut */
 GCG_VARHISTORY* GCGmastersepacutGetVarHistory(
    GCG_SEPARATORMASTERCUT*      mastersepacut     /**< separator master cut */
@@ -155,6 +156,7 @@ GCG_VARHISTORY* GCGmastersepacutGetVarHistory(
 
    return mastersepacut->knownvarhistory;
 }
+#endif
 
 /**< return the separator which created the cut */
 GCG_SEPA* GCGmastersepacutGetSeparator(
