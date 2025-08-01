@@ -350,7 +350,6 @@ SCIP_RETCODE GCGrelaxIncludeSepa(
    SCIP_SEPADATA*        sepadata,           /**< separator data */
    GCG_DECL_SEPAADJUSTCOL((*sepaadjustcol)), /**< method for modifying the outdated values of a gcg column */
    GCG_DECL_SEPAGETCOLCOEFFICIENT((*sepagetcolcoef)),/**< method for computing the column coefficient for a cut */
-   GCG_DECL_SEPAGETVARCOEFFICIENT((*sepagetvarcoef)),/**< method for computing the column coefficient for a cut */
    GCG_DECL_SEPASETOBJECTIVE((*sepasetobjective)),/**< method for modifying the objectives of pricing problems to account for master cut */
    GCG_DECL_SEPAMASTERCUTDELETE((*sepamastercutdelete))/**< callback to delete the sepamastercutdata */
    );

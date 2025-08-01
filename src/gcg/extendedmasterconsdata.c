@@ -841,6 +841,7 @@ SCIP_RETCODE GCGextendedmasterconsGetCoeff(
    SCIP_Real*                       solvals,                      /**< array of column solution values */
    int                              nsolvars,                     /**< number of column solution variables and values */
    int                              probnr,                       /**< the pricing problem that the column belongs to */
+   GCG_COL*                         gcgcol,                       /**< gcg column if available (or NULL) */
    SCIP_Real*                       coeff                         /**< pointer to store the coefficient */
    )
 {
@@ -849,10 +850,10 @@ SCIP_RETCODE GCGextendedmasterconsGetCoeff(
    switch( extendedmasterconsdata->type )
    {
    case GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS:
-      SCIP_CALL( GCGbranchGetExtendedmasterconsCoeff(gcg, extendedmasterconsdata, solvars, solvals, nsolvars, probnr, coeff) );
+      SCIP_CALL( GCGbranchGetExtendedmasterconsCoeff(gcg, extendedmasterconsdata, solvars, solvals, nsolvars, probnr, gcgcol, coeff) );
       break;
    case GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW:
-      return SCIP_NOTIMPLEMENTED;
+      SCIP_CALL( GCGmastersepacutGetExtendedmasterconsCoeff(gcg, extendedmasterconsdata, solvars, solvals, nsolvars, probnr, gcgcol, coeff) );
       break;
    default:
       SCIPerrorMessage("Cannot handle the extended master constraint type.\n");

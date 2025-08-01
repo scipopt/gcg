@@ -45,6 +45,7 @@
 #include "gcg/type_gcg.h"
 #include "gcg/type_branchgcg.h"
 #include "gcg/type_mastersepacut.h"
+#include "gcg/type_gcgcol.h"
 
 #ifdef NDEBUG
 #include "gcg/struct_extendedmasterconsdata.h"
@@ -300,6 +301,7 @@ SCIP_RETCODE GCGextendedmasterconsGetCoeff(
    SCIP_Real*                       solvals,                      /**< array of column solution values */
    int                              nsolvars,                     /**< number of column solution variables and values */
    int                              probnr,                       /**< the pricing problem that the column belongs to */
+   GCG_COL*                         gcgcol,                       /**< gcg column if available (or NULL) */
    SCIP_Real*                       coeff                         /**< pointer to store the coefficient */
    );
 

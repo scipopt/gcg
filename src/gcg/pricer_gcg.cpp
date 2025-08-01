@@ -50,7 +50,6 @@
 #include "gcg/type_pricingprob.h"
 #include "gcg/struct_gcg.h"
 #include "gcg/pub_mastersepacut.h"
-#include "gcg/struct_sepagcg.h"
 #include "gcg/pub_gcg.hpp"
 #include <cassert>
 #include <cstring>
@@ -1254,8 +1253,6 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
 
    for( j = 0; j < nactivecuts; j++ )
    {
-      GCG_SEPA* sepa;
-
       /* inactive cuts have no effect on the pricing problems */
       if( !GCGextendedmasterconsIsActive(activecuts[j]) )
          continue;
@@ -1271,10 +1268,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
       }
 
       /* modify the objective of pricing problems affected by this master separator cut */
-      sepa = GCGmastersepacutGetSeparator(GCGextendedmasterconsGetSepamastercut(activecuts[j]));
-      assert(sepa != NULL);
-      if( sepa->sepasetobjective != NULL )
-         SCIP_CALL( sepa->sepasetobjective(gcg, sepa, activecuts[j], dualsol) );
+      SCIP_CALL( GCGmastersepacutSetObjective(gcg, activecuts[j], dualsol) );
    }
 
    /* get dual solutions / farkas values of the convexity constraints */
@@ -1761,7 +1755,6 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
    for( j = 0; j < nactivecuts; j++ )
    {
       SCIP_ROW* row;
-      GCG_SEPA* sepa;
 
       row = GCGextendedmasterconsGetRow(activecuts[j]);
 
@@ -1774,10 +1767,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
 
       /* compute the coefficient for the cut */
       coeff = 0.0;
-      sepa = GCGmastersepacutGetSeparator(GCGextendedmasterconsGetSepamastercut(activecuts[j]));
-      assert(sepa != NULL);
-      if( sepa->sepagetvarcoefficient != NULL )
-         SCIP_CALL( sepa->sepagetvarcoefficient(gcg, sepa, activecuts[j], solvars, solvals, nsolvars, prob, &coeff) );
+      SCIP_CALL( GCGmastersepacutGetExtendedmasterconsCoeff(gcg, activecuts[j], solvars, solvals, nsolvars, prob, NULL, &coeff) );
 
       /* add master variable to cut with computed coefficient */
       if( !SCIPisZero(scip_, coeff) )
@@ -1923,14 +1913,11 @@ SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
    SCIP_CALL( SCIPallocBufferArray(origprob, &coeffs, nactivecuts - ncurrentsepamastercutcoeffs) );
    for( j = ncurrentsepamastercutcoeffs, i = 0; j < nactivecuts; j++, i++ )
    {
-      GCG_SEPA* sepa;
-
       coeffs[i] = 0.0;
 
-      sepa = GCGmastersepacutGetSeparator(GCGextendedmasterconsGetSepamastercut(activecuts[j]));
-      assert(sepa != NULL);
-      if( GCGextendedmasterconsIsActive(activecuts[j]) && sepa->sepagetcolcoefficient != NULL )
-         SCIP_CALL( sepa->sepagetcolcoefficient(gcg, sepa, activecuts[j], gcgcol, &coeffs[i]) );
+      if( GCGextendedmasterconsIsActive(activecuts[j]) )
+         SCIP_CALL( GCGmastersepacutGetExtendedmasterconsCoeff(gcg, activecuts[j], GCGcolGetVars(gcgcol), GCGcolGetVals(gcgcol),
+            GCGcolGetNVars(gcgcol), GCGcolGetProbNr(gcgcol), gcgcol, &coeffs[i]) );
    }
 
    /* transfer the computed coefficients to the gcg column */

@@ -61,24 +61,12 @@ typedef struct GCG_Sepa GCG_SEPA;             /**< separator for master problem*
  *    gcg             : GCG main data structure
  *    sepa            : the gcg separator itself
  *    cut             : cut which has to be altered
+ *    vars            : the column representing a new master variable which should be included in cut
+ *    vals            : stores the computed coefficient
  *    gcgcol          : the column representing a new master variable which should be included in cut
  *    coef            : stores the computed coefficient
  */
-#define GCG_DECL_SEPAGETCOLCOEFFICIENT(x) SCIP_RETCODE x (GCG* gcg, GCG_SEPA* sepa, GCG_EXTENDEDMASTERCONSDATA* cut, GCG_COL* gcgcol, SCIP_Real* coeff)
-
-/** method for computing the column coefficient for a cut
- *
- *  input:
- *    gcg             : GCG main data structure
- *    sepa            : the gcg separator itself
- *    cut             : cut which has to be altered
- *    vars            : the column representing a new master variable which should be included in cut
- *    vals            : stores the computed coefficient
- *    nvars           :
- *    coef            :
- */
-#define GCG_DECL_SEPAGETVARCOEFFICIENT(x) SCIP_RETCODE x (GCG* gcg, GCG_SEPA* sepa, GCG_EXTENDEDMASTERCONSDATA* cut, SCIP_VAR** vars, SCIP_Real* vals, int nvars, int probnr, SCIP_Real* coef)
-
+#define GCG_DECL_SEPAGETCOLCOEFFICIENT(x) SCIP_RETCODE x (GCG* gcg, GCG_SEPA* sepa, GCG_EXTENDEDMASTERCONSDATA* cut, SCIP_VAR** vars, SCIP_Real* vals, int nvars, int probnr, GCG_COL* gcgcol, SCIP_Real* coef)
 
 /** method for modifying the objectives of pricing problems to account for master cut
  *

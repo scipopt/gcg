@@ -237,3 +237,34 @@ SCIP_RETCODE GCGmastersepacutUpdateCol(
 
    return SCIP_OKAY;
 }
+
+SCIP_RETCODE GCGmastersepacutGetExtendedmasterconsCoeff(
+   GCG*                             gcg,                          /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*      mastersepacut,                /**< master cut data structure */
+   SCIP_VAR**                       solvars,                      /**< array of column solution variables */
+   SCIP_Real*                       solvals,                      /**< array of column solution values */
+   int                              nsolvars,                     /**< number of column solution variables and values */
+   int                              probnr,                       /**< the pricing problem that the column belongs to */
+   GCG_COL*                         gcgcol,                       /**< gcg column if available (or NULL) */
+   SCIP_Real*                       coef                          /**< pointer to store the coefficient */
+   )
+{
+   GCG_SEPA* sepa = GCGmastersepacutGetSeparator(GCGextendedmasterconsGetSepamastercut(mastersepacut));
+
+   SCIP_CALL( sepa->sepagetcolcoefficient(gcg, sepa, mastersepacut, solvars, solvals, nsolvars, probnr, gcgcol, coef) );
+   return SCIP_OKAY;
+}
+
+/** adapts the objectives of all the necessary pricing problems such that they consider the cut  */
+GCG_EXPORT
+SCIP_RETCODE GCGmastersepacutSetObjective(
+   GCG*                          gcg,              /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*   mastersepacut,    /**< pointer to separator master cut */
+   SCIP_Real                     coef              /**< objective coefficient */
+   )
+{
+   GCG_SEPA* sepa = GCGmastersepacutGetSeparator(GCGextendedmasterconsGetSepamastercut(mastersepacut));
+
+   SCIP_CALL( sepa->sepasetobjective(gcg, sepa, mastersepacut, coef) );
+   return SCIP_OKAY;
+}

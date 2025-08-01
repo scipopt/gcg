@@ -878,15 +878,10 @@ static
 GCG_DECL_SEPAGETCOLCOEFFICIENT(sepaGetColCoefficientSubsetrow)
 {
    assert(strcmp(SEPA_NAME, SCIPsepaGetName(GCGsepaGetScipSeparator(sepa))) == 0);
-   return GCGchvatalGomoryCutGetColumnCoefficient(gcg, cut, gcgcol, coeff);
-}
-
-/** compute cut coefficient for master variable */
-static
-GCG_DECL_SEPAGETVARCOEFFICIENT(sepaGetVarCoefficientSubsetrow)
-{
-   assert(strcmp(SEPA_NAME, SCIPsepaGetName(GCGsepaGetScipSeparator(sepa))) == 0);
-   return GCGchvatalGomoryCutGetVariableCoefficient(gcg, cut, vars, vals, nvars, probnr, coef);
+   if( gcgcol != NULL )
+      return GCGchvatalGomoryCutGetColumnCoefficient(gcg, cut, gcgcol, coef);
+   else
+      return GCGchvatalGomoryCutGetVariableCoefficient(gcg, cut, vars, vals, nvars, probnr, coef);
 }
 
 /** modifies the objective values of the pricing variables affected by the master cut */
@@ -967,7 +962,7 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
 
    SCIP_CALL( GCGrelaxIncludeSepa(gcg, &sepa, &gcgsepa, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
       SEPA_USESSUBSCIP, SEPA_DELAY, sepaExeclpSubsetrow, NULL, sepadata, sepaAdjustColSubsetrow, sepaGetColCoefficientSubsetrow,
-      sepaGetVarCoefficientSubsetrow, sepaSetObjectiveSubsetrow, sepaMastercutDeleteSubsetrow) );
+      sepaSetObjectiveSubsetrow, sepaMastercutDeleteSubsetrow) );
 
    assert(sepa != NULL);
    assert(gcgsepa != NULL);

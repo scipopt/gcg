@@ -388,7 +388,7 @@ SCIP_RETCODE addVarToMasterbranch(
 
    *added = FALSE;
 
-   SCIP_CALL( GCGextendedmasterconsGetCoeff(gcg, branchdata->mastercons, origvars, origvals, norigvars, GCGvarGetBlock(mastervar), &coef) );
+   SCIP_CALL( GCGbranchGetExtendedmasterconsCoeff(gcg, branchdata->mastercons, origvars, origvals, norigvars, GCGvarGetBlock(mastervar), NULL, &coef) );
 
    if( !SCIPisZero(masterprob, coef) )
    {

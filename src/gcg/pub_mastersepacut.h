@@ -225,7 +225,7 @@ SCIP_RETCODE GCGextendedmasterconsCreateForSepamastercut(
    int                           npricingmodifications      /**< number of pricing modifications */
    );
 
-/** updates the given gcgcol such that it respects the given cut*/
+/** updates the given gcgcol such that it respects the given cut */
 GCG_EXPORT
 SCIP_RETCODE GCGmastersepacutUpdateCol(
    GCG*                          gcg,              /**< GCG data structure */
@@ -233,6 +233,26 @@ SCIP_RETCODE GCGmastersepacutUpdateCol(
    GCG_COL*                      col               /**< gcgcol that should be updated */
    );
 
+/** calculate the coefficient of a column solution */
+GCG_EXPORT
+SCIP_RETCODE GCGmastersepacutGetExtendedmasterconsCoeff(
+   GCG*                             gcg,                          /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*      mastersepacut,                /**< master cut data structure */
+   SCIP_VAR**                       solvars,                      /**< array of column solution variables */
+   SCIP_Real*                       solvals,                      /**< array of column solution values */
+   int                              nsolvars,                     /**< number of column solution variables and values */
+   int                              probnr,                       /**< the pricing problem that the column belongs to */
+   GCG_COL*                         gcgcol,                       /**< gcg column if available (or NULL) */
+   SCIP_Real*                       coef                          /**< pointer to store the coefficient */
+   );
+
+/** adapts the objectives of all the necessary pricing problems such that they consider the cut  */
+GCG_EXPORT
+SCIP_RETCODE GCGmastersepacutSetObjective(
+   GCG*                          gcg,              /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*   mastersepacut,    /**< pointer to separator master cut */
+   SCIP_Real                     coef              /**< objective coefficient */
+   );
 
 #ifdef __cplusplus
 }
