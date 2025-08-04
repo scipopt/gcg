@@ -30,6 +30,7 @@
  * @brief  methods for storing priced cols (based on SCIP's separation storage)
  * @author Jonas Witt
  * @author Christian Puchert
+ * @author Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -786,7 +787,7 @@ SCIP_RETCODE GCGpricestoreApplyCols(
          SCIP_CALL( pricestoreApplyCol(pricestore, col, FALSE, mincolorthogonality, score, &added) );
          if( added )
          {
-            SCIPdebugMessage(" -> applying col %p (pos=%d/%d, probnr=%d, efficacy=%g, objparallelism=%g, orthogonality=%g, score=%g)\n",
+            SCIPdebugMessage(" -> applied col %p (pos=%d/%d, probnr=%d, efficacy=%g, objparallelism=%g, orthogonality=%g, score=%g)\n",
                   (void*) col, bestpos+1, pricestore->ncols[i], probnr, GCGcolGetRedcost(col), pricestore->objparallelisms[i][bestpos],
                   pricestore->orthogonalities[i][bestpos], pricestore->scores[i][bestpos]);
 
