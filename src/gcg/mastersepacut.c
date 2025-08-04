@@ -47,19 +47,19 @@
 
 /** frees separator master cut */
 static
-SCIP_RETCODE freeMasterSepaCut(
+SCIP_RETCODE freeMastersepacut(
    GCG*                          gcg,              /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA*   mastersepacut     /**< pointer to separator master cut */
    )
 {
    SCIP* masterscip;
-   GCG_SEPARATORMASTERCUT* cut;
+   GCG_MASTERSEPACUT* cut;
    GCG_SEPA* sepa;
    assert(gcg != NULL);
    assert(mastersepacut != NULL);
 
    masterscip = GCGgetMasterprob(gcg);
-   cut = mastersepacut->data.sepamastercut;
+   cut = mastersepacut->data.mastersepacut;
    sepa = cut->sepa;
 
    if( cut->knownvarhistory != NULL )
@@ -76,22 +76,22 @@ SCIP_RETCODE freeMasterSepaCut(
    }
    assert(cut->data == NULL);
 
-   SCIPfreeBlockMemory(masterscip, &mastersepacut->data.sepamastercut);
-   mastersepacut->data.sepamastercut = NULL;
+   SCIPfreeBlockMemory(masterscip, &mastersepacut->data.mastersepacut);
+   mastersepacut->data.mastersepacut = NULL;
 
    return SCIP_OKAY;
 }
 
 /** increases usage counter of separator master cut */
-SCIP_RETCODE GCGcaptureMasterSepaCut(
+SCIP_RETCODE GCGcaptureMastersepacut(
    GCG_EXTENDEDMASTERCONSDATA*      mastersepacut      /**< separator master cut */
    )
 {
-   GCG_SEPARATORMASTERCUT* cut;
+   GCG_MASTERSEPACUT* cut;
    assert(mastersepacut != NULL);
    assert(GCGextendedmasterconsGetType(mastersepacut) == GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW);
 
-   cut = mastersepacut->data.sepamastercut;
+   cut = mastersepacut->data.mastersepacut;
    assert(cut->nuses >= 0);
    cut->nuses++;
 
@@ -99,24 +99,24 @@ SCIP_RETCODE GCGcaptureMasterSepaCut(
 }
 
 /** decreases usage counter of separator master cut, and frees memory if necessary */
-SCIP_RETCODE GCGreleaseMasterSepaCut(
+SCIP_RETCODE GCGreleaseMastersepacut(
    GCG*                             gcg,             /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA**     mastersepacut    /**< pointer to separator master cut */
    )
 {
-   GCG_SEPARATORMASTERCUT* cut;
+   GCG_MASTERSEPACUT* cut;
    assert(gcg != NULL);
    assert(mastersepacut != NULL);
    assert(*mastersepacut != NULL);
    assert(GCGextendedmasterconsGetType(*mastersepacut) == GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW);
 
-   cut = (*mastersepacut)->data.sepamastercut;
+   cut = (*mastersepacut)->data.mastersepacut;
    assert(cut->nuses > 0);
 
    cut->nuses--;
    if( cut->nuses == 0 )
    {
-      SCIP_CALL( freeMasterSepaCut(gcg, *mastersepacut) );
+      SCIP_CALL( freeMastersepacut(gcg, *mastersepacut) );
       SCIP_CALL( GCGextendedmasterconsFree(gcg, mastersepacut) );
    }
 
@@ -126,12 +126,12 @@ SCIP_RETCODE GCGreleaseMasterSepaCut(
 }
 
 /**< creates separator master cut */
-SCIP_RETCODE GCGcreateMasterSepaCut(
+SCIP_RETCODE GCGcreateMastersepacut(
    GCG*                         gcg,                 /**< GCG data structure */
-   GCG_SEPARATORMASTERCUT**     mastersepacut,       /**< pointer to store separator master cut */
+   GCG_MASTERSEPACUT**     mastersepacut,       /**< pointer to store separator master cut */
    GCG_SEPA*                    sepa,                /**< separator creating this cut */
    GCG_VARHISTORY*              varhistory,          /**< variable history */
-   GCG_SEPARATORMASTERCUTDATA*  mastersepacutdata    /**< separator master cut data */
+   GCG_MASTERSEPACUTDATA*  mastersepacutdata    /**< separator master cut data */
    )
 {
    assert(gcg != NULL);
@@ -149,7 +149,7 @@ SCIP_RETCODE GCGcreateMasterSepaCut(
 #ifndef NDEBUG
 /**< returns the variable history of the separator master cut */
 GCG_VARHISTORY* GCGmastersepacutGetVarHistory(
-   GCG_SEPARATORMASTERCUT*      mastersepacut     /**< separator master cut */
+   GCG_MASTERSEPACUT*      mastersepacut     /**< separator master cut */
    )
 {
    assert(mastersepacut != NULL);
@@ -160,7 +160,7 @@ GCG_VARHISTORY* GCGmastersepacutGetVarHistory(
 
 /**< return the separator which created the cut */
 GCG_SEPA* GCGmastersepacutGetSeparator(
-   GCG_SEPARATORMASTERCUT*      mastersepacut     /**< separator master cut */
+   GCG_MASTERSEPACUT*      mastersepacut     /**< separator master cut */
    )
 {
    assert(mastersepacut != NULL);
@@ -169,8 +169,8 @@ GCG_SEPA* GCGmastersepacutGetSeparator(
 }
 
 /**< returns the data of the separator master cut */
-GCG_SEPARATORMASTERCUTDATA* GCGmastersepacutGetData(
-   GCG_SEPARATORMASTERCUT*      mastersepacut     /**< separator master cut */
+GCG_MASTERSEPACUTDATA* GCGmastersepacutGetData(
+   GCG_MASTERSEPACUT*      mastersepacut     /**< separator master cut */
    )
 {
    assert(mastersepacut != NULL);
@@ -181,7 +181,7 @@ GCG_SEPARATORMASTERCUTDATA* GCGmastersepacutGetData(
 /**< set the variable history of separator master cut */
 SCIP_RETCODE GCGmastersepacutSetVarHistory(
    GCG*                         gcg,              /**< GCG data structure */
-   GCG_SEPARATORMASTERCUT*      mastersepacut     /**< pointer to separator master cut */
+   GCG_MASTERSEPACUT*      mastersepacut     /**< pointer to separator master cut */
    )
 {
    SCIP* masterscip;
@@ -194,14 +194,14 @@ SCIP_RETCODE GCGmastersepacutSetVarHistory(
 }
 
 #ifndef NDEBUG
-/** returns the corresponding sepamastercut */
-GCG_SEPARATORMASTERCUT* GCGextendedmasterconsGetSepamastercut(
+/** returns the corresponding mastersepacut */
+GCG_MASTERSEPACUT* GCGextendedmasterconsGetMastersepacut(
    GCG_EXTENDEDMASTERCONSDATA* extendedmasterconsdata
    )
 {
    assert(extendedmasterconsdata != NULL);
    assert(GCGextendedmasterconsGetType(extendedmasterconsdata) == GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW);
-   return extendedmasterconsdata->data.sepamastercut;
+   return extendedmasterconsdata->data.mastersepacut;
 }
 #endif
 
@@ -209,7 +209,7 @@ GCG_SEPARATORMASTERCUT* GCGextendedmasterconsGetSepamastercut(
 SCIP_RETCODE GCGextendedmasterconsCreateForSepamastercut(
    GCG*                          gcg,                       /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA**  extendedmastercons,        /**< pointer to store the create extended master cons data */
-   GCG_SEPARATORMASTERCUT*       cut,                       /**< master cut data structure */
+   GCG_MASTERSEPACUT*       cut,                       /**< master cut data structure */
    SCIP_ROW*                     row,                       /**< corresponding row object */
    GCG_PRICINGMODIFICATION**     pricingmodifications,      /**< related pricing modifications */
    int                           npricingmodifications      /**< number of pricing modifications */
@@ -230,7 +230,7 @@ SCIP_RETCODE GCGmastersepacutUpdateCol(
    GCG_COL*                      col
    )
 {
-   GCG_SEPA* sepa = GCGmastersepacutGetSeparator(GCGextendedmasterconsGetSepamastercut(mastersepacut));
+   GCG_SEPA* sepa = GCGmastersepacutGetSeparator(GCGextendedmasterconsGetMastersepacut(mastersepacut));
    
    if( sepa->sepaadjustcol != NULL )
       SCIP_CALL( sepa->sepaadjustcol(gcg, sepa, mastersepacut, col) );
@@ -249,7 +249,7 @@ SCIP_RETCODE GCGmastersepacutGetExtendedmasterconsCoeff(
    SCIP_Real*                       coef                          /**< pointer to store the coefficient */
    )
 {
-   GCG_SEPA* sepa = GCGmastersepacutGetSeparator(GCGextendedmasterconsGetSepamastercut(mastersepacut));
+   GCG_SEPA* sepa = GCGmastersepacutGetSeparator(GCGextendedmasterconsGetMastersepacut(mastersepacut));
 
    SCIP_CALL( sepa->sepagetcolcoefficient(gcg, sepa, mastersepacut, solvars, solvals, nsolvars, probnr, gcgcol, coef) );
    return SCIP_OKAY;
@@ -263,7 +263,7 @@ SCIP_RETCODE GCGmastersepacutSetObjective(
    SCIP_Real                     coef              /**< objective coefficient */
    )
 {
-   GCG_SEPA* sepa = GCGmastersepacutGetSeparator(GCGextendedmasterconsGetSepamastercut(mastersepacut));
+   GCG_SEPA* sepa = GCGmastersepacutGetSeparator(GCGextendedmasterconsGetMastersepacut(mastersepacut));
 
    SCIP_CALL( sepa->sepasetobjective(gcg, sepa, mastersepacut, coef) );
    return SCIP_OKAY;

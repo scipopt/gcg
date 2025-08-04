@@ -41,7 +41,7 @@
 #include "gcg/struct_gcgcol.h"
 
 /** additional data for subset row cuts */
-struct GCG_SeparatorMasterCutData
+struct GCG_MastersepacutData
 {
    int*                    conssindices;           /**< indices of constraints used to create cut */
    SCIP_Real*              weights;                /**< weights used to create cut */
@@ -52,7 +52,7 @@ struct GCG_SeparatorMasterCutData
 /**< creates a Chvatal-Gomory cut */
 SCIP_RETCODE GCGcreateChvatalGomoryCut(
    GCG*                       gcg,                   /**< GCG data structure */
-   GCG_SEPARATORMASTERCUT**   mastersepacut,         /**< pointer to store separator master cut */
+   GCG_MASTERSEPACUT**   mastersepacut,         /**< pointer to store separator master cut */
    GCG_SEPA*                  sepa,                  /**< separator creating this cut */
    GCG_VARHISTORY*            varhistory,            /**< variables history of Chvatal-Gomory cut */
    SCIP_Real*                 weights,               /**< weights which were used to create the cut */
@@ -61,7 +61,7 @@ SCIP_RETCODE GCGcreateChvatalGomoryCut(
    )
 {
    SCIP* masterscip;
-   GCG_SEPARATORMASTERCUTDATA* data;
+   GCG_MASTERSEPACUTDATA* data;
 
    assert(gcg != NULL);
    assert(mastersepacut != NULL);
@@ -80,14 +80,14 @@ SCIP_RETCODE GCGcreateChvatalGomoryCut(
       SCIP_CALL( SCIPduplicateBlockMemoryArray(masterscip, &(data->conssindices), indices, n) );
    }
 
-   SCIP_CALL( GCGcreateMasterSepaCut(gcg, mastersepacut, sepa, varhistory, data) );
+   SCIP_CALL( GCGcreateMastersepacut(gcg, mastersepacut, sepa, varhistory, data) );
    return SCIP_OKAY;
 }
 
 /** frees data of Chvatal-Gomory cut */
 SCIP_RETCODE GCGfreeChvatalGomoryCutData(
    GCG*                             gcg,           /**< GCG data structure */
-   GCG_SEPARATORMASTERCUTDATA**     data           /**< pointer to data of subset row cut */
+   GCG_MASTERSEPACUTDATA**     data           /**< pointer to data of subset row cut */
    )
 {
    SCIP* masterscip;
@@ -114,10 +114,10 @@ SCIP_RETCODE GCGfreeChvatalGomoryCutData(
 
 /**< returns the number of weights of Chvatal-Gomory cut */
 int GCGchvatalGomoryCutGetNWeights(
-   GCG_SEPARATORMASTERCUT*      mastersepacut     /**< separator master cut */
+   GCG_MASTERSEPACUT*      mastersepacut     /**< separator master cut */
    )
 {
-   GCG_SEPARATORMASTERCUTDATA* data;
+   GCG_MASTERSEPACUTDATA* data;
 
    assert(mastersepacut != NULL);
 
@@ -129,10 +129,10 @@ int GCGchvatalGomoryCutGetNWeights(
 
 /**< returns the weights of Chvatal-Gomory cut */
 SCIP_Real* GCGchvatalGomoryCutGetWeights(
-   GCG_SEPARATORMASTERCUT*      mastersepacut     /**< separator master cut */
+   GCG_MASTERSEPACUT*      mastersepacut     /**< separator master cut */
    )
 {
-   GCG_SEPARATORMASTERCUTDATA* data;
+   GCG_MASTERSEPACUTDATA* data;
 
    assert(mastersepacut != NULL);
 
@@ -144,10 +144,10 @@ SCIP_Real* GCGchvatalGomoryCutGetWeights(
 
 /**< returns the constraint indices of Chvatal-Gomory cut */
 int* GCGchvatalGomoryCutGetConssIndices(
-   GCG_SEPARATORMASTERCUT*      mastersepacut     /**< separator master cut */
+   GCG_MASTERSEPACUT*      mastersepacut     /**< separator master cut */
    )
 {
-   GCG_SEPARATORMASTERCUTDATA* data;
+   GCG_MASTERSEPACUTDATA* data;
 
    assert(mastersepacut != NULL);
 
@@ -171,14 +171,14 @@ SCIP_RETCODE GCGchvatalGomoryCutGetColumnCoefficient(
    int*           conssindices;
    int            n;
    int            i;
-   GCG_SEPARATORMASTERCUT* cut;
+   GCG_MASTERSEPACUT* cut;
 
    assert(gcg != NULL);
    assert(gcgcol != NULL);
    assert(GCGcolGetInitializedCoefs(gcgcol));
 
    scip = GCGgetMasterprob(gcg);
-   cut = GCGextendedmasterconsGetSepamastercut(mastercutdata);
+   cut = GCGextendedmasterconsGetMastersepacut(mastercutdata);
    mastercoeffs = GCGcolGetMastercoefs(gcgcol);
    weights = GCGchvatalGomoryCutGetWeights(cut);
    conssindices = GCGchvatalGomoryCutGetConssIndices(cut);

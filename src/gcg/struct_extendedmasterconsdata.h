@@ -79,7 +79,7 @@ struct GCG_ExtendedMasterConsData
    int                              npricingmodifications;     /**< number of pricing modifications for the extended master cons */
    union {
       GCG_BRANCHCONSDATA*           branchconsdata;            /**< branchconsdata in case the extended master cons is of type GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS */
-      GCG_SEPARATORMASTERCUT*       sepamastercut;             /**< sepamastercut in case the extended master cons is of type GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW */
+      GCG_MASTERSEPACUT*            mastersepacut;             /**< mastersepacut in case the extended master cons is of type GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW */
    } data;                                                     /**< data required to calculate the coefficient of a column solution */
 };
 

@@ -97,7 +97,7 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromRow(
    SCIP_ROW*                        row,                          /**< row in the master problem that represents the extended master cons */
    GCG_PRICINGMODIFICATION**        pricingmodifications,         /**< pricing modifications for the extended master cons */
    int                              npricingmodifications,        /**< number of pricing modifications for the extended master cons */
-   GCG_SEPARATORMASTERCUT*          data                          /**< sepamastercut that corresponds to the row */
+   GCG_MASTERSEPACUT*          data                               /**< mastersepacut that corresponds to the row */
    );
 
 /** free an extended master cons */

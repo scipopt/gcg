@@ -94,9 +94,9 @@ typedef struct GCG_Sepa GCG_SEPA;             /**< separator for master problem*
  *    gcg             : GCG main data structure
  *    sepa            : the gcg separator itself
  *    cut             : corresponding cut
- *    data            : sepamastercutdata that has to be deleted
+ *    data            : mastersepacutdata that has to be deleted
  */
-#define GCG_DECL_SEPAMASTERCUTDELETE(x) SCIP_RETCODE x (GCG* gcg, GCG_SEPA* sepa, GCG_EXTENDEDMASTERCONSDATA* cut, GCG_SEPARATORMASTERCUTDATA** data)
+#define GCG_DECL_SEPAMASTERCUTDELETE(x) SCIP_RETCODE x (GCG* gcg, GCG_SEPA* sepa, GCG_EXTENDEDMASTERCONSDATA* cut, GCG_MASTERSEPACUTDATA** data)
 
 #ifdef __cplusplus
 }

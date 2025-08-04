@@ -44,6 +44,7 @@
 #include "gcg/sepa_subsetrow.h"
 #include "gcg/zerohalf_selector.h"
 #include "gcg/struct_sepagcg.h"
+#include "gcg/event_mastersepacut.h"
 
 #define SEPA_NAME           "subsetrow"
 #define SEPA_DESC "subsetrow separator"
@@ -148,9 +149,9 @@ SCIP_RETCODE createSubsetRowCut(
    )
 {
    SCIP_SEPADATA* sepadata;
-   char           name[SCIP_MAXSTRLEN]; // name of the ssrc
-   int            nentries;
-   int            i;
+   char name[SCIP_MAXSTRLEN]; // name of the ssrc
+   int nentries;
+   int i;
 
    assert(GCGisMaster(masterscip));
    assert(sepa != NULL);
@@ -203,10 +204,10 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS(
    )
 {
    SCIP_SEPADATA* sepadata;
-   SCIP_Bool      success;
-   int            nmasterconsvars;
-   int            i;
-   int            j;
+   SCIP_Bool success;
+   int nmasterconsvars;
+   int i;
+   int j;
 
    assert(masterscip != NULL);
    assert(sepa != NULL);
@@ -309,9 +310,9 @@ SCIP_RETCODE computePricingConssCoefficients(
    SCIP_VAR*  pricingvar;
    SCIP_Real* origconscoeffs;
    SCIP_Real  coeff_pricing;
-   int        norigconsvars;
-   int        i;
-   int        j;
+   int norigconsvars;
+   int i;
+   int j;
 
    assert(nselectedconss > 0);
 
@@ -490,20 +491,20 @@ static
 GCG_EXTENDEDMASTERCONSDATA* createMastercutData(
    GCG*           gcg,                    /**< GCG data structure */
    SCIP_ROW*      ssrc,                   /**< subset row cut */
-   GCG_SEPARATORMASTERCUT* mastercut,     /**< sepa master cut */
+   GCG_MASTERSEPACUT* mastercut,          /**< master sepa cut */
    int            npricingproblems,       /**< number of pricing problems */
    SCIP_SEPADATA* sepadata,               /**< subset row separator data */
    SCIP_HASHMAP*  mappricingvarxcoeff     /**< map storing the coefficients for the pricing constraints for subset row cut */
    )
 {
    SCIP* masterscip;
-   GCG_EXTENDEDMASTERCONSDATA*         mastercutdata = NULL;         // master cut data for subset row cut
-   GCG_PRICINGMODIFICATION**  pricingmodifications = NULL;  // pricing modifications associated with cut
-   GCG_PRICINGMODIFICATION**  pricingmodificationsbuffer = NULL;
-   SCIP_Bool                  success;
-   char                       name[SCIP_MAXSTRLEN];         // name of the subset row cut
-   int                        npricingmodifications = 0;    // counter for number of pricing modifications
-   int                        j;
+   GCG_EXTENDEDMASTERCONSDATA* mastercutdata = NULL;         // master cut data for subset row cut
+   GCG_PRICINGMODIFICATION** pricingmodifications = NULL;  // pricing modifications associated with cut
+   GCG_PRICINGMODIFICATION** pricingmodificationsbuffer = NULL;
+   SCIP_Bool success;
+   char name[SCIP_MAXSTRLEN];         // name of the subset row cut
+   int npricingmodifications = 0;    // counter for number of pricing modifications
+   int j;
 
    masterscip = GCGgetMasterprob(gcg);
 
@@ -512,16 +513,16 @@ GCG_EXTENDEDMASTERCONSDATA* createMastercutData(
    /* create the pricing modification for every (relevant) pricing problem */
    for( j = 0; j < npricingproblems; j++ )
    {
-      SCIP*                      pricingproblem;
+      SCIP* pricingproblem;
       /* we add at most one constraint to each pricing problem */
-      SCIP_CONS*                 pricingcons;
-      SCIP_CONS**                pricingconss = NULL;
-      SCIP_VAR**                 pricingvars;
-      SCIP_VAR*                  coeffvar = NULL; // y
-      SCIP_Real                  pricingcoeff;
-      int                        npricingvars;
-      int                        nvars;
-      int                        l;
+      SCIP_CONS* pricingcons;
+      SCIP_CONS** pricingconss = NULL;
+      SCIP_VAR** pricingvars;
+      SCIP_VAR* coeffvar = NULL; // y
+      SCIP_Real pricingcoeff;
+      int npricingvars;
+      int nvars;
+      int l;
 
       /* in case of aggregated pricing problems, we skip the non-representative ones */
       pricingproblem = GCGgetPricingprob(gcg, j);
@@ -638,21 +639,21 @@ SCIP_DECL_SEPAFREE(sepaFreeSubsetrow)
 static
 SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
 {
-   GCG*              gcg;
-   SCIP_SEPADATA*    sepadata;
-   SCIP_HASHMAP*     mappricingvarxcoeff = NULL;   // maps pricing variable to its coefficient in its pricing constraint
-   GCG_CUTINDICES**  cutindices = NULL;            // Ss             : for every cut contains the S defining it
-   SCIP_Bool         success;
-   SCIP_Bool         isroot;
-   int               ncutindices;                  // |Ss|           : number of S-sets created
-   int               npricingproblems;             // |K|            : number of pricing problems
-   int               nmastervars;                  // |X'|           : number of variables in (reduced) master problem
-   int               ncontmastervars;              // number of continuous variables in (reduced) master problem
-   int               maxcuts;                      // number of cuts to be generated in a separation round
-   int               ncalls;                       // number of times separator was called in this node
-   int               curfound;                     // number of generated subset-row cuts
-   int               i;
-   GCG_SEPARATORMASTERCUT* mastercut;
+   GCG* gcg;
+   SCIP_SEPADATA* sepadata;
+   SCIP_HASHMAP* mappricingvarxcoeff = NULL;    // maps pricing variable to its coefficient in its pricing constraint
+   GCG_CUTINDICES** cutindices = NULL;          // Ss             : for every cut contains the S defining it
+   SCIP_Bool success;
+   SCIP_Bool isroot;
+   int ncutindices;                  // |Ss|           : number of S-sets created
+   int npricingproblems;             // |K|            : number of pricing problems
+   int nmastervars;                  // |X'|           : number of variables in (reduced) master problem
+   int ncontmastervars;              // number of continuous variables in (reduced) master problem
+   int maxcuts;                      // number of cuts to be generated in a separation round
+   int ncalls;                       // number of times separator was called in this node
+   int curfound;                     // number of generated subset-row cuts
+   int i;
+   GCG_MASTERSEPACUT* mastercut;
    SCIP_HASHMAP* mapmastervarxcoeff = NULL;
    SCIP* origprob;
 
@@ -853,7 +854,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       assert(mastercut != NULL);
       mastercutdata = createMastercutData(gcg, ssrc, mastercut, npricingproblems, sepadata, mappricingvarxcoeff);
       SCIP_CALL( SCIPaddRow(scip, ssrc, FALSE, &success) );
-      SCIP_CALL( GCGaddCutToGeneratedCuts(gcg, mastercutdata) );
+      SCIP_CALL( GCGaddGeneratedMastersepacut(gcg, mastercutdata) );
       curfound++;
 
       // cleanup
@@ -900,7 +901,7 @@ GCG_DECL_SEPAADJUSTCOL(sepaAdjustColSubsetrow)
    return GCGchvatalGomoryAdjustGCGColumn(gcg, cut, gcgcol);
 }
 
-/** deletes sepamastercutdata */
+/** deletes mastersepacutdata */
 static
 GCG_DECL_SEPAMASTERCUTDELETE(sepaMastercutDeleteSubsetrow)
 {

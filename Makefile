@@ -321,9 +321,9 @@ LIBOBJ = \
 			gcg/disp_master.o \
 			gcg/event_bestsol.o \
 			gcg/event_display.o \
+			gcg/event_mastersepacut.o \
 			gcg/event_mastersol.o \
 			gcg/event_relaxsol.o \
-			gcg/event_sepacuts.o \
 			gcg/event_solvingstats.o \
 			gcg/gcgcgcut.o \
 			gcg/gcgcol.o \

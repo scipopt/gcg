@@ -213,7 +213,7 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromRow(
    SCIP_ROW*                        row,                          /**< row in the master problem that represents the extended master cons cut */
    GCG_PRICINGMODIFICATION**        pricingmodifications,         /**< pricing modifications for the extended master cons */
    int                              npricingmodifications,        /**< number of pricing modifications for the extended master cons */
-   GCG_SEPARATORMASTERCUT*          data                          /**< sepamastercut that corresponds to the row */
+   GCG_MASTERSEPACUT*               data                          /**< mastersepacut that corresponds to the row */
    )
 {
 #ifndef NDEBUG
@@ -258,7 +258,7 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromRow(
    (*extendedmasterconsdata)->cons.row = row;
    (*extendedmasterconsdata)->pricingmodifications = pricingmodifications;
    (*extendedmasterconsdata)->npricingmodifications = npricingmodifications;
-   (*extendedmasterconsdata)->data.sepamastercut = data;
+   (*extendedmasterconsdata)->data.mastersepacut = data;
 
    for( i = 0; i < npricingmodifications; i++ ) {
       SCIPvarGetData(pricingmodifications[i]->coefvar)->data.inferredpricingvardata.extendedmasterconsdata = *extendedmasterconsdata;

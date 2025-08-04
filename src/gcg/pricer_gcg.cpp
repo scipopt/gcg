@@ -1248,8 +1248,8 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    GCG_EXTENDEDMASTERCONSDATA** activecuts;
    int nactivecuts;
 
-   activecuts = GCGsepacutGetActiveCuts(gcg, pricerdata->mastersepacuthdlr);
-   nactivecuts = GCGsepacutGetNActiveCuts(gcg, pricerdata->mastersepacuthdlr);
+   activecuts = GCGeventmastersepacutGetActiveMastersepacuts(gcg, pricerdata->mastersepacuthdlr);
+   nactivecuts = GCGeventmastersepacutGetNActiveMastersepacuts(gcg, pricerdata->mastersepacuthdlr);
 
    for( j = 0; j < nactivecuts; j++ )
    {
@@ -1688,13 +1688,13 @@ SCIP_RETCODE ObjPricerGcg::addVariableToOriginalSepaCutsFromGCGCol(
 }
 
 /** add variable with computed coefficients to the master separator cuts */
-SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCutsFromGCGCol(
+SCIP_RETCODE ObjPricerGcg::addVariableToMastersepacutsFromGCGCol(
    SCIP_VAR*             newvar,   /**< the new master variable to add to master cuts*/
    GCG_COL*              gcgcol    /**< GCG column data structure which generated the master variable */
    )
 {
    GCG_EXTENDEDMASTERCONSDATA** activecuts;
-   SCIP_Real* sepamastercutcoeffs;
+   SCIP_Real* mastersepacutcoeffs;
    int nactivecuts;
    int j;
 
@@ -1703,10 +1703,10 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCutsFromGCGCol(
    assert(gcgcol != NULL);
 
    /* compute new variable coefficient for each cut */
-   SCIP_CALL( computeColSepaMastercutCoeffs(gcgcol) );
-   sepamastercutcoeffs = GCGcolGetSepaMastercutCoeffs(gcgcol);
-   activecuts = GCGsepacutGetActiveCuts(gcg, pricerdata->mastersepacuthdlr);
-   nactivecuts = GCGsepacutGetNActiveCuts(gcg, pricerdata->mastersepacuthdlr);
+   SCIP_CALL( computeColMastersepacutCoeffs(gcgcol) );
+   mastersepacutcoeffs = GCGcolGetMastersepaCutCoeffs(gcgcol);
+   activecuts = GCGeventmastersepacutGetActiveMastersepacuts(gcg, pricerdata->mastersepacuthdlr);
+   nactivecuts = GCGeventmastersepacutGetNActiveMastersepacuts(gcg, pricerdata->mastersepacuthdlr);
 
    /* add the variable to the active cuts using the previously computed coefficients */
    for( j = 0; j < nactivecuts; j++ )
@@ -1721,16 +1721,16 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCutsFromGCGCol(
          continue;
 
       /* add master var to cut with pre-computed coefficient */
-      //SCIPinfoMessage(scip_, NULL, "add var %s: %f\n", SCIPvarGetName(newvar), sepamastercutcoeffs[j]);
-      if( !SCIPisZero(scip_, sepamastercutcoeffs[j]) )
-         SCIP_CALL( SCIPaddVarToRow(scip_, row, newvar, sepamastercutcoeffs[j]) );
+      //SCIPinfoMessage(scip_, NULL, "add var %s: %f\n", SCIPvarGetName(newvar), mastersepacutcoeffs[j]);
+      if( !SCIPisZero(scip_, mastersepacutcoeffs[j]) )
+         SCIP_CALL( SCIPaddVarToRow(scip_, row, newvar, mastersepacutcoeffs[j]) );
    }
 
    return SCIP_OKAY;
 }
 
 /** compute coefficients for new master var and add them to the separator master cuts */
-SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
+SCIP_RETCODE ObjPricerGcg::addVariableToMastersepacuts(
    SCIP_VAR*             newvar,       /**< the new master variable to add */
    int                   prob,         /**< number of the pricing problem the solution belongs to */
    SCIP_VAR**            solvars,      /**< array of variables with non-zero value in the solution of the pricing problem */
@@ -1748,9 +1748,9 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
    assert(solvars != NULL || nsolvars == 0);
    assert(solvals != NULL || nsolvars == 0);
 
-   /* get sepa master cuts and separators */
-   activecuts = GCGsepacutGetActiveCuts(gcg, pricerdata->mastersepacuthdlr);
-   nactivecuts = GCGsepacutGetNActiveCuts(gcg, pricerdata->mastersepacuthdlr);
+   /* get master sepa cuts and separators */
+   activecuts = GCGeventmastersepacutGetActiveMastersepacuts(gcg, pricerdata->mastersepacuthdlr);
+   nactivecuts = GCGeventmastersepacutGetNActiveMastersepacuts(gcg, pricerdata->mastersepacuthdlr);
 
    for( j = 0; j < nactivecuts; j++ )
    {
@@ -1763,7 +1763,7 @@ SCIP_RETCODE ObjPricerGcg::addVariableToSepaMasterCuts(
          continue;
 
       /*  update the variable history of the cut */
-      SCIP_CALL( GCGvarhistoryJumpToLatest(scip_, GCGmastersepacutGetVarHistory(GCGextendedmasterconsGetSepamastercut(activecuts[j]))) );
+      SCIP_CALL( GCGvarhistoryJumpToLatest(scip_, GCGmastersepacutGetVarHistory(GCGextendedmasterconsGetMastersepacut(activecuts[j]))) );
 
       /* compute the coefficient for the cut */
       coeff = 0.0;
@@ -1880,7 +1880,7 @@ SCIP_RETCODE ObjPricerGcg::computeColOriginalSepaCuts(
 }
 
 /** compute separator master cut coefficients of column and store them in the column */
-SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
+SCIP_RETCODE ObjPricerGcg::computeColMastersepacutCoeffs(
    GCG_COL*              gcgcol              /**< GCG column data structure */
 )
 {
@@ -1894,15 +1894,15 @@ SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
    assert(scip_ != NULL);
    assert(gcgcol != NULL);
 
-   activecuts = GCGsepacutGetActiveCuts(gcg, pricerdata->mastersepacuthdlr);
-   nactivecuts = GCGsepacutGetNActiveCuts(gcg, pricerdata->mastersepacuthdlr);
+   activecuts = GCGeventmastersepacutGetActiveMastersepacuts(gcg, pricerdata->mastersepacuthdlr);
+   nactivecuts = GCGeventmastersepacutGetNActiveMastersepacuts(gcg, pricerdata->mastersepacuthdlr);
 
    /* ensure that the coefficients for the master constraints have been computed */
    if( !GCGcolGetInitializedCoefs(gcgcol) )
       SCIP_CALL( computeColMastercoefs(gcgcol) );
 
    /* get the number of coefficients which have already been stored (relevant for columns from pool) */
-   ncurrentsepamastercutcoeffs = GCGcolGetNSepaMastercutCoeffs(gcgcol);
+   ncurrentsepamastercutcoeffs = GCGcolGetNMastersepacutCoeffs(gcgcol);
    assert(ncurrentsepamastercutcoeffs <= nactivecuts);
 
    /* no new cuts since last computation */
@@ -1921,7 +1921,7 @@ SCIP_RETCODE ObjPricerGcg::computeColSepaMastercutCoeffs(
    }
 
    /* transfer the computed coefficients to the gcg column */
-   SCIP_CALL( GCGcolAppendSepaMastercutCoeffs(gcgcol, coeffs, nactivecuts - ncurrentsepamastercutcoeffs) );
+   SCIP_CALL( GCGcolAppendMastersepacutCoeffs(gcgcol, coeffs, nactivecuts - ncurrentsepamastercutcoeffs) );
    SCIPfreeBufferArrayNull(origprob, &coeffs);
 
    return SCIP_OKAY;
@@ -2471,8 +2471,8 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
    }
 
    /* separator master cuts */
-   nactivecuts = GCGsepacutGetNActiveCuts(gcg, pricerdata->mastersepacuthdlr);
-   activecuts = GCGsepacutGetActiveCuts(gcg, pricerdata->mastersepacuthdlr);
+   nactivecuts = GCGeventmastersepacutGetNActiveMastersepacuts(gcg, pricerdata->mastersepacuthdlr);
+   activecuts = GCGeventmastersepacutGetActiveMastersepacuts(gcg, pricerdata->mastersepacuthdlr);
 
    for( j = 0; j < nactivecuts; j++ )
    {
@@ -2996,7 +2996,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVar(
    SCIP_CALL( addVariableToPricedvars(newvar) );
    SCIP_CALL( addVariableToMasterconstraints(newvar, prob, solvars, solvals, nsolvars) );
    SCIP_CALL( addVariableToOriginalSepaCuts(newvar, prob, solvars, solvals, nsolvars) );
-   SCIP_CALL( addVariableToSepaMasterCuts(newvar, prob, solvars, solvals, nsolvars) );
+   SCIP_CALL( addVariableToMastersepacuts(newvar, prob, solvars, solvals, nsolvars) );
    SCIP_CALL( addVariableToExtendedmastercons(newvar) );
 
    /* add variable to convexity constraint */
@@ -3152,7 +3152,7 @@ SCIP_RETCODE ObjPricerGcg::createNewMasterVarFromGcgCol(
    SCIP_CALL( addVariableToPricedvars(newvar) );
    SCIP_CALL( addVariableToMasterconstraintsFromGCGCol(newvar, gcgcol) );
    SCIP_CALL( addVariableToOriginalSepaCutsFromGCGCol(newvar, gcgcol) );
-   SCIP_CALL( addVariableToSepaMasterCutsFromGCGCol(newvar, gcgcol) );
+   SCIP_CALL( addVariableToMastersepacutsFromGCGCol(newvar, gcgcol) );
    SCIP_CALL( addVariableToExtendedmastercons(newvar) );
 
    /* add variable to convexity constraint */
@@ -3567,8 +3567,8 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    SCIP_CALL( GCGrelaxBranchGetAllActiveExtendedMasterConss(gcg, &branchrules, &branchdata, &branchextendedmasterconsdata, &nbranchextendedmasterconss) );
    assert(nbranchextendedmasterconss == 0 || (branchrules != NULL && branchdata != NULL && branchextendedmasterconsdata != NULL));
 
-   activecuts = GCGsepacutGetActiveCuts(gcg, pricerdata->mastersepacuthdlr);
-   nactivecuts = GCGsepacutGetNActiveCuts(gcg, pricerdata->mastersepacuthdlr);
+   activecuts = GCGeventmastersepacutGetActiveMastersepacuts(gcg, pricerdata->mastersepacuthdlr);
+   nactivecuts = GCGeventmastersepacutGetNActiveMastersepacuts(gcg, pricerdata->mastersepacuthdlr);
 
    // disable colpool while probing mode is active (can be removed after a feasibility check (#586) is implemented)
    probingnode = (SCIPnodeGetType(SCIPgetCurrentNode(scip_)) == SCIP_NODETYPE_PROBINGNODE);
@@ -4136,7 +4136,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
       if( GCGextendedmasterconsIsActive(activecuts[j]) )
       {
          /* update the var history of all the cuts still in the LP */
-         SCIP_CALL( GCGvarhistoryJumpToLatest(scip_, GCGmastersepacutGetVarHistory(GCGextendedmasterconsGetSepamastercut(activecuts[j]))) );
+         SCIP_CALL( GCGvarhistoryJumpToLatest(scip_, GCGmastersepacutGetVarHistory(GCGextendedmasterconsGetMastersepacut(activecuts[j]))) );
          SCIP_Real dual = pricetype->extendedmasterconsGetDual(activecuts[j]);
          /* if the dual was zero, the pricing modifications were never applied since they are superfluous */
          if( dual != 0.0 )
@@ -4276,7 +4276,7 @@ SCIP_RETCODE GCGcomputeColMastercoefs(
 
    pricer->computeColMastercoefs(gcgcol);
    pricer->computeColOriginalSepaCuts(gcgcol);
-   pricer->computeColSepaMastercutCoeffs(gcgcol);
+   pricer->computeColMastersepacutCoeffs(gcgcol);
 
    return SCIP_OKAY;
 

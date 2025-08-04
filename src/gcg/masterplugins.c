@@ -146,7 +146,7 @@
 #endif
 
 /* Chantal's Separators */
-#include "gcg/event_sepacuts.h"
+#include "gcg/event_mastersepacut.h"
 #include "gcg/sepa_subsetrow.h"
 
 /* Jonas' stuff */
@@ -380,7 +380,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
 
    /* GCG Master Separators */
    SCIP_CALL( SCIPincludeSepaSubsetrow(gcg) );
-   SCIP_CALL( SCIPincludeEventHdlrSepaCuts(gcg) );
+   SCIP_CALL( GCGincludeEventHdlrSepaCuts(gcg) );
 
    return SCIP_OKAY;
 }

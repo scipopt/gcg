@@ -43,8 +43,8 @@
 extern "C" {
 #endif
 
-typedef struct GCG_SeparatorMasterCutData GCG_SEPARATORMASTERCUTDATA;
-typedef struct GCG_SeparatorMasterCut GCG_SEPARATORMASTERCUT;
+typedef struct GCG_MastersepacutData GCG_MASTERSEPACUTDATA;
+typedef struct GCG_Mastersepacut GCG_MASTERSEPACUT;
 
 #ifdef __cplusplus
 }

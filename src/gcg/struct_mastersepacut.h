@@ -49,12 +49,12 @@ extern "C" {
 
 
 /** master separator cut data structure */
-struct GCG_SeparatorMasterCut
+struct GCG_Mastersepacut
 {
    GCG_SEPA*                        sepa;                   /**< GCG Master Separator which generated the mastercut */
    GCG_VARHISTORY*                  knownvarhistory;        /**< pointer to the history of priced variables */
-   GCG_SEPARATORMASTERCUTDATA*      data;                   /**< additional data helpful to compute coefficients */
-   int                              nuses;                  /**< number of times this separator mastercut is referenced */
+   GCG_MASTERSEPACUTDATA*           data;                   /**< additional data helpful to compute coefficients */
+   int                              nuses;                  /**< number of times this mastersepacut is referenced */
 };
 
 #ifdef __cplusplus

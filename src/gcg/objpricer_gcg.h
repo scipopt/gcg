@@ -205,9 +205,6 @@ public:
    /** add artificial vars */
    SCIP_RETCODE addArtificialVars();
 
-   /** add trivial sols */
-   SCIP_RETCODE addTrivialsols();
-
    /** create the pointers for the pricing types */
    SCIP_RETCODE createPricingTypes();
 
@@ -270,19 +267,19 @@ public:
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
-   /** compute separator mastercut coefficients of column */
-   SCIP_RETCODE computeColSepaMastercutCoeffs(
+   /** compute mastersepacut coefficients of column */
+   SCIP_RETCODE computeColMastersepacutCoeffs(
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
    /** add variable with computed coefficients to the original separator cuts */
-   SCIP_RETCODE addVariableToSepaMasterCutsFromGCGCol(
+   SCIP_RETCODE addVariableToMastersepacutsFromGCGCol(
       SCIP_VAR*             newvar,             /**< The new variable to add */
       GCG_COL*              gcgcol              /**< GCG column data structure */
       );
 
    /** add variable with computed coefficients to the separator master cuts */
-   SCIP_RETCODE addVariableToSepaMasterCuts(
+   SCIP_RETCODE addVariableToMastersepacuts(
       SCIP_VAR*             newvar,             /**< The new variable to add */
       int                   prob,               /**< number of the pricing problem the solution belongs to */
       SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */

@@ -80,7 +80,7 @@ set(gcgsources
     gcg/event_display.c
     gcg/event_mastersol.c
     gcg/event_relaxsol.c
-    gcg/event_sepacuts.c
+    gcg/event_mastersepacut.c
     gcg/event_solvingstats.c
     gcg/gcg.cpp
     gcg/gcg_general.c
@@ -228,7 +228,7 @@ set(gcgheaders
     gcg/event_display.h
     gcg/event_mastersol.h
     gcg/event_relaxsol.h
-    gcg/event_sepacuts.h
+    gcg/event_mastersepacut.h
     gcg/event_solvingstats.h
     gcg/gcg.h
     gcg/gcgcol.h

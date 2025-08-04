@@ -39,8 +39,7 @@
 
 #include <scip/type_sepa.h>
 
-#include "type_sepagcg.h"
-#include "event_sepacuts.h"
+#include "gcg/type_sepagcg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,7 +52,7 @@ struct GCG_Sepa
    GCG_DECL_SEPAGETCOLCOEFFICIENT         ((*sepagetcolcoefficient));    /**< compute cut coefficient using gcg column */
    GCG_DECL_SEPASETOBJECTIVE              ((*sepasetobjective));         /**< adapt pricing objectives to consider cut */
    GCG_DECL_SEPAADJUSTCOL                 ((*sepaadjustcol));            /**< modify outdated column to consider cut */
-   GCG_DECL_SEPAMASTERCUTDELETE           ((*sepamastercutdelete));      /**< delete sepamastercutdata */
+   GCG_DECL_SEPAMASTERCUTDELETE           ((*sepamastercutdelete));      /**< delete mastersepacutdata */
 };
 
 #ifdef __cplusplus
