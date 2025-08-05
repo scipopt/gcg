@@ -45,6 +45,12 @@
 extern "C" {
 #endif
 
+struct GCG_BranchConsData
+{
+    GCG_BRANCHRULE* branchrule;
+    GCG_BRANCHDATA* branchdata;
+};
+
 /** branching rule */
 struct GCG_Branchrule
 {

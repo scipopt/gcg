@@ -179,41 +179,40 @@ SCIP_RETCODE GCGvarhistoryNext(
 /** jump to the latest history event */
 SCIP_RETCODE GCGvarhistoryJumpToLatest(
    SCIP*                  scip,              /**< SCIP data structure */
-   GCG_VARHISTORY**       pointer            /**< pointer to the history */
+   GCG_VARHISTORY*        pointer            /**< pointer to the history */
    )
 {
    GCG_VARHISTORYBUFFER* next;
    assert(scip != NULL);
    assert(pointer != NULL);
-   assert(*pointer != NULL);
-   assert((*pointer)->buffer != NULL);
-   assert((*pointer)->pos < (*pointer)->buffer->nvars);
-   assert((*pointer)->buffer->nvars <= GCG_VARHISTORYBUFFER_SIZE);
-   assert(((*pointer)->buffer->nvars == GCG_VARHISTORYBUFFER_SIZE) >= ((*pointer)->buffer->next != NULL));
+   assert(pointer->buffer != NULL);
+   assert(pointer->pos < pointer->buffer->nvars);
+   assert(pointer->buffer->nvars <= GCG_VARHISTORYBUFFER_SIZE);
+   assert((pointer->buffer->nvars == GCG_VARHISTORYBUFFER_SIZE) >= (pointer->buffer->next != NULL));
 
-   next = (*pointer)->buffer->next;
+   next = pointer->buffer->next;
    while( next != NULL )
    {
-      assert(((*pointer)->buffer->nvars == GCG_VARHISTORYBUFFER_SIZE) >= ((*pointer)->buffer->next != NULL));
+      assert((pointer->buffer->nvars == GCG_VARHISTORYBUFFER_SIZE) >= (pointer->buffer->next != NULL));
       SCIPdebugMessage("Jumping history pointer to next buffer\n");
       SCIP_CALL( GCGvarhistoryCaptureBuffer(next) );
-      SCIP_CALL( GCGvarhistoryReleaseBuffer(scip, &(*pointer)->buffer) );
+      SCIP_CALL( GCGvarhistoryReleaseBuffer(scip, &pointer->buffer) );
 
-      (*pointer)->buffer = next;
-      next = (*pointer)->buffer->next;
+      pointer->buffer = next;
+      next = pointer->buffer->next;
 
-      assert((*pointer)->buffer->nvars > 0);
-      assert((*pointer)->buffer->vars[0] != NULL);
+      assert(pointer->buffer->nvars > 0);
+      assert(pointer->buffer->vars[0] != NULL);
    }
 
-   (*pointer)->pos = (*pointer)->buffer->nvars - 1;
+   pointer->pos = pointer->buffer->nvars - 1;
    return SCIP_OKAY;
 }
 
 /** jump to the latest history event and retrieve all new variables */
 SCIP_RETCODE GCGvarhistoryJumpAndRetrieveVars(
    SCIP*                  scip,              /**< SCIP data structure */
-   GCG_VARHISTORY**       pointer,           /**< pointer to the history */
+   GCG_VARHISTORY*        pointer,           /**< pointer to the history */
    SCIP_VAR***            vars,              /**< pointer to store the variables */
    int*                   nvars              /**< pointer to store the number of variables */
    )
@@ -225,11 +224,10 @@ SCIP_RETCODE GCGvarhistoryJumpAndRetrieveVars(
 
    assert(scip != NULL);
    assert(pointer != NULL);
-   assert(*pointer != NULL);
-   assert((*pointer)->buffer != NULL);
-   assert((*pointer)->pos < (*pointer)->buffer->nvars);
-   assert((*pointer)->buffer->nvars <= GCG_VARHISTORYBUFFER_SIZE);
-   assert(((*pointer)->buffer->nvars == GCG_VARHISTORYBUFFER_SIZE) >= ((*pointer)->buffer->next != NULL));
+   assert(pointer->buffer != NULL);
+   assert(pointer->pos < pointer->buffer->nvars);
+   assert(pointer->buffer->nvars <= GCG_VARHISTORYBUFFER_SIZE);
+   assert((pointer->buffer->nvars == GCG_VARHISTORYBUFFER_SIZE) >= (pointer->buffer->next != NULL));
    assert(vars != NULL);
    assert(*vars == NULL);
    assert(nvars != NULL);
@@ -238,18 +236,18 @@ SCIP_RETCODE GCGvarhistoryJumpAndRetrieveVars(
    *vars = NULL;
    *nvars = 0;
 
-   if( (*pointer)->buffer->nvars == 0 )
+   if( pointer->buffer->nvars == 0 )
    {
       return SCIP_OKAY;
    }
 
-   if( (*pointer)->pos < 0 )
+   if( pointer->pos < 0 )
    {
-      (*pointer)->pos = -1;
+      pointer->pos = -1;
    }
 
-   weakcopy.buffer = (*pointer)->buffer;
-   weakcopy.pos = (*pointer)->pos;
+   weakcopy.buffer = pointer->buffer;
+   weakcopy.pos = pointer->pos;
    do
    {
       *nvars += weakcopy.buffer->nvars - weakcopy.pos - 1;
@@ -277,24 +275,24 @@ SCIP_RETCODE GCGvarhistoryJumpAndRetrieveVars(
 
    do
    {
-      assert((*pointer)->buffer->nvars > 0);
-      assert((*pointer)->pos < (*pointer)->buffer->nvars);
-      assert(((*pointer)->buffer->nvars == GCG_VARHISTORYBUFFER_SIZE) >= ((*pointer)->buffer->next != NULL));
+      assert(pointer->buffer->nvars > 0);
+      assert(pointer->pos < pointer->buffer->nvars);
+      assert((pointer->buffer->nvars == GCG_VARHISTORYBUFFER_SIZE) >= (pointer->buffer->next != NULL));
 
-      for( i = (*pointer)->pos + 1; i < (*pointer)->buffer->nvars; i++ )
+      for( i = pointer->pos + 1; i < pointer->buffer->nvars; i++ )
       {
-         (*vars)[curridx] = (*pointer)->buffer->vars[i];
+         (*vars)[curridx] = pointer->buffer->vars[i];
          curridx += 1;
       }
 
-      next = (*pointer)->buffer->next;
+      next = pointer->buffer->next;
       if( next != NULL )
       {
          SCIP_CALL( GCGvarhistoryCaptureBuffer(next) );
-         SCIP_CALL( GCGvarhistoryReleaseBuffer(scip, &(*pointer)->buffer) );
+         SCIP_CALL( GCGvarhistoryReleaseBuffer(scip, &pointer->buffer) );
 
-         (*pointer)->buffer = next;
-         (*pointer)->pos = -1;
+         pointer->buffer = next;
+         pointer->pos = -1;
       }
       else
       {
@@ -305,9 +303,9 @@ SCIP_RETCODE GCGvarhistoryJumpAndRetrieveVars(
 
    assert(curridx == *nvars);
 
-   (*pointer)->pos = (*pointer)->buffer->nvars - 1;
-   assert((*pointer)->buffer->next == NULL);
-   assert((*pointer)->pos >= 0);
+   pointer->pos = pointer->buffer->nvars - 1;
+   assert(pointer->buffer->next == NULL);
+   assert(pointer->pos >= 0);
 
    return SCIP_OKAY;
 }

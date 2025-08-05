@@ -61,7 +61,7 @@ SCIP_RETCODE GCGcreateConsMasterbranch(
    const char*           name,               /**< name of the constraint */
    SCIP_NODE*            node,               /**< node at which the constraint should be created */
    SCIP_CONS*            parentcons,         /**< parent constraint */
-   SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branching rule */
+   GCG_BRANCHRULE*       branchrule,         /**< pointer to the branching rule */
    GCG_BRANCHDATA*       branchdata,         /**< branching data */
    SCIP_CONS**           origbranchconss,    /**< original constraints enforcing the branching decision */
    int                   norigbranchconss,   /**< number of original constraints */
@@ -137,7 +137,7 @@ void GCGconsMasterbranchSetBranchdata(
 
 /** returns the branching rule of the constraint */
 GCG_EXPORT
-SCIP_BRANCHRULE* GCGconsMasterbranchGetBranchrule(
+GCG_BRANCHRULE* GCGconsMasterbranchGetBranchrule(
    SCIP_CONS*            cons                /**< masterbranch constraint for which the data is requested */
    );
 

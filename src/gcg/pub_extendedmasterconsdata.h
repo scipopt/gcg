@@ -43,6 +43,9 @@
 #include "scip/scip.h"
 #include "gcg/def.h"
 #include "gcg/type_gcg.h"
+#include "gcg/type_branchgcg.h"
+#include "gcg/type_mastersepacut.h"
+#include "gcg/type_gcgcol.h"
 
 #ifdef NDEBUG
 #include "gcg/struct_extendedmasterconsdata.h"
@@ -82,7 +85,7 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromCons(
    SCIP_CONS*                       cons,                         /**< constraint in the master problem that represents the extended master cons */
    GCG_PRICINGMODIFICATION**        pricingmodifications,         /**< pricing modifications for the extended master cons */
    int                              npricingmodifications,        /**< number of pricing modifications for the extended master cons */
-   GCG_EXTENDEDMASTERCONSDATADATA*  data                          /**< any data that might be required to calculate the coefficient of a column solution */
+   GCG_BRANCHCONSDATA*              data                          /**< branchconsdata that belongs to the cons */
    );
 
 /** create an extended master cons, taking ownership over pricingmodifications */
@@ -94,7 +97,7 @@ SCIP_RETCODE GCGextendedmasterconsCreateFromRow(
    SCIP_ROW*                        row,                          /**< row in the master problem that represents the extended master cons */
    GCG_PRICINGMODIFICATION**        pricingmodifications,         /**< pricing modifications for the extended master cons */
    int                              npricingmodifications,        /**< number of pricing modifications for the extended master cons */
-   GCG_EXTENDEDMASTERCONSDATADATA*  data                          /**< any data that might be required to calculate the coefficient of a column solution */
+   GCG_MASTERSEPACUT*          data                               /**< mastersepacut that corresponds to the row */
    );
 
 /** free an extended master cons */
@@ -289,16 +292,6 @@ SCIP_Real* GCGextendedmasterconsGetVals(
    GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
    );
 
-#ifdef NDEBUG
-#define GCGextendedmasterconsGetData(extendedmasterconsdata) ((extendedmasterconsdata)->data)
-#else
-/** get the additional data */
-GCG_EXPORT
-GCG_EXTENDEDMASTERCONSDATADATA* GCGextendedmasterconsGetData(
-   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
-   );
-#endif
-
 /** calculate the coefficient of a column solution in the extended master cons */
 GCG_EXPORT
 SCIP_RETCODE GCGextendedmasterconsGetCoeff(
@@ -308,6 +301,7 @@ SCIP_RETCODE GCGextendedmasterconsGetCoeff(
    SCIP_Real*                       solvals,                      /**< array of column solution values */
    int                              nsolvars,                     /**< number of column solution variables and values */
    int                              probnr,                       /**< the pricing problem that the column belongs to */
+   GCG_COL*                         gcgcol,                       /**< gcg column if available (or NULL) */
    SCIP_Real*                       coeff                         /**< pointer to store the coefficient */
    );
 

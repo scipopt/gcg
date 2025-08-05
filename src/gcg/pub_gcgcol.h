@@ -258,17 +258,6 @@ SCIP_RETCODE GCGcolUpdateOriginalSepaMastercuts(
    int                  nneworiginalsepamastercuts/**< new number of master cut coefficients */
    );
 
-/** set extended master cons coefficients information of column in the master problem
- * @note the arrays will be freed by the column, they must be allocated using the pricingscip the column belongs to
- */
-GCG_EXPORT
-SCIP_RETCODE GCGcolSetExtendedmasterconss(
-   GCG_COL*             gcgcol,             /**< gcg column structure */
-   SCIP_Real*           extendedmasterconss,  /**< pointer to array of extended master cons coefficients */
-   SCIP_Real*           extendedmasterconsbounds,/**< pointer to array of extended master cons bounds */
-   int                  nextendedmasterconss  /**< number of extended master cons coefficients */
-   );
-
 /** gets the age of the col */
 GCG_EXPORT
 int GCGcolGetAge(
@@ -312,8 +301,45 @@ SCIP_VAR** GCGcolGetInferredPricingVars(
    );
 
 /** returns the number of inferred (coefficient) pricing variables */
+GCG_EXPORT
 int GCGcolGetNInferredPricingVars(
    GCG_COL*              gcgcol             /**< gcgcol */
+   );
+
+/** update the column's stored coefficients for mastersepacut */
+GCG_EXPORT
+SCIP_RETCODE GCGcolSetMastersepacutCoeffs(
+   GCG_COL*             gcgcol,                 /**< gcg column structure */
+   SCIP_Real*           sepamastercoeffs,       /**< pointer to array of new mastercut coefficients */
+   int                  nsepamastercoeffs       /**< number of new mastercut coefficients */
+   );
+
+/** get the column's number of stored coefficients for mastersepacuts */
+GCG_EXPORT
+int GCGcolGetNMastersepacutCoeffs(
+   GCG_COL*             gcgcol      /**< gcg column structure */
+   );
+
+/** get the size of the column's array for mastersepacut coefficients */
+GCG_EXPORT
+int GCGcolGetMastersepacutCoeffsSize(
+   GCG_COL*            gcgcol    /**< gcg column structure */
+   );
+
+/** get the column's coefficients for the mastersepacuts */
+GCG_EXPORT
+SCIP_Real* GCGcolGetMastersepaCutCoeffs(
+   GCG_COL*             gcgcol      /**< gcg column structure */
+   );
+
+/** updates column such that it respect the given active cuts */
+GCG_EXPORT
+SCIP_RETCODE GCGcolUpdateActiveMastersepacuts(
+   GCG*                          gcg,                          /**< GCG data structure */
+   GCG_COL*                      gcgcol,                       /**< gcg column structure */
+   GCG_EXTENDEDMASTERCONSDATA**  mastersepacuts,               /**< active master sepa cuts */
+   int                           nmastersepacuts,              /**< number of all active cuts */
+   SCIP_Real*                    mastersepacutcoefs            /**< master sepa cut coefficients */
    );
 
 /** gets the hash key of a col */

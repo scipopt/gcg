@@ -46,8 +46,9 @@
 extern "C" {
 #endif
 
-typedef struct GCG_BranchData GCG_BRANCHDATA;   /**< branching data */
-typedef struct GCG_Branchrule GCG_BRANCHRULE;   /**< branching rule */
+typedef struct GCG_BranchData GCG_BRANCHDATA;         /**< branching data */
+typedef struct GCG_Branchrule GCG_BRANCHRULE;         /**< branching rule */
+typedef struct GCG_BranchConsData GCG_BRANCHCONSDATA; /**< branching cons data */
 
 /** type of variable bound: lower or upper bound */
 enum GCG_BoundType
@@ -144,9 +145,10 @@ typedef enum GCG_BoundType GCG_BOUNDTYPE;
  *    solvals         : array of column solution values
  *    nsolvars        : number of column solution variables and values
  *    probnr          : the pricing problem that the column belongs to
+ *    gcgcol          : gcg column if available (or NULL)
  *    coef            : the calculated coefficient
  */
-#define GCG_DECL_BRANCHGETEXTENDEDMASTERCONSCOEFF(x) SCIP_RETCODE x (GCG* gcg, GCG_BRANCHDATA* branchdata, GCG_EXTENDEDMASTERCONSDATA* extendedmasterconsdata, SCIP_VAR** solvars, SCIP_Real* solvals, int nsolvars, int probnr, SCIP_Real* coef)
+#define GCG_DECL_BRANCHGETEXTENDEDMASTERCONSCOEFF(x) SCIP_RETCODE x (GCG* gcg, GCG_BRANCHDATA* branchdata, GCG_EXTENDEDMASTERCONSDATA* extendedmasterconsdata, SCIP_VAR** solvars, SCIP_Real* solvals, int nsolvars, int probnr, GCG_COL* gcgcol, SCIP_Real* coef)
 
 #ifdef __cplusplus
 }

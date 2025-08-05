@@ -31,6 +31,7 @@
  * @brief  public methods for GCG separators
  * @author Christian Puchert
  * @author Jonas Witt
+ * @author Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -41,6 +42,10 @@
 
 #include "scip/scip.h"
 #include "gcg/type_gcg.h"
+
+#ifdef NDEBUG
+#include "gcg/struct_sepagcg.h"
+#endif
 
 
 #ifdef __cplusplus
@@ -64,6 +69,16 @@ SCIP_RETCODE GCGsetSeparators(
    GCG*                  gcg,                /**< GCG data structure */
    SCIP_PARAMSETTING     paramsetting        /**< parameter settings */
    );
+
+#ifdef NDEBUG
+#define GCGsepaGetScipSeparator(gcgsepa) ((gcgsepa)->separator)
+#else
+/** returns the pointer to the SCIP_SEPA object */
+GCG_EXPORT
+SCIP_SEPA* GCGsepaGetScipSeparator(
+   GCG_SEPA*             gcgsepa             /**< gcg separator data structure */   
+   );
+#endif
 
 #ifdef __cplusplus
 }

@@ -9,10 +9,11 @@ New features:
 - Solver plugin for HiGHS. Allows user to select HiGHS as a pricing problem solver.
 - new pricing solver ('gcg') that calls GCG to solve (structured) pricing problems
 - new (JSON formatted) decomposition file format ('jdec') supporting nested/recursive decompositions
-- generic approach to handle cuts and branching constraints in the master problem with no couterpart in the original problem
+- generic approach to handle cuts and branching constraints in the master problem with no counterpart in the original problem
 - created a pricing variable type for variables not corresponding to any original variable, inferred by extended master constraints
 - automatic mastervariable synchronization across the entire search tree through history-tracking
 - component bound branching rule
+- experimental subset row separator
 - New pricing callback plugin type. This plugin type provides two callback methods for interacting with the GCG pricer.
   The pre-pricing and post-pricing callback methods is called immediately before and after, respectively, new variables
   are generated in the REDCOST and FARKAS pricing methods.
@@ -35,12 +36,18 @@ New/modified/removed structures, defines, and classes:
 - added struct 'GCG_VARHISTORYBUFFER'
 - added type 'GCG_VARTYPE_INFERREDPRICING'
 - added a 'MASTER' prefix to the master diving type declarations
+- added struct 'GCG_MASTERSEPACUT'
+- added struct 'GCG_MASTERSEPACUTDATA'
+- added struct 'GCG_SEPA'
 
 New/modified/removed API functions:
 ---------------------------
 
 - public GCG functions use the new GCG data structure
 - added functions 'GCGcreate', 'GCGfree', 'GCGgetOrigprob', 'GCGgetMasterprob', 'GCGgetBendersMasterprob', 'GCGgetDwMasterprob', 'GCGmasterGetGcg', 'GCGorigGetGcg'
+- 'GCGrelaxIncludeBranchrule' now also calls 'SCIPincludeBranchrule'
+- public branching methods now use pointers to 'GCG_BRANCHRULE' instead of 'SCIP_BRANCHRULE'
+- added functions 'GCGbranchGetScipBranchrule' and 'GCGbranchGetScipBranchruledata'
 - removed 'GCGgetPartialdecToWrite'
 - 'GCGconshdlrDecompAddBasicPartialdec' returns now SCIP_RETCODE and sets a pointer to the created decomposition
 - public C functions working with (partial) decompositions use now 'PARTIALDECOMP_C' pointers instead of the id of the decomposition
@@ -72,10 +79,8 @@ New/modified/removed API functions:
 - added function 'GCGcreateInferredPricingVar'
 - added function 'GCGvarIsInferredPricing'
 - added function 'GCGpricingmodificationCreate'
-- added function 'GCGextendedmasterconsCreateFromCons'
-- added function 'GCGextendedmasterconsCreateFromRow'
+- added functions 'GCGextendedmastercons*' to work with extended master constraints
 - added function 'GCGbranchCreateExtendedmastercons'
-- added function 'GCGextendedmasterconsFree'
 - added function 'GCGrelaxBranchNewCol'
 - added function 'GCGrelaxBranchGetExtendedMasterCons'
 - added function 'GCGrelaxBranchGetAllActiveExtendedMasterConss'
@@ -84,17 +89,33 @@ New/modified/removed API functions:
 - added parameter 'GCG_DECL_BRANCHNEWCOL ((*branchnewcol));' to 'GCGrelaxIncludeBranchrule'
 - added parameter 'GCG_DECL_BRANCHGETEXTENDEDMASTERCONS((*branchgetextendedmastercons))' to 'GCGrelaxIncludeBranchrule'
 - added parameter 'GCG_DECL_BRANCHGETEXTENDEDMASTERCONSCOEFF((*branchgetextendedmasterconscoeff))' to 'GCGrelaxIncludeBranchrule'
-- moved function 'SCIPincludeSepaMaster' to 'SCIPincludeSepaOriginal'
+- moved function 'GCGincludeSepaMaster' to 'GCGincludeSepaOriginal'
 - moved function 'GCGsepaGetOrigcuts' to 'GCGsepaGetOriginalSepaOrigcuts'
 - moved function 'GCGsepaGetNCuts' to 'GCGsepaGetNOriginalSepaCuts'
 - moved function 'GCGsepaGetMastercuts' to 'GCGsepaGetOriginalSepaMastercuts'
 - moved function 'GCGsepaAddMastercuts' to 'GCGsepaAddOriginalSepaCuts'
 - moved function 'GCGsepaOrigcutExists' to 'GCGsepaOriginalSepaOrigcutExists'
+- added function 'GCGremoveNewInactiveMastersepacuts'
+- added function 'GCGgetActiveMastersepacuts'
+- added function 'GCGgetNActiveMastersepacuts'
+- added function 'GCGShrinkActiveMastersepacuts'
+- added function 'GCGaddGeneratedMastersepacut'
+- added function 'GCGaddActiveMastersepacut'
+- added function 'GCGcaptureMastersepacut'
+- added function 'GCGreleaseMastersepacut'
+- added function 'GCGcreateMastersepacut'
+- added functions 'GCGmastersepacut*' to work with master separator cuts
+- added function 'GCGcreateChvatalGomoryCut'
+- added functions 'GCGchvatalGomoryCut*' to work with Chvatal-Gomory cuts
+- added function 'GCGcolGetNMastersepacutCoeffs'
+- added function 'GCGcolGetMastersepacutCoeffsSize'
+- added function 'GCGcolGetMastersepacutCoeffs'
+- added function 'GCGcolUpdateActiveMastersepacuts'
 
 Command line interface
 -----------------------
 
-- Renamed output log column 'mcuts' to 'ocuts'
+- Renamed output log column 'mcuts' to 'cuts'
 
 Code cleanup:
 -------------
@@ -122,6 +143,15 @@ New/changed parameters:
 - added parameter 'pricingsolver/cliquer/lincutoff/slope'
 - added parameter 'pricingsolver/cliquer/lincutoff/intercept'
 - changed and renamed parameter 'pricingsolver/cliquer/density' to 'pricingsolver/cliquer/maxdensity': now used as upper bound
+- added parameter 'sepa/subsetrow/enable'
+- added parameter 'sepa/subsetrow/maxrounds'
+- added parameter 'sepa/subsetrow/maxroundsroot'
+- added parameter 'sepa/subsetrow/maxsepacuts'
+- added parameter 'sepa/subsetrow/maxsepacutsroot'
+- added parameter 'sepa/subsetrow/maxcutcands'
+- added parameter 'sepa/subsetrow/onlyroot'
+- added parameter 'sepa/subsetrow/n'
+- added parameter 'sepa/subsetrow/k'
 
 Bug fixes
 ---------

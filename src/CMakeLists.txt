@@ -80,9 +80,11 @@ set(gcgsources
     gcg/event_display.c
     gcg/event_mastersol.c
     gcg/event_relaxsol.c
+    gcg/event_mastersepacut.c
     gcg/event_solvingstats.c
     gcg/gcg.cpp
     gcg/gcg_general.c
+    gcg/gcgcgcut.c
     gcg/gcgcol.c
     gcg/gcggithash.c
     gcg/gcgheur.c
@@ -119,6 +121,7 @@ set(gcgsources
     gcg/heur_setcover.c
     gcg/heur_xpcrossover.c
     gcg/heur_xprins.c
+    gcg/mastersepacut.c
     gcg/extendedmasterconsdata.c
     gcg/masterplugins.c
     gcg/misc.c
@@ -152,11 +155,13 @@ set(gcgsources
     gcg/score.c
     gcg/sepa_basis.c
     gcg/sepa_original.c
+    gcg/sepa_subsetrow.c
     gcg/solver_gcg.cpp
     gcg/solver_knapsack.c
     gcg/solver_mip.c
     gcg/solver.c
     gcg/stat.c
+    gcg/zerohalf_selector.c
 )
 
 set(gcggraphsources
@@ -223,6 +228,7 @@ set(gcgheaders
     gcg/event_display.h
     gcg/event_mastersol.h
     gcg/event_relaxsol.h
+    gcg/event_mastersepacut.h
     gcg/event_solvingstats.h
     gcg/gcg.h
     gcg/gcgcol.h
@@ -258,6 +264,7 @@ set(gcgheaders
     gcg/heur_setcover.h
     gcg/heur_xpcrossover.h
     gcg/heur_xprins.h
+    gcg/mastersepacut.h
     gcg/extendedmasterconsdata.h
     gcg/masterplugins.h
     gcg/nodesel_master.h
@@ -283,6 +290,7 @@ set(gcgheaders
     gcg/pub_gcgpqueue.h
     gcg/pub_gcgvar.h
     gcg/pub_extendedmasterconsdata.h
+    gcg/pub_mastersepacut.h
     gcg/pub_pricingcb.h
     gcg/pub_pricingjob.h
     gcg/pub_pricingprob.h
@@ -308,6 +316,7 @@ set(gcgheaders
     gcg/score.h
     gcg/sepa_basis.h
     gcg/sepa_original.h
+    gcg/sepa_subsetrow.h
     gcg/solver.h
     gcg/solver_cliquer.h
     gcg/solver_gcg.h
@@ -322,12 +331,14 @@ set(gcgheaders
     gcg/struct_gcg.h
     gcg/struct_gcgcol.h
     gcg/struct_gcgpqueue.h
+    gcg/struct_mastersepacut.h
     gcg/struct_extendedmasterconsdata.h
     gcg/struct_pricestore_gcg.h
     gcg/struct_pricingcb.h
     gcg/struct_pricingjob.h
     gcg/struct_pricingprob.h
     gcg/struct_score.h
+    gcg/struct_sepagcg.h
     gcg/struct_solver.h
     gcg/struct_vardata.h
     gcg/struct_gcgvarhistory.h
@@ -340,6 +351,7 @@ set(gcgheaders
     gcg/type_gcg.h
     gcg/type_gcgcol.h
     gcg/type_gcgpqueue.h
+    gcg/type_mastersepacut.h
     gcg/type_gcgpricer.h
     gcg/type_locks.h
     gcg/type_extendedmasterconsdata.h
@@ -352,9 +364,11 @@ set(gcgheaders
     gcg/type_pricingjob.h
     gcg/type_pricingprob.h
     gcg/type_pricingstatus.h
+    gcg/type_sepagcg.h
     gcg/type_score.h
     gcg/type_solver.h
     gcg/type_varclassifier.h
+    gcg/zerohalf_selector.h
     gcg/type_gcgvarhistory.h
 )
 

@@ -26,38 +26,34 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    type_extendedmasterconsdata.h
- * @ingroup TYPEDEFINITIONS
- * @brief   type definitions for extended master conss in GCG projects
- * @author  Til Mohr
+/**@file    sepa_subsetrow.h
+ * @ingroup SEPARATORS-GCG
+ * @brief   subset row separator for master problem
+ * @author  Chantal Reinartz Groba
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_TYPE_EXTENDEDMASTERCONSDATA_H_
-#define GCG_TYPE_EXTENDEDMASTERCONSDATA_H_
+#ifndef GCG_SEPA_SUBSETROW_H__
+#define GCG_SEPA_SUBSETROW_H__
 
-#include "scip/def.h"
+
+#include <scip/scip.h>
+#include "gcg/gcg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** type of extended master constraint */
-enum GCG_ExtendedMasterConsType
-{
-   GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS,            /**< extended master cons is represented by a constraint */
-   GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW                /**< extended master cons is represented by a row */
-};
-typedef enum GCG_ExtendedMasterConsType GCG_EXTENDEDMASTERCONSTYPE;
-
-typedef union GCG_ExtendedMasterCons GCG_EXTENDEDMASTERCONS;
-
-typedef struct GCG_PricingModification GCG_PRICINGMODIFICATION;
-typedef struct GCG_ExtendedMasterConsData GCG_EXTENDEDMASTERCONSDATA;
+/** creates the scip sepa of the subsetrow gcg separator and includes it in SCIP */
+GCG_EXPORT
+SCIP_RETCODE SCIPincludeSepaSubsetrow(
+   GCG*                  gcg                 /**< GCG data structure */
+   );
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
+

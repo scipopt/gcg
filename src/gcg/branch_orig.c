@@ -98,6 +98,7 @@ struct SCIP_BranchruleData
                                                    * (only if usepseudocosts = mostfrac = random = FALSE)*/
    SCIP_Bool             usestrong;             /**< should strong branching be used to determine the variable on which
                                                    * the branching is performed? */
+   GCG_BRANCHRULE*       gcgbranchrule;         /**< GCG branchrule structure */
 };
 
 /** branching data for branching decisions */
@@ -188,7 +189,7 @@ SCIP_Bool getUniqueBlockFlagForIter(
 static
 SCIP_RETCODE branchVar(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< pointer to the original variable branching rule */
+   GCG_BRANCHRULE*       branchrule,         /**< pointer to the original variable branching rule */
    SCIP_VAR*             branchvar,          /**< variable to branch on */
    SCIP_Real             solval,             /**< value of the variable in the current solution */
    SCIP_Bool             upinf,              /**< have we seen during strong branching that the upbranch is
@@ -208,10 +209,10 @@ SCIP_RETCODE branchVar(
    origprob = GCGgetOrigprob(gcg);
    masterprob = GCGgetMasterprob(gcg);
 
-   branchruledata = SCIPbranchruleGetData(branchrule);
+   branchruledata = GCGbranchGetScipBranchruledata(branchrule);
    assert(branchruledata != NULL);
 
-   assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
+   assert(strcmp(SCIPbranchruleGetName(GCGbranchGetScipBranchrule(branchrule)), BRANCHRULE_NAME) == 0);
 
    assert(origprob != NULL);
    assert(branchrule != NULL);
@@ -473,14 +474,12 @@ SCIP_RETCODE branchVar(
  */
 static SCIP_Real score_function(
     SCIP *scip,
-    SCIP_BRANCHRULE*      branchrule,         /* pointer to the original variable branching rule */
+    SCIP_BRANCHRULEDATA*      branchruledata,         /* pointer to branching rule data */
     SCIP_VAR *var,            /* var to be scored */
     SCIP_Real solval,         /* the var's current solution value */
     SCIP_Real *score         /* stores the computed score */
-)
+   )
 {
-   SCIP_BRANCHRULEDATA* branchruledata;
-   branchruledata = SCIPbranchruleGetData(branchrule);
    assert(branchruledata != NULL);
 
    /* define score functions and calculate score for all variables for sorting dependent on used heuristic */
@@ -504,7 +503,7 @@ static SCIP_Real score_function(
 static
 SCIP_RETCODE branchExtern(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< pointer to the original variable branching rule */
+   GCG_BRANCHRULE*       branchrule,         /**< pointer to the original variable branching rule */
    SCIP_RESULT*          result              /**< pointer to store the result of the branching call */
    )
 {
@@ -528,7 +527,7 @@ SCIP_RETCODE branchExtern(
    SCIP_Real score;
 
    assert(branchrule != NULL);
-   assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
+   assert(strcmp(SCIPbranchruleGetName(GCGbranchGetScipBranchrule(branchrule)), BRANCHRULE_NAME) == 0);
    assert(gcg != NULL);
    assert(result != NULL);
 
@@ -536,7 +535,7 @@ SCIP_RETCODE branchExtern(
 
    assert(SCIPisRelaxSolValid(origprob));
 
-   branchruledata = SCIPbranchruleGetData(branchrule);
+   branchruledata = GCGbranchGetScipBranchruledata(branchrule);
    assert(branchruledata != NULL);
 
    *result = SCIP_DIDNOTRUN;
@@ -572,7 +571,7 @@ SCIP_RETCODE branchExtern(
 
                if( !branchruledata->userandom )
                {
-                  SCIP_CALL( score_function(origprob, branchrule, branchcands[i], branchcandssol[i], &score) );
+                  SCIP_CALL( score_function(origprob, branchruledata, branchcands[i], branchcandssol[i], &score) );
 
                   if( score > maxscore )
                   {
@@ -783,7 +782,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
    if( SCIPgetNExternBranchCands(origprob) > 0 )
    {
       assert(SCIPisRelaxSolValid(origprob));
-      SCIP_CALL( branchExtern(branchruledata->gcg, branchrule, result) );
+      SCIP_CALL( branchExtern(branchruledata->gcg, branchruledata->gcgbranchrule, result) );
    }
 
    return SCIP_OKAY;
@@ -813,7 +812,7 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
       *result = SCIP_DIDNOTFIND;
       SCIPdebugMessage("solution was feasible, node can be cut off!");
    }
-   SCIP_CALL( branchExtern(branchruledata->gcg, branchrule, result) );
+   SCIP_CALL( branchExtern(branchruledata->gcg, branchruledata->gcgbranchrule, result) );
 
    return SCIP_OKAY;
 }
@@ -822,18 +821,6 @@ SCIP_DECL_BRANCHEXECEXT(branchExecextOrig)
 static
 SCIP_DECL_BRANCHINIT(branchInitOrig)
 {
-   SCIP_BRANCHRULEDATA* branchruledata;
-
-   assert(branchrule != NULL);
-   assert(strcmp(SCIPbranchruleGetName(branchrule), BRANCHRULE_NAME) == 0);
-   branchruledata = SCIPbranchruleGetData(branchrule);
-   assert(branchruledata != NULL);
-
-   SCIPdebugMessage("Init orig branching rule\n");
-
-   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, branchrule, NULL, branchActiveMasterOrig,
-         branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolvedOrig, branchDataDeleteOrig, NULL, NULL, NULL) );
-
    return SCIP_OKAY;
 }
 
@@ -989,7 +976,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsOrig)
 
    assert(branchvar != NULL);
 
-   SCIP_CALL( branchVar(branchruledata->gcg, branchrule, branchvar, solval, FALSE, FALSE) );
+   SCIP_CALL( branchVar(branchruledata->gcg, branchruledata->gcgbranchrule, branchvar, solval, FALSE, FALSE) );
 
    *result = SCIP_BRANCHED;
 
@@ -1010,6 +997,7 @@ SCIP_RETCODE GCGincludeBranchruleOrig(
    SCIP* origprob;
    SCIP* masterprob;
    SCIP_BRANCHRULE* branchrule;
+   GCG_BRANCHRULE* gcgbranchrule;
    SCIP_BRANCHRULEDATA* branchruledata;
 
    SCIPdebugMessage("Include orig branching rule\n");
@@ -1027,9 +1015,11 @@ SCIP_RETCODE GCGincludeBranchruleOrig(
    branchruledata->gcg = gcg;
 
    /* include branching rule */
-   SCIP_CALL( SCIPincludeBranchruleBasic(masterprob, &branchrule, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
-            BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata) );
+   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, &branchrule, &gcgbranchrule, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
+         BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata, branchActiveMasterOrig,
+         branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolvedOrig, branchDataDeleteOrig, NULL, NULL, NULL) );
    assert(branchrule != NULL);
+   branchruledata->gcgbranchrule = gcgbranchrule;
 
    /* set non fundamental callbacks via setter functions */
    SCIP_CALL( SCIPsetBranchruleInit(masterprob, branchrule, branchInitOrig) );
@@ -1096,9 +1086,6 @@ SCIP_RETCODE GCGincludeBranchruleOrig(
    SCIP_CALL( SCIPaddRealParam(origprob, "branching/orig/phase2gapweight",
          "how much impact should the node gap have on the number of precisely evaluated candidates in phase 2 during strong branching?",
          NULL, FALSE, DEFAULT_PHASE2GAPWEIGHT, 0, 1, NULL, NULL) );
-
-   /* notify cons_integralorig about the original variable branching rule */
-   SCIP_CALL( GCGconsIntegralorigAddBranchrule(gcg, branchrule) );
 
    return SCIP_OKAY;
 }

@@ -1542,7 +1542,10 @@ SCIP_RETCODE GCGcreateMasterVar(
    }
    if( trivialsol )
    {
-      j = 0;
+      pricingvars = SCIPgetOrigVars(pricingscip);
+      npricingvars = SCIPgetNOrigVars(pricingscip);
+      assert(j == 0);
+
       for( i = 0; i < npricingvars; ++i )
       {
          SCIP_VAR* origvar;
@@ -1563,11 +1566,12 @@ SCIP_RETCODE GCGcreateMasterVar(
          SCIPhashmapInsertReal(newvardata->data.mastervardata.origvar2val, origvar, 0.0);
          /* save the quota in the original variable's data */
          SCIP_CALL( GCGoriginalVarAddMasterVar(gcg, origvar, *newvar, 0.0) );
-         j++;
       }
+      j = i;
    }
    assert(j == newvardata->data.mastervardata.norigvars);
-return SCIP_OKAY;
+
+   return SCIP_OKAY;
 }
 
 /** creates initial master variables and the vardata */
@@ -1664,7 +1668,7 @@ SCIP_RETCODE GCGcreateInferredPricingVar(
    SCIP_VAR**            newvar,             /**< pointer to store new master variable */
    const char*           varname,            /**< new variable name */
    SCIP_Real             lb,                 /**< new variable lower bound */
-   SCIP_Real             ub,                 /**< new objective coefficient */
+   SCIP_Real             ub,                 /**< new variable lower bound */
    SCIP_Bool             iscoefvar,          /**< is this a coefficient variable? (objcoeff can be 0 if TRUE but not != 0 if FALSE) */
    SCIP_Real             objcoeff,           /**< new objective coefficient */
    SCIP_VARTYPE          vartype,            /**< new variable type */
@@ -1691,6 +1695,7 @@ SCIP_RETCODE GCGcreateInferredPricingVar(
 
    return SCIP_OKAY;
 }
+
 
 /* adds the vardata to the auxiliary variable */
 SCIP_RETCODE GCGaddDataAuxiliaryVar(

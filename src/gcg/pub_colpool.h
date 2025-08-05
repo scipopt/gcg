@@ -48,6 +48,7 @@
 #include "gcg/type_colpool.h"
 #include "gcg/type_pricestore_gcg.h"
 #include "gcg/type_gcg.h"
+#include "gcg/type_extendedmasterconsdata.h"
 
 
 #ifdef __cplusplus

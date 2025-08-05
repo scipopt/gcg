@@ -321,9 +321,11 @@ LIBOBJ = \
 			gcg/disp_master.o \
 			gcg/event_bestsol.o \
 			gcg/event_display.o \
+			gcg/event_mastersepacut.o \
 			gcg/event_mastersol.o \
 			gcg/event_relaxsol.o \
 			gcg/event_solvingstats.o \
+			gcg/gcgcgcut.o \
 			gcg/gcgcol.o \
 			gcg/gcg_general.o \
 			gcg/gcggithash.o \
@@ -364,6 +366,7 @@ LIBOBJ = \
 			gcg/heur_setcover.o \
 			gcg/heur_xpcrossover.o \
 			gcg/heur_xprins.o \
+			gcg/mastersepacut.o  \
 			gcg/extendedmasterconsdata.o \
 			gcg/masterplugins.o \
 			gcg/bendersplugins.o \
@@ -400,11 +403,13 @@ LIBOBJ = \
 			gcg/score.o \
 			gcg/sepa_basis.o \
 			gcg/sepa_original.o \
+			gcg/sepa_subsetrow.o \
 			gcg/solver.o \
 			gcg/solver_gcg.o \
 			gcg/solver_knapsack.o \
 			gcg/solver_mip.o \
 			gcg/stat.o \
+			gcg/zerohalf_selector.o \
 
 ifneq ($(SYM),none)
 LIBOBJ		+=	symmetry/automorphism.o \

@@ -94,6 +94,7 @@ struct GCG_BranchData
 struct SCIP_BranchruleData
 {
    GCG*                 gcg;                 /**< GCG data structure */
+   GCG_BRANCHRULE*      gcgbranchrule;       /**< GCG branchrule structure */
 };
    
 
@@ -327,7 +328,7 @@ GCG_DECL_BRANCHDATADELETE(branchDataDeleteRyanfoster)
 static
 SCIP_RETCODE createChildNodesRyanfoster(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule */
    SCIP_VAR*             ovar1,              /**< first original variable */
    SCIP_VAR*             ovar2,              /**< second original variable */
    int                   blocknr,            /**< number of the pricing block */
@@ -793,7 +794,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
    {
       if( npairs>0 )
       {
-         GCGbranchSelectCandidateStrongBranchingRyanfoster(branchruledata->gcg, branchrule, ovar1s, ovar2s, nspricingblock,
+         GCGbranchSelectCandidateStrongBranchingRyanfoster(branchruledata->gcg, branchruledata->gcgbranchrule, ovar1s, ovar2s, nspricingblock,
                                                            npairs, &ovar1, &ovar2, &pricingblock, &sameinf, &differinf,
                                                            result, &stillusestrong);
 
@@ -814,7 +815,7 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpRyanfoster)
    }
 
    /* create the two child nodes in the branch-and-bound tree */
-   SCIP_CALL( createChildNodesRyanfoster(branchruledata->gcg, branchrule, ovar1, ovar2, GCGvarGetBlock(mvar1), sameinf,
+   SCIP_CALL( createChildNodesRyanfoster(branchruledata->gcg, branchruledata->gcgbranchrule, ovar1, ovar2, GCGvarGetBlock(mvar1), sameinf,
                                          differinf) );
 
    *result = SCIP_BRANCHED;
@@ -901,7 +902,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
          /* check whether we already branched on this combination of variables */
          for( c = 0; c < norigbranchconss; ++c )
          {
-            if( GCGconsOrigbranchGetBranchrule(origbranchconss[c]) == branchrule )
+            if( GCGconsOrigbranchGetBranchrule(origbranchconss[c]) == branchruledata->gcgbranchrule )
                continue;
 
             branchdata = GCGconsOrigbranchGetBranchdata(origbranchconss[c]);
@@ -929,7 +930,7 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
    }
 
    /* create the two child nodes in the branch-and-bound tree */
-   SCIP_CALL( createChildNodesRyanfoster(branchruledata->gcg, branchrule, ovar1, ovar2, GCGvarGetBlock(ovar1), FALSE, FALSE) );
+   SCIP_CALL( createChildNodesRyanfoster(branchruledata->gcg, branchruledata->gcgbranchrule, ovar1, ovar2, GCGvarGetBlock(ovar1), FALSE, FALSE) );
 
    *result = SCIP_BRANCHED;
 
@@ -940,15 +941,6 @@ SCIP_DECL_BRANCHEXECPS(branchExecpsRyanfoster)
 static
 SCIP_DECL_BRANCHINIT(branchInitRyanfoster)
 {
-   SCIP_BRANCHRULEDATA* branchruledata;
-
-   assert(branchrule != NULL);
-   branchruledata = SCIPbranchruleGetData(branchrule);
-   assert(branchruledata != NULL);
-
-   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, branchrule, NULL, branchActiveMasterRyanfoster,
-         branchDeactiveMasterRyanfoster, branchPropMasterRyanfoster, NULL, branchDataDeleteRyanfoster, NULL, NULL, NULL) );
-
    return SCIP_OKAY;
 }
 
@@ -983,6 +975,8 @@ SCIP_RETCODE GCGincludeBranchruleRyanfoster(
    )
 {
    SCIP_BRANCHRULEDATA* branchruledata;
+   SCIP_BRANCHRULE* branchrule;
+   GCG_BRANCHRULE* gcgbranchrule;
    SCIP* origprob;
    SCIP* masterprob;
 
@@ -994,11 +988,17 @@ SCIP_RETCODE GCGincludeBranchruleRyanfoster(
    branchruledata->gcg = gcg;
 
    /* include branching rule */
-   SCIP_CALL( SCIPincludeBranchrule(masterprob, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
-         BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchCopyRyanfoster,
-         branchFreeRyanfoster, branchInitRyanfoster, branchExitRyanfoster, branchInitsolRyanfoster,
-         branchExitsolRyanfoster, branchExeclpRyanfoster, branchExecextRyanfoster, branchExecpsRyanfoster,
-         branchruledata) );
+   SCIP_CALL( GCGrelaxIncludeBranchrule(branchruledata->gcg, &branchrule, &gcgbranchrule, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY,
+         BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata, branchActiveMasterRyanfoster,
+         branchDeactiveMasterRyanfoster, branchPropMasterRyanfoster, NULL, branchDataDeleteRyanfoster, NULL, NULL, NULL) );
+   assert(branchrule != NULL);
+   SCIP_CALL( SCIPsetBranchruleInit(masterprob, branchrule, branchInitRyanfoster) );
+   SCIP_CALL( SCIPsetBranchruleExecLp(masterprob, branchrule, branchExeclpRyanfoster) );
+   SCIP_CALL( SCIPsetBranchruleExecExt(masterprob, branchrule, branchExecextRyanfoster) );
+   SCIP_CALL( SCIPsetBranchruleExecPs(masterprob, branchrule, branchExecpsRyanfoster) );
+   SCIP_CALL( SCIPsetBranchruleFree(masterprob, branchrule, branchFreeRyanfoster) );
+   SCIP_CALL( SCIPsetBranchruleCopy(masterprob, branchrule, branchCopyRyanfoster) );
+   branchruledata->gcgbranchrule = gcgbranchrule;
 
    SCIP_CALL( SCIPaddBoolParam(origprob, "branching/ryanfoster/usestrong",
          "should strong branching be used to determine the variables on which the branching is performed?",

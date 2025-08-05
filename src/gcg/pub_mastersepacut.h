@@ -1,0 +1,245 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                           */
+/*                  This file is part of the program and library             */
+/*          GCG --- Generic Column Generation                                */
+/*                  a Dantzig-Wolfe decomposition based extension            */
+/*                  of the branch-cut-and-price framework                    */
+/*         SCIP --- Solving Constraint Integer Programs                      */
+/*                                                                           */
+/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
+/*                         Zuse Institute Berlin (ZIB)                       */
+/*                                                                           */
+/*  Licensed under the Apache License, Version 2.0 (the "License");          */
+/*  you may not use this file except in compliance with the License.         */
+/*  You may obtain a copy of the License at                                  */
+/*                                                                           */
+/*      http://www.apache.org/licenses/LICENSE-2.0                           */
+/*                                                                           */
+/*  Unless required by applicable law or agreed to in writing, software      */
+/*  distributed under the License is distributed on an "AS IS" BASIS,        */
+/*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/*  See the License for the specific language governing permissions and      */
+/*  limitations under the License.                                           */
+/*                                                                           */
+/*  You should have received a copy of the Apache-2.0 license                */
+/*  along with GCG; see the file LICENSE. If not visit gcg.or.rwth-aachen.de.*/
+/*                                                                           */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/**@file   mastersepacut.c
+ * @brief  public functions to work with master cuts
+ * @author Erik Muehmer
+ */
+
+/*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+
+#ifndef GCG_PUB_MASTERSEPACUT_H__
+#define GCG_PUB_MASTERSEPACUT_H__
+
+#include "gcg/type_mastersepacut.h"
+
+#include "scip/scip.h"
+#include "gcg/def.h"
+#include "gcg/type_gcg.h"
+#include "gcg/type_gcgvarhistory.h"
+#include "gcg/type_extendedmasterconsdata.h"
+
+#ifdef NDEBUG
+#include "gcg/struct_mastersepacut.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef NDEBUG
+#define GCGmastersepacutGetVarHistory(mastersepacut) ((mastersepacut)->knownvarhistory)
+#else
+/** returns the variable history of the separator master cut */
+GCG_EXPORT
+GCG_VARHISTORY* GCGmastersepacutGetVarHistory(
+   GCG_MASTERSEPACUT*       mastersepacut     /**< separator master cut */
+   );
+#endif
+ 
+/** return the separator which created the cut */
+GCG_EXPORT
+GCG_SEPA* GCGmastersepacutGetSeparator(
+   GCG_MASTERSEPACUT*       mastersepacut     /**< separator master cut */
+   );
+ 
+/** returns the data of the separator master cut */
+GCG_EXPORT
+GCG_MASTERSEPACUTDATA* GCGmastersepacutGetData(
+   GCG_MASTERSEPACUT*       mastersepacut     /**< separator master cut */
+   );
+ 
+/** set the variable history of separator master cut */
+GCG_EXPORT
+SCIP_RETCODE GCGmastersepacutSetVarHistory(
+   GCG*                          gcg,              /**< GCG data structure */
+   GCG_MASTERSEPACUT*       mastersepacut     /**< pointer to separator master cut */
+   );
+
+/** creates a Chvatal-Gomory cut */
+GCG_EXPORT
+SCIP_RETCODE GCGcreateChvatalGomoryCut(
+   GCG*                          gcg,                   /**< GCG data structure */
+   GCG_MASTERSEPACUT**      mastersepacut,         /**< pointer to store separator master cut */
+   GCG_SEPA*                     sepa,                  /**< separator creating this cut */
+   GCG_VARHISTORY*               varhistory,            /**< variables history of subset row cut*/
+   SCIP_Real*                    weights,               /**< weights which were used to create the cut */
+   int*                          indices,               /**< indices of constraints used to create the cut */
+   int                           n                      /**< number of constraints used to create the cut */
+   );
+
+/** frees data of Chvatal-Gomory cut */
+GCG_EXPORT
+SCIP_RETCODE GCGfreeChvatalGomoryCutData(
+   GCG*                             gcg,           /**< GCG data structure */
+   GCG_MASTERSEPACUTDATA**     data           /**< pointer to data of subset row cut */
+   );
+ 
+/** returns the number of weights of Chvatal-Gomory cut */
+GCG_EXPORT
+int GCGchvatalGomoryCutGetNWeights(
+   GCG_MASTERSEPACUT*       mastersepacut     /**< separator master cut */
+   );
+ 
+/** returns the weights of Chvatal-Gomory cut */
+GCG_EXPORT
+SCIP_Real* GCGchvatalGomoryCutGetWeights(
+   GCG_MASTERSEPACUT*       mastersepacut     /**< separator master cut */
+   );
+ 
+/** returns the constraint indices of Chvatal-Gomory cut */
+GCG_EXPORT
+int* GCGchvatalGomoryCutGetConssIndices(
+   GCG_MASTERSEPACUT*       mastersepacut     /**< separator master cut */
+   );
+ 
+/** computes the coefficient of a column for a Chvatal-Gomory cut */
+GCG_EXPORT
+SCIP_RETCODE GCGchvatalGomoryCutGetColumnCoefficient(
+   GCG*                          gcg,              /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*   mastercutdata,    /**< master separator cut */
+   GCG_COL*                      gcgcol,           /**< gcg column */
+   SCIP_Real*                    coeff             /**< pointer to store the coefficient */
+   );
+ 
+/** computes the coefficient of a master variable for a Chvatal-Gomory cut */
+GCG_EXPORT
+SCIP_RETCODE GCGchvatalGomoryCutGetVariableCoefficient(
+   GCG*                          gcg,                 /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*   mastercutdata,       /**< separator master cut */
+   SCIP_VAR**                    vars,                /**< pricing variables which define the master variable */
+   SCIP_Real*                    vals,                /**< values of the pricing variables which define the master variables */
+   int                           nvars,               /**< number of pricing variables which define the master variable */
+   int                           probnr,              /**< index of the pricing problem which generated the master variable */
+   SCIP_Real*                    coef                 /**< pointer to store the coefficient */
+   );
+ 
+/** adapts the objectives of all the necessary pricing problems such that they consider the Chvatal-Gomory cut */
+GCG_EXPORT
+SCIP_RETCODE GCGchvatalGomorySetPricingObjectives(
+   GCG*                          gcg,     /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*   cut,     /**< separator master cut */
+   SCIP_Real                     dual     /**< the dual value of the separator master cut */
+   );
+ 
+/** returns active master separator cuts */
+GCG_EXPORT
+GCG_EXTENDEDMASTERCONSDATA** GCGgetActiveMastersepacuts(
+   GCG*              gcg             /**< GCG data structure */
+   );
+ 
+/** returns active master separator cuts */
+GCG_EXPORT
+GCG_EXTENDEDMASTERCONSDATA** GCGeventmastersepacutGetActiveMastersepacuts(
+   GCG*              gcg,            /**< GCG data structure */
+   SCIP_EVENTHDLR*   eventhdlr       /**< mastersepacut event handler*/
+   );
+ 
+/** return number of active mastersepacuts */
+GCG_EXPORT
+int GCGgetNActiveMastersepacuts(
+   GCG*              gcg             /**< GCG data structure */
+   );
+ 
+/** return number of active master separator cuts */
+GCG_EXPORT
+int GCGeventmastersepacutGetNActiveMastersepacuts(
+   GCG*              gcg,            /**< GCG data structure */
+   SCIP_EVENTHDLR*   eventhdlr       /**< masterepacut event handler */
+   );
+
+#ifdef NDEBUG
+#define GCGextendedmasterconsGetMastersepacut(extendedmasterconsdata) ((extendedmasterconsdata)->data.mastersepacut)
+#else
+/** returns the corresponding mastersepacut */
+GCG_EXPORT
+GCG_MASTERSEPACUT* GCGextendedmasterconsGetMastersepacut(
+   GCG_EXTENDEDMASTERCONSDATA* extendedmasterconsdata
+   );
+#endif
+
+/** increases usage counter of separator master cut */
+GCG_EXPORT
+SCIP_RETCODE GCGcaptureMastersepacut(
+   GCG_EXTENDEDMASTERCONSDATA*   mastersepacut      /**< separator master cut */
+   );
+
+/** decreases usage counter of separator master cut, and frees memory if necessary */
+GCG_EXPORT
+SCIP_RETCODE GCGreleaseMastersepacut(
+   GCG*                          gcg,             /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA**  mastersepacut    /**< pointer to separator master cut */
+   );
+
+/** creates separator master cut */
+GCG_EXPORT
+SCIP_RETCODE GCGcreateMastersepacut(
+   GCG*                          gcg,                 /**< GCG data structure */
+   GCG_MASTERSEPACUT**      mastersepacut,       /**< pointer to store separator master cut */
+   GCG_SEPA*                     sepa,                /**< separator creating this cut */
+   GCG_VARHISTORY*               varhistory,          /**< variable history */
+   GCG_MASTERSEPACUTDATA*   mastersepacutdata    /**< separator master cut data */
+   );
+
+/** creates extended master cons data for a given master cut */
+GCG_EXPORT
+SCIP_RETCODE GCGextendedmasterconsCreateForSepamastercut(
+   GCG*                          gcg,                       /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA**  extendedmastercons,        /**< pointer to store the create extended master cons data */
+   GCG_MASTERSEPACUT*       cut,                       /**< master cut data structure */
+   SCIP_ROW*                     row,                       /**< corresponding row object */
+   GCG_PRICINGMODIFICATION**     pricingmodifications,      /**< related pricing modifications */
+   int                           npricingmodifications      /**< number of pricing modifications */
+   );
+
+/** calculate the coefficient of a column solution */
+GCG_EXPORT
+SCIP_RETCODE GCGmastersepacutGetExtendedmasterconsCoeff(
+   GCG*                             gcg,                          /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*      mastersepacut,                /**< master cut data structure */
+   SCIP_VAR**                       solvars,                      /**< array of column solution variables */
+   SCIP_Real*                       solvals,                      /**< array of column solution values */
+   int                              nsolvars,                     /**< number of column solution variables and values */
+   int                              probnr,                       /**< the pricing problem that the column belongs to */
+   GCG_COL*                         gcgcol,                       /**< gcg column if available (or NULL) */
+   SCIP_Real*                       coef                          /**< pointer to store the coefficient */
+   );
+
+/** adapts the objectives of all the necessary pricing problems such that they consider the cut  */
+GCG_EXPORT
+SCIP_RETCODE GCGmastersepacutSetObjective(
+   GCG*                          gcg,              /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*   mastersepacut,    /**< pointer to separator master cut */
+   SCIP_Real                     coef              /**< objective coefficient */
+   );
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

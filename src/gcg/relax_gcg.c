@@ -33,7 +33,7 @@
  * @author  Martin Bergner
  * @author  Alexander Gross
  * @author  Michael Bastubbe
- * @author Erik Muehmer
+ * @author  Erik Muehmer
  *
  * \bug
  * - The memory limit is not strictly enforced
@@ -63,7 +63,9 @@
 #include "gcg/gcg.h"
 #include "gcg/struct_gcg.h"
 #include "gcg/struct_branchgcg.h"
+#include "gcg/struct_sepagcg.h"
 
+#include "gcg/cons_integralorig.h"
 #include "gcg/cons_origbranch.h"
 #include "gcg/cons_masterbranch.h"
 #include "gcg/pricer_gcg.h"
@@ -192,6 +194,10 @@ struct SCIP_RelaxData
    SCIP_Real             stashedgaplimit;        /**< stashed gap limit */
    int                   stashedsollimit;        /**< stashed solution limit */
    SCIP_Real             stashedtimelimit;       /**< stashed time limit */
+
+   /* separator data*/
+   GCG_SEPA**            separators;             /**< separators registered to the relaxator */
+   int                   nseparators;            /**< number of separators registered to the relaxator */
 
 #ifdef _OPENMP
    GCG_LOCKS*            locks;                  /** OpenMP locks */
@@ -597,6 +603,28 @@ SCIP_RETCODE ensureSizeBranchrules(
    return SCIP_OKAY;
 }
 
+/** ensures size of branchrules array: enlarges the array by 1 */
+static
+SCIP_RETCODE ensureSizeSeparators(
+   GCG*                  gcg,
+   SCIP_RELAXDATA*       relaxdata
+   )
+{
+   assert(gcg != NULL);
+   assert(relaxdata != NULL);
+   assert((relaxdata->separators == NULL) == (relaxdata->nseparators == 0));
+
+   if( relaxdata->separators == 0 )
+   {
+      SCIP_CALL( SCIPallocMemoryArray(GCGgetOrigprob(gcg), &(relaxdata->separators), 1) ); /*lint !e506*/
+   }
+   else
+   {
+      SCIP_CALL( SCIPreallocMemoryArray(GCGgetOrigprob(gcg), &(relaxdata->separators), (size_t)relaxdata->nseparators+1) );
+   }
+
+   return SCIP_OKAY;
+}
 
 /** check whether the master problem has a set partitioning or set covering structure */
 static
@@ -2626,6 +2654,9 @@ SCIP_RETCODE initRelaxdata(
    relaxdata->nactivebranchextendedmasterconss = 0;
    relaxdata->maxactivebranchextendedmasterconss = 0;
 
+   relaxdata->separators = NULL;
+   relaxdata->nseparators = 0;
+
    SCIP_CALL( GCGcreateParamsVisu(gcg, &(relaxdata->paramsvisu)) );
    assert(relaxdata->paramsvisu != NULL);
 
@@ -2693,6 +2724,26 @@ SCIP_DECL_RELAXFREE(relaxFreeGcg)
 
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
+
+   /* free array for branchrules*/
+   if( relaxdata->nbranchrules > 0 )
+   {
+      for( i = 0; i < relaxdata->nbranchrules; i++ )
+      {
+         SCIPfreeMemory(scip, &(relaxdata->branchrules[i]));
+      }
+      SCIPfreeMemoryArray(scip, &(relaxdata->branchrules));
+   }
+
+   /* free array for separators*/
+   if( relaxdata->nseparators > 0 )
+   {
+      for( i = 0; i < relaxdata->nseparators; i++ )
+      {
+         SCIPfreeMemory(scip, &(relaxdata->separators[i]));
+      }
+      SCIPfreeMemoryArray(scip, &(relaxdata->separators));
+   }
 
    /* free pricing problems */
    if( relaxdata->pricingprobs != NULL )
@@ -2774,17 +2825,6 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
       SCIP_CALL( GCGdecompFree(relaxdata->gcg, &relaxdata->decomp) );
       relaxdata->decomp = NULL;
    }
-
-   /* free array for branchrules*/
-   if( relaxdata->nbranchrules > 0 )
-   {
-      for( i = 0; i < relaxdata->nbranchrules; i++ )
-      {
-         SCIPfreeMemory(scip, &(relaxdata->branchrules[i]));
-      }
-      SCIPfreeMemoryArray(scip, &(relaxdata->branchrules));
-   }
-
 
    relaxdata->nbranchrules = 0;
    relaxdata->relaxisinitialized = FALSE;
@@ -3639,8 +3679,16 @@ SCIP_RETCODE GCGincludeRelaxGcg(
 /** includes a branching rule into the relaxator data */
 SCIP_RETCODE GCGrelaxIncludeBranchrule(
    GCG*                  gcg,                /**< SCIP data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule for which callback methods are saved */
+   SCIP_BRANCHRULE**     branchrule,         /**< branching rule for which callback methods are saved */
    GCG_BRANCHRULE**      gcgbranchrule,      /**< pointer to store created GCG branch rule (can be NULL) */
+   const char*           name,               /**< name of branching rule */
+   const char*           desc,               /**< description of branching rule */
+   int                   priority,           /**< priority of the branching rule */
+   int                   maxdepth,           /**< maximal depth level, up to which this branching rule should be used (or -1) */
+   SCIP_Real             maxbounddist,       /**< maximal relative distance from current node's dual bound to primal bound
+                                              *   compared to best node's dual bound for applying branching rule
+                                              *   (0.0: only on current best node, 1.0: on all nodes) */
+   SCIP_BRANCHRULEDATA*  branchruledata,     /**< branching rule data */
    GCG_DECL_BRANCHACTIVEMASTER((*branchactivemaster)),/**<  activation method for branchrule */
    GCG_DECL_BRANCHDEACTIVEMASTER((*branchdeactivemaster)),/**<  deactivation method for branchrule */
    GCG_DECL_BRANCHPROPMASTER((*branchpropmaster)),/**<  propagation method for branchrule */
@@ -3668,9 +3716,12 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
 
    pos = relaxdata->nbranchrules;
 
+   SCIP_CALL( SCIPincludeBranchruleBasic(GCGgetMasterprob(gcg), branchrule, name, desc, priority,
+         maxdepth, maxbounddist, branchruledata) );
+
    /* store callback functions */
    SCIP_CALL( SCIPallocMemory(GCGgetOrigprob(gcg), &(relaxdata->branchrules[pos])) );
-   relaxdata->branchrules[pos]->branchrule = branchrule;
+   relaxdata->branchrules[pos]->branchrule = *branchrule;
    relaxdata->branchrules[pos]->branchactivemaster = branchactivemaster;
    relaxdata->branchrules[pos]->branchdeactivemaster = branchdeactivemaster;
    relaxdata->branchrules[pos]->branchpropmaster = branchpropmaster;
@@ -3683,6 +3734,8 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
 
    if( gcgbranchrule != NULL )
       *gcgbranchrule = relaxdata->branchrules[pos];
+   
+   SCIP_CALL( GCGconsIntegralorigAddBranchrule(gcg, *branchrule) );
 
    return SCIP_OKAY;
 }
@@ -3690,13 +3743,12 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
 /** perform activation method of the given branchrule for the given branchdata */
 SCIP_RETCODE GCGrelaxBranchActiveMaster(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata          /**< data representing the branching decision */
    )
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   int i;
 
    assert(gcg != NULL);
    assert(branchrule != NULL);
@@ -3707,22 +3759,11 @@ SCIP_RETCODE GCGrelaxBranchActiveMaster(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   /* search for the branching rule in the branchrules array */
-   for( i = 0; i < relaxdata->nbranchrules; i++ )
-   {
-      if( branchrule == relaxdata->branchrules[i]->branchrule )
-      {
-         /* call activation method of branching rule */
-         if( relaxdata->branchrules[i]->branchactivemaster != NULL )
-            SCIP_CALL( relaxdata->branchrules[i]->branchactivemaster(gcg, branchdata) );
+   /* call activation method of branching rule */
+   if( branchrule->branchactivemaster != NULL )
+      SCIP_CALL( branchrule->branchactivemaster(gcg, branchdata) );
 
-         SCIP_CALL( addActiveBranchExtendedmastercons(gcg, relaxdata, relaxdata->branchrules[i], branchdata) );
-
-         break;
-      }
-   }
-
-   assert(i < relaxdata->nbranchrules);
+   SCIP_CALL( addActiveBranchExtendedmastercons(gcg, relaxdata, branchrule, branchdata) );
 
    return SCIP_OKAY;
 }
@@ -3730,13 +3771,12 @@ SCIP_RETCODE GCGrelaxBranchActiveMaster(
 /** perform deactivation method of the given branchrule for the given branchdata */
 SCIP_RETCODE GCGrelaxBranchDeactiveMaster(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata          /**< data representing the branching decision */
    )
 {
    SCIP_RELAX* relax;
    SCIP_RELAXDATA* relaxdata;
-   int i;
 
    assert(gcg != NULL);
    assert(branchrule != NULL);
@@ -3747,22 +3787,11 @@ SCIP_RETCODE GCGrelaxBranchDeactiveMaster(
    relaxdata = SCIPrelaxGetData(relax);
    assert(relaxdata != NULL);
 
-   /* search for the branching rule in the branchrules array */
-   for( i = 0; i < relaxdata->nbranchrules; i++ )
-   {
-      if( branchrule == relaxdata->branchrules[i]->branchrule )
-      {
-         /* call deactivation method of branching rule */
-         if( relaxdata->branchrules[i]->branchdeactivemaster != NULL )
-            SCIP_CALL( relaxdata->branchrules[i]->branchdeactivemaster(gcg, branchdata) );
+   /* call deactivation method of branching rule */
+   if( branchrule->branchdeactivemaster != NULL )
+      SCIP_CALL( branchrule->branchdeactivemaster(gcg, branchdata) );
 
-         SCIP_CALL( dropActiveBranchExtendedmastercons(gcg, relaxdata, relaxdata->branchrules[i], branchdata) );
-
-         break;
-      }
-   }
-
-   assert(i < relaxdata->nbranchrules);
+   SCIP_CALL( dropActiveBranchExtendedmastercons(gcg, relaxdata, branchrule, branchdata) );
 
    return SCIP_OKAY;
 }
@@ -3770,41 +3799,20 @@ SCIP_RETCODE GCGrelaxBranchDeactiveMaster(
 /** perform propagation method of the given branchrule for the given branchdata */
 SCIP_RETCODE GCGrelaxBranchPropMaster(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
    SCIP_RESULT*          result              /**< pointer to store the result of the propagation call */
    )
 {
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
-   int i;
-
    assert(gcg != NULL);
    assert(branchrule != NULL);
    assert(result != NULL);
 
-   relax = GCGgetRelax(gcg);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
    *result = SCIP_DIDNOTRUN;
 
-   /* search for the branching rule in the branchrules array */
-   for( i = 0; i < relaxdata->nbranchrules; i++ )
-   {
-      if( branchrule == relaxdata->branchrules[i]->branchrule )
-      {
-         /* call propagation method of branching rule*/
-         if( relaxdata->branchrules[i]->branchpropmaster != NULL )
-            SCIP_CALL( relaxdata->branchrules[i]->branchpropmaster(gcg, branchdata, result) );
-
-         break;
-      }
-   }
-
-   assert(i < relaxdata->nbranchrules);
+   /* call propagation method of branching rule*/
+   if( branchrule->branchpropmaster != NULL )
+      SCIP_CALL( branchrule->branchpropmaster(gcg, branchdata, result) );
 
    return SCIP_OKAY;
 }
@@ -3812,91 +3820,32 @@ SCIP_RETCODE GCGrelaxBranchPropMaster(
 /** frees branching data created by the given branchrule */
 SCIP_RETCODE GCGrelaxBranchDataDelete(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA**      branchdata,         /**< data representing the branching decision */
    SCIP_Bool             origbranch,         /**< true iff an origbranch triggered this call */
    SCIP_Bool             force               /**< branch data must be deleted if true */
    )
 {
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
-   int i;
-
    assert(gcg != NULL);
    assert(branchrule != NULL);
    assert(branchdata != NULL);
 
-   relax = GCGgetRelax(gcg);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   /* search for the branching rule in the branchrules array */
-   for( i = 0; i < relaxdata->nbranchrules; i++ )
+   /* call branchrule data deletion method of the branching rule */
+   if( branchrule->branchdatadelete != NULL )
+      SCIP_CALL( branchrule->branchdatadelete(gcg, branchdata, origbranch, force) );
+   else
    {
-      if( branchrule == relaxdata->branchrules[i]->branchrule )
+      if( *branchdata != NULL )
       {
-         /* call branchrule data deletion method of the branching rule */
-         if( relaxdata->branchrules[i]->branchdatadelete != NULL )
-            SCIP_CALL( relaxdata->branchrules[i]->branchdatadelete(gcg, branchdata, origbranch, force) );
-         else
-         {
-            if( *branchdata != NULL )
-            {
-               SCIPfreeMemory(GCGgetMasterprob(gcg), branchdata);
-            }
-         }
-         break;
+         SCIPfreeMemory(GCGgetMasterprob(gcg), branchdata);
       }
    }
-
-   assert(i < relaxdata->nbranchrules);
 
    return SCIP_OKAY;
 }
 
 /** notifies the branching rule that a new mastervariable was created while this node was active */
 SCIP_RETCODE GCGrelaxBranchNewCol(
-   GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
-   GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
-   SCIP_VAR*             mastervar           /**< new mastervariable that was created */
-   )
-{
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
-   int i;
-
-   assert(gcg != NULL);
-   assert(branchrule != NULL);
-   assert(branchdata != NULL);
-   assert(mastervar != NULL);
-
-   relax = GCGgetRelax(gcg);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   /* search for the branching rule in the branchrules array */
-   for( i = 0; i < relaxdata->nbranchrules; i++ )
-   {
-      if( branchrule == relaxdata->branchrules[i]->branchrule )
-      {
-         SCIP_CALL( GCGrelaxBranchNewColWithGCGBranchrule(gcg, relaxdata->branchrules[i], branchdata, mastervar) );
-
-         break;
-      }
-   }
-
-   assert(i < relaxdata->nbranchrules);
-
-   return SCIP_OKAY;
-}
-
-/** notifies the branching rule that a new mastervariable was created while this node was active */
-SCIP_RETCODE GCGrelaxBranchNewColWithGCGBranchrule(
    GCG*                  gcg,                /**< GCG data structure */
    GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
@@ -3918,42 +3867,25 @@ SCIP_RETCODE GCGrelaxBranchNewColWithGCGBranchrule(
 /** gets the extendedmasterconsdata created by this branching rule, if any */
 SCIP_RETCODE GCGrelaxBranchGetExtendedMasterCons(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
    GCG_EXTENDEDMASTERCONSDATA**   extendedmasterconsdata       /**< the extendedmasterconsdata to grab */
    )
 {
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
-   int i;
-
    assert(gcg != NULL);
    assert(branchrule != NULL);
    assert(extendedmasterconsdata == NULL);
 
-   relax = GCGgetRelax(gcg);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   /* search for the branching rule in the branchrules array */
-   for( i = 0; i < relaxdata->nbranchrules; i++ )
+   /* call extended master cons getter method of branching rule */
+   if( branchrule->branchgetextendedmastercons != NULL )
    {
-      if( branchrule == relaxdata->branchrules[i]->branchrule )
-      {
-         /* call extended master cons getter method of branching rule */
-         if( relaxdata->branchrules[i]->branchgetextendedmastercons != NULL )
-         {
-            SCIP_CALL( relaxdata->branchrules[i]->branchgetextendedmastercons(gcg, branchdata, extendedmasterconsdata) );
-            assert(*extendedmasterconsdata != NULL);
-         }
-
-         break;
-      }
+      SCIP_CALL( branchrule->branchgetextendedmastercons(gcg, branchdata, extendedmasterconsdata) );
+      assert(*extendedmasterconsdata != NULL);
    }
-
-   assert(i < relaxdata->nbranchrules);
+   else
+   {
+      *extendedmasterconsdata = NULL;
+   }
 
    return SCIP_OKAY;
 }
@@ -3991,41 +3923,22 @@ SCIP_RETCODE GCGrelaxBranchGetAllActiveExtendedMasterConss(
 /** perform method of the given branchrule that is called after the master LP is solved */
 SCIP_RETCODE GCGrelaxBranchMasterSolved(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
    SCIP_Real             newlowerbound       /**< the new local lowerbound */
    )
 {
-   SCIP_RELAX* relax;
-   SCIP_RELAXDATA* relaxdata;
-   int i;
 
    assert(gcg != NULL);
    assert(branchrule != NULL);
 
-   relax = GCGgetRelax(gcg);
-   assert(relax != NULL);
-
-   relaxdata = SCIPrelaxGetData(relax);
-   assert(relaxdata != NULL);
-
-   /* search for the branching rule in the branchrules array */
-   for( i = 0; i < relaxdata->nbranchrules; i++ )
-   {
-      if( branchrule == relaxdata->branchrules[i]->branchrule )
-      {
-         /* call master problem solved method of the branching rule */
-         if( relaxdata->branchrules[i]->branchmastersolved != NULL )
-            SCIP_CALL( relaxdata->branchrules[i]->branchmastersolved(gcg, branchdata, newlowerbound) );
-
-         break;
-      }
-   }
-
-   assert(i < relaxdata->nbranchrules);
+   /* call master problem solved method of the branching rule */
+   if( branchrule->branchmastersolved != NULL )
+      SCIP_CALL( branchrule->branchmastersolved(gcg, branchdata, newlowerbound) );
 
    return SCIP_OKAY;
 }
+
 
 /** transforms a constraint of the original problem into the master variable space
  *  and stores information about the constraints in the variable */
@@ -4611,7 +4524,7 @@ SCIP_RETCODE GCGrelaxNewProbingnodeMaster(
  */
 SCIP_RETCODE GCGrelaxNewProbingnodeMasterCons(
    GCG*                  gcg,                 /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branching rule */
+   GCG_BRANCHRULE*       branchrule,         /**< pointer to the branching rule */
    GCG_BRANCHDATA*       branchdata,         /**< branching data */
    SCIP_CONS**           origbranchconss,    /**< original constraints enforcing the branching decision */
    int                   norigbranchconss,   /**< number of original constraints */
@@ -5845,4 +5758,59 @@ GCG* GCGrelaxGetGcg(
    assert(relaxdata != NULL);
 
    return relaxdata->gcg;
+}
+
+/** includes a separator into the relaxator data */
+SCIP_RETCODE GCGrelaxIncludeSepa(
+   GCG*                  gcg,                /**< SCIP data structure */
+   SCIP_SEPA**           sepa,               /**< pointer to store created scip separator */
+   GCG_SEPA**            gcgsepa,            /**< pointer to store created GCG separator (can be NULL) */
+   const char*           name,               /**< name of separator */
+   const char*           desc,               /**< description of separator */
+   int                   priority,           /**< priority of separator (>= 0: before, < 0: after constraint handlers) */
+   int                   freq,               /**< frequency for calling separator */
+   SCIP_Real             maxbounddist,       /**< maximal relative distance from current node's dual bound to primal bound compared
+                                              *   to best node's dual bound for applying separation */
+   SCIP_Bool             usessubscip,        /**< does the separator use a secondary SCIP instance? */
+   SCIP_Bool             delay,              /**< should separator be delayed, if other separators found cuts? */
+   SCIP_DECL_SEPAEXECLP  ((*sepaexeclp)),    /**< LP solution separation method of separator */
+   SCIP_DECL_SEPAEXECSOL ((*sepaexecsol)),   /**< arbitrary primal solution separation method of separator */
+   SCIP_SEPADATA*        sepadata,           /**< separator data */
+   GCG_DECL_SEPAGETCOLCOEFFICIENT((*sepagetcolcoef)),/**< method for computing the column coefficient for a cut */
+   GCG_DECL_SEPASETOBJECTIVE((*sepasetobjective)),/**< method for modifying the objectives of pricing problems to account for master cut */
+   GCG_DECL_SEPAMASTERCUTDELETE((*sepamastercutdelete))/**< callback to delete the mastersepacutdata */
+   )
+{
+   SCIP_RELAX* relax;
+   SCIP_RELAXDATA* relaxdata;
+   int pos;
+
+   assert(gcg != NULL);
+   assert(sepa != NULL);
+
+   relax = GCGgetRelax(gcg);
+   assert(relax != NULL);
+
+   relaxdata = SCIPrelaxGetData(relax);
+   assert(relaxdata != NULL);
+
+   SCIP_CALL( ensureSizeSeparators(gcg, relaxdata) );
+
+   pos = relaxdata->nseparators;
+
+   SCIP_CALL( SCIPincludeSepaBasic(GCGgetMasterprob(gcg), sepa, name, desc, priority, freq, maxbounddist, usessubscip,
+                                   delay, sepaexeclp, sepaexecsol, sepadata) );
+
+   /* store callback functions */
+   SCIP_CALL( SCIPallocMemory(GCGgetOrigprob(gcg), &(relaxdata->separators[pos])) );
+   relaxdata->separators[pos]->separator = *sepa;
+   relaxdata->separators[pos]->sepagetcolcoefficient = sepagetcolcoef;
+   relaxdata->separators[pos]->sepasetobjective = sepasetobjective;
+   relaxdata->separators[pos]->sepamastercutdelete = sepamastercutdelete;
+   relaxdata->nseparators++;
+
+   if( gcgsepa != NULL )
+      *gcgsepa = relaxdata->separators[pos];
+
+   return SCIP_OKAY;
 }

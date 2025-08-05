@@ -30,9 +30,11 @@
  * @brief  methods for storing priced cols (based on SCIP's separation storage)
  * @author Jonas Witt
  * @author Christian Puchert
+ * @author Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
+//#define SCIP_DEBUG
 #include <assert.h>
 
 #include "gcg/pub_gcgcol.h"
@@ -53,6 +55,7 @@
 #include "gcg/struct_pricestore_gcg.h"
 #include "gcg/pricer_gcg.h"
 #include "gcg/struct_gcgcol.h"
+#include "gcg/struct_sepagcg.h"
 
 #ifdef _OPENMP
 #include "gcg/struct_locks.h"
@@ -371,7 +374,7 @@ SCIP_RETCODE GCGpricestoreAddCol(
       SCIP_Real val;
       SCIP_SOL* sol;
       SCIP_Bool feasible;
-      if( SCIPgetStage(col->pricingprob) < SCIP_STAGE_PRESOLVING )
+      if( SCIPgetStage(col->pricingprob) < SCIP_STAGE_PRESOLVING && GCGgetNActiveMastersepacuts(pricestore->gcg) == 0 )
       {
          SCIP_CALL( SCIPcreateOrigSol(col->pricingprob, &sol, NULL) );
          SCIP_CALL( SCIPsetSolVals(col->pricingprob, sol, col->nvars, col->vars, col->vals) );
@@ -784,7 +787,7 @@ SCIP_RETCODE GCGpricestoreApplyCols(
          SCIP_CALL( pricestoreApplyCol(pricestore, col, FALSE, mincolorthogonality, score, &added) );
          if( added )
          {
-            SCIPdebugMessage(" -> applying col %p (pos=%d/%d, probnr=%d, efficacy=%g, objparallelism=%g, orthogonality=%g, score=%g)\n",
+            SCIPdebugMessage(" -> applied col %p (pos=%d/%d, probnr=%d, efficacy=%g, objparallelism=%g, orthogonality=%g, score=%g)\n",
                   (void*) col, bestpos+1, pricestore->ncols[i], probnr, GCGcolGetRedcost(col), pricestore->objparallelisms[i][bestpos],
                   pricestore->orthogonalities[i][bestpos], pricestore->scores[i][bestpos]);
 

@@ -53,6 +53,7 @@
 #include "gcg/type_gcgcol.h"
 #include "gcg/type_gcgpqueue.h"
 #include "gcg/type_masterdiving.h"
+#include "gcg/type_mastersepacut.h"
 #include "gcg/type_origdiving.h"
 #include "gcg/type_parameter.h"
 #include "gcg/type_pricetype.h"
@@ -61,6 +62,7 @@
 #include "gcg/type_pricingprob.h"
 #include "gcg/type_pricingstatus.h"
 #include "gcg/type_score.h"
+#include "gcg/type_sepagcg.h"
 #include "gcg/type_solver.h"
 #include "gcg/type_varclassifier.h"
 
@@ -77,6 +79,7 @@
 #include "gcg/pub_gcgpqueue.h"
 #include "gcg/pub_gcgsepa.h"
 #include "gcg/pub_gcgvar.h"
+#include "gcg/pub_mastersepacut.h"
 #include "gcg/pub_pricingcb.h"
 #include "gcg/pub_pricingjob.h"
 #include "gcg/pub_pricingprob.h"

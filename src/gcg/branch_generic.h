@@ -98,7 +98,7 @@ SCIP_CONS* GCGbranchGenericBranchdataGetMastercons(
 
 /** returns true when the branch rule is the generic branchrule */
 SCIP_Bool GCGisBranchruleGeneric(
-   SCIP_BRANCHRULE*      branchrule          /**< branchrule to check */
+   GCG_BRANCHRULE*       branchrule          /**< branchrule to check */
 );
 
 #ifdef __cplusplus

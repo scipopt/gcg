@@ -328,13 +328,6 @@ GCG_DECL_BRANCHGETEXTENDEDMASTERCONSCOEFF(branchGetExtendedmasterconsCoeffXyz)
 static
 SCIP_DECL_BRANCHINIT(branchInitXyz)
 {  /*lint --e{715}*/
-   GCG_BRANCHRULE* gcgbranchrule = NULL;
-
-   /* inform relaxator of GCG about the branching rule */
-   SCIP_CALL( GCGrelaxIncludeBranchrule(scip, branchrule, &gcgbranchrule, branchActiveMasterOrig,
-         branchDeactiveMasterOrig, branchPropMasterOrig, branchMasterSolvedOrig, branchDataDeleteOrig,
-         branchNewColXyz, branchGetExtendedMasterConsXyz, branchGetExtendedmasterconsCoeff) );
-
    SCIPerrorMessage("method of xyz branching rule not implemented yet\n");
    SCIPABORT(); /*lint --e{527}*/
 
@@ -355,17 +348,28 @@ SCIP_RETCODE GCGincludeBranchruleXyz(
 )
 {
    SCIP_BRANCHRULEDATA* branchruledata;
+   SCIP_BRANCHRULE* branchrule;
+   GCG_BRANCHRULE* gcgbranchrule;
 
    /* create xyz branching rule data */
    branchruledata = NULL;
    /* TODO: (optional) create branching rule specific data here */
 
    /* include branching rule */
-   SCIP_CALL( SCIPincludeBranchrule(scip, BRANCHRULE_NAME, BRANCHRULE_DESC, BRANCHRULE_PRIORITY, BRANCHRULE_MAXDEPTH,
-         BRANCHRULE_MAXBOUNDDIST,
-         branchCopyXyz, branchFreeXyz, branchInitXyz, branchExitXyz, branchInitsolXyz, branchExitsolXyz,
-         branchExeclpXyz, branchExecextXyz, branchExecpsXyz,
-         branchruledata) );
+   SCIP_CALL( GCGrelaxIncludeBranchrule(scip, &branchrule, &gcgbranchrule, BRANCHRULE_NAME, BRANCHRULE_DESC,
+         BRANCHRULE_PRIORITY, BRANCHRULE_MAXDEPTH, BRANCHRULE_MAXBOUNDDIST, branchruledata, branchActiveMasterXyz,
+         branchDeactiveMasterXyz, branchPropMasterXyz, branchMasterSolvedXyz, branchDataDeleteXyz,
+         branchNewColXyz, branchGetExtendedmasterconsXyz, branchGetExtendedmasterconsCoeffXyz) );
+   assert(branchrule != NULL);
+   assert(gcgbranchrule != NULL);
+
+   /* set non fundamental callbacks via setter functions */
+   SCIP_CALL( SCIPsetBranchruleInit(scip, branchrule, branchInitXyz) );
+   SCIP_CALL( SCIPsetBranchruleFree(scip, branchrule, branchFreeXyz) );
+   SCIP_CALL( SCIPsetBranchruleExecLp(scip, branchrule, branchExeclpXyz) );
+   SCIP_CALL( SCIPsetBranchruleExecExt(scip, branchrule, branchExecextXyz) );
+   SCIP_CALL( SCIPsetBranchruleExecPs(scip, branchrule, branchExecpsXyz) );
+   SCIP_CALL( SCIPsetBranchruleCopy(scip, branchrule, branchCopyXyz) );
 
    /* add xyz branching rule parameters */
    /* TODO: (optional) add branching rule specific parameters with SCIPaddTypeParam() here */

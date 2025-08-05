@@ -42,6 +42,10 @@
 #include "gcg/def.h"
 #include "gcg/type_gcg.h"
 
+#ifdef NDEBUG
+#include "gcg/struct_branchgcg.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -49,33 +53,54 @@ extern "C" {
 /** creates an extended master cons for a cons created by a branch rule */
 GCG_EXPORT
 SCIP_RETCODE GCGbranchCreateExtendedmastercons(
-    GCG*                             gcg,                             /**< GCG data structure */
-    GCG_BRANCHRULE*                  branchrule,                      /**< GCG branch rule */
-    GCG_EXTENDEDMASTERCONSDATA**     extendedmasterconsdata,          /**< pointer to store the extended master cons data */
-    SCIP_CONS*                       cons,                            /**< constraint in the master problem that represents the extended master cons */
-    GCG_PRICINGMODIFICATION**        pricingmodifications,            /**< pricing modifications for the extended master cons */
-    int                              npricingmodifications,           /**< number of pricing modifications for the extended master cons */
-    GCG_BRANCHDATA*                  branchdata                       /**< any data that might be required to calculate the coefficient of a column solution */
-    );
+   GCG*                             gcg,                             /**< GCG data structure */
+   GCG_BRANCHRULE*                  branchrule,                      /**< GCG branch rule */
+   GCG_EXTENDEDMASTERCONSDATA**     extendedmasterconsdata,          /**< pointer to store the extended master cons data */
+   SCIP_CONS*                       cons,                            /**< constraint in the master problem that represents the extended master cons */
+   GCG_PRICINGMODIFICATION**        pricingmodifications,            /**< pricing modifications for the extended master cons */
+   int                              npricingmodifications,           /**< number of pricing modifications for the extended master cons */
+   GCG_BRANCHDATA*                  branchdata                       /**< any data that might be required to calculate the coefficient of a column solution */
+   );
 
 /** calculate the coefficient of a column solution in the extended master cons */
 GCG_EXPORT
 SCIP_RETCODE GCGbranchGetExtendedmasterconsCoeff(
-    GCG*                             gcg,                          /**< GCG data structure */
-    GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata,       /**< extended master cons data */
-    SCIP_VAR**                       solvars,                      /**< array of column solution variables */
-    SCIP_Real*                       solvals,                      /**< array of column solution values */
-    int                              nsolvars,                     /**< number of column solution variables and values */
-    int                              probnr,                       /**< the pricing problem that the column belongs to */
-    SCIP_Real*                       coeff                         /**< pointer to store the coefficient */
-    );
+   GCG*                             gcg,                          /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata,       /**< extended master cons data */
+   SCIP_VAR**                       solvars,                      /**< array of column solution variables */
+   SCIP_Real*                       solvals,                      /**< array of column solution values */
+   int                              nsolvars,                     /**< number of column solution variables and values */
+   int                              probnr,                       /**< the pricing problem that the column belongs to */
+   GCG_COL*                         gcgcol,                       /**< gcg column if available (or NULL) */
+   SCIP_Real*                       coeff                         /**< pointer to store the coefficient */
+   );
 
 /** frees the branch data stored in the extened master cons data */
 GCG_EXPORT
 SCIP_RETCODE GCGbranchFreeExtendedmasterconsBranchData(
-    GCG*                             gcg,                          /**< GCG data structure */
-    GCG_EXTENDEDMASTERCONSDATA**     extendedmasterconsdata        /**< extended master cons data */
-    );
+   GCG*                             gcg,                          /**< GCG data structure */
+   GCG_EXTENDEDMASTERCONSDATA**     extendedmasterconsdata        /**< extended master cons data */
+   );
+
+#ifdef NDEBUG
+#define GCGbranchGetScipBranchrule(gcgbranchrule) ((gcgbranchrule)->branchrule)
+#else
+/** returns the pointer to the SCIP_BRNACHRULE object */
+GCG_EXPORT
+SCIP_BRANCHRULE* GCGbranchGetScipBranchrule(
+   GCG_BRANCHRULE* branchrule
+   );
+#endif
+
+#ifdef NDEBUG
+#define GCGbranchGetScipBranchruledata(gcgbranchrule) (SCIPbranchruleGetData((gcgbranchrule)->branchrule))
+#else
+/** returns the pointer to the SCIP_BRNACHRULEDATA object */
+GCG_EXPORT
+SCIP_BRANCHRULEDATA* GCGbranchGetScipBranchruledata(
+   GCG_BRANCHRULE* branchrule
+   );
+#endif
 
 #ifdef __cplusplus
 }

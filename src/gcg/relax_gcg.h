@@ -33,6 +33,7 @@
  * @author  Christian Puchert
  * @author  Martin Bergner
  * @author  Oliver Gaul
+ * @author  Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -62,8 +63,16 @@ SCIP_RETCODE GCGincludeRelaxGcg(
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxIncludeBranchrule(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule for which callback methods are saved */
+   SCIP_BRANCHRULE**     branchrule,         /**< branching rule for which callback methods are saved */
    GCG_BRANCHRULE**      gcgbranchrule,      /**< pointer to store created GCG branch rule (can be NULL) */
+   const char*           name,               /**< name of branching rule */
+   const char*           desc,               /**< description of branching rule */
+   int                   priority,           /**< priority of the branching rule */
+   int                   maxdepth,           /**< maximal depth level, up to which this branching rule should be used (or -1) */
+   SCIP_Real             maxbounddist,       /**< maximal relative distance from current node's dual bound to primal bound
+                                              *   compared to best node's dual bound for applying branching rule
+                                              *   (0.0: only on current best node, 1.0: on all nodes) */
+   SCIP_BRANCHRULEDATA*  branchruledata,     /**< branching rule data */
    GCG_DECL_BRANCHACTIVEMASTER((*branchactivemaster)),/**<  activation method for branchrule */
    GCG_DECL_BRANCHDEACTIVEMASTER((*branchdeactivemaster)),/**<  deactivation method for branchrule */
    GCG_DECL_BRANCHPROPMASTER((*branchpropmaster)),/**<  propagation method for branchrule */
@@ -78,7 +87,7 @@ SCIP_RETCODE GCGrelaxIncludeBranchrule(
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchActiveMaster(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata          /**< data representing the branching decision */
    );
 
@@ -86,7 +95,7 @@ SCIP_RETCODE GCGrelaxBranchActiveMaster(
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchDeactiveMaster(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata          /**< data representing the branching decision */
    );
 
@@ -94,7 +103,7 @@ SCIP_RETCODE GCGrelaxBranchDeactiveMaster(
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchPropMaster(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
    SCIP_RESULT*          result              /**< pointer to store the result of the propagation call */
    );
@@ -103,7 +112,7 @@ SCIP_RETCODE GCGrelaxBranchPropMaster(
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchMasterSolved(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
    SCIP_Real             newlowerbound       /**< the new local lowerbound */
    );
@@ -112,7 +121,7 @@ SCIP_RETCODE GCGrelaxBranchMasterSolved(
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchDataDelete(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA**      branchdata,         /**< data representing the branching decision */
    SCIP_Bool             origbranch,         /**< true iff an origbranch triggered this call */
    SCIP_Bool             force               /**< branch data must be deleted if true */
@@ -121,15 +130,6 @@ SCIP_RETCODE GCGrelaxBranchDataDelete(
 /** notifies the branching rule that a new mastervariable was created while this node was active */
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchNewCol(
-   GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
-   GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
-   SCIP_VAR*             mastervar           /**< new mastervariable that was created */
-   );
-
-/** notifies the branching rule that a new mastervariable was created while this node was active */
-GCG_EXPORT
-SCIP_RETCODE GCGrelaxBranchNewColWithGCGBranchrule(
    GCG*                  gcg,                /**< GCG data structure */
    GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
@@ -140,7 +140,7 @@ SCIP_RETCODE GCGrelaxBranchNewColWithGCGBranchrule(
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxBranchGetExtendedMasterCons(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< branching rule that did the branching */
+   GCG_BRANCHRULE*       branchrule,         /**< branching rule that did the branching */
    GCG_BRANCHDATA*       branchdata,         /**< data representing the branching decision */
    GCG_EXTENDEDMASTERCONSDATA**   extendedmasterconsdata       /**< the extendedmasterconsdata to grab */
    );
@@ -224,7 +224,7 @@ SCIP_RETCODE GCGrelaxNewProbingnodeMaster(
 GCG_EXPORT
 SCIP_RETCODE GCGrelaxNewProbingnodeMasterCons(
    GCG*                  gcg,                /**< GCG data structure */
-   SCIP_BRANCHRULE*      branchrule,         /**< pointer to the branching rule */
+   GCG_BRANCHRULE*       branchrule,         /**< pointer to the branching rule */
    GCG_BRANCHDATA*       branchdata,         /**< branching data */
    SCIP_CONS**           origbranchconss,    /**< original constraints enforcing the branching decision */
    int                   norigbranchconss,   /**< number of original constraints */
@@ -329,6 +329,28 @@ SCIP_RETCODE GCGsetPricingProblemParameters(
 GCG_EXPORT
 GCG* GCGrelaxGetGcg(
    SCIP*                 origprob            /**< SCIP data structure */
+   );
+
+/** includes a separator into the relaxator data */
+GCG_EXPORT
+SCIP_RETCODE GCGrelaxIncludeSepa(
+   GCG*                  gcg,                /**< SCIP data structure */
+   SCIP_SEPA**           sepa,               /**< pointer to store created scip separator */
+   GCG_SEPA**            gcgsepa,            /**< pointer to store created GCG separator (can be NULL) */
+   const char*           name,               /**< name of separator */
+   const char*           desc,               /**< description of separator */
+   int                   priority,           /**< priority of separator (>= 0: before, < 0: after constraint handlers) */
+   int                   freq,               /**< frequency for calling separator */
+   SCIP_Real             maxbounddist,       /**< maximal relative distance from current node's dual bound to primal bound compared
+                                              *   to best node's dual bound for applying separation */
+   SCIP_Bool             usessubscip,        /**< does the separator use a secondary SCIP instance? */
+   SCIP_Bool             delay,              /**< should separator be delayed, if other separators found cuts? */
+   SCIP_DECL_SEPAEXECLP  ((*sepaexeclp)),    /**< LP solution separation method of separator */
+   SCIP_DECL_SEPAEXECSOL ((*sepaexecsol)),   /**< arbitrary primal solution separation method of separator */
+   SCIP_SEPADATA*        sepadata,           /**< separator data */
+   GCG_DECL_SEPAGETCOLCOEFFICIENT((*sepagetcolcoef)),/**< method for computing the column coefficient for a cut */
+   GCG_DECL_SEPASETOBJECTIVE((*sepasetobjective)),/**< method for modifying the objectives of pricing problems to account for master cut */
+   GCG_DECL_SEPAMASTERCUTDELETE((*sepamastercutdelete))/**< callback to delete the mastersepacutdata */
    );
 
 #ifdef __cplusplus

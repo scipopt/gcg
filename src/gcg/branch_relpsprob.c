@@ -1540,9 +1540,6 @@ SCIP_RETCODE GCGincludeBranchruleRelpsprob(
          "reliability value for probing",
          &branchruledata->reliability, FALSE, DEFAULT_RELIABILITY, 0.0, 1.0, NULL, NULL) );
 
-   /* notify cons_integralorig about the original variable branching rule */
-   SCIP_CALL( GCGconsIntegralorigAddBranchrule(gcg, branchrule) );
-
    return SCIP_OKAY;
 }
 

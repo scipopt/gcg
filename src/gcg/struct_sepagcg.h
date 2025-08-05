@@ -26,35 +26,34 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file    type_extendedmasterconsdata.h
- * @ingroup TYPEDEFINITIONS
- * @brief   type definitions for extended master conss in GCG projects
- * @author  Til Mohr
+/**@file    struct_sepagcg.h
+ * @ingroup DATASTRUCTURES
+ * @brief   data structures for separators for master
+ * @author  Chantal Reinartz Groba
+ * @author  Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 
-#ifndef GCG_TYPE_EXTENDEDMASTERCONSDATA_H_
-#define GCG_TYPE_EXTENDEDMASTERCONSDATA_H_
+#ifndef GCG_STRUCT_SEPAGCG_H__
+#define GCG_STRUCT_SEPAGCG_H__
 
-#include "scip/def.h"
+#include <scip/type_sepa.h>
+
+#include "gcg/type_sepagcg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** type of extended master constraint */
-enum GCG_ExtendedMasterConsType
+/** master separator */
+struct GCG_Sepa
 {
-   GCG_EXTENDEDMASTERCONSTYPE_BRANCH_CONS,            /**< extended master cons is represented by a constraint */
-   GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW                /**< extended master cons is represented by a row */
+   SCIP_SEPA*                             separator;                     /**< SCIP separator */
+   GCG_DECL_SEPAGETCOLCOEFFICIENT         ((*sepagetcolcoefficient));    /**< compute cut coefficient using gcg column */
+   GCG_DECL_SEPASETOBJECTIVE              ((*sepasetobjective));         /**< adapt pricing objectives to consider cut */
+   GCG_DECL_SEPAMASTERCUTDELETE           ((*sepamastercutdelete));      /**< delete mastersepacutdata */
 };
-typedef enum GCG_ExtendedMasterConsType GCG_EXTENDEDMASTERCONSTYPE;
-
-typedef union GCG_ExtendedMasterCons GCG_EXTENDEDMASTERCONS;
-
-typedef struct GCG_PricingModification GCG_PRICINGMODIFICATION;
-typedef struct GCG_ExtendedMasterConsData GCG_EXTENDEDMASTERCONSDATA;
 
 #ifdef __cplusplus
 }
