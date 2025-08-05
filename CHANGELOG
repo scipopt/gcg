@@ -78,10 +78,8 @@ New/modified/removed API functions:
 - added function 'GCGcreateInferredPricingVar'
 - added function 'GCGvarIsInferredPricing'
 - added function 'GCGpricingmodificationCreate'
-- added function 'GCGextendedmasterconsCreateFromCons'
-- added function 'GCGextendedmasterconsCreateFromRow'
+- added functions 'GCGextendedmastercons*' to work with extended master constraints
 - added function 'GCGbranchCreateExtendedmastercons'
-- added function 'GCGextendedmasterconsFree'
 - added function 'GCGrelaxBranchNewCol'
 - added function 'GCGrelaxBranchGetExtendedMasterCons'
 - added function 'GCGrelaxBranchGetAllActiveExtendedMasterConss'
@@ -96,7 +94,7 @@ New/modified/removed API functions:
 - moved function 'GCGsepaGetMastercuts' to 'GCGsepaGetOriginalSepaMastercuts'
 - moved function 'GCGsepaAddMastercuts' to 'GCGsepaAddOriginalSepaCuts'
 - moved function 'GCGsepaOrigcutExists' to 'GCGsepaOriginalSepaOrigcutExists'
-- added function 'GCGremoveNewInactiveRows'
+- added function 'GCGremoveNewInactiveMastersepacuts'
 - added function 'GCGgetActiveMastersepacuts'
 - added function 'GCGgetNActiveMastersepacuts'
 - added function 'GCGShrinkActiveMastersepacuts'
@@ -105,22 +103,13 @@ New/modified/removed API functions:
 - added function 'GCGcaptureMastersepacut'
 - added function 'GCGreleaseMastersepacut'
 - added function 'GCGcreateMastersepacut'
-- added function 'GCGmastersepacutGetVarHistory'
-- added function 'GCGmastersepacutGetCutType'
-- added function 'GCGmastersepacutGetSeparator'
-- added function 'GCGmastersepacutGetData'
-- added function 'GCGmastersepacutSetVarHistory'
+- added functions 'GCGmastersepacut*' to work with master separator cuts
 - added function 'GCGcreateChvatalGomoryCut'
-- added function 'GCGchvatalGomoryCutGetNWeights'
-- added function 'GCGchvatalGomoryCutGetWeights'
-- added function 'GCGchvatalGomoryCutGetConssIndices'
-- added function 'GCGchvatalGomoryCutGetColumnCoefficient'
-- added function 'GCGchvatalGomorySetPricingObjectives'
-- added function 'GCGchvatalGomoryAdjustGCGColumn'
-- added function 'GCGcolAppendMastersepacutCoeffs'
+- added functions 'GCGchvatalGomoryCut*' to work with Chvatal-Gomory cuts
 - added function 'GCGcolGetNMastersepacutCoeffs'
 - added function 'GCGcolGetMastersepacutCoeffsSize'
 - added function 'GCGcolGetMastersepacutCoeffs'
+- added function 'GCGcolUpdateActiveMastersepacuts'
 
 Command line interface
 -----------------------

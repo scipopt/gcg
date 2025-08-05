@@ -49,7 +49,7 @@
 #define SEPA_NAME           "subsetrow"
 #define SEPA_DESC "subsetrow separator"
 #define SEPA_PRIORITY               100
-#define SEPA_FREQ                     1 /**< default frequency: 1 --> callback is executed for subproblems at every level*/
+#define SEPA_FREQ                    -1 /**< default frequency: 1 --> callback is executed for subproblems at every level*/
 #define SEPA_MAXBOUNDDIST           1.0
 #define SEPA_USESSUBSCIP          FALSE /**< does the separator use a secondary SCIP instance? */
 #define SEPA_DELAY                 TRUE /**< should separation method be delayed, if other separators found cuts? */

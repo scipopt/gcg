@@ -147,14 +147,6 @@ SCIP_RETCODE GCGchvatalGomorySetPricingObjectives(
    SCIP_Real                     dual     /**< the dual value of the separator master cut */
    );
  
-/** adapts a GCG column such that it respects the pricing modification imposed by the Chvatal-Gomory cut */
-GCG_EXPORT
-SCIP_RETCODE GCGchvatalGomoryAdjustGCGColumn(
-   GCG*                          gcg,        /**< GCG data structure */
-   GCG_EXTENDEDMASTERCONSDATA*   cut,        /**< separator master cut */
-   GCG_COL*                      gcgcol      /**< gcg column */
-   );
-
 /** returns active master separator cuts */
 GCG_EXPORT
 GCG_EXTENDEDMASTERCONSDATA** GCGgetActiveMastersepacuts(
