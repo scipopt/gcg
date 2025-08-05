@@ -223,21 +223,6 @@ SCIP_RETCODE GCGextendedmasterconsCreateForSepamastercut(
    return SCIP_OKAY;
 }
 
-/** updates the given gcgcol such that it respects the given cut*/
-SCIP_RETCODE GCGmastersepacutUpdateCol(
-   GCG*                          gcg,
-   GCG_EXTENDEDMASTERCONSDATA*   mastersepacut,
-   GCG_COL*                      col
-   )
-{
-   GCG_SEPA* sepa = GCGmastersepacutGetSeparator(GCGextendedmasterconsGetMastersepacut(mastersepacut));
-   
-   if( sepa->sepaadjustcol != NULL )
-      SCIP_CALL( sepa->sepaadjustcol(gcg, sepa, mastersepacut, col) );
-
-   return SCIP_OKAY;
-}
-
 SCIP_RETCODE GCGmastersepacutGetExtendedmasterconsCoeff(
    GCG*                             gcg,                          /**< GCG data structure */
    GCG_EXTENDEDMASTERCONSDATA*      mastersepacut,                /**< master cut data structure */

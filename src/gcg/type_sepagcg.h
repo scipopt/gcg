@@ -78,16 +78,6 @@ typedef struct GCG_Sepa GCG_SEPA;             /**< separator for master problem*
  */
 #define GCG_DECL_SEPASETOBJECTIVE(x) SCIP_RETCODE x (GCG* gcg, GCG_SEPA* sepa, GCG_EXTENDEDMASTERCONSDATA* cut, SCIP_Real dual)
 
-/** method for modifying the outdated values of a gcg column
- *
- *  input:
- *    gcg             : GCG main data structure
- *    sepa            : the gcg separator itself
- *    cut             : cut which has to be altered
- *    gcgcol          : GCG column
- */
-#define GCG_DECL_SEPAADJUSTCOL(x) SCIP_RETCODE x (GCG* gcg, GCG_SEPA* sepa, GCG_EXTENDEDMASTERCONSDATA* cut, GCG_COL* gcgcol)
-
 /** callback to delete the sepamastercutdata
  *
  *  input:

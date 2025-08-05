@@ -225,14 +225,6 @@ SCIP_RETCODE GCGextendedmasterconsCreateForSepamastercut(
    int                           npricingmodifications      /**< number of pricing modifications */
    );
 
-/** updates the given gcgcol such that it respects the given cut */
-GCG_EXPORT
-SCIP_RETCODE GCGmastersepacutUpdateCol(
-   GCG*                          gcg,              /**< GCG data structure */
-   GCG_EXTENDEDMASTERCONSDATA*   mastersepacut,    /**< cut that should be added to the gcgcol */
-   GCG_COL*                      col               /**< gcgcol that should be updated */
-   );
-
 /** calculate the coefficient of a column solution */
 GCG_EXPORT
 SCIP_RETCODE GCGmastersepacutGetExtendedmasterconsCoeff(

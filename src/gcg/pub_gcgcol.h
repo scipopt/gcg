@@ -307,7 +307,8 @@ int GCGcolGetNInferredPricingVars(
    );
 
 /** update the column's stored coefficients for mastersepacut */
-SCIP_RETCODE GCGcolAppendMastersepacutCoeffs(
+GCG_EXPORT
+SCIP_RETCODE GCGcolSetMastersepacutCoeffs(
    GCG_COL*             gcgcol,                 /**< gcg column structure */
    SCIP_Real*           sepamastercoeffs,       /**< pointer to array of new mastercut coefficients */
    int                  nsepamastercoeffs       /**< number of new mastercut coefficients */
@@ -329,6 +330,16 @@ int GCGcolGetMastersepacutCoeffsSize(
 GCG_EXPORT
 SCIP_Real* GCGcolGetMastersepaCutCoeffs(
    GCG_COL*             gcgcol      /**< gcg column structure */
+   );
+
+/** updates column such that it respect the given active cuts */
+GCG_EXPORT
+SCIP_RETCODE GCGcolUpdateActiveMastersepacuts(
+   GCG*                          gcg,                          /**< GCG data structure */
+   GCG_COL*                      gcgcol,                       /**< gcg column structure */
+   GCG_EXTENDEDMASTERCONSDATA**  mastersepacuts,               /**< active master sepa cuts */
+   int                           nmastersepacuts,              /**< number of all active cuts */
+   SCIP_Real*                    mastersepacutcoefs            /**< master sepa cut coefficients */
    );
 
 /** gets the hash key of a col */

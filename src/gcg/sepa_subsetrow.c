@@ -515,7 +515,8 @@ GCG_EXTENDEDMASTERCONSDATA* createMastercutData(
    {
       SCIP* pricingproblem;
       /* we add at most one constraint to each pricing problem */
-      SCIP_CONS* pricingcons;
+      SCIP_CONS* pricingconslb;
+      SCIP_CONS* pricingconsub;
       SCIP_CONS** pricingconss = NULL;
       SCIP_VAR** pricingvars;
       SCIP_VAR* coeffvar = NULL; // y
@@ -536,11 +537,16 @@ GCG_EXTENDEDMASTERCONSDATA* createMastercutData(
       pricingvars = SCIPgetVars(pricingproblem);
 
       /* create (and capture) 'empty' pricing constraint: -inf <= ... <= 1 - EPSILON */
-      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pp%i_cons_ssrc_%i", j, sepadata->ngeneratedcut);
-      SCIPcreateConsBasicLinear(pricingproblem, &pricingcons, name, 0, NULL, NULL, -SCIPinfinity(pricingproblem),
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pp%i_cons_ssrc_%i_lb", j, sepadata->ngeneratedcut);
+      SCIPcreateConsBasicLinear(pricingproblem, &pricingconslb, name, 0, NULL, NULL, -SCIPinfinity(pricingproblem),
                                 1 - 0.0001); // released via GCGpricingmodificationFree
+      
+      /* create (and capture) 'empty' pricing constraint: -EPSILON <= ... <= inf */
+      (void) SCIPsnprintf(name, SCIP_MAXSTRLEN, "pp%i_cons_ssrc_%i_ub", j, sepadata->ngeneratedcut);
+      SCIPcreateConsBasicLinear(pricingproblem, &pricingconsub, name, 0, NULL, NULL, -0.0001,
+                                SCIPinfinity(pricingproblem)); // released via GCGpricingmodificationFree
 
-      /* fill constraint such that -inf <= w^TAx <= 1 - EPSILON */
+      /* add w^TAx to constraints */
       for( l = 0; l < npricingvars; l++ )
       {
          assert(GCGvarIsPricing(pricingvars[l]));
@@ -549,15 +555,19 @@ GCG_EXTENDEDMASTERCONSDATA* createMastercutData(
             continue;
 
          if( !SCIPisZero(pricingproblem, pricingcoeff) ) // @todo: == 0.0??
-            SCIPaddCoefLinear(pricingproblem, pricingcons, pricingvars[l], pricingcoeff);
+         {
+            SCIPaddCoefLinear(pricingproblem, pricingconslb, pricingvars[l], pricingcoeff);
+            SCIPaddCoefLinear(pricingproblem, pricingconsub, pricingvars[l], pricingcoeff);
+         }
       }
 
       /* if no variables were actually added, the constraint is useless and can be released */
-      SCIPgetConsNVars(pricingproblem, pricingcons, &nvars, &success);
+      SCIPgetConsNVars(pricingproblem, pricingconslb, &nvars, &success);
       if( nvars == 0  )
       {
          SCIPdebugMessage("constraint was empty --> release\n");
-         SCIPreleaseCons(pricingproblem, &pricingcons);
+         SCIPreleaseCons(pricingproblem, &pricingconslb);
+         SCIPreleaseCons(pricingproblem, &pricingconsub);
          continue;
       }
 
@@ -568,16 +578,19 @@ GCG_EXTENDEDMASTERCONSDATA* createMastercutData(
                                   SCIPinfinity(pricingproblem), TRUE, -1.0, SCIP_VARTYPE_INTEGER, j) ; // released in GCGpricingmodificationFree
       assert(coeffvar != NULL);
 
-      /* add y to constraint such that: -inf <= w^TAx - y <= 1 - EPSILON  <=> w^TAx - 1 + EPSILON <= y */
-      SCIPaddCoefLinear(pricingproblem, pricingcons, coeffvar, -1.0);
-      SCIPdebugPrintCons(pricingproblem, pricingcons, NULL);
+      /* add y to constraints */
+      SCIPaddCoefLinear(pricingproblem, pricingconslb, coeffvar, -1.0);
+      SCIPaddCoefLinear(pricingproblem, pricingconsub, coeffvar, -1.0);
+      SCIPdebugPrintCons(pricingproblem, pricingconslb, NULL);
+      SCIPdebugPrintCons(pricingproblem, pricingconsub, NULL);
 
       assert(GCGgetNRelPricingprobs(gcg) > npricingmodifications);
 
       /* create pricing modifications containing y as the coeffvar and the single constraint we created */
-      SCIPallocBlockMemoryArray(masterscip, &pricingconss, 1); // freed via GCGpricingmodificationFree
-      pricingconss[0] = pricingcons;
-      GCGpricingmodificationCreate(gcg, &pricingmodificationsbuffer[npricingmodifications], j, coeffvar, NULL, 0, pricingconss, 1); // released in GCGpricingmodificationFree
+      SCIPallocBlockMemoryArray(masterscip, &pricingconss, 2); // freed via GCGpricingmodificationFree
+      pricingconss[0] = pricingconslb;
+      pricingconss[1] = pricingconsub;
+      GCGpricingmodificationCreate(gcg, &pricingmodificationsbuffer[npricingmodifications], j, coeffvar, NULL, 0, pricingconss, 2); // released in GCGpricingmodificationFree
 
       npricingmodifications++;
    }
@@ -893,14 +906,6 @@ GCG_DECL_SEPASETOBJECTIVE(sepaSetObjectiveSubsetrow)
    return GCGchvatalGomorySetPricingObjectives(gcg, cut, dual);
 }
 
-/** modifies outdated column to respect cut */
-static
-GCG_DECL_SEPAADJUSTCOL(sepaAdjustColSubsetrow)
-{
-   assert(strcmp(SEPA_NAME, SCIPsepaGetName(GCGsepaGetScipSeparator(sepa))) == 0);
-   return GCGchvatalGomoryAdjustGCGColumn(gcg, cut, gcgcol);
-}
-
 /** deletes mastersepacutdata */
 static
 GCG_DECL_SEPAMASTERCUTDELETE(sepaMastercutDeleteSubsetrow)
@@ -962,7 +967,7 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
                                SCIPinitializeRandomSeed(scip, DEFAULT_RANDSEED), TRUE) );
 
    SCIP_CALL( GCGrelaxIncludeSepa(gcg, &sepa, &gcgsepa, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
-      SEPA_USESSUBSCIP, SEPA_DELAY, sepaExeclpSubsetrow, NULL, sepadata, sepaAdjustColSubsetrow, sepaGetColCoefficientSubsetrow,
+      SEPA_USESSUBSCIP, SEPA_DELAY, sepaExeclpSubsetrow, NULL, sepadata, sepaGetColCoefficientSubsetrow,
       sepaSetObjectiveSubsetrow, sepaMastercutDeleteSubsetrow) );
 
    assert(sepa != NULL);

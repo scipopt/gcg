@@ -341,9 +341,6 @@ SCIP_Bool GCGcolIsEq(
    if( gcgcol1->nvars != gcgcol2->nvars )
       return FALSE;
    
-   if( gcgcol1->ninferredpricingvars != gcgcol2->ninferredpricingvars )
-      return FALSE;
-
    pricingprob = GCGcolGetPricingProb(gcgcol1);
 
    vars1 = GCGcolGetVars(gcgcol1);
@@ -360,19 +357,19 @@ SCIP_Bool GCGcolIsEq(
       }
    }
 
+#ifndef NDEBUG
    vars1 = gcgcol1->inferredpricingvars;
    vars2 = gcgcol2->inferredpricingvars;
 
    vals1 = gcgcol1->inferredpricingvals;
    vals2 = gcgcol2->inferredpricingvals;
 
+   assert(gcgcol1->ninferredpricingvars == gcgcol2->ninferredpricingvars);
    for( i = 0; i < gcgcol1->ninferredpricingvars; ++i )
    {
-      if( vars1[i] != vars2[i] || !SCIPisEQ(pricingprob, vals1[i], vals2[i]) )
-      {
-         return FALSE;
-      }
+      assert(vars1[i] == vars2[i] && SCIPisEQ(pricingprob, vals1[i], vals2[i]));
    }
+#endif
 
    return TRUE;
 
@@ -680,7 +677,7 @@ SCIP_RETCODE GCGcolUpdateOriginalSepaMastercuts(
 }
 
 /** update the column's stored coefficients for mastersepacut */
-SCIP_RETCODE GCGcolAppendMastersepacutCoeffs(
+SCIP_RETCODE GCGcolSetMastersepacutCoeffs(
    GCG_COL*             gcgcol,                 /**< gcg column structure */
    SCIP_Real*           mastersepacutcoeffs,    /**< pointer to array of new mastercut coefficients */
    int                  nmastersepacutcoeffs    /**< number of new mastercut coefficients */
@@ -691,9 +688,9 @@ SCIP_RETCODE GCGcolAppendMastersepacutCoeffs(
    SCIPdebugMessage("append %i coefficients for master separator cuts\n", nmastersepacutcoeffs);
 
    /* allocate memory for new coefficients (if necessary) */
-   if( gcgcol->mastersepacutscoeffssize < gcgcol->nmastersepacutcoeffs + nmastersepacutcoeffs )
+   if( gcgcol->mastersepacutscoeffssize < nmastersepacutcoeffs )
    {
-      int newsize = SCIPcalcMemGrowSize(gcgcol->pricingprob, gcgcol->nmastersepacutcoeffs + nmastersepacutcoeffs);
+      int newsize = SCIPcalcMemGrowSize(gcgcol->pricingprob, nmastersepacutcoeffs);
       SCIP_CALL( SCIPreallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->mastersepacutcoeffs), gcgcol->mastersepacutscoeffssize, newsize) );
       gcgcol->mastersepacutscoeffssize = newsize;
    }
@@ -702,10 +699,10 @@ SCIP_RETCODE GCGcolAppendMastersepacutCoeffs(
    SCIPdebugMessage("current number of coefficients %i\n", gcgcol->nmastersepacutcoeffs);
    for( i = 0; i < nmastersepacutcoeffs; i++ )
    {
-      SCIPdebugMessage("add %f at %i\n", mastersepacutcoeffs[i], gcgcol->nmastersepacutcoeffs);
-      gcgcol->mastersepacutcoeffs[gcgcol->nmastersepacutcoeffs] = mastersepacutcoeffs[i];
-      ++(gcgcol->nmastersepacutcoeffs);
+      SCIPdebugMessage("add %f at %i\n", mastersepacutcoeffs[i], i);
+      gcgcol->mastersepacutcoeffs[i] = mastersepacutcoeffs[i];
    }
+   gcgcol->nmastersepacutcoeffs = nmastersepacutcoeffs;
 
    return SCIP_OKAY;
 }
@@ -1106,6 +1103,64 @@ int GCGcolGetNInferredPricingVars(
    )
 {
    return gcgcol->ninferredpricingvars;
+}
+
+/** updates column such that it respect the given active cuts */
+SCIP_RETCODE GCGcolUpdateActiveMastersepacuts(
+   GCG*                          gcg,                          /**< GCG data structure */
+   GCG_COL*                      gcgcol,                       /**< gcg column structure */
+   GCG_EXTENDEDMASTERCONSDATA**  mastersepacuts,               /**< active master sepa cuts */
+   int                           nmastersepacuts,              /**< number of active cuts */
+   SCIP_Real*                    mastersepacutcoefs            /**< master sepa cut coefficients */
+   )
+{
+   int i;
+
+   /* @todo: improve this, currently all active cuts are added again */
+   
+   SCIP_CALL( GCGcolSetMastersepacutCoeffs(gcgcol, mastersepacutcoefs, nmastersepacuts) );
+
+   for( i = gcgcol->ninferredpricingvars-1; i >= 0; --i )
+   {
+      GCG_EXTENDEDMASTERCONSDATA* extendedmasterconsdata = GCGinferredPricingVarGetExtendedmasterconsdata(gcgcol->inferredpricingvars[i]);
+      assert(extendedmasterconsdata != NULL);
+      if( GCGextendedmasterconsGetType(extendedmasterconsdata) == GCG_EXTENDEDMASTERCONSTYPE_SEPA_ROW )
+      {
+         gcgcol->ninferredpricingvars--;
+         SCIP_CALL( SCIPreleaseVar(gcgcol->pricingprob, &gcgcol->inferredpricingvars[i]) );
+         if( i < gcgcol->ninferredpricingvars )
+         {
+            gcgcol->inferredpricingvars[i] = gcgcol->inferredpricingvars[gcgcol->ninferredpricingvars];
+            gcgcol->inferredpricingvals[i] = gcgcol->inferredpricingvals[gcgcol->ninferredpricingvars];
+         }
+      }
+   }
+
+   if( gcgcol->ninferredpricingvars + nmastersepacuts > gcgcol->maxinferredpricingvars )
+   {
+      int oldsize = gcgcol->maxinferredpricingvars;
+      gcgcol->maxinferredpricingvars = SCIPcalcMemGrowSize(gcgcol->pricingprob, gcgcol->ninferredpricingvars + nmastersepacuts);
+      SCIP_CALL( SCIPreallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->inferredpricingvars), oldsize, gcgcol->maxinferredpricingvars) );
+      SCIP_CALL( SCIPreallocBlockMemoryArray(gcgcol->pricingprob, &(gcgcol->inferredpricingvals), oldsize, gcgcol->maxinferredpricingvars) );
+   }
+
+   for( i = 0; i < nmastersepacuts; ++i )
+   {
+      GCG_EXTENDEDMASTERCONSDATA* mastersepacut = mastersepacuts[i];
+      GCG_PRICINGMODIFICATION* pricingmodification = GCGextendedmasterconsGetPricingModification(gcg, mastersepacut, gcgcol->probnr);
+      
+      if( !SCIPisZero(gcgcol->pricingprob, mastersepacutcoefs[i]) )
+      {
+         gcgcol->inferredpricingvars[gcgcol->ninferredpricingvars] = GCGpricingmodificationGetCoefVar(pricingmodification);
+         gcgcol->inferredpricingvals[gcgcol->ninferredpricingvars] = mastersepacutcoefs[i];
+         SCIP_CALL( SCIPcaptureVar(gcgcol->pricingprob, gcgcol->inferredpricingvars[gcgcol->ninferredpricingvars]) );
+         gcgcol->ninferredpricingvars++;
+      }
+   }
+
+   SCIPsortPtrReal((void**)gcgcol->inferredpricingvars, (double*)gcgcol->inferredpricingvals, SCIPvarComp, gcgcol->ninferredpricingvars);
+
+   return SCIP_OKAY;
 }
 
 SCIP_DECL_HASHGETKEY(GCGhashGetKeyCol)

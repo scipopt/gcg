@@ -225,17 +225,6 @@ GCG_DECL_SEPASETOBJECTIVE(sepasetobjectiveXyz)
    return SCIP_OKAY;
 }
 
-/** method for modifying the outdated values of a gcg column */
-static
-GCG_DECL_SEPAADJUSTCOL(sepaadjustcolXyz)
-{  /*lint --e{715}*/
-   assert(strcmp(SEPA_NAME, SCIPsepaGetName(GCGsepaGetScipSeparator(sepa))) == 0);
-   SCIPerrorMessage("method of xyz separator not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-
 /** callback to delete the mastersepacutdata */
 static
 GCG_DECL_SEPAMASTERCUTDELETE(sepamastercutdeleteXyz)
@@ -270,7 +259,7 @@ SCIP_RETCODE GCGincludeSepaXyz(
    sepa = NULL;
 
    SCIP_CALL( GCGrelaxIncludeSepa(gcg, &sepa, &gcgsepa, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
-      SEPA_USESSUBSCIP, SEPA_DELAY, sepaExeclpXyz, sepaExecsolXyz, sepadata, sepaadjustcolXyz, sepagetcolcoefficientXyz,
+      SEPA_USESSUBSCIP, SEPA_DELAY, sepaExeclpXyz, sepaExecsolXyz, sepadata, sepagetcolcoefficientXyz,
       sepasetobjectiveXyz, sepamastercutdeleteXyz) );
 
    assert(sepa != NULL);

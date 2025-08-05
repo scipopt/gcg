@@ -1882,14 +1882,12 @@ SCIP_RETCODE ObjPricerGcg::computeColOriginalSepaCuts(
 /** compute separator master cut coefficients of column and store them in the column */
 SCIP_RETCODE ObjPricerGcg::computeColMastersepacutCoeffs(
    GCG_COL*              gcgcol              /**< GCG column data structure */
-)
+   )
 {
    GCG_EXTENDEDMASTERCONSDATA** activecuts = NULL;
    SCIP_Real* coeffs = NULL;
    int i;
-   int j;
    int nactivecuts;
-   int ncurrentsepamastercutcoeffs;
 
    assert(scip_ != NULL);
    assert(gcgcol != NULL);
@@ -1901,27 +1899,23 @@ SCIP_RETCODE ObjPricerGcg::computeColMastersepacutCoeffs(
    if( !GCGcolGetInitializedCoefs(gcgcol) )
       SCIP_CALL( computeColMastercoefs(gcgcol) );
 
-   /* get the number of coefficients which have already been stored (relevant for columns from pool) */
-   ncurrentsepamastercutcoeffs = GCGcolGetNMastersepacutCoeffs(gcgcol);
-   assert(ncurrentsepamastercutcoeffs <= nactivecuts);
-
    /* no new cuts since last computation */
-   if( nactivecuts - ncurrentsepamastercutcoeffs == 0 )
+   if( nactivecuts == 0 )
       return SCIP_OKAY;
 
    /* compute coefficient for each (active) cut */
-   SCIP_CALL( SCIPallocBufferArray(origprob, &coeffs, nactivecuts - ncurrentsepamastercutcoeffs) );
-   for( j = ncurrentsepamastercutcoeffs, i = 0; j < nactivecuts; j++, i++ )
+   SCIP_CALL( SCIPallocBufferArray(origprob, &coeffs, nactivecuts) );
+   for( i = 0; i < nactivecuts; ++i )
    {
       coeffs[i] = 0.0;
 
-      if( GCGextendedmasterconsIsActive(activecuts[j]) )
-         SCIP_CALL( GCGmastersepacutGetExtendedmasterconsCoeff(gcg, activecuts[j], GCGcolGetVars(gcgcol), GCGcolGetVals(gcgcol),
-            GCGcolGetNVars(gcgcol), GCGcolGetProbNr(gcgcol), gcgcol, &coeffs[i]) );
+      assert(GCGextendedmasterconsIsActive(activecuts[i]));
+      SCIP_CALL( GCGmastersepacutGetExtendedmasterconsCoeff(gcg, activecuts[i], GCGcolGetVars(gcgcol), GCGcolGetVals(gcgcol),
+         GCGcolGetNVars(gcgcol), GCGcolGetProbNr(gcgcol), gcgcol, &coeffs[i]) );
    }
 
    /* transfer the computed coefficients to the gcg column */
-   SCIP_CALL( GCGcolAppendMastersepacutCoeffs(gcgcol, coeffs, nactivecuts - ncurrentsepamastercutcoeffs) );
+   SCIP_CALL( GCGcolUpdateActiveMastersepacuts(gcg, gcgcol, activecuts, nactivecuts, coeffs) );
    SCIPfreeBufferArrayNull(origprob, &coeffs);
 
    return SCIP_OKAY;
@@ -2175,10 +2169,10 @@ SCIP_Real ObjPricerGcg::computeRedCostGcgCol(
    solvals = GCGcolGetInferredPricingVals(gcgcol);
    for( i = 0; i < nsolvars; ++i )
    {
-      GCG_EXTENDEDMASTERCONSDATA* branchextendedmasterconsdata = GCGinferredPricingVarGetExtendedmasterconsdata(solvars[i]);
+      GCG_EXTENDEDMASTERCONSDATA* extendedmasterconsdata = GCGinferredPricingVarGetExtendedmasterconsdata(solvars[i]);
 
       assert(GCGinferredPricingVarIsCoefVar(solvars[i]));
-      objvalue -= solvals[i] * pricetype->extendedmasterconsGetDual(branchextendedmasterconsdata);
+      objvalue -= solvals[i] * pricetype->extendedmasterconsGetDual(extendedmasterconsdata);
    }
 
    redcost = (isray ? objvalue : objvalue - pricerdata->dualsolconv[probnr]);
@@ -3660,13 +3654,9 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    /* master separator cuts: modify pricing problems for active master cuts */
    for( j = 0; j < nactivecuts; j++ )
    {
-      if( GCGextendedmasterconsIsActive(activecuts[j]) )
-      {
-         SCIP_Real dual = pricetype->extendedmasterconsGetDual(activecuts[j]);
-         /* if dual is zero, modifications are superfluous since the effect on the objective value is zero */
-         if( dual != 0.0 )
-            SCIP_CALL( GCGextendedmasterconsApplyPricingModifications(gcg, activecuts[j]) );
-      }
+      assert(GCGextendedmasterconsIsActive(activecuts[j]));
+      /* @todo: if dual is zero, modifications are superfluous since the effect on the objective value is zero (but we have to respect/set the value of the coefvar) */
+      SCIP_CALL( GCGextendedmasterconsApplyPricingModifications(gcg, activecuts[j]) );
    }
 
    pricerdata->npricingloopiters = 0;
@@ -4133,15 +4123,10 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
    /* as generation of new columns is finished, the modifications to the pricing problems stemming from the active mastercuts are undone */
    for( j = 0; j < nactivecuts; j++ )
    {
-      if( GCGextendedmasterconsIsActive(activecuts[j]) )
-      {
-         /* update the var history of all the cuts still in the LP */
-         SCIP_CALL( GCGvarhistoryJumpToLatest(scip_, GCGmastersepacutGetVarHistory(GCGextendedmasterconsGetMastersepacut(activecuts[j]))) );
-         SCIP_Real dual = pricetype->extendedmasterconsGetDual(activecuts[j]);
-         /* if the dual was zero, the pricing modifications were never applied since they are superfluous */
-         if( dual != 0.0 )
-            SCIP_CALL( GCGextendedmasterconsUndoPricingModifications(gcg, activecuts[j]) );
-      }
+      assert(GCGextendedmasterconsIsActive(activecuts[j]));
+      /* update the var history of all the cuts still in the LP */
+      SCIP_CALL( GCGvarhistoryJumpToLatest(scip_, GCGmastersepacutGetVarHistory(GCGextendedmasterconsGetMastersepacut(activecuts[j]))) );
+      SCIP_CALL( GCGextendedmasterconsUndoPricingModifications(gcg, activecuts[j]) );
    }
 
    return SCIP_OKAY;

@@ -512,24 +512,3 @@ SCIP_RETCODE GCGcolpoolPropagateGlobalBounds(
 
    return SCIP_OKAY;
 }
-
-SCIP_RETCODE GCGcolpoolAddMastersepacutsToCols(
-   GCG_COLPOOL*                  colpool,
-   GCG_EXTENDEDMASTERCONSDATA*   mastercut
-   )
-{
-   GCG_COL* col;
-   int c;
-   assert(colpool != NULL);
-
-   for( c = 0; c < colpool->ncols; ++c )
-   {
-      col = colpool->cols[c];
-      assert(SCIPhashtableExists(colpool->hashtable, (void*)col));
-      // SCIP_CALL( SCIPhashtableRemove(colpool->hashtable, (void*)col) );
-      SCIP_CALL( GCGmastersepacutUpdateCol(colpool->gcg, mastercut, col) );
-      // SCIP_CALL( SCIPhashtableInsert(colpool->hashtable, (void*)col) );
-   }
-
-   return SCIP_OKAY;
-}

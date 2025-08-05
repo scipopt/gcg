@@ -177,13 +177,6 @@ SCIP_RETCODE GCGcolpoolPropagateGlobalBounds(
    GCG_COLPOOL*          colpool             /**< col pool */
    );
 
-/** updates columns such that they respect the new cut */
-GCG_EXPORT
-SCIP_RETCODE GCGcolpoolAddMastersepacutsToCols(
-   GCG_COLPOOL*                  colpool,       /**< column pool */
-   GCG_EXTENDEDMASTERCONSDATA*   mastercut  /**< new cut to be added to the existing gcgcols */
-   );
-
 /** @} */
 
 #ifdef __cplusplus
