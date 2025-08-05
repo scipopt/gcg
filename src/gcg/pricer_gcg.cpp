@@ -1967,6 +1967,7 @@ SCIP_RETCODE ObjPricerGcg::addRootBounds(
    SCIP_Real             dualbound           /**< new dual bound for the root master LP */
    )
 {
+   SCIP_VAR** probvars;
    int nprobvars;
    int i;
    int j;
