@@ -2217,7 +2217,7 @@ SCIP_RETCODE ObjPricerGcg::addColToPricestore(
          pricerdata->nefficaciouscols[GCGcolGetProbNr(col)]++;
 #ifdef SCIP_DEBUG
       GCG_SET_LOCK(&pricerdata->locks->printlock);
-      SCIPdebugMessage("  -> new column <%p>, reduced cost = %g\n", (void*) col, redcost);
+      SCIPdebugMessage("  -> new column <%p>, reduced cost = %.8g\n", (void*) col, redcost);
       GCG_UNSET_LOCK(&pricerdata->locks->printlock);
 #endif
    }
@@ -2239,6 +2239,7 @@ void ObjPricerGcg::getBestCols(
 
    assert(pricingprobcols != NULL);
 
+   SCIPdebugMessage("getBestCols():\n");
    for( i = 0; i < pricerdata->npricingprobs; ++i )
    {
       pricingprobcols[i] = NULL;
@@ -2254,6 +2255,10 @@ void ObjPricerGcg::getBestCols(
          if( pricingprobcols[i] == NULL || SCIPisDualfeasLT(scip_, GCGcolGetRedcost(col), GCGcolGetRedcost(pricingprobcols[i])) )
             pricingprobcols[i] = col;
       }
+#ifndef NDEBUG
+      if( ncols > 0 )
+         SCIPdebugMessage("  -> problem %d best col <%p>, redcost: %.8g\n", i, (void*)pricingprobcols[i], GCGcolGetRedcost(pricingprobcols[i]));
+#endif
    }
 }
 
@@ -3819,7 +3824,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
                pricingprobnr, GCGsolverGetName(GCGpricingjobGetSolver(pricingjob)), stabilized,
                GCGpricingjobIsHeuristic(pricingjob) ? "heuristic" : "exact");
             SCIPdebugMessage("  -> status: %d\n", status);
-            SCIPdebugMessage("  -> problowerbound: %.4g\n", problowerbound);
+            SCIPdebugMessage("  -> problowerbound: %.8g\n", problowerbound);
             SCIPdebugMessage("  -> #impcols: %d\n", impcols);
             GCG_UNSET_LOCK(&pricerdata->locks->printlock);
 #endif
@@ -3861,7 +3866,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
       /* collect results from all performed pricing jobs */
       getBestCols(bestcols);
-      pricingcontroller->collectResults(bestcols, &infeasible, &optimal, bestobjvals, &beststabobj, &bestredcost, bestredcostvalid);
+      pricingcontroller->collectResults(bestcols, pricerdata->dualsolconv, stabilized, &infeasible, &optimal, bestobjvals, &beststabobj, &bestredcost, bestredcostvalid);
 
       if( infeasible )
          break;
@@ -3878,7 +3883,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
 
          SCIP_CALL( getStabilizedDualObjectiveValue(pricetype, &stabdualval, stabilized) );
 
-         SCIPdebugMessage("lpobjval = %.8g, bestredcost = %.8g, stabdualval = %.8g, beststabobj = %.8g\n",
+         SCIPdebugMessage("lpobjval = %.10g, bestredcost = %.10g, stabdualval = %.10g, beststabobj = %.10g\n",
             SCIPgetSolOrigObj(scip_, NULL), bestredcost, stabdualval, beststabobj);
 
 #ifndef NDEBUG
@@ -3907,7 +3912,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
                   tmp = dualsol * SCIProwGetRhs(row);
                if( !SCIPisZero(scip_, tmp) )
                {
-                  SCIPdebugMessage("  <%s>, dualsol %.8g, bnds [%.8g, %.8g] -> %.8g\n", SCIProwGetName(row), dualsol, SCIProwGetLhs(row), SCIProwGetRhs(row), tmp);
+                  SCIPdebugMessage("  <%s>, dualsol %.8g, bnds [%.8g, %.8g] -> %.10g\n", SCIProwGetName(row), dualsol, SCIProwGetLhs(row), SCIProwGetRhs(row), tmp);
                   dualobj += tmp;
                }
             }
@@ -3929,11 +3934,11 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
                   tmp = redcost * SCIPcolGetUb(col);
                if( !SCIPisZero(scip_, tmp) )
                {
-                  SCIPdebugMessage("  <%s>, redcost %.8g, bnds [%.8g, %.8g] -> %.8g\n", SCIPvarGetName(SCIPcolGetVar(col)), redcost, SCIPcolGetLb(col), SCIPcolGetUb(col), tmp);
+                  SCIPdebugMessage("  <%s>, redcost %.8g, bnds [%.8g, %.8g] -> %.10g\n", SCIPvarGetName(SCIPcolGetVar(col)), redcost, SCIPcolGetLb(col), SCIPcolGetUb(col), tmp);
                   dualobj += tmp;
                }
             }
-            SCIPdebugMessage("  -> dualobj %.8g\n", dualobj);
+            SCIPdebugMessage("  -> dualobj %.10g\n", dualobj);
 
             /* getStabilizedDualObjectiveValue() does not include the dual solutions associated with the convexity constraints.
              * This works since they are also not included in 'beststabobj' and we are only interested in the sum 'stabdualval + beststabobj'
@@ -3945,7 +3950,7 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
                if( convcons != NULL )
                   dualconvoffset += GCGconsGetRhs(scip_, convcons) * pricetype->consGetDual(convcons);
             }
-            SCIPdebugMessage("  offset caused by convexity constraints: %g\n", dualconvoffset);
+            SCIPdebugMessage("  offset caused by convexity constraints: %.10g\n", dualconvoffset);
 
             assert(SCIPisDualfeasEQ(scip_, SCIPretransformObj(scip_, dualobj), stabdualval + dualconvoffset));
          }

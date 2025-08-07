@@ -160,6 +160,8 @@ public:
    /** collect solution results from all pricing problems */
    void collectResults(
       GCG_COL**             bestcols,           /**< best found columns per pricing problem */
+      SCIP_Real*            dualsolconv,        /**< dual solution values of convexity constraints */
+      SCIP_Bool             stabilized,         /**< whether the pricing was stabilized */
       SCIP_Bool*            infeasible,         /**< pointer to store whether pricing is infeasible */
       SCIP_Bool*            optimal,            /**< pointer to store whether all pricing problems were solved to optimality */
       SCIP_Real*            bestobjvals,        /**< array to store best lower bounds */

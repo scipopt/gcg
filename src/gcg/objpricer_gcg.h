@@ -220,14 +220,6 @@ public:
    /** create the pointers for the pricestore */
    SCIP_RETCODE createPricestore();
 
-   /** for given columns, (re-)compute and update their reduced costs */
-   void updateRedcosts(
-      PricingType*          pricetype,          /**< type of pricing */
-      GCG_COL**             cols,               /**< columns to compute reduced costs for */
-      int                   ncols,              /**< number of columns */
-      int*                  nimpcols            /**< pointer to store number of improving columns */
-      );
-
    /** add a new column to the pricer's column buffer that will be added to the pricing storage */
    SCIP_RETCODE addColToPricestore(
       GCG_COL*              col,                /**< priced col */

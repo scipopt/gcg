@@ -564,6 +564,8 @@ void Pricingcontroller::evaluatePricingjob(
 /** collect solution results from all pricing problems */
 void Pricingcontroller::collectResults(
    GCG_COL**             bestcols,           /**< best found columns per pricing problem */
+   SCIP_Real*            dualsolconv,        /**< dual solution values of convexity constraints */
+   SCIP_Bool             stabilized,         /**< whether the pricing was stabilized */
    SCIP_Bool*            infeasible,         /**< pointer to store whether pricing is infeasible */
    SCIP_Bool*            optimal,            /**< pointer to store whether all pricing problems were solved to optimality */
    SCIP_Real*            bestobjvals,        /**< array to store best lower bounds */
@@ -587,7 +589,19 @@ void Pricingcontroller::collectResults(
    {
       int probnr = GCGpricingprobGetProbnr(pricingprobs[i]);
       int nidentblocks = GCGgetNIdenticalBlocks(gcg, probnr);
-      SCIP_Real lowerbound = GCGpricingprobGetLowerbound(pricingprobs[i]);
+      SCIP_Real lowerbound;
+
+      if( !stabilized && bestcols[probnr] != NULL && SCIPgetStatus(pricingprobs[i]->pricingscip) == SCIP_STATUS_OPTIMAL )
+      {
+         /* set dual bound due to numerical issues: the best col may not belong to the lowerbound of this optimal round
+          * caused by numerical instability of the mip solver */
+         lowerbound = dualsolconv[probnr] + GCGcolGetRedcost(bestcols[probnr]);
+         assert(SCIPisFeasEQ(pricingprobs[i]->pricingscip, GCGpricingprobGetLowerbound(pricingprobs[i]), lowerbound));
+      }
+      else
+      {
+         lowerbound = GCGpricingprobGetLowerbound(pricingprobs[i]);
+      }
 
       /* check infeasibility */
       *infeasible |= GCGpricingprobGetStatus(pricingprobs[i]) == GCG_PRICINGSTATUS_INFEASIBLE;
