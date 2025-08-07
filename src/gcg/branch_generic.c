@@ -2742,12 +2742,12 @@ SCIP_RETCODE initBranch(
    {
       SCIP_Bool rays;
 
-      SCIPdebugMessage("Generic branching rule could not find variables to branch on!\n");
+      SCIPerrorMessage("Generic branching rule could not find variables to branch on!\n");
 
       SCIP_CALL( GCGpricerExistRays(gcg, &rays) );
 
       if( rays )
-         SCIPwarningMessage(masterprob, "Generic branching is not compatible with unbounded problems!\n");
+         SCIPerrorMessage("Generic branching is not compatible with unbounded problems!\n");
 
       return SCIP_ERROR;
    }
