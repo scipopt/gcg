@@ -5018,7 +5018,7 @@ SCIP_RETCODE GCGrelaxUpdateCurrentSol(
          if( GCGgetDecompositionMode(gcg) == GCG_DECMODE_BENDERS )
             SCIP_CALL( SCIPtrySol(scip, relaxdata->currentorigsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
          else
-            SCIP_CALL( SCIPcheckSolOrig(scip, relaxdata->currentorigsol, &stored, FALSE, TRUE) );
+            SCIP_CALL( SCIPcheckSol(scip, relaxdata->currentorigsol, FALSE, FALSE, TRUE, TRUE, TRUE, &stored) );
 
          SCIPdebugMessage("updated current original LP solution, %s feasible in the original problem!\n",
             (stored ? "" : "not"));
