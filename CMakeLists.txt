@@ -1,14 +1,27 @@
 cmake_minimum_required(VERSION 3.11)
 
+# INTERPROCEDURAL_OPTIMIZATION is enforced when enabled.
+if(POLICY CMP0069)
+    cmake_policy(SET CMP0069 NEW)
+endif()
+
 # option() honors normal variables.
 if(POLICY CMP0077)
-   cmake_policy(SET CMP0077 NEW)
+    cmake_policy(SET CMP0077 NEW)
+endif()
+
+# MSVC runtime library flags are selected by an abstraction.
+if(POLICY CMP0091)
+    cmake_policy(SET CMP0091 NEW)
+endif()
+
+# Avoid warnings about removed FindBoost.cmake until our minimum required version is >= 3.30.
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
 endif()
 
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_DEBUG} ${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} ${CMAKE_CXX_FLAGS_RELEASE}")
-
-project(GCG)
 
 set(GCG_VERSION_MAJOR 4)
 set(GCG_VERSION_MINOR 0)
@@ -16,14 +29,21 @@ set(GCG_VERSION_PATCH 0)
 set(GCG_VERSION_SUB 0)
 set(GCG_VERSION_API 21)
 
+project(GCG
+    VERSION ${GCG_VERSION_MAJOR}.${GCG_VERSION_MINOR}.${GCG_VERSION_PATCH}
+    LANGUAGES CXX C
+    DESCRIPTION "GCG is a generic decomposition solver for mixed-integer linear programs (MILPs)."
+    )
+
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 
 if(SCIPOptSuite_BINARY_DIR)
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${SCIPOptSuite_BINARY_DIR}/bin)
-  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${SCIPOptSuite_BINARY_DIR}/lib)
-  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${SCIPOptSuite_BINARY_DIR}/lib)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${SCIPOptSuite_BINARY_DIR}/bin)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${SCIPOptSuite_BINARY_DIR}/lib)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${SCIPOptSuite_BINARY_DIR}/lib)
 endif()
 
 # path to e.g. FindGMP module
@@ -35,16 +55,16 @@ message(STATUS "Build shared libraries: " ${SHARED})
 
 # make 'Release' the default build type
 if(NOT CMAKE_BUILD_TYPE)
-   set(CMAKE_BUILD_TYPE Release)
+    set(CMAKE_BUILD_TYPE Release)
 endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 if(MSVC)
-   # GCG requires OpenMP features which are not supported by the native MSVC (requires C++ Clang Compiler for Windows)
-   set(DEFAULT_OPENMP OFF)
+    # GCG requires OpenMP features which are not supported by the native MSVC
+    set(DEFAULT_OPENMP OFF)
 else()
-   set(DEFAULT_OPENMP ON)
+    set(DEFAULT_OPENMP ON)
 endif()
 
 option(OPENMP "should gcg be compiled with openmp" ${DEFAULT_OPENMP})
@@ -58,6 +78,24 @@ option(MT "use static runtime libraries for Visual Studio compiler" OFF)
 option(GCG_DEV_BUILD "compile SCIP and SoPlex located in lib/scip-git and lib/soplex-git" OFF)
 option(HMETIS "should hmetis be called" OFF)
 option(JSON "should JSON library be linked" ON)
+option(LTO "Enable Link Time Optimization, aka Interprocedural Optimization" ON)
+
+if(GCG_DEV_BUILD)
+    # @todo: fix this
+    set(LTO OFF)
+endif()
+
+if(LTO AND (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo"))
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT result OUTPUT output LANGUAGES C CXX)
+    if(result)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+        message(STATUS "LTO enabled")
+    else()
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
+        message(STATUS "${output}")
+    endif()
+endif()
 
 # OPENMP
 if(OPENMP)

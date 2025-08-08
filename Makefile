@@ -59,6 +59,8 @@ VISUSETTINGS 	= 	none
 DATADIR 		= 	none
 OBJDIR		= obj
 
+OPT			=	opt
+LTO			=	true
 VALGRIND	=	false
 MODE		=	readdec
 VISU 		= 	false
@@ -76,6 +78,20 @@ JSON        =   true
 HIGHS       =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CLIQUER).$(HIGHS)
+
+ifeq ($(LTO),true)
+  	# for GCC < 10, use just -flto, otherwise use -flto=auto, which should give faster link times
+  	# -fno-fat-lto-objects (since GCC 5) should improve compilation time a bit
+  	GCCVERSION := $(shell $(CC) -dumpversion | cut -f1 -d.)
+  	LTOFLAG := $(word $(shell expr \( $(GCCVERSION) \>= 10 \) + 1), -flto -flto=auto)
+
+  	CFLAGS	+=	$(LTOFLAG) -fno-fat-lto-objects
+  	CXXFLAGS	+=	$(LTOFLAG) -fno-fat-lto-objects
+  	LDFLAGS	+=	$(LTOFLAG) -Wno-stringop-overflow -Wno-alloc-size-larger-than -Wno-odr
+ifeq ($(SHARED),true)
+  	LIBBUILDFLAGS +=	$(LTOFLAG) -Wno-stringop-overflow -Wno-alloc-size-larger-than -Wno-odr
+endif
+endif
 
 # overriding SCIP PARASCIP setting if compiled with OPENMP
 ifeq ($(OPENMP),true)
@@ -132,9 +148,11 @@ override IPOPT    :=$(shell echo "$(SCIPVERSION)" | sed -e 's/.* IPOPT=\([^@]*\)
 override IPOPTOPT :=$(shell echo "$(SCIPVERSION)" | sed -e 's/.* IPOPTOPT=\([^@]*\).*/\1/')
 override LPSCHECK :=$(shell echo "$(SCIPVERSION)" | sed -e 's/.* LPSCHECK=\([^@]*\).*/\1/')
 override LPSOPT   :=$(shell echo "$(SCIPVERSION)" | sed -e 's/.* LPSOPT=\([^@]*\).*/\1/')
+override LTO      :=$(shell echo "$(SCIPVERSION)" | sed -e 's/.* LTO=\([^@]*\).*/\1/')
 override NOBLKBUFMEM :=$(shell echo "$(SCIPVERSION)" | sed -e 's/.* NOBLKBUFMEM=\([^@]*\).*/\1/')
 override NOBLKMEM :=$(shell echo "$(SCIPVERSION)" | sed -e 's/.* NOBLKMEM=\([^@]*\).*/\1/')
 override NOBUFMEM :=$(shell echo "$(SCIPVERSION)" | sed -e 's/.* NOBUFMEM=\([^@]*\).*/\1/')
+override OPT      :=$(shell echo "$(SCIPVERSION)" | sed -e 's/.* OPT=\([^@]*\).*/\1/')
 override PARASCIP :=$(shell echo "$(SCIPVERSION)" | sed -e 's/.* PARASCIP=\([^@]*\).*/\1/')
 override READLINE :=$(shell echo "$(SCIPVERSION)" | sed -e 's/.* READLINE=\([^@]*\).*/\1/')
 override SANITIZE :=$(shell echo "$(SCIPVERSION)" | sed -e 's/.* SANITIZE=\([^@]*\).*/\1/')
@@ -901,6 +919,7 @@ help:
 		@echo "  - NOBLKMEM=<true|false>: Turn off block memory or on (default)."
 		@echo "  - NOBUFMEM=<true|false>>: Turn off buffer memory or on (default)."
 		@echo "  - ZIMPLOPT=<dbg|opt>: Use debug or optimized (default) mode for ZIMPL."
+		@echo "  - LTO=<true|false>: if OPT=opt for linux/macOS with gcc/clang, enable link-time-optimization (default)."
 		@echo "  - ARCH"
 		@echo "  - GMP"
 		@echo "  - IPOPTOPT"
