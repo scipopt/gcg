@@ -207,7 +207,7 @@ SCIP_RETCODE solveProblem(
    )
 {
    GCG_COL* col;
-   SCIP_RETCODE retcode;
+   SCIP_RETCODE retcode = SCIP_OKAY;
 #ifdef SCIP_STATISTIC
    SCIP_Longint oldnnodes;
 #endif
@@ -229,8 +229,23 @@ SCIP_RETCODE solveProblem(
 #ifdef SCIP_STATISTIC
    oldnnodes = SCIPgetNNodes(pricingprob);
 #endif
-   /* solve the pricing SCIP */
-   retcode = SCIPsolve(pricingprob);
+
+   if( SCIPgetStage(pricingprob) == SCIP_STAGE_PROBLEM )
+   {
+      retcode = SCIPpresolve(pricingprob);
+      if( SCIPgetNContVars(pricingprob) > 0 )
+      {
+         /* disable presolving restarts because of numerical instability caused by these (workaround) */
+         SCIP_CALL( SCIPsetIntParam(pricingprob, "presolving/maxrestarts", 0) );
+      }
+   }
+
+   if( retcode == SCIP_OKAY )
+   {
+      /* solve the pricing SCIP */
+      retcode = SCIPsolve(pricingprob);
+   }
+
    if( retcode != SCIP_OKAY )
    {
       SCIPwarningMessage(pricingprob, "Pricing problem %d terminated with retcode = %d, ignoring\n", probnr, retcode);
