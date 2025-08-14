@@ -367,9 +367,8 @@ static
 SCIP_RETCODE addVarToMasterbranch(
    GCG*                  gcg,                /**< GCG data structure */
    SCIP_VAR*             mastervar,          /**< the variable to add */
-   GCG_BRANCHDATA*       branchdata,         /**< branching data structure where the variable should be added */
-   SCIP_Bool*            added               /**< whether the variable was added */
-)
+   GCG_BRANCHDATA*       branchdata          /**< branching data structure where the variable should be added */
+   )
 {
    SCIP_Real coef;
    SCIP_VAR** origvars;
@@ -380,13 +379,10 @@ SCIP_RETCODE addVarToMasterbranch(
    assert(masterprob != NULL);
    assert(mastervar != NULL);
    assert(branchdata != NULL);
-   assert(added != NULL);
 
    origvars = GCGmasterVarGetOrigvars(mastervar);
    norigvars = GCGmasterVarGetNOrigvars(mastervar);
    origvals = GCGmasterVarGetOrigvals(mastervar);
-
-   *added = FALSE;
 
    SCIP_CALL( GCGbranchGetExtendedmasterconsCoeff(gcg, branchdata->mastercons, origvars, origvals, norigvars, GCGvarGetBlock(mastervar), NULL, &coef) );
 
@@ -394,7 +390,6 @@ SCIP_RETCODE addVarToMasterbranch(
    {
       SCIPdebugMessage("Adding variable %s to branching constraint: %s %d\n", SCIPvarGetName(mastervar), branchdata->branchtype == GCG_BRANCH_DOWN ? "<=" : ">=", branchdata->constant);
       SCIP_CALL( GCGextendedmasterconsAddMasterVar(gcg, branchdata->mastercons, mastervar, coef) );
-      *added = TRUE;
    }
 
    return SCIP_OKAY;
@@ -445,7 +440,6 @@ SCIP_RETCODE createBranchingCons(
    SCIP_VAR** mastervars;
    int nmastervars;
    int i;
-   SCIP_Bool added = FALSE;
 
    SCIP_CONS* branchcons;
 
@@ -642,8 +636,7 @@ SCIP_RETCODE createBranchingCons(
    // add the variables to the constraint
    for( i = 0; i < nmastervars; i++ )
    {
-      added = FALSE;
-      SCIP_CALL( addVarToMasterbranch(gcg, mastervars[i], branchdata, &added) );
+      SCIP_CALL( addVarToMasterbranch(gcg, mastervars[i], branchdata) );
    }
 
    return SCIP_OKAY;
@@ -2043,8 +2036,7 @@ GCG_DECL_BRANCHNEWCOL(branchNewColCompBnd)
    assert(branchdata != NULL);
    assert(branchdata->mastercons != NULL);
 
-   SCIP_Bool added = FALSE;
-   SCIP_CALL( addVarToMasterbranch(gcg, mastervar, branchdata, &added) );
+   SCIP_CALL( addVarToMasterbranch(gcg, mastervar, branchdata) );
 
    return SCIP_OKAY;
 }

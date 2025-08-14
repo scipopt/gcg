@@ -213,18 +213,6 @@ GCG_DECL_SEPAGETCOLCOEFFICIENT(sepagetcolcoefficientXyz)
    return SCIP_OKAY;
 }
 
-
-/** method for adapting pricing objectives to consider cut */
-static
-GCG_DECL_SEPASETOBJECTIVE(sepasetobjectiveXyz)
-{  /*lint --e{715}*/
-   assert(strcmp(SEPA_NAME, SCIPsepaGetName(GCGsepaGetScipSeparator(sepa))) == 0);
-   SCIPerrorMessage("method of xyz separator not implemented yet\n");
-   SCIPABORT(); /*lint --e{527}*/
-
-   return SCIP_OKAY;
-}
-
 /** callback to delete the mastersepacutdata */
 static
 GCG_DECL_SEPAMASTERCUTDELETE(sepamastercutdeleteXyz)
@@ -259,8 +247,7 @@ SCIP_RETCODE GCGincludeSepaXyz(
    sepa = NULL;
 
    SCIP_CALL( GCGrelaxIncludeSepa(gcg, &sepa, &gcgsepa, SEPA_NAME, SEPA_DESC, SEPA_PRIORITY, SEPA_FREQ, SEPA_MAXBOUNDDIST,
-      SEPA_USESSUBSCIP, SEPA_DELAY, sepaExeclpXyz, sepaExecsolXyz, sepadata, sepagetcolcoefficientXyz,
-      sepasetobjectiveXyz, sepamastercutdeleteXyz) );
+      SEPA_USESSUBSCIP, SEPA_DELAY, sepaExeclpXyz, sepaExecsolXyz, sepadata, sepagetcolcoefficientXyz, sepamastercutdeleteXyz) );
 
    assert(sepa != NULL);
    assert(gcgsepa != NULL);

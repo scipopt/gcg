@@ -349,7 +349,6 @@ SCIP_RETCODE GCGrelaxIncludeSepa(
    SCIP_DECL_SEPAEXECSOL ((*sepaexecsol)),   /**< arbitrary primal solution separation method of separator */
    SCIP_SEPADATA*        sepadata,           /**< separator data */
    GCG_DECL_SEPAGETCOLCOEFFICIENT((*sepagetcolcoef)),/**< method for computing the column coefficient for a cut */
-   GCG_DECL_SEPASETOBJECTIVE((*sepasetobjective)),/**< method for modifying the objectives of pricing problems to account for master cut */
    GCG_DECL_SEPAMASTERCUTDELETE((*sepamastercutdelete))/**< callback to delete the mastersepacutdata */
    );
 
