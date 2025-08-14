@@ -203,3 +203,14 @@ SCIP_SEPA* GCGgetSepaorig(
    return gcg->sepaorig;
 }
 #endif
+
+#ifndef NDEBUG
+/** gets the master separator cut event handler */
+SCIP_EVENTHDLR* GCGgetMastersepacutEventhdlr(
+   GCG*                 gcg               /**< GCG data structure */
+   )
+{
+   assert(gcg != NULL);
+   return gcg->mastersepacuthdlr;
+}
+#endif

@@ -540,6 +540,17 @@ SCIP_SEPA* GCGgetSepaorig(
    );
 #endif
 
+#ifdef NDEBUG
+#define GCGgetMastersepacutEventhdlr(gcg)               (gcg->mastersepacuthdlr)
+#else
+/** gets the master separator cut event handler */
+GCG_EXPORT
+SCIP_EVENTHDLR* GCGgetMastersepacutEventhdlr(
+   GCG*                 gcg               /**< GCG data structure */
+   );
+#endif
+
+
 /**@} */
 
 #ifdef __cplusplus
