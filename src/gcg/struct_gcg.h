@@ -41,6 +41,7 @@
 #include "scip/type_scip.h"
 #include "scip/type_relax.h"
 #include "scip/type_sepa.h"
+#include "scip/type_event.h"
 
 #include "gcg/type_gcg.h"
 #include "gcg/type_gcgpricer.h"
@@ -52,13 +53,14 @@ extern "C" {
 /** Column data structure */
 struct Gcg
 {
-   SCIP*                origprob;         /**< SCIP data structure of origprob */
-   SCIP*                masterprob;       /**< SCIP data structure of masterprob */
-   SCIP*                dwmasterprob;     /**< SCIP data structure of DW masterprob */
-   SCIP*                bendersmasterprob;/**< SCIP data structure of Benders masterprob */
-   SCIP_RELAX*          relax;            /**< GCG's relaxation handler */
-   GCG_PRICER*          pricer;           /**< GCG pricer */
-   SCIP_SEPA*           sepaorig;         /**< orig cuts separator */
+   SCIP*                origprob;            /**< SCIP data structure of origprob */
+   SCIP*                masterprob;          /**< SCIP data structure of masterprob */
+   SCIP*                dwmasterprob;        /**< SCIP data structure of DW masterprob */
+   SCIP*                bendersmasterprob;   /**< SCIP data structure of Benders masterprob */
+   SCIP_RELAX*          relax;               /**< GCG's relaxation handler */
+   GCG_PRICER*          pricer;              /**< GCG pricer */
+   SCIP_SEPA*           sepaorig;            /**< orig cuts separator */
+   SCIP_EVENTHDLR*      mastersepacuthdlr;   /**< event handler for managing master separator cuts */
 };
 
 #ifdef __cplusplus

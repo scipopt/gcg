@@ -157,9 +157,6 @@ struct SCIP_ConshdlrData
    int*                  maxcollectedbndvars;/**< capacity of the collected* arrays per block */
    int**                 linkingvaridxs;     /**< position of linking vars in collectedbndvars */
    int                   maxlinkingvaridxs;  /**< capacity of linkingvaridxs */
-
-   /* handler which manages the master separator cuts */
-   SCIP_EVENTHDLR*       eventhdlr;
 };
 
 struct SCIP_EventhdlrData
@@ -262,7 +259,7 @@ SCIP_RETCODE removeStoredCutsFromActiveCuts(
    assert(gcg != NULL);
    assert(consdata != NULL);
 
-   SCIP_CALL( GCGeventmastersepacutShrinkActiveMastersepacuts(gcg, consdata->firstnewcut, conshdlrdata->eventhdlr) );
+   SCIP_CALL( GCGshrinkActiveMastersepacuts(gcg, consdata->firstnewcut) );
 
    return SCIP_OKAY;
 }
@@ -285,7 +282,7 @@ SCIP_RETCODE addStoredCutsToActiveCuts(
 
    SCIPdebugMessage("add stored cuts: node %lli of type: %i\n", SCIPnodeGetNumber(consdata->node), SCIPnodeGetType(consdata->node));
 
-   nactivecuts = GCGeventmastersepacutGetNActiveMastersepacuts(gcg, conshdlrdata->eventhdlr);
+   nactivecuts = GCGgetNActiveMastersepacuts(gcg);
    assert(consdata->firstnewcut == nactivecuts);
 
    /* store the current number of activecuts */
@@ -304,7 +301,7 @@ SCIP_RETCODE addStoredCutsToActiveCuts(
       /* we update the cut to include all the master variables which were generated while the cut was inactive */
       SCIP_CALL( addMissedVariables(gcg, consdata->addedcuts[j]) );
       /* we add this cut to activecuts */
-      SCIP_CALL( GCGeventmastersepacutAddActiveMastersepacut(gcg, consdata->addedcuts[j], conshdlrdata->eventhdlr) );
+      SCIP_CALL( GCGaddActiveMastersepacut(gcg, consdata->addedcuts[j]) );
 
 #ifdef SCIP_DEBUG
       SCIP_ROW* mastercutrow = NULL;
@@ -340,7 +337,7 @@ SCIP_RETCODE initializeAddedCuts(
       SCIPnodeGetNumber(consdata->node), SCIPnodeGetType(consdata->node));
 
    /* cleanup (remove AND free) the rows generated at node which have already been removed from the LP */
-   SCIP_CALL( GCGeventmastersepacutRemoveNewInactiveMastersepacuts(gcg, consdata->firstnewcut, conshdlrdata->eventhdlr) );
+   SCIP_CALL( GCGremoveNewInactiveMastersepacuts(gcg, consdata->firstnewcut) );
 
    /* the only type of nodes which can store rows */
    if( !(SCIPnodeGetType(consdata->node) == SCIP_NODETYPE_FORK
@@ -352,8 +349,8 @@ SCIP_RETCODE initializeAddedCuts(
       return SCIP_OKAY;
    }
 
-   nactivecuts = GCGeventmastersepacutGetNActiveMastersepacuts(gcg, conshdlrdata->eventhdlr);
-   activecuts = GCGeventmastersepacutGetActiveMastersepacuts(gcg, conshdlrdata->eventhdlr);
+   nactivecuts = GCGgetNActiveMastersepacuts(gcg);
+   activecuts = GCGgetActiveMastersepacuts(gcg);
    consdata->naddedcuts = 0;
    assert(consdata->firstnewcut <= nactivecuts);
 
@@ -599,7 +596,7 @@ SCIP_RETCODE initializeConsdata(
    }
 
    /* store the number of activecuts at activation */
-   consdata->firstnewcut = GCGeventmastersepacutGetNActiveMastersepacuts(gcg, conshdlrdata->eventhdlr);
+   consdata->firstnewcut = GCGgetNActiveMastersepacuts(gcg);
 
    SCIPdebugMessage("init cons data: firstnewcut %i in node %lli\n", consdata->firstnewcut, SCIPnodeGetNumber(consdata->node));
 
@@ -1815,7 +1812,6 @@ SCIP_DECL_CONSINITSOL(consInitsolMasterbranch)
 
    conshdlrdata->nstack = 1;
    conshdlrdata->stack[0] = cons;
-   conshdlrdata->eventhdlr = SCIPfindEventhdlr(scip, "mastersepacut");
 
    return SCIP_OKAY;
 }
@@ -2022,7 +2018,7 @@ SCIP_DECL_CONSACTIVE(consActiveMasterbranch)
    /* if tree is currently probing, we do not clear generated cuts
     * - the cuts in generated cuts may not have been separated yet, as separation store gets switched when probing */
    if( SCIPnodeGetType(consdata->node) == SCIP_NODETYPE_FOCUSNODE )
-      SCIP_CALL( GCGsepacutClearGeneratedCuts(conshdlrdata->gcg, conshdlrdata->eventhdlr) ); // potentially: move to pricing
+      SCIP_CALL( GCGclearGeneratedMastersepacuts(conshdlrdata->gcg) ); // potentially: move to pricing
 
    return SCIP_OKAY;
 }
@@ -2631,7 +2627,6 @@ SCIP_RETCODE GCGincludeConshdlrMasterbranch(
    conshdlrdata->stack = NULL;
    conshdlrdata->nstack = 0;
    conshdlrdata->maxstacksize = 25;
-   conshdlrdata->eventhdlr = NULL;
 
    /* include constraint handler */
    SCIP_CALL( SCIPincludeConshdlrBasic(masterprob, &conshdlr, CONSHDLR_NAME, CONSHDLR_DESC,
