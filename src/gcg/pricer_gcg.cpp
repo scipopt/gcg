@@ -1233,12 +1233,12 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          dualsol = pricetype->extendedmasterconsGetDual(branchextendedmasterconsdata[i]);
       }
 
-      #ifdef PRINTDUALSOLS
-            if ( !SCIPisZero(scip_, dualsol) )
-            {
-               SCIPdebugMessage("extendedmasterconsdata <%s> dualsol: %g\n", GCGextendedmasterconsGetName(branchextendedmasterconsdata[i]), dualsol);
-            }
-      #endif
+#ifdef PRINTDUALSOLS
+      if ( !SCIPisZero(scip_, dualsol) )
+      {
+         SCIPdebugMessage("extendedmasterconsdata <%s> dualsol: %g\n", GCGextendedmasterconsGetName(branchextendedmasterconsdata[i]), dualsol);
+      }
+#endif
 
       SCIP_CALL( GCGextendedmasterconsUpdateDualValue(gcg, branchextendedmasterconsdata[i], dualweight * dualsol) );
    }
@@ -1253,9 +1253,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
    for( j = 0; j < nactivecuts; j++ )
    {
       /* inactive cuts have no effect on the pricing problems */
-      if( !GCGextendedmasterconsIsActive(activecuts[j]) )
-         continue;
-
+      assert( GCGextendedmasterconsIsActive(activecuts[j]) );
       if( stabilize )
       {
          /* @todo: implement stabilization for mastercuts?*/
@@ -1266,8 +1264,15 @@ SCIP_RETCODE ObjPricerGcg::setPricingObjs(
          dualsol = pricetype->extendedmasterconsGetDual(activecuts[j]);
       }
 
+#ifdef PRINTDUALSOLS
+      if ( !SCIPisZero(scip_, dualsol) )
+      {
+         SCIPdebugMessage("extendedmasterconsdata <%s> dualsol: %g\n", GCGextendedmasterconsGetName(activecuts[i]), dualsol);
+      }
+#endif
+
       /* modify the objective of pricing problems affected by this master separator cut */
-      SCIP_CALL( GCGmastersepacutSetObjective(gcg, activecuts[j], dualsol) );
+      SCIP_CALL( GCGextendedmasterconsUpdateDualValue(gcg, activecuts[j], dualweight * dualsol) );
    }
 
    /* get dual solutions / farkas values of the convexity constraints */

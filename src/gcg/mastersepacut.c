@@ -239,17 +239,3 @@ SCIP_RETCODE GCGmastersepacutGetExtendedmasterconsCoeff(
    SCIP_CALL( sepa->sepagetcolcoefficient(gcg, sepa, mastersepacut, solvars, solvals, nsolvars, probnr, gcgcol, coef) );
    return SCIP_OKAY;
 }
-
-/** adapts the objectives of all the necessary pricing problems such that they consider the cut  */
-GCG_EXPORT
-SCIP_RETCODE GCGmastersepacutSetObjective(
-   GCG*                          gcg,              /**< GCG data structure */
-   GCG_EXTENDEDMASTERCONSDATA*   mastersepacut,    /**< pointer to separator master cut */
-   SCIP_Real                     coef              /**< objective coefficient */
-   )
-{
-   GCG_SEPA* sepa = GCGmastersepacutGetSeparator(GCGextendedmasterconsGetMastersepacut(mastersepacut));
-
-   SCIP_CALL( sepa->sepasetobjective(gcg, sepa, mastersepacut, coef) );
-   return SCIP_OKAY;
-}

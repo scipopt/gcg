@@ -139,14 +139,6 @@ SCIP_RETCODE GCGchvatalGomoryCutGetVariableCoefficient(
    SCIP_Real*                    coef                 /**< pointer to store the coefficient */
    );
  
-/** adapts the objectives of all the necessary pricing problems such that they consider the Chvatal-Gomory cut */
-GCG_EXPORT
-SCIP_RETCODE GCGchvatalGomorySetPricingObjectives(
-   GCG*                          gcg,     /**< GCG data structure */
-   GCG_EXTENDEDMASTERCONSDATA*   cut,     /**< separator master cut */
-   SCIP_Real                     dual     /**< the dual value of the separator master cut */
-   );
- 
 /** returns active master separator cuts */
 GCG_EXPORT
 GCG_EXTENDEDMASTERCONSDATA** GCGgetActiveMastersepacuts(
@@ -214,14 +206,6 @@ SCIP_RETCODE GCGmastersepacutGetExtendedmasterconsCoeff(
    int                              probnr,                       /**< the pricing problem that the column belongs to */
    GCG_COL*                         gcgcol,                       /**< gcg column if available (or NULL) */
    SCIP_Real*                       coef                          /**< pointer to store the coefficient */
-   );
-
-/** adapts the objectives of all the necessary pricing problems such that they consider the cut  */
-GCG_EXPORT
-SCIP_RETCODE GCGmastersepacutSetObjective(
-   GCG*                          gcg,              /**< GCG data structure */
-   GCG_EXTENDEDMASTERCONSDATA*   mastersepacut,    /**< pointer to separator master cut */
-   SCIP_Real                     coef              /**< objective coefficient */
    );
 
 /** removes the mastersepacuts which were applied at current node, but have already been removed from the LP */
