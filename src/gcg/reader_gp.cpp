@@ -93,7 +93,7 @@ static
 SCIP_DECL_READERWRITE(readerWriteGp)
 {
    PARTIALDECOMP* partialdec;
-   char filename[SCIP_MAXSTRLEN];
+   char gpoutname[SCIP_MAXSTRLEN];
    char outputname[SCIP_MAXSTRLEN];
    SCIP_READERDATA* readerdata;
 
@@ -105,21 +105,33 @@ SCIP_DECL_READERWRITE(readerWriteGp)
    /* get partialdec to write */
    partialdec = GCGgetPartialdecToWrite(readerdata->gcg, transformed);
 
-   if(partialdec == NULL)
+   if( filename != NULL )
    {
-      SCIPerrorMessage("Could not find Partialdecomp to write!\n");
+      SCIPstrncpy(gpoutname, filename, SCIP_MAXSTRLEN);
+   }
+   else if( file != NULL )
+   {
+      GCGgetFilePath(file, gpoutname);
+   }
+   else
+   {
+      SCIPwarningMessage(scip, "Could not find file path to write!\n");
+      *result = SCIP_DIDNOTRUN;
+      return SCIP_OKAY;
+   }
+
+   if( partialdec == NULL )
+   {
+      SCIPwarningMessage(scip, "Could not find Partialdecomp to write!\n");
       *result = SCIP_DIDNOTRUN;
    }
    else
    {
-      /* reader internally works with the filename instead of the C FILE type */
-      GCGgetFilePath(file, filename);
-
       /* get filename for compiled file */
       GCGgetVisualizationFilename(readerdata->gcg, partialdec, "pdf", outputname);
       strcat(outputname, ".pdf");
 
-      GCGwriteGpVisualization(readerdata->gcg, filename, outputname, partialdec->getID() );
+      GCGwriteGpVisualization(readerdata->gcg, gpoutname, outputname, partialdec->getID() );
 
       *result = SCIP_SUCCESS;
    }
@@ -133,7 +145,7 @@ SCIP_DECL_READERWRITE(readerWriteGp)
 static
 SCIP_RETCODE writeGpHeader(
    GCG*                  gcg,                /**< GCG data structure */
-   char*                 filename,           /**< filename (including path) to write to */
+   const char*           filename,           /**< filename (including path) to write to */
    const char*           outputname,         /**< the filename to which gnuplot should compile the visualization */
    GP_OUTPUT_FORMAT      outputformat        /**< the output format which gnuplot should emit */
    )
@@ -172,14 +184,14 @@ SCIP_RETCODE writeGpHeader(
  * @returns SCIP status */
 static
 SCIP_RETCODE drawGpBox(
-   GCG* gcg,         /**< GCG data structure */
-   char* filename,   /**< filename (including path) to write to */
-   int objectid,     /**< id number of box (>0), must be unique */
-   int x1,           /**< x value of lower left vertex coordinate */
-   int y1,           /**< y value of lower left vertex coordinate */
-   int x2,           /**< x value of upper right vertex coordinate */
-   int y2,           /**< y value of upper right vertex coordinate */
-   const char* color /**< color hex code (e.g. #000000) for box filling */
+   GCG* gcg,               /**< GCG data structure */
+   const char* filename,   /**< filename (including path) to write to */
+   int objectid,           /**< id number of box (>0), must be unique */
+   int x1,                 /**< x value of lower left vertex coordinate */
+   int y1,                 /**< y value of lower left vertex coordinate */
+   int x2,                 /**< x value of upper right vertex coordinate */
+   int y2,                 /**< y value of upper right vertex coordinate */
+   const char* color       /**< color hex code (e.g. #000000) for box filling */
    )
 {
    std::ofstream ofs;
@@ -338,9 +350,9 @@ SCIP_RETCODE writeGpNonzeros(
  * This includes axes, blocks and nonzeros. */
 static
 SCIP_RETCODE writeGpPartialdec(
-   GCG* gcg,               /**< GCG data structure */
-   char* filename,         /**< filename (including path) to write to */
-   PARTIALDECOMP* partialdec            /**< PARTIALDECOMP for which the nonzeros should be visualized */
+   GCG* gcg,                  /**< GCG data structure */
+   const char* filename,      /**< filename (including path) to write to */
+   PARTIALDECOMP* partialdec  /**< PARTIALDECOMP for which the nonzeros should be visualized */
    )
 {
    int rowboxcounter = 0;
@@ -463,8 +475,8 @@ SCIP_RETCODE writeGpPartialdec(
 /* Writes a visualization for the given partialdec */
 SCIP_RETCODE GCGwriteGpVisualizationFormat(
    GCG* gcg,               /**< GCG data structure */
-   char* filename,         /**< filename (including path) to write to */
-   char* outputname,       /**< filename for compiled output file */
+   const char* filename,   /**< filename (including path) to write to */
+   const char* outputname, /**< filename for compiled output file */
    int partialdecid,       /**< id of partialdec to visualize */
    GP_OUTPUT_FORMAT outputformat /**< the output format which gnuplot should emit */
    )
@@ -497,9 +509,9 @@ SCIP_RETCODE GCGwriteGpVisualizationFormat(
 /* Writes a visualization as .pdf file for the given partialdec */
 SCIP_RETCODE GCGwriteGpVisualization(
    GCG* gcg,               /**< GCG data structure */
-   char* filename,         /**< filename (including path) to write to */
-   char* outputname,       /**< filename for compiled output file */
-   int partialdecid             /**< id of partialdec to visualize */
+   const char* filename,   /**< filename (including path) to write to */
+   const char* outputname, /**< filename for compiled output file */
+   int partialdecid        /**< id of partialdec to visualize */
    )
 {
    return GCGwriteGpVisualizationFormat(gcg, filename, outputname, partialdecid, GP_OUTPUT_FORMAT_PDF);

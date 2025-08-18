@@ -68,8 +68,8 @@ SCIP_RETCODE GCGincludeReaderGp(
 GCG_EXPORT
 SCIP_RETCODE GCGwriteGpVisualizationFormat(
    GCG* gcg,               /**< GCG data structure */
-   char* filename,         /**< filename (including path) to write to */
-   char* outputname,       /**< filename for compiled output file */
+   const char* filename,   /**< filename (including path) to write to */
+   const char* outputname, /**< filename for compiled output file */
    int partialdecid,       /**< id of partialdec to visualize */
    GP_OUTPUT_FORMAT outputformat /**< the output format which gnuplot should emit */
    );
@@ -79,9 +79,9 @@ SCIP_RETCODE GCGwriteGpVisualizationFormat(
 GCG_EXPORT
 SCIP_RETCODE GCGwriteGpVisualization(
    GCG* gcg,               /**< GCG data structure */
-   char* filename,         /**< filename (including path), location of the output*/
-   char* outputname,       /**< outputname is the name of the file for the compiled gnuplot output file */
-   int partialdecid             /**< id of partialdec to visualize */
+   const char* filename,   /**< filename (including path), location of the output*/
+   const char* outputname, /**< outputname is the name of the file for the compiled gnuplot output file */
+   int partialdecid        /**< id of partialdec to visualize */
    );
 
 /** Creates a block matrix and outputs its visualization as .pdf file
