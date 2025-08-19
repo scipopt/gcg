@@ -74,7 +74,7 @@ CLIQUER     =   false
 HMETIS      =   false
 OPENMP      =   true
 GSL         =   false
-JSON        =   true
+JANSSON     =   true
 HIGHS       =   false
 LASTSETTINGS	=	$(OBJDIR)/make.lastsettings
 LINKSMARKERFILE	=	$(LIBDIR)/linkscreated.$(BLISS).$(CLIQUER).$(HIGHS)
@@ -229,9 +229,9 @@ endif
 # Jansson
 #-----------------------------------------------------------------------------
 
-ifeq ($(JSON),true)
+ifeq ($(JANSSON),true)
 LDFLAGS		+=	-ljansson
-FLAGS		+=	-DWITH_JSON
+FLAGS		+=	-DWITH_JANSSON
 endif
 
 #-----------------------------------------------------------------------------
@@ -460,7 +460,7 @@ ifeq ($(HIGHS),true)
 LIBOBJ		+=	gcg/solver_highs.o
 endif
 
-ifeq ($(JSON),true)
+ifeq ($(JANSSON),true)
 LIBOBJ		+=	gcg/reader_jdec.o
 endif
 
@@ -903,7 +903,7 @@ help:
 		@echo "  - CLIQUER=<true|false>: Enables CLIQUER (as a heuristic for stable set pricing problems)."
 		@echo "  - HMETIS=<true|false>: Enables hMETIS (hypergraph partitioning, used in structure detection)."
 		@echo "  - GSL=<true|false>: Enables the GNU Scientific Library (needed by a detector)"
-		@echo "  - JSON=<true|false>: Enables JSON functionality (requires Jansson library)"
+		@echo "  - JANSSON=<true|false>: Enables JSON functionality (requires Jansson library)"
 		@echo "  - GAMS=<true|false>: To enable or disable (default) reading functionality in GAMS reader (needs GAMS)."
 		@echo "  - GTEST=<true|false>: Enables Google Test."
 		@echo "  - SYM=<none|bliss|sbliss|nauty|snauty>: To choose type of symmetry handling."

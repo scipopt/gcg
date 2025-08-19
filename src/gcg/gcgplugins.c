@@ -212,7 +212,7 @@
 #include "gcg/relax_gcg.h"
 #include "gcg/branch_empty.h"
 
-#if WITH_JSON
+#if WITH_JANSSON
 #include "gcg/reader_jdec.h"
 #endif
 
@@ -486,7 +486,7 @@ SCIP_RETCODE GCGincludeGcgPlugins(
    SCIP_CALL( GCGincludeReaderBlk(gcg) );
    SCIP_CALL( GCGincludeReaderDec(gcg) );
    SCIP_CALL( GCGincludeReaderRef(gcg) );
-#if WITH_JSON
+#if WITH_JANSSON
    SCIP_CALL( GCGincludeReaderJDec(gcg) );
 #endif
    SCIP_CALL( GCGincludeBranchruleEmpty(gcg) );
