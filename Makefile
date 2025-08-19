@@ -765,7 +765,10 @@ endif
 ifneq ($(LAST_STATISTICS),$(STATISTICS))
 		@$(SHELL) -ec 'for file in $$(grep "SCIP_STATISTIC" ${SRCDIR} -rl | sort -u); do touch $$file; done'
 endif
-
+ifneq ($(LAST_JANSSON),$(JANSSON))
+		@-touch $(SRCDIR)/gcg/gcgplugins.c
+		@-touch $(SRCDIR)/gcg/reader_jdec.cpp
+endif
 ifneq ($(LAST_BLISS),$(BLISS))
 		@-touch $(SRCDIR)/gcg/dec_isomorph.cpp
 		@-touch $(SRCDIR)/gcg/relax_gcg.c
@@ -826,6 +829,7 @@ endif
 		@echo "LAST_OPENMP=$(OPENMP)" >> $(LASTSETTINGS)
 		@echo "LAST_CPLEXSOLVER=$(CPLEXSOLVER)" >> $(LASTSETTINGS)
 		@echo "LAST_STATISTICS=$(STATISTICS)" >> $(LASTSETTINGS)
+		@echo "LAST_JANSSON=$(JANSSON)" >> $(LASTSETTINGS)
 
 .PHONY: $(SOFTLINKS)
 $(SOFTLINKS): $(LIBDIR)/static $(LIBDIR)/shared $(LIBDIR)/include
