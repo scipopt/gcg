@@ -591,7 +591,7 @@ void Pricingcontroller::collectResults(
       int nidentblocks = GCGgetNIdenticalBlocks(gcg, probnr);
       SCIP_Real lowerbound;
 
-      if( !stabilized && bestcols[probnr] != NULL && SCIPgetStatus(pricingprobs[i]->pricingscip) == SCIP_STATUS_OPTIMAL )
+      if( *bestredcostvalid && !stabilized && bestcols[probnr] != NULL && SCIPgetStatus(pricingprobs[i]->pricingscip) == SCIP_STATUS_OPTIMAL )
       {
          /* set dual bound due to numerical issues: the best col may not belong to the lowerbound of this optimal round
           * caused by numerical instability of the mip solver */
