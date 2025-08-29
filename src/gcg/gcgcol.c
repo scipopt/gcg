@@ -64,13 +64,21 @@ SCIP_RETCODE GCGcreateGcgCol(
 {
    int i;
    int ninferredpricingvars;
+   GCG_EXTENDEDMASTERCONSDATA** activecuts = NULL;
+   int nactivecuts;
+   GCG_EXTENDEDMASTERCONSDATA** branchextendedmasterconsdata = NULL;
+   int nbranchextendedmasterconsdata = 0;
+   int nnzinferredcoefvars;
 
    /* WARNING: this function has to be threadsafe!*/
 
-   ninferredpricingvars = GCGcountInferredCoefPricingVars(vars, nvars);
+   nnzinferredcoefvars = GCGcountInferredCoefPricingVars(vars, nvars);
+   ninferredpricingvars = GCGgetNActivePricingproblemModifications(gcg, probnr);
+
+   assert(GCGgetNAppliedPricingproblemModifications(gcg, probnr) >= nnzinferredcoefvars);
 
    SCIP_CALL( SCIPallocBlockMemory(pricingprob, gcgcol) );
-   (*gcgcol)->maxvars = SCIPcalcMemGrowSize(pricingprob, nvars - ninferredpricingvars);
+   (*gcgcol)->maxvars = SCIPcalcMemGrowSize(pricingprob, nvars - nnzinferredcoefvars);
    SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vars), (*gcgcol)->maxvars) );
    SCIP_CALL( SCIPallocBlockMemoryArray(pricingprob, &((*gcgcol)->vals), (*gcgcol)->maxvars) );
 
@@ -137,16 +145,7 @@ SCIP_RETCODE GCGcreateGcgCol(
       if( SCIPisZero(pricingprob, origval) )
          continue;
 
-      if( GCGvarIsInferredPricing(origvar) && GCGinferredPricingVarIsCoefVar(origvar) )
-      {
-         assert((*gcgcol)->inferredpricingvars != NULL);
-         assert((*gcgcol)->ninferredpricingvars < (*gcgcol)->maxinferredpricingvars);
-         (*gcgcol)->inferredpricingvars[(*gcgcol)->ninferredpricingvars] = origvar;
-         (*gcgcol)->inferredpricingvals[(*gcgcol)->ninferredpricingvars] = origval;
-         ++(*gcgcol)->ninferredpricingvars;
-         SCIPcaptureVar(pricingprob, origvar);
-      }
-      else if( GCGvarIsPricing(origvar) )
+      if( GCGvarIsPricing(origvar) )
       {
          assert(GCGvarIsPricing(origvar) && GCGpricingVarGetNOrigvars(origvar) > 0 && GCGpricingVarGetOrigvars(origvar)[0] != NULL);
          assert((*gcgcol)->nvars < (*gcgcol)->maxvars);
@@ -156,10 +155,59 @@ SCIP_RETCODE GCGcreateGcgCol(
          SCIPcaptureVar(pricingprob, origvar);
       }
    }
-   assert(ninferredpricingvars == (*gcgcol)->ninferredpricingvars);
 
    /* sort vars and vals array w.r.t. variable index */
    SCIPsortPtrReal((void**)(*gcgcol)->vars, (double*)(*gcgcol)->vals, SCIPvarComp, (*gcgcol)->nvars);
+
+   SCIP_CALL( GCGrelaxBranchGetAllActiveExtendedMasterConss(gcg, NULL, NULL, &branchextendedmasterconsdata, &nbranchextendedmasterconsdata) );
+   for( i = 0; i < nbranchextendedmasterconsdata; ++i )
+   {
+      GCG_PRICINGMODIFICATION* mod;
+      SCIP_Real val;
+
+      mod = GCGextendedmasterconsGetPricingModification(gcg, branchextendedmasterconsdata[i], probnr);
+      assert(mod != NULL);
+      
+      GCGbranchGetExtendedmasterconsCoeff(gcg, branchextendedmasterconsdata[i], (*gcgcol)->vars, (*gcgcol)->vals, (*gcgcol)->nvars, probnr, NULL, &val);
+
+      if( !SCIPisZero(pricingprob, val) )
+      {
+         SCIP_VAR* var = GCGpricingmodificationGetCoefVar(mod);
+         assert(var != NULL);
+         assert((*gcgcol)->ninferredpricingvars < (*gcgcol)->maxinferredpricingvars);
+         (*gcgcol)->inferredpricingvars[(*gcgcol)->ninferredpricingvars] = var;
+         (*gcgcol)->inferredpricingvals[(*gcgcol)->ninferredpricingvars] = val;
+         ++(*gcgcol)->ninferredpricingvars;
+         SCIPcaptureVar(pricingprob, var);
+      }
+   }
+
+   activecuts = GCGgetActiveMastersepacuts(gcg);
+   nactivecuts = GCGgetNActiveMastersepacuts(gcg);
+   for( i = 0; i < nactivecuts; ++i )
+   {
+      GCG_PRICINGMODIFICATION* mod;
+      SCIP_Real val;
+
+      mod = GCGextendedmasterconsGetPricingModification(gcg, activecuts[i], probnr);
+      assert(mod != NULL);
+      
+      GCGmastersepacutGetExtendedmasterconsCoeff(gcg, activecuts[i], (*gcgcol)->vars, (*gcgcol)->vals, (*gcgcol)->nvars, probnr, NULL, &val);
+
+      if( !SCIPisZero(pricingprob, val) )
+      {
+         SCIP_VAR* var = GCGpricingmodificationGetCoefVar(mod);
+         assert(var != NULL);
+         assert((*gcgcol)->ninferredpricingvars < (*gcgcol)->maxinferredpricingvars);
+         (*gcgcol)->inferredpricingvars[(*gcgcol)->ninferredpricingvars] = var;
+         (*gcgcol)->inferredpricingvals[(*gcgcol)->ninferredpricingvars] = val;
+         ++(*gcgcol)->ninferredpricingvars;
+         SCIPcaptureVar(pricingprob, var);
+      }
+   }
+
+   assert(ninferredpricingvars >= (*gcgcol)->ninferredpricingvars);
+
    if( (*gcgcol)->inferredpricingvars != NULL )
    {
       SCIPsortPtrReal((void**)(*gcgcol)->inferredpricingvars, (double*)(*gcgcol)->inferredpricingvals,

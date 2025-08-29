@@ -549,41 +549,20 @@ SCIP_RETCODE GCGpricingmodificationApply(
    assert(pricingscip != NULL);
 
    // add the inferred pricing variables
+   assert(pricingmodification->coefvar != NULL);
    assert(GCGvarIsInferredPricing(pricingmodification->coefvar));
    SCIP_CALL( SCIPaddVar(pricingscip, pricingmodification->coefvar) );
 
-   for( i=0; i < pricingmodification->nadditionalvars; i++)
+   for( i = 0; i < pricingmodification->nadditionalvars; i++)
    {
       assert(GCGvarIsInferredPricing(pricingmodification->additionalvars[i]));
       SCIP_CALL( SCIPaddVar(pricingscip, pricingmodification->additionalvars[i]) );
    }
 
    // add the inferred pricing constraints
-   for( i=0; i < pricingmodification->nadditionalconss; i++)
+   for( i = 0; i < pricingmodification->nadditionalconss; i++)
    {
       SCIP_CALL( SCIPaddCons(pricingscip, pricingmodification->additionalconss[i]) );
-   }
-
-   return SCIP_OKAY;
-}
-
-/** apply all pricing modifications */
-SCIP_RETCODE GCGextendedmasterconsApplyPricingModifications(
-   GCG*                             gcg,                          /**< GCG data structure */
-   GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata        /**< extended master cons data */
-   )
-{
-   int i;
-   SCIP* pricingprob;
-
-   assert(gcg != NULL);
-   assert(extendedmasterconsdata != NULL);
-
-   for( i = 0; i < extendedmasterconsdata->npricingmodifications; i++ )
-   {
-      pricingprob = GCGgetPricingprob(gcg, extendedmasterconsdata->pricingmodifications[i]->blocknr);
-      assert(pricingprob != NULL);
-      SCIP_CALL( GCGpricingmodificationApply(pricingprob, extendedmasterconsdata->pricingmodifications[i]) );
    }
 
    return SCIP_OKAY;
@@ -637,9 +616,12 @@ SCIP_RETCODE GCGextendedmasterconsUndoPricingModifications(
 
    for( i = 0; i < extendedmasterconsdata->npricingmodifications; i++ )
    {
-      pricingprob = GCGgetPricingprob(gcg, extendedmasterconsdata->pricingmodifications[i]->blocknr);
+      GCG_PRICINGMODIFICATION* mod = extendedmasterconsdata->pricingmodifications[i];
+      pricingprob = GCGgetPricingprob(gcg, mod->blocknr);
       assert(pricingprob != NULL);
-      SCIP_CALL( GCGpricingmodificationUndo(pricingprob, extendedmasterconsdata->pricingmodifications[i]) );
+      assert(mod->coefvar != NULL);
+      if( SCIPvarGetProbindex(mod->coefvar) >= 0 )
+         SCIP_CALL( GCGpricingmodificationUndo(pricingprob, mod) );
    }
 
    return SCIP_OKAY;

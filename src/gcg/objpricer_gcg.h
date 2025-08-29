@@ -65,13 +65,13 @@ public:
 
    /** default constructor */
    ObjPricerGcg(
-         GCG* gcgstruct, /**< GCG data structure */
-         const char* name, /**< name of variable pricer */
-         const char* desc, /**< description of variable pricer */
-         int priority, /**< priority of the variable pricer */
-         unsigned int delay, /**< should the pricer be delayed until no other pricers or already existing*/
-         SCIP_PRICERDATA* p_pricerdata /**< pricerdata data structure */
-   );
+      GCG* gcgstruct, /**< GCG data structure */
+      const char* name, /**< name of variable pricer */
+      const char* desc, /**< description of variable pricer */
+      int priority, /**< priority of the variable pricer */
+      unsigned int delay, /**< should the pricer be delayed until no other pricers or already existing*/
+      SCIP_PRICERDATA* p_pricerdata /**< pricerdata data structure */
+      );
    /** destructor */
    virtual ~ObjPricerGcg()
    {}
@@ -105,7 +105,7 @@ public:
    SCIP_RETCODE setPricingObjs(
       PricingType*          pricetype,          /**< Farkas or Reduced cost pricing */
       SCIP_Bool             stabilize           /**< do we use stabilization ? */
-   );
+      );
 
    /** update reduced cost of columns in column pool */
    void updateRedcostColumnPool(
@@ -122,7 +122,7 @@ public:
       PricingType*       pricetype,          /**< type of the pricing */
       SCIP_RESULT*       result,             /**< result pointer */
       double*            lowerbound          /**< lower bound of pricingproblems */
-   );
+      );
 
    /** creates a new master variable corresponding to the given solution and problem */
    SCIP_RETCODE createNewMasterVar(
@@ -136,7 +136,7 @@ public:
       unsigned int       force,              /**< should the given variable be added also if it has non-negative reduced cost? */
       unsigned int*      added,              /**< pointer to store whether the variable was successfully added */
       SCIP_VAR**         addedvar            /**< pointer to store the created variable */
-   );
+      );
 
    /** creates a new master variable corresponding to the given gcg column */
    SCIP_RETCODE createNewMasterVarFromGcgCol(
@@ -146,7 +146,7 @@ public:
       SCIP_Bool*            added,              /**< pointer to store whether the variable was successfully added */
       SCIP_VAR**            addedvar,           /**< pointer to store the created variable */
       SCIP_Real             score               /**< score of column (or -1.0 if not specified) */
-   );
+      );
 
    /* Compute difference of two dual solutions */
    SCIP_RETCODE computeDualDiff(
@@ -155,7 +155,7 @@ public:
       SCIP_Real**          dualvals2,           /**< array of dual values for each pricing problem */
       SCIP_Real*           dualconv2,           /**< array of dual solutions for the convexity constraints  */
       SCIP_Real*           dualdiff             /**< pointer to store difference of duals solutions */
-   );
+      );
 
    /** the pricing loop: solve the pricing problems */
    SCIP_RETCODE pricingLoop(
@@ -164,7 +164,7 @@ public:
       int*           nfoundvars,         /**< pointer to store number of found variables */
       SCIP_Real*     lowerbound,         /**< pointer to store lowerbound obtained due to lagrange bound */
       SCIP_Bool*     bestredcostvalid    /**< pointer to store if bestredcost are valid (pp solvedoptimal) */
-   );
+      );
 
    const FarkasPricing* getFarkasPricing() const
    {
@@ -299,7 +299,7 @@ private:
       SCIP_Bool             solisray,           /**< is the solution a ray? */
       int                   prob,               /**< number of the pricing problem the solution belongs to */
       SCIP_Real*            objvalptr           /**< pointer to store the computed objective value */
-   ) const;
+      ) const;
 
    /** for given columns, (re-)compute and update their reduced costs */
    void updateRedcosts(
@@ -314,23 +314,23 @@ private:
    /** ensures size of pricedvars array */
    SCIP_RETCODE ensureSizePricedvars(
       int                   size                /**< needed size */
-   );
+      );
 
    /** adds new variable to the end of the priced variables array */
    SCIP_RETCODE addVariableToPricedvars(
       SCIP_VAR*             newvar              /**< variable to add */
-   );
+      );
 
    /** ensures size of root bounds arrays */
    SCIP_RETCODE ensureSizeRootBounds(
       int                   size                /**< needed size */
-   );
+      );
 
    /** adds new bounds to the bound arrays as well as some additional information on dual variables and root lp solution */
    SCIP_RETCODE addRootBounds(
       SCIP_Real             primalbound,        /**< new primal bound for the root master LP */
       SCIP_Real             dualbound           /**< new dual bound for the root master LP */
-   );
+      );
 
    /** add master variable to all constraints */
    SCIP_RETCODE addVariableToMasterconstraints(
@@ -339,7 +339,7 @@ private:
       SCIP_VAR**            solvars,            /**< array of variables with non-zero value in the solution of the pricing problem */
       SCIP_Real*            solvals,            /**< array of values in the solution of the pricing problem for variables in array solvars*/
       int                   nsolvars            /**< number of variables in array solvars */
-   );
+      );
 
    /** add master variable to all constraints */
    SCIP_RETCODE addVariableToMasterconstraintsFromGCGCol(
@@ -382,12 +382,12 @@ private:
    /** returns the gegeneracy of the masterproblem */
    SCIP_RETCODE computeCurrentDegeneracy(
       double*               degeneracy          /**< pointer to store degeneracy */
-   );
+      );
 
    /** set subproblem memory limit */
    SCIP_RETCODE setPricingProblemMemorylimit(
       SCIP*                 pricingscip         /**< SCIP of the pricingproblem */
-   );
+      );
 
 #ifdef SCIP_DISABLED_CODE
    /** generic method to generate feasible columns from the pricing problem
@@ -463,31 +463,20 @@ private:
       GCG_PRICETYPE         type                /**< the type of pricing, either redcost or farkas */
       );
 
-   /** computes the stack of masterbranch constraints up to the last generic branching node
-    * @note This method has to be threadsafe!
-    */
-   SCIP_RETCODE computeGenericBranchingconssStack(
-      PricingType*          pricetype,          /**< type of pricing: reduced cost or Farkas */
-      int                   prob,               /**< index of pricing problem */
-      SCIP_CONS***          consstack,          /**< stack of branching constraints */
-      int*                  nconsstack,         /**< size of the stack */
-      SCIP_Real**           consduals           /**< dual values of the masterbranch solutions, or NULL */
-   ) const;
-
    /** add bounds change from constraint from the pricing problem at this node
     * @note This method has to be threadsafe!
     */
    SCIP_RETCODE addBranchingBoundChangesToPricing(
       int                   prob,               /**< index of pricing problem */
       SCIP_CONS*            branchcons          /**< branching constraints from which bound should applied */
-   ) const;
+      ) const;
 
    SCIP_RETCODE checkBranchingBoundChanges(
       int                   prob,               /**< index of pricing problem */
       SCIP_SOL*             sol,                /**< solution to check */
       SCIP_CONS*            branchcons,         /**< branching constraints from which bound should applied */
       SCIP_Bool*            feasible            /**< check whether the solution is feasible */
-   ) const;
+      ) const;
 
    /** check bounds change from constraint from the pricing problem at this node
     * @note This method has to be threadsafe!
@@ -496,11 +485,17 @@ private:
       GCG_COL*              gcgcol,             /**< gcg column to check */
       SCIP_CONS*            branchcons,         /**< branching constraints from which bound should applied */
       SCIP_Bool*            feasible            /**< check whether the solution is feasible */
-   ) const;
+      ) const;
 
    SCIP_RETCODE ensureSizeArtificialvars(
       int                   size                /**< needed size */
-   );
+      );
+
+   /** activates all pricing modifications */
+   SCIP_RETCODE activatePricingModifications(
+      GCG_EXTENDEDMASTERCONSDATA*      extendedmasterconsdata,       /**< extended master cons data */
+      SCIP_Bool                        apply                         /**< should the modifications actually be activated */
+      );
 
 };
 
