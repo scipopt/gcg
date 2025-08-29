@@ -60,10 +60,10 @@ private:
    SCIP_Real* stabcenteroriginalsepacutvals;
    int stabcenteroriginalsepacutvalssize;
    int nstabcenteroriginalsepacutvals;
-   GCG_EXTENDEDMASTERCONSDATA** stabcenterextendedmasterconss;
+   GCG_EXTENDEDMASTERCONSDATA** stabcenterbranchmasterconss;
    int nstabcenterextendedmasterconss;
    int stabcenterextendedmasterconsssize;
-   SCIP_Real* stabcenterextendedmasterconsvals;
+   SCIP_Real* stabcenterbranchmasterconsvals;
    SCIP_Real* stabcenterlinkingconsvals;
    int nstabcenterlinkingconsvals;
    int stabcenterlinkingconsvalssize;
@@ -114,30 +114,33 @@ public:
    SCIP_RETCODE consGetDual(
       int                i,                  /**< index of the constraint */
       SCIP_Real*         dual                /**< return pointer for dual value */
-   );
+      );
 
    /** gets the stabilized dual solution of cut at position i */
    SCIP_RETCODE rowGetDual(
       int                i,                  /**< index of the row */
       SCIP_Real*         dual                /**< return pointer for dual value */
-   );
+      );
 
    /** gets the stabilized dual of the convexity constraint at position i */
    SCIP_Real convGetDual(
-      int i
-   );
+      int                i
+      );
 
-   SCIP_RETCODE extendedmasterconsGetDual(
-      GCG_EXTENDEDMASTERCONSDATA*    extendedmasterconsdata,      /**< extendedmasterconsdata */
-      SCIP_Real*            dual                /**< return pointer for dual value */
-   );
+   SCIP_Real branchmasterconsGetDual(
+      int                i                   /**< index of extendedmasterconsdata */
+      );
+   
+   SCIP_Real branchmasterconsGetStabCenter(
+      int                i                   /**< index of extendedmasterconsdata */
+      );
 
    /** updates the stability center if the bound has increased */
    SCIP_RETCODE updateStabilityCenter(
       SCIP_Real             lowerbound,         /**< lower bound due to lagrange function corresponding to current (stabilized) dual vars */
       SCIP_Real*            dualsolconv,        /**< corresponding feasible dual solution for convexity constraints */
       GCG_COL**             pricingcols         /**< columns of the pricing problems */
-   );
+      );
 
    /** updates the alpha after unsuccessful pricing */
    void updateAlphaMisprice();
@@ -149,33 +152,23 @@ public:
    SCIP_Bool isStabilized();
 
    /** enabling mispricing schedule */
-   void activateMispricingSchedule(
-   );
+   void activateMispricingSchedule();
 
    /** disabling mispricing schedule */
-   void disablingMispricingSchedule(
-   );
+   void disablingMispricingSchedule();
 
    /** is mispricing schedule enabled */
-   SCIP_Bool isInMispricingSchedule(
-   ) const;
-
-   /** sets the variable linking constraints in the master */
-   SCIP_RETCODE setLinkingConss(
-      SCIP_CONS**        linkingconss,       /**< array of linking master constraints */
-      int*               linkingconsblock,   /**< block of the linking constraints */
-      int                nlinkingconss       /**< size of the array */
-   );
+   SCIP_Bool isInMispricingSchedule() const;
 
    /** increases the number of new variable linking constraints */
    SCIP_RETCODE setNLinkingconsvals(
       int                nlinkingconssnew    /**< number of new linking constraints */
-   );
+      );
 
    /** increases the number of new convexity constraints */
    SCIP_RETCODE setNConvconsvals(
       int nconvconssnew
-   );
+      );
 
    /** gets the dual of variable linking constraints at index i */
    SCIP_Real linkingconsGetDual(
@@ -191,7 +184,12 @@ public:
    /** update subgradient product */
    SCIP_RETCODE updateSubgradientProduct(
       GCG_COL**            pricingcols         /**< solutions of the pricing problems */
-   );
+      );
+
+   /** updates the extended master conss in the stability center (and allocates more memory) */
+   SCIP_RETCODE updateStabcenterextendedmasterconsvals();
+
+   SCIP_Bool hasStabilityCenter() const;
 
 private:
    /** updates the number of iterations */
@@ -205,9 +203,6 @@ private:
 
    /** updates the original cuts in the stability center (and allocates more memory) */
    SCIP_RETCODE updateStabcenteroriginalcutvals();
-
-   /** updates the extended master conss in the stability center (and allocates more memory) */
-   SCIP_RETCODE updateStabcenterextendedmasterconsvals();
 
    /** updates the constraints in the subgradient (and allocates more memory) */
    SCIP_RETCODE updateSubgradientconsvals();
