@@ -48,6 +48,7 @@
 
 #define SEPA_NAME           "subsetrow"
 #define SEPA_DESC "subsetrow separator"
+#define SEPA_ENABLED              FALSE /**< should the separator be enabled by default? */
 #define SEPA_PRIORITY               100
 #define SEPA_FREQ                     1 /**< default frequency: 1 --> callback is executed for subproblems at every level*/
 #define SEPA_MAXBOUNDDIST           1.0
@@ -60,8 +61,9 @@
 #define DEFAULT_MAXSEPACUTS        1000 /**< maximal number of subset row cuts separated per call in non-root nodes */
 #define DEFAULT_MAXSEPACUTSROOT    2000 /**< maximal number of subset row cuts separated per call in root node */
 #define DEFAULT_MAXCUTCANDS         100 /**< maximal number of subset row cuts in total */
+#define DEFAULT_MINEFFICACY         0.1 /**< required minimum cut efficacy */
 #define DEFAULT_ONLYROOT          FALSE /**< only apply separator in root node */
-#define DEFAULT_STRATEGY              0 /**< strategy which is used to determine which rows to consider for cut computation */
+#define DEFAULT_STRATEGY              1 /**< strategy which is used to determine which rows to consider for cut computation */
 #define DEFAULT_N                     3 /**< number of rows used to create a new cut */
 #define DEFAULT_K                     2 /**< inverse of weight used for cut generation */
 #define DEFAULT_ONLYAGGREGATED     TRUE /**< run only on aggregated problems */
@@ -84,6 +86,7 @@ struct SCIP_SepaData
    int                     maxsepacutsroot;     /**< number of cuts generated per separation call of root node */
    int                     maxsepacuts;         /**< number of cuts generated per separation call at non-root node */
    int                     maxcutcands;         /**< maximal number of cuts generated in total */
+   SCIP_Real               minefficacy;         /**< required minimum cut efficacy */
    int                     strategy;            /**< RANDOM (0), KOSTER-ET-A (1) */
    int                     n;                   /**< n = |S| > 0    : number of constraints used to construct cut */
    int                     k;                   /**< k > 0          : defines the weights 1/k */
@@ -448,8 +451,8 @@ SCIP_RETCODE selectConstraintsKosterEtAl(
    zhdata.maxslackroot = 0.0;
    zhdata.minviol = 0.1;
    zhdata.dynamiccuts = TRUE;
-   zhdata.maxrowdensity = 0.05;
-   zhdata.densityoffset = 100;
+   zhdata.maxrowdensity = 1.0;
+   zhdata.densityoffset = 0;
    zhdata.infeasible = FALSE;
    zhdata.nreductions = 0;
    zhdata.nmasterconss = sepadata->nmasterconss;
@@ -466,6 +469,7 @@ SCIP_RETCODE selectConstraintsKosterEtAl(
 static
 SCIP_RETCODE createCut(
    SCIP*             masterscip,    /**< SCIP data structure (master problem) */
+   SCIP_SEPADATA*    sepadata,      /**< sepa data */
    GCG_CUTINDICES*   cutindex,      /**< indices of the master constraints to use for the construction of subset row cut */
    SCIP_SEPA*        sepa,          /**< subset row separator */
    int               nmastervars,   /**< number of variables in the master problem*/
@@ -512,7 +516,7 @@ SCIP_RETCODE createCut(
    norm = sqrt(norm);
    efficacy = (activity - SCIPfeasFloor(masterscip, rhs_ssrc)) / MAX(1e-6, norm);
 
-   if( efficacy >= 0.1 /*SCIPisEfficacious(masterscip, efficacy)*/ )
+   if( efficacy >= sepadata->minefficacy /*SCIPisEfficacious(masterscip, efficacy)*/ )
    {
       /* create the subset row cut */
       SCIP_CALL( createSubsetRowCut(masterscip, ssrc, mapmastervarxcoeff, rhs_ssrc, sepa, local) );
@@ -718,8 +722,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    gcg = sepadata->gcg;
    origprob = GCGgetOrigprob(gcg);
 
-   isroot = SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip);
-   ncalls = SCIPsepaGetNCallsAtNode(sepa);
    *result = SCIP_DIDNOTFIND;
 
    if( !sepadata->enable )
@@ -728,6 +730,9 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       *result = SCIP_DIDNOTRUN;
       return SCIP_OKAY;
    }
+
+   isroot = SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip);
+   ncalls = SCIPsepaGetNCallsAtNode(sepa);
 
    if( SCIPgetLPSolstat(scip) != SCIP_LPSOLSTAT_OPTIMAL )
    {
@@ -872,7 +877,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       SCIPallocBufferArray(scip, &weights, cutindices[i]->nindices);
 
       // create the subset row cut based on the selected indices
-      SCIP_CALL( createCut(scip, cutindices[i], sepa, nmastervars, sepadata->masterconss, &weights, &ssrc, mapmastervarxcoeff) );
+      SCIP_CALL( createCut(scip, sepadata, cutindices[i], sepa, nmastervars, sepadata->masterconss, &weights, &ssrc, mapmastervarxcoeff) );
 
       // row is empty --> useless
       if( ssrc == NULL || SCIProwGetNNonz(ssrc) == 0 )
@@ -1005,7 +1010,7 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
 
    /* define setting parameters */
    SCIP_CALL( SCIPaddBoolParam(origscip, "sepa/" SEPA_NAME "/enable", "enable subsetrow separator",
-      &(sepadata->enable), FALSE, TRUE, NULL, NULL) );
+      &(sepadata->enable), FALSE, SEPA_ENABLED, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/maxrounds", "maximal number of subsetrow separation rounds per node (-1: unlimited)",
       &sepadata->maxrounds, FALSE, DEFAULT_MAXROUNDS, -1, INT_MAX, NULL, NULL) );
@@ -1021,6 +1026,9 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
 
    SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/maxcutcands", "maximal number of total subsetrow cuts considered",
       &sepadata->maxcutcands, FALSE, DEFAULT_MAXCUTCANDS, 0, INT_MAX, NULL, NULL) );
+   
+   SCIP_CALL( SCIPaddRealParam(origscip, "sepa/" SEPA_NAME "/minefficacy", "required minimum cut efficacy",
+      &sepadata->minefficacy, FALSE, DEFAULT_MINEFFICACY, 0.0, SCIP_REAL_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/strategy", "RANDOM (0)",
       &sepadata->strategy, FALSE, DEFAULT_STRATEGY, 0, 1, NULL, NULL) );
