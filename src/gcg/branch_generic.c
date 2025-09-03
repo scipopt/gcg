@@ -2407,7 +2407,7 @@ SCIP_RETCODE createChildNodesGeneric(
    SCIPdebugMessage("lhsSum = %g\n", lhsSum);
 
 #ifdef SCIP_DEBUG
-   SCIP_CALL( SCIPgetVarsData(masterscip, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
+   SCIP_CALL( SCIPgetVarsData(masterprob, &mastervars, &nmastervars, NULL, NULL, NULL, NULL) );
 
   for( i = 0; i < nmastervars; ++i )
   {
@@ -2415,7 +2415,7 @@ SCIP_RETCODE createChildNodesGeneric(
 
      if( GCGisMasterVarInBlock(mastervar, blocknr) )
      {
-        identicalcontrol += SCIPgetSolVal(masterscip, NULL, mastervar);
+        identicalcontrol += SCIPgetSolVal(masterprob, NULL, mastervar);
      }
 
   }
