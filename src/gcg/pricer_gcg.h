@@ -253,14 +253,14 @@ SCIP_RETCODE GCGsetPricingObjs(
    );
 
 /** sets the dual weight for the pricing objective */
-extern
+GCG_EXPORT
 void GCGsetPricingObjDualWeight(
    GCG*                  gcg,                /**< GCG data structure */
    SCIP_Real             dualweight          /**< the weighting applied to the dual variables */
    );
 
 /** sets the Lagrangian relaxation weight for the pricing objective */
-extern
+GCG_EXPORT
 void GCGsetPricingObjRelaxWeight(
    GCG*                  gcg,                /**< GCG data structure */
    SCIP_Real*            weights,            /**< the Lagrangian relaxation weight applied to the master constraints */
@@ -297,7 +297,7 @@ SCIP_RETCODE GCGcomputeColMastercoefs(
    );
 
 /** includes a pricing callback plugin into the pricer data */
-extern
+GCG_EXPORT
 SCIP_RETCODE GCGpricerIncludePricingcb(
    GCG*                  gcg,                /**< GCG data structure */
    const char*           name,               /**< name of pricing callback plugin */
@@ -314,19 +314,19 @@ SCIP_RETCODE GCGpricerIncludePricingcb(
    );
 
 /** returns the available pricing callback plugins */
-extern
+GCG_EXPORT
 GCG_PRICINGCB** GCGpricerGetPricingcbs(
    GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** returns the number of available pricing callback plugins */
-extern
+GCG_EXPORT
 int GCGpricerGetNPricingcbs(
    GCG*                  gcg                 /**< GCG data structure */
    );
 
 /** returns the pricing callback plugin of the given name, or NULL if it doesn't exist */
-extern
+GCG_EXPORT
 GCG_PRICINGCB* GCGpricerFindPricingcb(
    GCG*                  gcg,                /**< GCG data structure */
    const char*           name                /**< the name of the pricing callback plugin */
@@ -355,6 +355,20 @@ int GCGpricerGetMaxNThreads(
 GCG_EXPORT
 GCG* GCGpricerGetGcg(
    SCIP*                 masterprob          /**< SCIP data structure */
+   );
+
+/** return number of active pricing modifications for a specific pricing problem */
+GCG_EXPORT
+int GCGgetNActivePricingproblemModifications(
+   GCG*                  gcg,                /**< GCG data structure */
+   int                   probnr              /**< number of pricing problem */
+   );
+
+/** return number of actually applied pricing modifications for a specific pricing problem */
+GCG_EXPORT
+int GCGgetNAppliedPricingproblemModifications(
+   GCG*                  gcg,                /**< GCG data structure */
+   int                   probnr              /**< number of pricing problem */
    );
 
 /**@} */

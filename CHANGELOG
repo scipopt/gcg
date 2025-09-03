@@ -98,7 +98,7 @@ New/modified/removed API functions:
 - added function 'GCGremoveNewInactiveMastersepacuts'
 - added function 'GCGgetActiveMastersepacuts'
 - added function 'GCGgetNActiveMastersepacuts'
-- added function 'GCGShrinkActiveMastersepacuts'
+- added function 'GCGshrinkActiveMastersepacuts'
 - added function 'GCGaddGeneratedMastersepacut'
 - added function 'GCGaddActiveMastersepacut'
 - added function 'GCGcaptureMastersepacut'

@@ -65,12 +65,6 @@ SCIP_RETCODE GCGpricingmodificationApply(
    GCG_PRICINGMODIFICATION*      pricingmodification     /**< pricing modification */
    );
 
-/** apply all pricing modifications */
-SCIP_RETCODE GCGextendedmasterconsApplyPricingModifications(
-   GCG*                          gcg,                    /**< GCG data structure */
-   GCG_EXTENDEDMASTERCONSDATA*   extendedmasterconsdata  /**< extended master cons data */
-   );
-
 /** undo a pricing modification */
 SCIP_RETCODE GCGpricingmodificationUndo(
    SCIP*                         pricingscip,            /**< pricing scip */
