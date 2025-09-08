@@ -2826,7 +2826,6 @@ SCIP_DECL_RELAXEXIT(relaxExitGcg)
       relaxdata->decomp = NULL;
    }
 
-   relaxdata->nbranchrules = 0;
    relaxdata->relaxisinitialized = FALSE;
    relaxdata->limitsettingsstashed = FALSE;
 
