@@ -65,9 +65,13 @@
 #define DEFAULT_ONLYROOT          FALSE /**< only apply separator in root node */
 #define DEFAULT_STRATEGY              1 /**< strategy which is used to determine which rows to consider for cut computation */
 #define DEFAULT_N                     3 /**< number of rows used to create a new cut */
-#define DEFAULT_K                     2 /**< inverse of weight used for cut generation */
+#define DEFAULT_L                     2 /**< inverse of weight used for cut generation */
 #define DEFAULT_ONLYAGGREGATED     TRUE /**< run only on aggregated problems */
-#define MAXAGGRLEN(nvars)           ((int)(0.1*(nvars) + 1000 )) // OG:+ 1000
+
+#define STRATEGY_SR_RANDOM            0 /**< randomly select n constraints */
+#define STRATEGY_ZEROHALF             1 /**< use zerohalf cut separator to select constraints */
+#define STRATEGY_SR_ENUMERATE         2 /**< enumerate all subsets of size n */
+#define STRATEGY_MAX                  2 /**< maximal strategy value */
 
 /*
  * Data structures
@@ -87,9 +91,9 @@ struct SCIP_SepaData
    int                     maxsepacuts;         /**< number of cuts generated per separation call at non-root node */
    int                     maxcutcands;         /**< maximal number of cuts generated in total */
    SCIP_Real               minefficacy;         /**< required minimum cut efficacy */
-   int                     strategy;            /**< RANDOM (0), KOSTER-ET-A (1) */
+   int                     strategy;            /**< strategy used to separate cuts (see defines above) */
    int                     n;                   /**< n = |S| > 0    : number of constraints used to construct cut */
-   int                     k;                   /**< k > 0          : defines the weights 1/k */
+   int                     l;                   /**< l > 0          : defines the weights 1/l */
    SCIP_Bool               onlyaggregated;      /**< indicates if separator should only run on aggregated problems */
    SCIP_CONS**             origmasterconss;     /**< array of (filtered) orig master conss (is only allocated if not equal to data of relaxator) */
    SCIP_CONS**             masterconss;         /**< array of (filtered) master conss (is only allocated if not equal to data of relaxator) */
@@ -212,6 +216,7 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS(
    int nmasterconsvars;
    int i;
    int j;
+   int l;
 
    assert(masterscip != NULL);
    assert(sepa != NULL);
@@ -220,6 +225,11 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS(
 
    *rhs_ssrc = 0;
    *local = FALSE;
+
+   if( sepadata->strategy == STRATEGY_ZEROHALF )
+      l = 2;
+   else
+      l = sepadata->l;
 
    for( i = 0; i < nselectedconss; i++ )
    {
@@ -243,24 +253,24 @@ SCIP_RETCODE computeSubsetRowCoefficientsAndRHS(
       assert(success);
 
       /* we want all constraints to have form ax <= b to simplify the summation
-       * - if constraint has form ax <= b: weight is  1/k
-       * - if constraint has form b <= ax: weight is -1/k (to transform it to -ax <= -b) */
+       * - if constraint has form ax <= b: weight is  1/l
+       * - if constraint has form b <= ax: weight is -1/l (to transform it to -ax <= -b) */
       if( SCIPisInfinity(masterscip, -lhs_mastercons ) ) // lhs = -inf --> constraint has form: ax <= b
       {
-         (*weights)[i] = 1.0 / sepadata->k;
+         (*weights)[i] = 1.0 / l;
          (*rhs_ssrc) += (*weights)[i] * rhs_mastercons;
          SCIPdebugMessage("master constraint %s (ax <= %f) with weight %f\n", SCIPconsGetName(mastercons), rhs_mastercons, (*weights)[i]);
       }
       else if( SCIPisInfinity(masterscip, rhs_mastercons ) ) // lhs != -inf & rhs = inf --> constraint has form: b <= ax
       {
-         (*weights)[i] = -1.0 / sepadata->k;
+         (*weights)[i] = -1.0 / l;
          (*rhs_ssrc) += (*weights)[i] * lhs_mastercons;
          SCIPdebugMessage("master constraint %s (%f <= ax) with weight %f\n", SCIPconsGetName(mastercons), lhs_mastercons, (*weights)[i]);
       }
       else // lhs != -inf & rhs != inf --> constraint has form: b_l <= ax <= b_r
       {
          /* we use the right side: ax <= b_r */
-         (*weights)[i] = 1.0 / sepadata->k;
+         (*weights)[i] = 1.0 / l;
          (*rhs_ssrc) += (*weights)[i] * rhs_mastercons;
          SCIPdebugMessage("master constraint %s (%f <= ax <= %f) with weight %f\n", SCIPconsGetName(mastercons), lhs_mastercons, rhs_mastercons, (*weights)[i]);
       }
@@ -389,26 +399,37 @@ SCIP_RETCODE computePricingConssCoefficients(
 /** select the indices of constraints to use for construction of cuts randomly */
 static
 SCIP_RETCODE selectConstraintsRandom(
-   SCIP*                   masterscip,       /**< SCIP data structure (master problem) */
+   GCG*                    gcg,              /**< GCG data structure */
    GCG_CUTINDICES***       cutindices,       /**< pointer to store array of constraint indices for cuts */
    int*                    ncutindices,      /**< pointer to store the number of cuts for which constraint indices were found */
-   int                     maxcuts,          /**< maximal number of cuts for which indices should be computed */
+   int                     depth,            /**< depth of current B&B node */
    SCIP_SEPADATA*          sepadata          /**< data of separator */
    )
 {
    int nconss;
    int nmasterconss;
    SCIP_RANDNUMGEN* randnumgen;
+   int maxcuts;
+   int i;
+   SCIP* masterscip;
 
    nconss = sepadata->n;
    nmasterconss = sepadata->nmasterconss;
    randnumgen = sepadata->randnumgen;
 
-   assert(masterscip != NULL);
+   assert(gcg != NULL);
    assert(randnumgen != NULL);
 
-   int i;
    *ncutindices = 0;
+   masterscip = GCGgetMasterprob(gcg);
+
+   /* determine the number of cuts to generate based on node type */
+   if( depth == 0 )
+      maxcuts = sepadata->maxsepacutsroot;
+   else
+      maxcuts = sepadata->maxsepacuts;
+
+   SCIP_CALL( SCIPallocBufferArray(masterscip, cutindices, maxcuts) );
 
    for( i = 0; i < maxcuts; i++ )
    {
@@ -431,22 +452,20 @@ SCIP_RETCODE selectConstraintsRandom(
 /** select the indices of constraints to use for construction of cuts using strategy devised for zero-half-cuts
  * @to-do: finished implementing alternative strategy */
 static
-SCIP_RETCODE selectConstraintsKosterEtAl(
+SCIP_RETCODE selectConstraintsZerohalf(
    GCG*                    gcg,           /**< GCG data structure */
    GCG_CUTINDICES***       cutindices,    /**< pointer to store array of constraint indices for cuts */
    int*                    ncutindices,   /**< pointer to store the number of cuts for which constraint indices were found */
    int                     ncalls,        /**< number of time separator has bin called at current node */
    SCIP_Bool               allowlocal,    /**< local cuts allowed? */
    int                     depth,         /**< depth of current node */
-   int                     maxcuts,       /**< maximum number of cuts to be generated */
    SCIP_SOL*               sol,           /**< current best solution, if available (else NULL) */
    SCIP_SEPADATA*          sepadata       /**< data of separator */
    )
 {
    GCG_ZEROHALFDATA zhdata;
+   int maxcuts;
 
-   zhdata.maxroundsroot = 20;
-   zhdata.maxrounds = 5;
    zhdata.maxslack = 0.0;
    zhdata.maxslackroot = 0.0;
    zhdata.minviol = 0.1;
@@ -460,7 +479,68 @@ SCIP_RETCODE selectConstraintsKosterEtAl(
    zhdata.masterconss = sepadata->masterconss;
    *ncutindices = 0;
 
+   /* determine the number of cuts to generate based on node type */
+   if( depth == 0 )
+      maxcuts = sepadata->maxsepacutsroot;
+   else
+      maxcuts = sepadata->maxsepacuts;
+   
+   SCIP_CALL( SCIPallocBufferArray(GCGgetMasterprob(gcg), cutindices, maxcuts) );
+
    SCIP_CALL( GCGselectConstraintsZeroHalf(gcg, sol, allowlocal, depth, &zhdata, ncalls, maxcuts, cutindices, ncutindices) );
+
+   return SCIP_OKAY;
+}
+
+/** select the indices of constraints to use for construction of cuts randomly */
+static
+SCIP_RETCODE selectConstraintsEnumerate(
+   GCG*                    gcg,              /**< GCG data structure */
+   GCG_CUTINDICES***       cutindices,       /**< pointer to store array of constraint indices for cuts */
+   int*                    ncutindices,      /**< pointer to store the number of cuts for which constraint indices were found */
+   SCIP_SEPADATA*          sepadata          /**< data of separator */
+   )
+{
+   int nmasterconss;
+   int maxcuts;
+   SCIP* masterscip;
+
+   nmasterconss = sepadata->nmasterconss;
+
+   assert(gcg != NULL);
+
+   int i, j, k;
+   *ncutindices = 0;
+
+   masterscip = GCGgetMasterprob(gcg);
+
+   maxcuts = (nmasterconss*(nmasterconss-1)*(nmasterconss-2)/6);
+
+   SCIP_CALL( SCIPallocBufferArray(masterscip, cutindices, maxcuts) );
+
+   for( i = 0; i < nmasterconss; i++ )
+   {
+      for( j = i + 1; j < nmasterconss; j++ )
+      {
+         for( k = j + 1; k < nmasterconss; k++ )
+         {
+            GCG_CUTINDICES* cutindex;
+            int* selectedindices;
+
+            SCIPallocBufferArray(masterscip, &selectedindices, 3);
+            selectedindices[0] = i;
+            selectedindices[1] = j;
+            selectedindices[2] = k;
+
+            SCIP_CALL( GCGcreateCutIndicesFromArray(masterscip, &cutindex, 3, selectedindices) );
+            (*cutindices)[(*ncutindices)] = cutindex;
+            (*ncutindices)++;
+            assert((*ncutindices) <= maxcuts);
+         }
+      }
+   }
+
+   assert(*ncutindices == maxcuts);
 
    return SCIP_OKAY;
 }
@@ -703,7 +783,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    int npricingproblems;             // |K|            : number of pricing problems
    int nmastervars;                  // |X'|           : number of variables in (reduced) master problem
    int ncontmastervars;              // number of continuous variables in (reduced) master problem
-   int maxcuts;                      // number of cuts to be generated in a separation round
    int ncalls;                       // number of times separator was called in this node
    int curfound;                     // number of generated subset-row cuts
    int i;
@@ -731,7 +810,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       return SCIP_OKAY;
    }
 
-   isroot = SCIPgetCurrentNode(scip) == SCIPgetRootNode(scip);
+   isroot = (depth == 0);
    ncalls = SCIPsepaGetNCallsAtNode(sepa);
 
    if( SCIPgetLPSolstat(scip) != SCIP_LPSOLSTAT_OPTIMAL )
@@ -845,21 +924,15 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       return SCIP_OKAY;
    }
 
-   /* determine the number of cuts to generate based on node type */
-   if( isroot )
-      maxcuts = sepadata->maxsepacutsroot;
-   else
-      maxcuts = sepadata->maxsepacuts;
-
-
    /* select which constraints to use for new subset row cuts */
-   SCIP_CALL( SCIPallocBufferArray(scip, &cutindices, maxcuts) );
    SCIP_CALL( SCIPhashmapCreate(&mappricingvarxcoeff, SCIPblkmem(scip), sepadata->n) );
    ncutindices = 0;
-   if( sepadata->strategy == 0 )
-      SCIP_CALL( selectConstraintsRandom(scip, &cutindices, &ncutindices, maxcuts, sepadata) );
-   else if( sepadata->strategy == 1 )
-      SCIP_CALL( selectConstraintsKosterEtAl(gcg, &cutindices, &ncutindices, ncalls, allowlocal, depth, maxcuts, NULL, sepadata) );
+   if( sepadata->strategy == STRATEGY_SR_RANDOM )
+      SCIP_CALL( selectConstraintsRandom(gcg, &cutindices, &ncutindices, depth, sepadata) );
+   else if( sepadata->strategy == STRATEGY_ZEROHALF )
+      SCIP_CALL( selectConstraintsZerohalf(gcg, &cutindices, &ncutindices, ncalls, allowlocal, depth, NULL, sepadata) );
+   else if( sepadata->strategy == STRATEGY_SR_ENUMERATE )
+      SCIP_CALL( selectConstraintsEnumerate(gcg, &cutindices, &ncutindices, sepadata) );
    else
    {
       *result = SCIP_DIDNOTRUN;
@@ -1030,14 +1103,14 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
    SCIP_CALL( SCIPaddRealParam(origscip, "sepa/" SEPA_NAME "/minefficacy", "required minimum cut efficacy",
       &sepadata->minefficacy, FALSE, DEFAULT_MINEFFICACY, 0.0, SCIP_REAL_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/strategy", "RANDOM (0)",
-      &sepadata->strategy, FALSE, DEFAULT_STRATEGY, 0, 1, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/strategy", "0: random SR cuts, 1: zerohalf cuts (ignores l and n parameters), 2: full enumeration of SR3 cuts (ignores n parameter)",
+      &sepadata->strategy, FALSE, DEFAULT_STRATEGY, 0, STRATEGY_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origscip,"sepa/" SEPA_NAME "/n", "number of rows used to create a new subset row cut ",
       &(sepadata->n), FALSE, DEFAULT_N, 0, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/l", "weight used to create new subset row cut",
-      &(sepadata->k), FALSE, DEFAULT_K, 1, INT_MAX, NULL, NULL) );
+   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/l", "inverse weight used to create new subset row cut",
+      &(sepadata->l), FALSE, DEFAULT_L, 1, INT_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddBoolParam(origscip, "sepa/" SEPA_NAME "/onlyaggregated", "apply subsetrow separator only on aggregated problems",
       &(sepadata->onlyaggregated), FALSE, DEFAULT_ONLYAGGREGATED, NULL, NULL) );

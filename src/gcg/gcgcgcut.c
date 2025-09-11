@@ -52,7 +52,7 @@ struct GCG_MastersepacutData
 /**< creates a Chvatal-Gomory cut */
 SCIP_RETCODE GCGcreateChvatalGomoryCut(
    GCG*                       gcg,                   /**< GCG data structure */
-   GCG_MASTERSEPACUT**   mastersepacut,         /**< pointer to store separator master cut */
+   GCG_MASTERSEPACUT**        mastersepacut,         /**< pointer to store separator master cut */
    GCG_SEPA*                  sepa,                  /**< separator creating this cut */
    GCG_VARHISTORY*            varhistory,            /**< variables history of Chvatal-Gomory cut */
    SCIP_Real*                 weights,               /**< weights which were used to create the cut */
