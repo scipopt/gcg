@@ -61,9 +61,9 @@
 #define DEFAULT_MAXSEPACUTS        1000 /**< maximal number of subset row cuts separated per call in non-root nodes */
 #define DEFAULT_MAXSEPACUTSROOT    2000 /**< maximal number of subset row cuts separated per call in root node */
 #define DEFAULT_MAXCUTCANDS         100 /**< maximal number of subset row cuts in total */
-#define DEFAULT_MINEFFICACY         0.1 /**< required minimum cut efficacy */
+#define DEFAULT_MINEFFICACY        0.01 /**< required minimum cut efficacy */
 #define DEFAULT_ONLYROOT          FALSE /**< only apply separator in root node */
-#define DEFAULT_STRATEGY              1 /**< strategy which is used to determine which rows to consider for cut computation */
+#define DEFAULT_STRATEGY              2 /**< strategy which is used to determine which rows to consider for cut computation */
 #define DEFAULT_N                     3 /**< number of rows used to create a new cut */
 #define DEFAULT_L                     2 /**< inverse of weight used for cut generation */
 #define DEFAULT_ONLYAGGREGATED     TRUE /**< run only on aggregated problems */
