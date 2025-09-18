@@ -167,7 +167,8 @@ completeness.\n
 
 The following arguments can be used when executing GCG:
 
-    syntax: ./bin/gcg [-l <logfile>] [-q] [-s <settings>] [-f <problem>] [-m <mastersettings>] [-d <decomposition>] [-b <batchfile>] [-c "command"]
+    syntax: ./bin/gcg [-v] [-l <logfile>] [-q] [-s <settings>] [-f <problem>] [-m <mastersettings>] [-d <decomposition>] [-b <batchfile>] [-c "command"]
+      -v, --version          : print version
       -l <logfile>           : copy output into log file
       -q                     : suppress screen messages
       -s <settings>          : load parameter settings (.set) file
