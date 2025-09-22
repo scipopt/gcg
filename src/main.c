@@ -141,6 +141,7 @@ SCIP_RETCODE GCGprocessGCGShellArguments(
    SCIP_Bool interactive;
    SCIP_Real primalreference = SCIP_UNKNOWN;
    SCIP_Real dualreference = SCIP_UNKNOWN;
+   SCIP_Bool onlyversion = FALSE;
    const char* dualrefstring;
    const char* primalrefstring;
    int i;
@@ -281,6 +282,10 @@ SCIP_RETCODE GCGprocessGCGShellArguments(
          }
          i += 2;
       }
+      else if( strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--version") == 0 )
+      {
+         onlyversion = TRUE;
+      }
       else
       {
          SCIPinfoMessage(scip, NULL, "invalid parameter <%s>\n", argv[i]);
@@ -325,6 +330,12 @@ SCIP_RETCODE GCGprocessGCGShellArguments(
 
       SCIPprintExternalCodes(scip, NULL);
       SCIPinfoMessage(scip, NULL, "\n");
+
+      if( onlyversion )
+      {
+         /* @todo: build options, see SCIPprintBuildOptions() */
+         return SCIP_OKAY;
+      }
 
       /*****************
        * Load settings *
@@ -380,7 +391,8 @@ SCIP_RETCODE GCGprocessGCGShellArguments(
    }
    else
    {
-      SCIPinfoMessage(scip, NULL, "\nsyntax: %s [-l <logfile>] [-q] [-s <settings>] [-f <problem>] [-m <mastersettings>] [-d <decomposition>] [-b <batchfile>] [-c \"command\"]\n"
+      SCIPinfoMessage(scip, NULL, "\nsyntax: %s [-v] [-l <logfile>] [-q] [-s <settings>] [-f <problem>] [-m <mastersettings>] [-d <decomposition>] [-b <batchfile>] [-c \"command\"]\n"
+            "  -v, --version          : print version\n"
             "  -l <logfile>           : copy output into log file\n"
             "  -q                     : suppress screen messages\n"
             "  -s <settings>          : load parameter settings (.set) file\n"
