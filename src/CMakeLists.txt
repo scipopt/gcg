@@ -510,6 +510,8 @@ target_link_libraries(libgcg
     ${SYM_LIBRARIES}
     ${CLIQUER_LIBRARIES}
     ${CPLEX_LIBRARIES}
+    $<$<BOOL:${OPENMP_FOUND}>:OpenMP::OpenMP_C>
+    $<$<BOOL:${OPENMP_FOUND}>:OpenMP::OpenMP_CXX>
     $<$<BOOL:${GSL_FOUND}>:GSL::gsl>
     $<$<BOOL:${JANSSON_FOUND}>:jansson::jansson>
     $<$<BOOL:${HIGHS_FOUND}>:highs::highs>)
@@ -547,6 +549,8 @@ target_link_libraries(gcg
     ${SYM_LIBRARIES}
     ${CLIQUER_LIBRARIES}
     ${CPLEX_LIBRARIES}
+    $<$<BOOL:${OPENMP_FOUND}>:OpenMP::OpenMP_C>
+    $<$<BOOL:${OPENMP_FOUND}>:OpenMP::OpenMP_CXX>
     $<$<BOOL:${GSL_FOUND}>:GSL::gsl>
     $<$<BOOL:${JANSSON_FOUND}>:jansson::jansson>
     $<$<BOOL:${HIGHS_FOUND}>:highs::highs>)

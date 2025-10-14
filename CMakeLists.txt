@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.11)
 
+# XYZ_Root variables are checked by find_package. (need this for OpenMP_ROOT)
+if(POLICY CMP0074)
+    cmake_policy(SET CMP0074 NEW)
+endif()
+
 # INTERPROCEDURAL_OPTIMIZATION is enforced when enabled.
 if(POLICY CMP0069)
     cmake_policy(SET CMP0069 NEW)
@@ -101,8 +106,6 @@ endif()
 if(OPENMP)
    find_package(OpenMP)
    if(OPENMP_FOUND)
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
       set(THREADSAFE ON FORCE)
    endif()
 endif()
