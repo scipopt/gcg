@@ -115,5 +115,5 @@ void GCGprintVersion(
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, " [GitHash: %s]", GCGgetGitHash());
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "\n");
    SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "Copyright (C) 2010-2025 Operations Research, RWTH Aachen University\n");
-   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "                        Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)\n\n");
+   SCIPmessageFPrintInfo(SCIPgetMessagehdlr(scip), file, "                        Zuse Institute Berlin (ZIB)\n\n");
 }

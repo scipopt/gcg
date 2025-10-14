@@ -3551,6 +3551,10 @@ SCIP_RETCODE GCGincludeRelaxGcg(
    origprob = GCGgetOrigprob(gcg);
    assert(origprob != NULL);
 
+#ifdef _OPENMP
+   SCIP_CALL( SCIPincludeExternalCodeInformation(origprob, "OpenMP", "multi-platform shared-memory parallel programming library (openmp.org)") );
+#endif
+
 #ifdef WITH_BLISS
    {
       char name[SCIP_MAXSTRLEN];
@@ -3563,12 +3567,16 @@ SCIP_RETCODE GCGincludeRelaxGcg(
    {
       char name[SCIP_MAXSTRLEN];
       GCGgetNautyName(name, SCIP_MAXSTRLEN);
-      SCIP_CALL( SCIPincludeExternalCodeInformation(origprob, name, "A Tool for Computing Automorphism Groups of Graphs by B.D. McKay and A. Piperno (https://pallini.di.uniroma1.it/)") );
+      SCIP_CALL( SCIPincludeExternalCodeInformation(origprob, name, "Tool for Computing Automorphism Groups of Graphs by B.D. McKay and A. Piperno (https://pallini.di.uniroma1.it/)") );
    }
 #endif
 
 #ifdef WITH_CLIQUER
-      SCIP_CALL( SCIPincludeExternalCodeInformation(origprob, "Cliquer", "A set of C routines for finding cliques in an arbitrary weighted graph by S. Niskanen and P. Ostergard (https://users.aalto.fi/~pat/cliquer.html)") );
+      SCIP_CALL( SCIPincludeExternalCodeInformation(origprob, "Cliquer", "C routines for finding cliques in an arbitrary weighted graph by S. Niskanen and P. Ostergard (https://users.aalto.fi/~pat/cliquer.html)") );
+#endif
+
+#ifdef WITH_JANSSON
+      SCIP_CALL( SCIPincludeExternalCodeInformation(origprob, "Jansson", "C library for encoding, decoding and manipulating JSON data (https://github.com/akheron/jansson)") );
 #endif
 
    /* create GCG relaxator data */
