@@ -1,12 +1,13 @@
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+include(GNUInstallDirs)
 #
 # interface function for setting common library properties
 #
 function(setLibProperties targetname outputname)
     set_target_properties(${targetname} PROPERTIES
         OUTPUT_NAME ${outputname}
-        MACOSX_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+        MACOSX_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 endfunction(setLibProperties)
 
 set(CMAKE_C_STANDARD 99)
@@ -565,7 +566,7 @@ set_target_properties(libgcg PROPERTIES
 
 # set the install rpath to the installed destination
 set_target_properties(gcg PROPERTIES
-    INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib"
+    INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}"
     INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # install the header files of gcg
@@ -576,10 +577,10 @@ install(FILES ${gcggraphheaders} DESTINATION include/graph)
 
 # install the binary and the library to appropriate locations and add them to an export group
 install(TARGETS gcg libgcg EXPORT gcg-targets
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include)
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 # Add all targets to the build-tree export set
 export(TARGETS gcg libgcg
@@ -602,5 +603,5 @@ configure_file(${PROJECT_SOURCE_DIR}/gcg-config.cmake.in
 
 # install the targets of the gcg export group and the config file so that other projects
 # can link easily against gcg
-install(EXPORT gcg-targets FILE gcg-targets.cmake DESTINATION lib/cmake/gcg)
-install(FILES "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/gcg-config.cmake" DESTINATION lib/cmake/gcg)
+install(EXPORT gcg-targets FILE gcg-targets.cmake DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/gcg)
+install(FILES "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/gcg-config.cmake" DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/gcg)
