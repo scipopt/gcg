@@ -5,11 +5,11 @@ add_dependencies(check
 
 if(MSVC)
     add_custom_target(gcg_check
-        COMMAND ${CMAKE_CTEST_COMMAND} -C $<CONFIG> -R="-default" --output-on-failure --schedule-random
+        COMMAND ${CMAKE_CTEST_COMMAND} -C $<CONFIG> -R "default" --output-on-failure --schedule-random
         DEPENDS gcg)
 else()
     add_custom_target(gcg_check
-        COMMAND ${CMAKE_CTEST_COMMAND} -R="-default" --output-on-failure --schedule-random
+        COMMAND ${CMAKE_CTEST_COMMAND} -R "default" --output-on-failure --schedule-random
         DEPENDS gcg)
 endif()
 
