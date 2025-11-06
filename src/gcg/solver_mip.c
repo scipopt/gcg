@@ -49,11 +49,11 @@
 #include "scip/scipdefplugins.h"
 #include "gcg/pub_gcgcol.h"
 
-#define SOLVER_NAME          "mip"
-#define SOLVER_DESC          "pricing solver solving the pricing problem as a sub-MIP, using SCIP"
-#define SOLVER_PRIORITY      0
-#define SOLVER_HEURENABLED   TRUE            /**< indicates whether the heuristic solving method of the solver should be enabled */
-#define SOLVER_EXACTENABLED  TRUE            /**< indicates whether the exact solving method of the solver should be enabled */
+#define SOLVER_NAME                  "mip"
+#define SOLVER_DESC                  "pricing solver solving the pricing problem as a sub-MIP, using SCIP"
+#define SOLVER_PRIORITY              0
+#define SOLVER_HEURENABLED           TRUE    /**< indicates whether the heuristic solving method of the solver should be enabled */
+#define SOLVER_EXACTENABLED          TRUE    /**< indicates whether the exact solving method of the solver should be enabled */
 
 #define DEFAULT_CHECKSOLS            TRUE    /**< should solutions be checked extensively */
 #define DEFAULT_STARTNODELIMIT       1000LL  /**< start node limit for heuristic pricing */

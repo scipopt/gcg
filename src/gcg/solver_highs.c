@@ -67,14 +67,14 @@
       }                                                                 \
    }
 
-#define SOLVER_NAME          "highs"
-#define SOLVER_DESC          "highs solver for pricing problems"
-#define SOLVER_PRIORITY       100
-#define SOLVER_HEURENABLED   TRUE            /**< indicates whether the heuristic solving method of the solver should be enabled */
-#define SOLVER_EXACTENABLED  TRUE            /**< indicates whether the exact solving method of the solver should be enabled */
+#define SOLVER_NAME                  "highs"
+#define SOLVER_DESC                  "highs solver for pricing problems"
+#define SOLVER_PRIORITY              10
+#define SOLVER_HEURENABLED           FALSE   /**< indicates whether the heuristic solving method of the solver should be enabled */
+#define SOLVER_EXACTENABLED          FALSE   /**< indicates whether the exact solving method of the solver should be enabled */
 
-#define DEFAULT_CHECKSOLS     TRUE   /**< should solutions of the pricing MIPs be checked for duplicity? */
-#define DEFAULT_THREADS       1      /**< number of threads the HIGHS pricing solver is allowed to use (0: automatic) */
+#define DEFAULT_CHECKSOLS            TRUE    /**< should solutions of the pricing MIPs be checked for duplicity? */
+#define DEFAULT_THREADS              1       /**< number of threads the HIGHS pricing solver is allowed to use (0: automatic) */
 #define DEFAULT_STARTNODELIMIT       1000LL  /**< start node limit for heuristic pricing */
 #define DEFAULT_STARTGAPLIMIT        0.2     /**< start gap limit for heuristic pricing */
 #define DEFAULT_STARTSOLLIMIT        10LL    /**< start solution limit for heuristic pricing */

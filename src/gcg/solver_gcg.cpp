@@ -63,12 +63,12 @@
 #include <omp.h>
 #endif
 
-#define SOLVER_NAME          "gcg"
-#define SOLVER_DESC          "gcg solver for pricing problems"
-#define SOLVER_PRIORITY      110
+#define SOLVER_NAME                  "gcg"
+#define SOLVER_DESC                  "gcg solver for pricing problems"
+#define SOLVER_PRIORITY              110
 
-#define SOLVER_ENABLED      TRUE  /**< indicates whether the exact solving method of the solver should be enabled */
-#define SOLVER_HEU_ENABLED  TRUE  /**< indicates whether the heuristic solving method of the solver should be enabled */
+#define SOLVER_ENABLED               TRUE    /**< indicates whether the exact solving method of the solver should be enabled */
+#define SOLVER_HEU_ENABLED           TRUE    /**< indicates whether the heuristic solving method of the solver should be enabled */
 
 #define DEFAULT_MAX_RECURSION_DEPTH  0
 #define DEFAULT_CHECKSOLS            TRUE    /**< should solutions be checked extensively */
