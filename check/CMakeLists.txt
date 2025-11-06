@@ -11,6 +11,9 @@ else()
     add_custom_target(gcg_check
         COMMAND ${CMAKE_CTEST_COMMAND} -R "default" --output-on-failure --schedule-random
         DEPENDS gcg)
+    add_custom_target(gcg_check_highs
+        COMMAND ${CMAKE_CTEST_COMMAND} -R "highs" --output-on-failure --schedule-random
+        DEPENDS gcg)
 endif()
 
 
@@ -46,6 +49,7 @@ add_custom_target(gcg_test
 
 set(settings_MIPLIB
     "default"
+    "highs-solver"
 )
 
 set(instances_MIPLIB
@@ -58,6 +62,7 @@ set(instances_MIPLIB
 
 set(settings_BPP
     "default"
+    "highs-solver"
 )
 
 set(instances_BPP
@@ -72,6 +77,7 @@ set(instances_BPP
 
 set(settings_CPMP
     "default"
+    "highs-solver"
 )
 
 set(instances_CPMP
@@ -86,6 +92,7 @@ set(instances_CPMP
 
 set(settings_CS
     "default"
+    "highs-solver"
 )
 
 set(instances_CS
@@ -99,6 +106,7 @@ set(instances_CS
 
 set(settings_GAP
     "default"
+    "highs-solver"
 )
 
 set(instances_GAP
@@ -112,6 +120,7 @@ set(instances_GAP
 
 set(settings_MKP
     "default"
+    "highs-solver"
 )
 
 set(instances_MKP

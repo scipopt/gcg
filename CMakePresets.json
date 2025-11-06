@@ -454,7 +454,7 @@
             },
             "filter": {
                 "include": {
-                    "name": "GCG-.*"
+                    "name": "GCG-.*-default.*"
                 }
             }
         },
@@ -469,7 +469,7 @@
             },
             "filter": {
                 "include": {
-                    "name": "GCG-.*"
+                    "name": "GCG-.*-default.*"
                 },
                 "exclude": {
                     "name": "GCG-BPP-default-N1C3W1_A.*"
