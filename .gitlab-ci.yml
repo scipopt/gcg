@@ -166,15 +166,19 @@ build:cmake_release:
       when: manual
       allow_failure: true
   script:
-    - mkdir build
-    - cd build
-    # download and unpack cliquer
+    ## additional libraries
+    - cd lib
+    # cliquer
     - wget http://users.aalto.fi/~pat/cliquer/cliquer-1.21.tar.gz
     - tar xvfz cliquer-1.21.tar.gz
-    # main compilation (build type: debug)
-    - cmake -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=cliquer-1.21/ -DHMETIS=ON ..
-    - make -j 4
+    # HiGHS
+    - git clone https://github.com/ERGO-Code/HiGHS.git highs
+    - cmake -S./highs -B./highs/build
+    - cmake --build ./highs/build -j4
+    # main compilation (build type: release)
     - cd ..
+    - cmake -S. -B./build -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=lib/cliquer-1.21/ -DHMETIS=ON -DHIGHS=ON -DHIGHS_DIR=lib/highs/build
+    - cmake --build build -j4 --target gcg
   artifacts:
     expire_in: 3 days
     paths:
@@ -194,15 +198,19 @@ build:cmake_debug:
     - if: '$CI_PIPELINE_SOURCE == "push"'
       when: always
   script:
-    - mkdir build
-    - cd build
-    # download and unpack cliquer
+    ## additional libraries
+    - cd lib
+    # cliquer
     - wget http://users.aalto.fi/~pat/cliquer/cliquer-1.21.tar.gz
     - tar xvfz cliquer-1.21.tar.gz
+    # HiGHS
+    - git clone https://github.com/ERGO-Code/HiGHS.git highs
+    - cmake -S./highs -B./highs/build
+    - cmake --build ./highs/build -j4
     # main compilation (build type: debug)
-    - cmake -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=cliquer-1.21/ -DHMETIS=ON -DCMAKE_BUILD_TYPE=Debug ..
-    - make -j 4
     - cd ..
+    - cmake -S. -B./build -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DCLIQUER_DIR=lib/cliquer-1.21/ -DHMETIS=ON -DCMAKE_BUILD_TYPE=Debug -DHIGHS=ON -DHIGHS_DIR=lib/highs/build
+    - cmake --build build -j4 --target gcg
   artifacts:
     expire_in: 3 days
     paths:
@@ -252,29 +260,6 @@ build:windows_debug:
     - echo "on windows"
   script:
     - cmake --workflow --preset gcg-windows-ci-debug
-  artifacts:
-    expire_in: 3 days
-    paths:
-      - $CI_PROJECT_DIR
-    exclude:
-      - $CI_PROJECT_DIR/.git/*
-
-# Additional / optional features
-build:highs_solver:
-  stage: "Build"
-  variables:
-    GIT_STRATEGY: fetch
-    GIT_SUBMODULE_STRATEGY: recursive
-  when: manual
-  script:
-    ## HiGHS
-    - git clone https://github.com/ERGO-Code/HiGHS.git lib/highs
-    - cmake -S./lib/highs -B./lib/highs/build
-    - cmake --build ./lib/highs/build -j4
-    # main compilation
-    - cmake -S. -B./build -DGCG_DEV_BUILD=ON -DZIMPL=OFF -DIPOPT=OFF -DPAPILO=OFF -DHIGHS=ON -DHIGHS_DIR=lib/highs/build
-    - cmake --build build -j4 --target gcg
-    - cmake --build build --target gcg_check
   artifacts:
     expire_in: 3 days
     paths:
@@ -347,7 +332,32 @@ test:cmake_release:
   before_script: []
   script:
     - cd build
-    - make gcg_check SETTINGS=default_feature
+    - make gcg_check
+    - cd ..
+    # check if test failed
+    - ls build/check/Testing/Temporary/LastTest.log # logfile exists
+  artifacts:
+    paths:
+      - build/check/Testing/Temporary/LastTest.log
+    expire_in: 3 days
+
+# Short test for CMake release build (test set: short) with HiGHS solver
+test:cmake_release_highs:
+  stage: "Test"
+  needs: ["build:cmake_release"]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^v[0-9]+-bugfix$/)'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: manual
+      allow_failure: true
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      when: manual
+      allow_failure: true
+  before_script: []
+  script:
+    - cd build
+    - make gcg_check_highs
     - cd ..
     # check if test failed
     - ls build/check/Testing/Temporary/LastTest.log # logfile exists
@@ -357,6 +367,31 @@ test:cmake_release:
     expire_in: 3 days
 
 # Short test for CMake debug build (test set: short)
+test:cmake_debug_highs:
+  stage: "Test"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^v[0-9]+-bugfix$/)'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: manual
+      allow_failure: true
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      when: manual
+      allow_failure: true
+  needs: ["build:cmake_debug"]
+  before_script: []
+  script:
+    - cd build
+    - make gcg_check_highs
+    - cd ..
+    # check if test failed
+    - ls build/check/Testing/Temporary/LastTest.log # logfile exists
+  artifacts:
+    paths:
+      - build/check/Testing/Temporary/LastTest.log
+    expire_in: 3 days
+
+# Short test for CMake debug build (test set: short) with HiGHS solver
 test:cmake_debug:
   stage: "Test"
   rules:
@@ -369,7 +404,7 @@ test:cmake_debug:
   before_script: []
   script:
     - cd build
-    - make gcg_check SETTINGS=default_feature
+    - make gcg_check
     - cd ..
     # check if test failed
     - ls build/check/Testing/Temporary/LastTest.log # logfile exists
