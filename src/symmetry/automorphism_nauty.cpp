@@ -191,5 +191,5 @@ void struct_graph::terminateSearch()
 extern "C"
 void GCGgetNautyName(char* buffer, int len)
 {
-   SCIPsnprintf(buffer, len, "nauty %s", NAUTYVERSION);
+   SCIPsnprintf(buffer, len, "Nauty %d.%d.%d", NAUTYVERSIONID/10000, (NAUTYVERSIONID%10000)/1000, (NAUTYVERSIONID%1000)/10);
 }

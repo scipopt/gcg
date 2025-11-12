@@ -806,6 +806,8 @@ SCIP_RETCODE GCGincludeDetectorHcgpartition(
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/hcgpartition/metisuseptyperb", "Should the rb or kway method be used for partitioning by metis", &detectordata->metisuseptyperb, FALSE, DEFAULT_METISUSEPTYPE_RB, NULL, NULL) );
    SCIP_CALL( SCIPaddBoolParam(scip, "detection/detectors/hcgpartition/realname", "Should the problem be used for metis files or a temporary name", &detectordata->realname, FALSE, DEFAULT_REALNAME, NULL, NULL) );
 
+   SCIP_CALL( SCIPincludeExternalCodeInformation(scip, "hMETIS", "Software package for partitioning large hypergraphs (https://karypis.github.io/glaros/software/metis/overview.html)") );
+
    return SCIP_OKAY;
 }
 

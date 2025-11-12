@@ -1460,6 +1460,7 @@ SCIP_RETCODE GCGincludeReaderJDec(
    GCG*                 gcg
    )
 {
+   char name[SCIP_MAXSTRLEN];
    SCIP_READERDATA* readerdata = NULL;
    SCIP* origprob = GCGgetOrigprob(gcg);
    assert(origprob != NULL);
@@ -1471,6 +1472,9 @@ SCIP_RETCODE GCGincludeReaderJDec(
    /* include jdec reader */
    SCIP_CALL(SCIPincludeReader(origprob, READER_NAME, READER_DESC, READER_EXTENSION, NULL, readerFreeJDec,
       readerReadJDec, readerWriteJDec, readerdata));
+   
+   SCIPsnprintf(name, SCIP_MAXSTRLEN, "Jansson %s", JANSSON_VERSION);
+   SCIP_CALL( SCIPincludeExternalCodeInformation(origprob, name, "C library for encoding, decoding and manipulating JSON data (https://github.com/akheron/jansson)") );
 
    return SCIP_OKAY;
 }
