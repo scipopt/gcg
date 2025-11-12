@@ -3552,7 +3552,11 @@ SCIP_RETCODE GCGincludeRelaxGcg(
    assert(origprob != NULL);
 
 #ifdef _OPENMP
-   SCIP_CALL( SCIPincludeExternalCodeInformation(origprob, "OpenMP", "multi-platform shared-memory parallel programming library (openmp.org)") );
+   {
+      char name[SCIP_MAXSTRLEN];
+      SCIPsnprintf(name, SCIP_MAXSTRLEN, "OpenMP %d", _OPENMP);
+      SCIP_CALL( SCIPincludeExternalCodeInformation(origprob, name, "multi-platform shared-memory parallel programming library (openmp.org)") );
+   }
 #endif
 
 #ifdef WITH_BLISS
@@ -3569,14 +3573,6 @@ SCIP_RETCODE GCGincludeRelaxGcg(
       GCGgetNautyName(name, SCIP_MAXSTRLEN);
       SCIP_CALL( SCIPincludeExternalCodeInformation(origprob, name, "Tool for Computing Automorphism Groups of Graphs by B.D. McKay and A. Piperno (https://pallini.di.uniroma1.it/)") );
    }
-#endif
-
-#ifdef WITH_CLIQUER
-      SCIP_CALL( SCIPincludeExternalCodeInformation(origprob, "Cliquer", "C routines for finding cliques in an arbitrary weighted graph by S. Niskanen and P. Ostergard (https://users.aalto.fi/~pat/cliquer.html)") );
-#endif
-
-#ifdef WITH_JANSSON
-      SCIP_CALL( SCIPincludeExternalCodeInformation(origprob, "Jansson", "C library for encoding, decoding and manipulating JSON data (https://github.com/akheron/jansson)") );
 #endif
 
    /* create GCG relaxator data */

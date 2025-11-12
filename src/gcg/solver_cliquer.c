@@ -2876,6 +2876,8 @@ SCIP_RETCODE GCGincludeSolverCliquer(
    SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/cliquer/lincutoff/intercept",
           "intercept b in the linear cutoff formula (n > m*d + b), with (d)ensity and (n)odes",
           &solverdata->lincutoffintercept, TRUE, DEFAULT_INTERCEPT, SCIP_REAL_MIN, SCIP_REAL_MAX, NULL, NULL) );
+   
+   SCIP_CALL( SCIPincludeExternalCodeInformation(origprob, "Cliquer", "C routines for finding cliques in an arbitrary weighted graph by S. Niskanen and P. Ostergard (https://users.aalto.fi/~pat/cliquer.html)") );
 
    return SCIP_OKAY;
 }

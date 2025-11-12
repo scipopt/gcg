@@ -1178,6 +1178,7 @@ SCIP_RETCODE GCGincludeSolverHighs(
 {
    SCIP* origprob;
    GCG_SOLVERDATA* solverdata;
+   char name[SCIP_MAXSTRLEN];
 
    SCIP_CALL( SCIPallocMemory(GCGgetDwMasterprob(gcg), &solverdata) );
    origprob = GCGgetOrigprob(gcg);
@@ -1218,6 +1219,9 @@ SCIP_RETCODE GCGincludeSolverHighs(
    SCIP_CALL( SCIPaddRealParam(origprob, "pricingsolver/highs/sollimitfac",
          "factor by which to increase solution limit for heuristic pricing (1.0: add start limit)",
          &solverdata->sollimitfac, TRUE, DEFAULT_SOLLIMITFAC, 1.0, SCIPinfinity(origprob), NULL, NULL) );
+   
+   SCIPsnprintf(name, SCIP_MAXSTRLEN, "HiGHS %s", Highs_version());
+   SCIP_CALL( SCIPincludeExternalCodeInformation(origprob, name, "High performance serial and parallel solver for large-scale sparse LP, MIP, and QP models (https://highs.dev/)") );
 
    return SCIP_OKAY;
 }
