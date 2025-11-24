@@ -575,6 +575,9 @@ install(FILES ${gcgheaders} DESTINATION include/gcg)
 # see e.g. here: https://stackoverflow.com/a/11097012
 install(FILES ${gcggraphheaders} DESTINATION include/graph)
 
+# install the license file of gcg
+install(FILES ${PROJECT_SOURCE_DIR}/LICENSE DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/gcg)
+
 # install the binary and the library to appropriate locations and add them to an export group
 install(TARGETS gcg libgcg EXPORT gcg-targets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
