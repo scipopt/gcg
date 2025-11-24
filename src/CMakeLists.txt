@@ -582,6 +582,14 @@ install(TARGETS gcg libgcg EXPORT gcg-targets
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
+# install the debug program database files
+if(MSVC)
+  install(FILES $<TARGET_PDB_FILE:gcg> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
+  if(BUILD_SHARED_LIBS)
+    install(FILES $<TARGET_PDB_FILE:libgcg> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
+  endif()
+endif()
+
 # Add all targets to the build-tree export set
 export(TARGETS gcg libgcg
   FILE "${CMAKE_BINARY_DIR}/gcg-targets.cmake")
