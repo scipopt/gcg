@@ -50,7 +50,7 @@
 extern "C" {
 #endif
 
-/** Column data structure */
+/** GCG data structure */
 struct Gcg
 {
    SCIP*                origprob;            /**< SCIP data structure of origprob */

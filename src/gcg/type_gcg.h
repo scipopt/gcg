@@ -28,8 +28,8 @@
 
 /**@file   type_gcgcol.h
  * @ingroup TYPEDEFINITIONS
- * @brief  type definitions for gcg column data structure
- * @author Jonas Witt
+ * @brief  type definitions for gcg data structure
+ * @author Erik Muehmer
  */
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
@@ -41,7 +41,7 @@
 extern "C" {
 #endif
 
-typedef struct Gcg GCG; /**< data structure to store colums (solutions of a pricing problem) */
+typedef struct Gcg GCG; /**< GCG data structure */
 
 #ifdef __cplusplus
 }
