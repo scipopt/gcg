@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2026 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /*  Licensed under the Apache License, Version 2.0 (the "License");          */
@@ -209,7 +209,7 @@ SCIP_RETCODE writeTexHeader(
    SCIPinfoMessage(scip, file, "%% *                  of the branch-cut-and-price framework                    * \n");
    SCIPinfoMessage(scip, file, "%% *         SCIP --- Solving Constraint Integer Programs                      * \n");
    SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
-   SCIPinfoMessage(scip, file, "%% * Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       * \n");
+   SCIPinfoMessage(scip, file, "%% * Copyright (C) 2010-2026 Operations Research, RWTH Aachen University       * \n");
    SCIPinfoMessage(scip, file, "%% *                         Zuse Institute Berlin (ZIB)                       * \n");
    SCIPinfoMessage(scip, file, "%% *                                                                           * \n");
    SCIPinfoMessage(scip, file, "%% *  Licensed under the Apache License, Version 2.0 (the \"License\");          * \n");

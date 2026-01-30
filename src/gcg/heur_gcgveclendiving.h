@@ -6,7 +6,7 @@
 /*                  of the branch-cut-and-price framework                    */
 /*         SCIP --- Solving Constraint Integer Programs                      */
 /*                                                                           */
-/* Copyright (C) 2010-2025 Operations Research, RWTH Aachen University       */
+/* Copyright (C) 2010-2026 Operations Research, RWTH Aachen University       */
 /*                         Zuse Institute Berlin (ZIB)                       */
 /*                                                                           */
 /*  Licensed under the Apache License, Version 2.0 (the "License");          */
