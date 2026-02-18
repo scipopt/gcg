@@ -2,6 +2,11 @@
 @section RN410 GCG 4.1.0
 *************************
 
+Miscellaneous
+-------------
+
+- modified ObjPricerGcg::setPricingObjs() to use buffer arrays instead of calling SCIPaddVarObj() multiple times
+
 
 @page RN40 Release notes for GCG 4.0
 @section RN401 GCG 4.0.1
