@@ -58,9 +58,9 @@
 #define DEFAULT_RANDSEED             71 /**< initial seed for RandomNumber Generator which picks the constraint indices*/
 #define DEFAULT_MAXROUNDS             1 /**< maximal number of subset row separation rounds per non-root node */
 #define DEFAULT_MAXROUNDSROOT         1 /**< maximal number of subset row separation calls in the root node */
-#define DEFAULT_MAXSEPACUTS        1000 /**< maximal number of subset row cuts separated per call in non-root nodes */
-#define DEFAULT_MAXSEPACUTSROOT    2000 /**< maximal number of subset row cuts separated per call in root node */
-#define DEFAULT_MAXCUTCANDS         100 /**< maximal number of subset row cuts in total */
+#define DEFAULT_MAXCUTCANDS        1000 /**< maximal number of subset row cut candidates per call in non-root nodes */
+#define DEFAULT_MAXCUTCANDSROOT    2000 /**< maximal number of subset row cut candidates per call in root node */
+#define DEFAULT_MAXCUTS            100 /**< maximal number of subset row cuts in total */
 #define DEFAULT_MINEFFICACY        0.01 /**< required minimum cut efficacy */
 #define DEFAULT_ONLYROOT          FALSE /**< only apply separator in root node */
 #define DEFAULT_STRATEGY              2 /**< strategy which is used to determine which rows to consider for cut computation */
@@ -87,9 +87,9 @@ struct SCIP_SepaData
    int                     ngeneratedcut;       /**< counts the total number of cuts generated */
    int                     maxrounds;           /**< maximal number of separation calls per non-root node */
    int                     maxroundsroot;       /**< maximal number of separation calls for root node */
-   int                     maxsepacutsroot;     /**< number of cuts generated per separation call of root node */
-   int                     maxsepacuts;         /**< number of cuts generated per separation call at non-root node */
-   int                     maxcutcands;         /**< maximal number of cuts generated in total */
+   int                     maxcutcandsroot;     /**< number of cut candidates generated per separation call of root node */
+   int                     maxcutcands;         /**< number of cut candidates generated per separation call at non-root node */
+   int                     maxcuts;             /**< maximal number of cuts generated in total */
    SCIP_Real               minefficacy;         /**< required minimum cut efficacy */
    int                     strategy;            /**< strategy used to separate cuts (see defines above) */
    int                     n;                   /**< n = |S| > 0    : number of constraints used to construct cut */
@@ -413,7 +413,7 @@ SCIP_RETCODE selectConstraintsRandom(
    int i;
    SCIP* masterscip;
 
-   nconss = sepadata->n;
+   nconss = sepadata->n > nmasterconss ? nmasterconss : sepadata->n;
    nmasterconss = sepadata->nmasterconss;
    randnumgen = sepadata->randnumgen;
 
@@ -425,9 +425,9 @@ SCIP_RETCODE selectConstraintsRandom(
 
    /* determine the number of cuts to generate based on node type */
    if( depth == 0 )
-      maxcuts = sepadata->maxsepacutsroot;
+      maxcuts = sepadata->maxcutcandsroot;
    else
-      maxcuts = sepadata->maxsepacuts;
+      maxcuts = sepadata->maxcutcands;
 
    SCIP_CALL( SCIPallocBufferArray(masterscip, cutindices, maxcuts) );
 
@@ -481,9 +481,9 @@ SCIP_RETCODE selectConstraintsZerohalf(
 
    /* determine the number of cuts to generate based on node type */
    if( depth == 0 )
-      maxcuts = sepadata->maxsepacutsroot;
+      maxcuts = sepadata->maxcutcandsroot;
    else
-      maxcuts = sepadata->maxsepacuts;
+      maxcuts = sepadata->maxcutcands;
    
    SCIP_CALL( SCIPallocBufferArray(GCGgetMasterprob(gcg), cutindices, maxcuts) );
 
@@ -498,6 +498,7 @@ SCIP_RETCODE selectConstraintsEnumerate(
    GCG*                    gcg,              /**< GCG data structure */
    GCG_CUTINDICES***       cutindices,       /**< pointer to store array of constraint indices for cuts */
    int*                    ncutindices,      /**< pointer to store the number of cuts for which constraint indices were found */
+   int                     depth,            /**< depth of current B&B node */
    SCIP_SEPADATA*          sepadata          /**< data of separator */
    )
 {
@@ -834,7 +835,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       return SCIP_OKAY;
    }
 
-   if( sepadata->ngeneratedcut >= sepadata->maxcutcands )
+   if( sepadata->ngeneratedcut >= sepadata->maxcuts )
    {
       SCIPdebugMessage("already generated the maximal number of cuts.\n");
       *result = SCIP_DIDNOTRUN;
@@ -910,13 +911,6 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
       }
    }
 
-   if( sepadata->n >= sepadata->nmasterconss )
-   {
-      SCIPdebugMessage("not enough constraints to build subset row cut: n = %i >= number of master constraints = %i!\n", sepadata->n, sepadata->nmasterconss);
-      *result = SCIP_DIDNOTRUN;
-      return SCIP_OKAY;
-   }
-
    /* we only apply the separator on pure integer master problems */
    if( ncontmastervars > 0 )
    {
@@ -932,7 +926,7 @@ SCIP_DECL_SEPAEXECLP(sepaExeclpSubsetrow)
    else if( sepadata->strategy == STRATEGY_ZEROHALF )
       SCIP_CALL( selectConstraintsZerohalf(gcg, &cutindices, &ncutindices, ncalls, allowlocal, depth, NULL, sepadata) );
    else if( sepadata->strategy == STRATEGY_SR_ENUMERATE )
-      SCIP_CALL( selectConstraintsEnumerate(gcg, &cutindices, &ncutindices, sepadata) );
+      SCIP_CALL( selectConstraintsEnumerate(gcg, &cutindices, &ncutindices, depth, sepadata) );
    else
    {
       *result = SCIP_DIDNOTRUN;
@@ -1091,19 +1085,19 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
    SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/maxroundsroot", "maximal number of subsetrow separation rounds in the root node (-1: unlimited)",
       &sepadata->maxroundsroot, FALSE, DEFAULT_MAXROUNDSROOT, -1, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/maxsepacuts", "maximal number of subsetrow cuts separated per separation round",
-      &sepadata->maxsepacuts, FALSE, DEFAULT_MAXSEPACUTS, 0, INT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/maxsepacutsroot", "maximal number of subsetrow cuts separated per separation round in the root node",
-      &sepadata->maxsepacutsroot, FALSE, DEFAULT_MAXSEPACUTSROOT, 0, INT_MAX, NULL, NULL) );
-
-   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/maxcutcands", "maximal number of total subsetrow cuts considered",
+   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/maxcutcands", "maximal number of subsetrow cut candidates per separation round",
       &sepadata->maxcutcands, FALSE, DEFAULT_MAXCUTCANDS, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/maxcutcandsroot", "maximal number of subsetrow cut candidates per separation round in the root node",
+      &sepadata->maxcutcandsroot, FALSE, DEFAULT_MAXCUTCANDSROOT, 0, INT_MAX, NULL, NULL) );
+
+   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/maxcuts", "maximal number of total subsetrow cuts considered",
+      &sepadata->maxcuts, FALSE, DEFAULT_MAXCUTS, 0, INT_MAX, NULL, NULL) );
    
    SCIP_CALL( SCIPaddRealParam(origscip, "sepa/" SEPA_NAME "/minefficacy", "required minimum cut efficacy",
       &sepadata->minefficacy, FALSE, DEFAULT_MINEFFICACY, 0.0, SCIP_REAL_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/strategy", "0: random SR cuts, 1: zerohalf cuts (ignores l and n parameters), 2: full enumeration of SR3 cuts (ignores n parameter)",
+   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/strategy", "0: random SR cuts, 1: zerohalf cuts (ignores l and n parameters), 2: full enumeration of SR cuts (updates maxcutcands parameters)",
       &sepadata->strategy, FALSE, DEFAULT_STRATEGY, 0, STRATEGY_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origscip,"sepa/" SEPA_NAME "/n", "number of rows used to create a new subset row cut ",
