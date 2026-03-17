@@ -99,6 +99,7 @@ struct SCIP_SepaData
    SCIP_CONS**             masterconss;         /**< array of (filtered) master conss (is only allocated if not equal to data of relaxator) */
    int                     nmasterconss;        /**< number of (filtered) master conss */
    SCIP_Bool               filteredmasterconss; /**< do origmasterconss and masterconss point to allocated arrays? */
+   SCIP_Bool               paramschgd;          /**< have the parameters been changed? */
 };
 
 
@@ -505,40 +506,88 @@ SCIP_RETCODE selectConstraintsEnumerate(
    int nmasterconss;
    int maxcuts;
    SCIP* masterscip;
+   int* tmpselectedindices;
+   int i, n;
 
    nmasterconss = sepadata->nmasterconss;
 
    assert(gcg != NULL);
 
-   int i, j, k;
    *ncutindices = 0;
 
    masterscip = GCGgetMasterprob(gcg);
 
-   maxcuts = (nmasterconss*(nmasterconss-1)*(nmasterconss-2)/6);
+   n = sepadata->n > nmasterconss ? nmasterconss : sepadata->n;
 
-   SCIP_CALL( SCIPallocBufferArray(masterscip, cutindices, maxcuts) );
-
-   for( i = 0; i < nmasterconss; i++ )
+   if( sepadata->paramschgd )
    {
-      for( j = i + 1; j < nmasterconss; j++ )
+      sepadata->paramschgd = FALSE;
+      if( n <= 1 )
+         return SCIP_OKAY;
+      if( n == 2 )
+         maxcuts = (nmasterconss*(nmasterconss-1)/2);
+      else if( n == 3 )
+         maxcuts = (nmasterconss*(nmasterconss-1)*(nmasterconss-2)/6);
+      else
       {
-         for( k = j + 1; k < nmasterconss; k++ )
+         int j;
+         // calculate binomial coefficient
+         maxcuts = 1;
+         j = 2 * n > nmasterconss ? nmasterconss - n : n;
+         for( i = 0; i < j; i++ )
          {
-            GCG_CUTINDICES* cutindex;
-            int* selectedindices;
-
-            SCIPallocBufferArray(masterscip, &selectedindices, 3);
-            selectedindices[0] = i;
-            selectedindices[1] = j;
-            selectedindices[2] = k;
-
-            SCIP_CALL( GCGcreateCutIndicesFromArray(masterscip, &cutindex, 3, selectedindices) );
-            (*cutindices)[(*ncutindices)] = cutindex;
-            (*ncutindices)++;
-            assert((*ncutindices) <= maxcuts);
+            if( maxcuts > INT_MAX / (nmasterconss - i) / (i + 1) )
+            {
+               SCIPwarningMessage(masterscip, "Too many cuts to be generated for n = %d.\n", sepadata->n);
+               maxcuts = 0;
+               break;
+            }
+            maxcuts = maxcuts * (nmasterconss - i) / (i + 1);
          }
       }
+      sepadata->maxcutcands = maxcuts;
+      sepadata->maxcutcandsroot = maxcuts;
+   }
+   else
+   {
+      maxcuts = sepadata->maxcutcands;
+   }
+
+   if( maxcuts > 0 )
+   {
+      SCIP_CALL( SCIPallocBufferArray(masterscip, cutindices, maxcuts) );
+      SCIP_CALL( SCIPallocBlockMemoryArray(masterscip, &tmpselectedindices, n) );
+
+      for( i = 0; i < n; i++ )
+         tmpselectedindices[n - i - 1] = i;
+
+      while( TRUE )
+      {
+         GCG_CUTINDICES* cutindex;
+         int* selectedindices;
+
+         assert(*ncutindices < maxcuts);
+
+         SCIP_CALL( SCIPduplicateBufferArray(masterscip, &selectedindices, tmpselectedindices, n) );
+         SCIP_CALL( GCGcreateCutIndicesFromArray(masterscip, &cutindex, n, selectedindices) );
+         (*cutindices)[(*ncutindices)] = cutindex;
+         (*ncutindices)++;
+         
+         /* get next combination of n indices */
+         i = 0;
+         while( i < n && tmpselectedindices[i] >= nmasterconss - i - 1 )
+            i++;
+         if( i == n )
+            break;
+         tmpselectedindices[i]++;
+         assert(tmpselectedindices[i] < nmasterconss);
+         for( i = i - 1; i >= 0; i-- )
+         {
+            tmpselectedindices[i] = tmpselectedindices[i + 1] + 1;
+            assert(tmpselectedindices[i] < nmasterconss);
+         }
+      }
+      SCIPfreeBlockMemoryArray(masterscip, &tmpselectedindices, n);
    }
 
    assert(*ncutindices == maxcuts);
@@ -1026,6 +1075,21 @@ SCIP_DECL_SEPAINIT(sepaInitSubsetrow)
    return SCIP_OKAY;
 }
 
+/** param changed method */
+static
+SCIP_DECL_PARAMCHGD(sepaParamChgdSubsetrow)
+{
+   SCIP_SEPADATA* sepadata;
+
+   assert(scip != NULL);
+
+   sepadata = (SCIP_SEPADATA*) SCIPparamGetData(param);
+   assert(sepadata != NULL);
+
+   sepadata->paramschgd = TRUE;
+
+   return SCIP_OKAY;
+}
 
 /*
  * separator specific interface methods
@@ -1054,6 +1118,7 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
    sepadata->masterconss = NULL;
    sepadata->nmasterconss = 0;
    sepadata->filteredmasterconss = FALSE;
+   sepadata->paramschgd = TRUE;
 
    /* create random number generator */
    SCIP_CALL( SCIPcreateRandom(scip, &(sepadata->randnumgen),
@@ -1101,7 +1166,7 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
       &sepadata->strategy, FALSE, DEFAULT_STRATEGY, 0, STRATEGY_MAX, NULL, NULL) );
 
    SCIP_CALL( SCIPaddIntParam(origscip,"sepa/" SEPA_NAME "/n", "number of rows used to create a new subset row cut ",
-      &(sepadata->n), FALSE, DEFAULT_N, 0, INT_MAX, NULL, NULL) );
+      &(sepadata->n), FALSE, DEFAULT_N, 0, INT_MAX, sepaParamChgdSubsetrow, (SCIP_PARAMDATA*) sepadata) );
 
    SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/l", "inverse weight used to create new subset row cut",
       &(sepadata->l), FALSE, DEFAULT_L, 1, INT_MAX, NULL, NULL) );
