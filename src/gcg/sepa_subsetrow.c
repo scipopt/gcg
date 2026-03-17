@@ -1156,7 +1156,7 @@ SCIP_RETCODE SCIPincludeSepaSubsetrow(
    SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/maxcutcandsroot", "maximal number of subsetrow cut candidates per separation round in the root node",
       &sepadata->maxcutcandsroot, FALSE, DEFAULT_MAXCUTCANDSROOT, 0, INT_MAX, NULL, NULL) );
 
-   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/maxcuts", "maximal number of total subsetrow cuts considered",
+   SCIP_CALL( SCIPaddIntParam(origscip, "sepa/" SEPA_NAME "/maxcuts", "maximal number of subsetrow cuts that will be added over the whole solving process",
       &sepadata->maxcuts, FALSE, DEFAULT_MAXCUTS, 0, INT_MAX, NULL, NULL) );
    
    SCIP_CALL( SCIPaddRealParam(origscip, "sepa/" SEPA_NAME "/minefficacy", "required minimum cut efficacy",
