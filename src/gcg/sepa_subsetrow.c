@@ -708,7 +708,7 @@ GCG_EXTENDEDMASTERCONSDATA* createMastercutData(
       assert(GCGgetNRelPricingprobs(gcg) > npricingmodifications);
 
       /* create pricing modifications containing y as the coeffvar and the single constraint we created */
-      SCIPallocBlockMemoryArray(masterscip, &pricingconss, 2); // freed via GCGpricingmodificationFree
+      SCIPallocBlockMemoryArray(masterscip, &pricingconss, 1); // freed via GCGpricingmodificationFree
       pricingconss[0] = pricingconslb;
       //pricingconss[1] = pricingconsub;
       GCGpricingmodificationCreate(gcg, &pricingmodificationsbuffer[npricingmodifications], j, coeffvar, NULL, 0, pricingconss, 1); // released in GCGpricingmodificationFree
