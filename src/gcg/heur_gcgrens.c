@@ -431,7 +431,7 @@ SCIP_RETCODE applyGcgrens(
       valid = FALSE;
 
       /* copy complete SCIP instance */
-      SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "gcgrens", TRUE, FALSE, FALSE, TRUE, &valid) ); /** @todo check for thread safeness */
+      SCIP_CALL( SCIPcopy(scip, subscip, varmapfw, NULL, "gcgrens", TRUE, FALSE, TRUE, FALSE, TRUE, &valid) ); /** @todo check for thread safeness */
 
       if( heurdata->copycuts )
       {

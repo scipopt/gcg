@@ -1042,7 +1042,7 @@ SCIP_RETCODE createRepairProblem(
 
       valid = FALSE;
 
-      SCIP_CALL( SCIPcopy(scip, (*repairprob), varmapfw, NULL, "repairprob", TRUE, FALSE, FALSE, TRUE, &valid) ); /** @todo check for thread safeness */
+      SCIP_CALL( SCIPcopy(scip, (*repairprob), varmapfw, NULL, "repairprob", TRUE, FALSE, TRUE, FALSE, TRUE, &valid) ); /** @todo check for thread safeness */
 
       if( heurdata->copycuts )
       {
