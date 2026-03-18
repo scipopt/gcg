@@ -160,7 +160,6 @@
 #include "scip/prop_pseudoobj.h"
 #include "scip/prop_rootredcost.h"
 #include "scip/prop_redcost.h"
-#include "scip/prop_symmetry.h"
 #include "scip/prop_vbounds.h"
 #endif
 
@@ -390,7 +389,6 @@ SCIP_RETCODE GCGincludeGcgPlugins(
    SCIP_CALL( SCIPincludePropPseudoobj(scip) );
    SCIP_CALL( SCIPincludePropRedcost(scip) );
    SCIP_CALL( SCIPincludePropRootredcost(scip) );
-   // SCIP_CALL( SCIPincludePropSymmetry(scip) );
    SCIP_CALL( SCIPincludePropVbounds(scip) );
 #endif
 
