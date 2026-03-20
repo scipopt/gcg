@@ -235,8 +235,10 @@ SCIP_RETCODE solveProblem(
       retcode = SCIPpresolve(pricingprob);
       if( SCIPgetNContVars(pricingprob) > 0 )
       {
-         /* disable presolving restarts because of numerical instability caused by these (workaround) */
+         /* disable presolving restarts because of numerical instability (workaround) */
          SCIP_CALL( SCIPsetIntParam(pricingprob, "presolving/maxrestarts", 0) );
+         /* disable feasibility jump heuristic because of numerical instability (workaround) */
+         SCIP_CALL( SCIPsetIntParam(pricingprob, "heuristics/feasjump/freq", -1) );
       }
    }
 
