@@ -596,7 +596,7 @@ void Pricingcontroller::collectResults(
          /* set dual bound due to numerical issues: the best col may not belong to the lowerbound of this optimal round
           * caused by numerical instability of the mip solver */
          lowerbound = dualsolconv[probnr] + GCGcolGetRedcost(bestcols[probnr]);
-         assert(SCIPisFeasEQ(pricingprobs[i]->pricingscip, GCGpricingprobGetLowerbound(pricingprobs[i]), lowerbound));
+         assert(SCIPisFeasEQ(scip_, GCGpricingprobGetLowerbound(pricingprobs[i]), lowerbound));
       }
       else
       {

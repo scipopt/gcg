@@ -234,11 +234,14 @@ SCIP_RETCODE solveProblem(
 
    if( SCIPgetStage(pricingprob) == SCIP_STAGE_PROBLEM )
    {
-      retcode = SCIPpresolve(pricingprob);
-      if( SCIPgetNContVars(pricingprob) > 0 )
+      if( SCIPgetNOrigContVars(pricingprob) > 0 )
       {
-         /* disable presolving restarts because of numerical instability (workaround) */
-         SCIP_CALL( SCIPsetIntParam(pricingprob, "presolving/maxrestarts", 0) );
+         /* @todo: it should be enough to adjust the following settings if there are continuous variables that appear in a linking constraint */
+
+         /* solve the problem with a smaller feasibility tolerance due to numerical instability (workaround) */
+         SCIP_CALL( SCIPsetRealParam(pricingprob, "numerics/feastol", 1e-9) );
+         /* disable trivial heuristic because of numerical instability (workaround) */
+         SCIP_CALL( SCIPsetIntParam(pricingprob, "heuristics/trivial/freq", -1) );
          /* disable feasibility jump heuristic because of numerical instability (workaround) */
          SCIP_CALL( SCIPsetIntParam(pricingprob, "heuristics/feasjump/freq", -1) );
       }

@@ -2401,12 +2401,12 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       else
          dualsol = pricetype->consGetDual(masterconss[i]);
 
-      if( !SCIPisZero(scip_, dualsol) || (!SCIPisInfinity(scip_, -lhs) && !SCIPisInfinity(scip_, rhs)) )
+      if( !SCIPisZero(scip_, dualsol) && (!SCIPisInfinity(scip_, -lhs) && !SCIPisInfinity(scip_, rhs)) )
          // SCIPisZero(boundval * dualsol) could be FALSE although SCIPisZero(scip_, dualsol) holds
          boundval = dualsol > 0.0 ? lhs : rhs;
-      else if( !SCIPisInfinity(scip_, -lhs) )
+      else if( !SCIPisInfinity(scip_, -lhs) && dualsol > 0.0 )
          boundval = lhs;
-      else if( !SCIPisInfinity(scip_, rhs) )
+      else if( !SCIPisInfinity(scip_, rhs) && dualsol < 0.0 )
          boundval = rhs;
       else
          continue;
@@ -2440,11 +2440,11 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       else
          dualsol = pricetype->rowGetDual(originalsepamastercuts[i]);
 
-      if( !SCIPisZero(scip_, dualsol) || (!SCIPisInfinity(scip_, -lhs) && !SCIPisInfinity(scip_, rhs)) )
+      if( !SCIPisZero(scip_, dualsol) && (!SCIPisInfinity(scip_, -lhs) && !SCIPisInfinity(scip_, rhs)) )
          boundval = dualsol > 0.0 ? lhs : rhs;
-      else if( !SCIPisInfinity(scip_, -lhs) )
+      else if( !SCIPisInfinity(scip_, -lhs) && dualsol > 0.0 )
          boundval = lhs;
-      else if( !SCIPisInfinity(scip_, rhs) )
+      else if( !SCIPisInfinity(scip_, rhs) && dualsol < 0.0 )
          boundval = rhs;
       else
          continue;
@@ -2479,11 +2479,11 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
          dualsol = pricetype->extendedmasterconsGetDual(branchextendedmasterconsdata[i]);
       }
 
-      if( !SCIPisZero(scip_, dualsol) || (!SCIPisInfinity(scip_, -lhs) && !SCIPisInfinity(scip_, rhs)) )
+      if( !SCIPisZero(scip_, dualsol) && (!SCIPisInfinity(scip_, -lhs) && !SCIPisInfinity(scip_, rhs)) )
          boundval = dualsol > 0.0 ? lhs : rhs;
-      else if( !SCIPisInfinity(scip_, -lhs) )
+      else if( !SCIPisInfinity(scip_, -lhs) && dualsol > 0.0 )
          boundval = lhs;
-      else if( !SCIPisInfinity(scip_, rhs) )
+      else if( !SCIPisInfinity(scip_, rhs) && dualsol < 0.0 )
          boundval = rhs;
       else
          continue;
@@ -2525,11 +2525,11 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
          dualsol = pricetype->rowGetDual(mastercutrow);
       }
 
-      if( !SCIPisZero(scip_, dualsol) || (!SCIPisInfinity(scip_, -lhs) && !SCIPisInfinity(scip_, rhs)) )
+      if( !SCIPisZero(scip_, dualsol) && (!SCIPisInfinity(scip_, -lhs) && !SCIPisInfinity(scip_, rhs)) )
          boundval = dualsol > 0.0 ? lhs : rhs;
-      else if( !SCIPisInfinity(scip_, -lhs) )
+      else if( !SCIPisInfinity(scip_, -lhs) && dualsol > 0.0 )
          boundval = lhs;
-      else if( !SCIPisInfinity(scip_, rhs) )
+      else if( !SCIPisInfinity(scip_, rhs) && dualsol < 0.0 )
          boundval = rhs;
       else
          continue;
@@ -2853,11 +2853,11 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
       SCIP_Real lb = SCIPvarGetLbLocal(staticvar);
       SCIP_Real ub = SCIPvarGetUbLocal(staticvar);
 
-      if( !SCIPisZero(scip_, stabredcost) || (!SCIPisInfinity(scip_, -lb) && !SCIPisInfinity(scip_, ub)) )
+      if( !SCIPisZero(scip_, stabredcost) && (!SCIPisInfinity(scip_, -lb) && !SCIPisInfinity(scip_, ub)) )
          boundval = stabredcost > 0.0 ? lb : ub;
-      else if( !SCIPisInfinity(scip_, -lb) )
+      else if( !SCIPisInfinity(scip_, -lb) && stabredcost > 0.0 )
          boundval = lb;
-      else if( !SCIPisInfinity(scip_, ub) )
+      else if( !SCIPisInfinity(scip_, ub) && stabredcost < 0.0 )
          boundval = ub;
       else
          continue;
@@ -3919,11 +3919,11 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
                   continue;
                SCIP_Real dualsol = SCIProwGetDualsol(row);
                SCIP_Real tmp = 0.0;
-               if( !SCIPisZero(scip_, dualsol) || (!SCIPisInfinity(scip_, -SCIProwGetLhs(row)) && !SCIPisInfinity(scip_, SCIProwGetRhs(row))) )
+               if( !SCIPisZero(scip_, dualsol) && (!SCIPisInfinity(scip_, -SCIProwGetLhs(row)) && !SCIPisInfinity(scip_, SCIProwGetRhs(row))) )
                   tmp = dualsol * (dualsol > 0 ? SCIProwGetLhs(row) : SCIProwGetRhs(row));
-               else if( !SCIPisInfinity(scip_, -SCIProwGetLhs(row)) )
+               else if( !SCIPisInfinity(scip_, -SCIProwGetLhs(row)) && dualsol > 0 )
                   tmp = dualsol * SCIProwGetLhs(row);
-               else if( !SCIPisInfinity(scip_, SCIProwGetRhs(row)) )
+               else if( !SCIPisInfinity(scip_, SCIProwGetRhs(row)) && dualsol < 0 )
                   tmp = dualsol * SCIProwGetRhs(row);
                if( !SCIPisZero(scip_, tmp) )
                {
@@ -3941,11 +3941,11 @@ SCIP_RETCODE ObjPricerGcg::pricingLoop(
                   continue;
                SCIP_Real redcost = SCIPgetColRedcost(scip_, col);
                SCIP_Real tmp = 0.0;
-               if( !SCIPisZero(scip_, redcost) || (!SCIPisInfinity(scip_, -SCIPcolGetLb(col)) && !SCIPisInfinity(scip_, SCIPcolGetUb(col))) )
-                  tmp = redcost * (redcost >= 0 ? SCIPcolGetLb(col) : SCIPcolGetUb(col));
-               else if( !SCIPisInfinity(scip_, -SCIPcolGetLb(col)) )
+               if( !SCIPisZero(scip_, redcost) && (!SCIPisInfinity(scip_, -SCIPcolGetLb(col)) && !SCIPisInfinity(scip_, SCIPcolGetUb(col))) )
+                  tmp = redcost * (redcost > 0.0 ? SCIPcolGetLb(col) : SCIPcolGetUb(col));
+               else if( !SCIPisInfinity(scip_, -SCIPcolGetLb(col)) && redcost > 0.0 )
                   tmp = redcost * SCIPcolGetLb(col);
-               else if( !SCIPisInfinity(scip_, SCIPcolGetUb(col)) )
+               else if( !SCIPisInfinity(scip_, SCIPcolGetUb(col)) && redcost < 0.0 )
                   tmp = redcost * SCIPcolGetUb(col);
                if( !SCIPisZero(scip_, tmp) )
                {
