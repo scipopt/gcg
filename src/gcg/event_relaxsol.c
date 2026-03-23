@@ -142,8 +142,8 @@ SCIP_DECL_EVENTEXEC(eventExecRelaxsol)
       SCIP_Bool stored;
       SCIP_Bool foundbyheur = SCIPsolGetHeur(sol) != NULL;
 
-      SCIPdebugMessage("Master feasible solution found by <%s> -- transferring to original problem\n",
-         foundbyheur ? SCIPheurGetName(SCIPsolGetHeur(sol)) : "relaxation");
+      SCIPdebugMessage("Master feasible solution (obj: %g) found by <%s> -- transferring to original problem\n",
+         SCIPgetSolOrigObj(scip, sol), foundbyheur ? SCIPheurGetName(SCIPsolGetHeur(sol)) : "relaxation");
 
       /* transform the master solution to the original variable space */
       SCIP_CALL( GCGtransformMastersolToOrigsol(eventhdlrdata->gcg, sol, &origsol, foundbyheur, &violatesvarbnds) );

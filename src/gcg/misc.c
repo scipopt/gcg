@@ -544,13 +544,13 @@ SCIP_RETCODE GCGtransformMastersolToOrigsol(
       if( SCIPisFeasGT(origprob, solval, ub) && EPSEQ(solval, ub, 10 * feastol) )
       {
          SCIP_CALL( SCIPsetSolVal(origprob, *origsol, vars[i], ub) );
-         SCIPwarningMessage(origprob, "Variable %s rounded from %g to %g in relaxation solution\n",
+         SCIPwarningMessage(origprob, "Variable %s rounded from %.10g to %.10g in relaxation solution\n",
             SCIPvarGetName(vars[i]), solval, ub);
       }
       else if( SCIPisFeasLT(origprob, solval, lb) && EPSEQ(solval, lb, 10 * feastol) )
       {
          SCIP_CALL( SCIPsetSolVal(origprob, *origsol, vars[i], lb) );
-         SCIPwarningMessage(origprob, "Variable %s rounded from %g to %g in relaxation solution\n",
+         SCIPwarningMessage(origprob, "Variable %s rounded from %.10g to %.10g in relaxation solution\n",
             SCIPvarGetName(vars[i]), solval, lb);
       }
       if( !SCIPisFeasGE(origprob, SCIPgetSolVal(origprob, *origsol, vars[i]), lb) || !SCIPisFeasLE(origprob, SCIPgetSolVal(origprob, *origsol, vars[i]), ub) )
@@ -639,7 +639,6 @@ SCIP_Real GCGtransformOrigvalsToMastervals(
             {
 #ifdef SCIP_DEBUG
                SCIP* masterprob = GCGgetMasterprob(gcg);
-               SCIP_VAR** vars = SCIPgetVars(masterprob);
 
                SCIPdebugMessage("OrigVar %s [%f,%f]\n", SCIPvarGetName(origvars[i]), SCIPvarGetLbGlobal(origvars[i]),
                      SCIPvarGetUbGlobal(origvars[i]));

@@ -305,6 +305,10 @@ SCIP_DECL_CONSCHECK(consCheckIntegralOrig)
 
    if( violatesvarbnds )
    {
+      if( printreason )
+      {
+         SCIPinfoMessage(scip, NULL, "violation: variable bounds are violated\n");
+      }
       *result = SCIP_INFEASIBLE;
       SCIPfreeSol(origprob, &origsol);
       return SCIP_OKAY;

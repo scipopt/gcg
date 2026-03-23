@@ -779,6 +779,8 @@ SCIP_DECL_BRANCHEXECLP(branchExeclpOrig)
       SCIPdebugMessage("solution was feasible, node can be cut off!");
    }
 
+   SCIPdebugMessage("Original branching rule: %d candidates\n", SCIPgetNExternBranchCands(origprob));
+
    if( SCIPgetNExternBranchCands(origprob) > 0 )
    {
       assert(SCIPisRelaxSolValid(origprob));

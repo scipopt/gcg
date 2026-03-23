@@ -36,6 +36,8 @@
 
 /*---+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0----+----1----+----2*/
 /* #define DEBUG_PRICING_ALL_OUTPUT */
+/* #define DEBUG_PRICING_ALL_OUTPUT_PROBNR -1 */
+/* #define SCIP_DEBUG */
 
 #include <assert.h>
 #include <string.h>
@@ -426,8 +428,10 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    SCIP_CALL( SCIPsetIntParam(pricingprob, "limits/solutions", -1) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
-   SCIP_CALL( SCIPwriteParams(pricingprob, "pricing.set", TRUE, TRUE) );
+   if( DEBUG_PRICING_ALL_OUTPUT_PROBNR < 0 || probnr == DEBUG_PRICING_ALL_OUTPUT_PROBNR )
+   {
+      SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
+   }
 #endif
 
    *lowerbound = -SCIPinfinity(pricingprob);
@@ -436,8 +440,14 @@ GCG_DECL_SOLVERSOLVE(solverSolveMip)
    SCIP_CALL( solveProblem(gcg, pricingprob, probnr, solverdata, lowerbound, status) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_NONE) );
-   SCIP_CALL( SCIPprintStatistics(pricingprob, NULL) );
+   if( DEBUG_PRICING_ALL_OUTPUT_PROBNR < 0 || probnr == DEBUG_PRICING_ALL_OUTPUT_PROBNR )
+   {
+      SCIP_CALL( SCIPprintBestSol(pricingprob, NULL, FALSE) );
+      // SCIP_CALL( SCIPprintOrigProblem(pricingprob, NULL, NULL, FALSE) );
+      SCIP_CALL( SCIPprintTransProblem(pricingprob, NULL, NULL, FALSE) );
+      SCIP_CALL( SCIPprintStatistics(pricingprob, NULL) );
+      SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_NONE) );
+   }
 #endif
 
    return SCIP_OKAY;
@@ -450,7 +460,10 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    GCG_SOLVERDATA* solverdata;
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
+   if( DEBUG_PRICING_ALL_OUTPUT_PROBNR < 0 || probnr == DEBUG_PRICING_ALL_OUTPUT_PROBNR )
+   {
+      SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_HIGH) );
+   }
 #endif
 
    solverdata = GCGsolverGetData(solver);
@@ -512,8 +525,14 @@ GCG_DECL_SOLVERSOLVEHEUR(solverSolveHeurMip)
    SCIP_CALL( solveProblem(gcg, pricingprob, probnr, solverdata, lowerbound, status) );
 
 #ifdef DEBUG_PRICING_ALL_OUTPUT
-   SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_NONE) );
-   SCIP_CALL( SCIPprintStatistics(pricingprob, NULL) );
+   if( DEBUG_PRICING_ALL_OUTPUT_PROBNR < 0 || probnr == DEBUG_PRICING_ALL_OUTPUT_PROBNR )
+   {
+      SCIP_CALL( SCIPprintBestSol(pricingprob, NULL, FALSE) );
+      // SCIP_CALL( SCIPprintOrigProblem(pricingprob, NULL, NULL, FALSE) );
+      SCIP_CALL( SCIPprintTransProblem(pricingprob, NULL, NULL, FALSE) );
+      SCIP_CALL( SCIPprintStatistics(pricingprob, NULL) );
+      SCIP_CALL( SCIPsetIntParam(pricingprob, "display/verblevel", SCIP_VERBLEVEL_NONE) );
+   }
 #endif
 
    return SCIP_OKAY;

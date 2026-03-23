@@ -2707,7 +2707,8 @@ SCIP_RETCODE initBranch(
 
          blocknr = GCGgetBlockRepresentative(gcg, GCGvarGetBlock(origvar));
 
-         SCIPdebugMessage("Variable %s belonging to block %d with representative %d is not integral!\n", SCIPvarGetName(origvar), GCGvarGetBlock(origvar), blocknr);
+         SCIPdebugMessage("Variable %s (val: %.10g) belonging to block %d with representative %d is not integral!\n",
+            SCIPvarGetName(origvar), SCIPgetSolVal(origprob, GCGrelaxGetCurrentOrigSol(gcg), origvar), GCGvarGetBlock(origvar), blocknr);
 
          if( blocknr == -1 )
          {
