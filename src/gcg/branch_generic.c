@@ -1974,8 +1974,8 @@ SCIP_RETCODE ChooseSeparateMethod(
       {
          assert(strips != NULL);
 
-         SCIP_CALL( SCIPallocBuffer(origprob, &(*checkedblockssortstrips[*ncheckedblocks-1][i])) ); /*lint !e866*/
-         *checkedblockssortstrips[*ncheckedblocks-1][i] = strips[i];
+         SCIP_CALL( SCIPallocBuffer(origprob, &((*checkedblockssortstrips)[(*ncheckedblocks)-1][i])) ); /*lint !e866*/
+         (*checkedblockssortstrips)[(*ncheckedblocks)-1][i] = strips[i];
       }
 
       for( i=0; i<nstrips; ++i )
