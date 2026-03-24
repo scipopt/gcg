@@ -921,7 +921,7 @@ SCIP_RETCODE ObjPricerGcg::setPricingProblemMemorylimit(
 
    SCIP_CALL( SCIPgetRealParam(origprob, "limits/memory", &memlimit) );
 
-   if( !SCIPisInfinity(origprob, memlimit) )
+   if( memlimit < SCIP_MEM_NOLIMIT )
    {
       GCG_SET_LOCK(&pricerdata->locks->pricinglimitslock);
       memlimit -= SCIPgetMemUsed(origprob)/1048576.0 + GCGgetPricingprobsMemUsed(gcg);
