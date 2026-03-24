@@ -1,4 +1,13 @@
 @page RN40 Release notes for GCG 4.0
+@section RN402 GCG 4.0.2
+*************************
+
+Bug fixes
+---------
+
+- only set memory limits for pricing problems if the user has provided one
+
+
 @section RN401 GCG 4.0.1
 *************************
 
