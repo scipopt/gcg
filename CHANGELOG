@@ -6,6 +6,7 @@ Bug fixes
 ---------
 
 - only set memory limits for pricing problems if the user has provided one
+- branch_generic: fix memory access
 
 
 @section RN401 GCG 4.0.1
