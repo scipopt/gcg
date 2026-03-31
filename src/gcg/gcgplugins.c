@@ -76,6 +76,7 @@
 #include "scip/heur_dps.h"
 #include "scip/heur_dualval.h"
 #include "scip/heur_farkasdiving.h"
+#include "scip/heur_feasjump.h"
 #include "scip/heur_feaspump.h"
 #include "scip/heur_fixandinfer.h"
 #include "scip/heur_fracdiving.h"
@@ -408,6 +409,7 @@ SCIP_RETCODE GCGincludeGcgPlugins(
    SCIP_CALL( SCIPincludeHeurDps(scip) );
    SCIP_CALL( SCIPincludeHeurDualval(scip) );
    SCIP_CALL( SCIPincludeHeurFarkasdiving(scip) );
+   SCIP_CALL( SCIPincludeHeurFeasjump(scip) );
    SCIP_CALL( SCIPincludeHeurFeaspump(scip) );
    SCIP_CALL( SCIPincludeHeurFixandinfer(scip) );
    SCIP_CALL( SCIPincludeHeurFracdiving(scip) );

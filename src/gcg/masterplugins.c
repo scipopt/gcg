@@ -69,6 +69,7 @@
 #include "scip/heur_dps.h"
 #include "scip/heur_dualval.h"
 #include "scip/heur_farkasdiving.h"
+#include "scip/heur_feasjump.h"
 #include "scip/heur_feaspump.h"
 #include "scip/heur_fixandinfer.h"
 #include "scip/heur_fracdiving.h"
@@ -270,6 +271,7 @@ SCIP_RETCODE GCGincludeMasterPlugins(
    SCIP_CALL( SCIPincludeHeurDps(masterprob) );
    SCIP_CALL( SCIPincludeHeurDualval(masterprob) );
    SCIP_CALL( SCIPincludeHeurFarkasdiving(masterprob) );
+   SCIP_CALL( SCIPincludeHeurFeasjump(masterprob) );
    SCIP_CALL( SCIPincludeHeurFeaspump(masterprob) );
    SCIP_CALL( SCIPincludeHeurFixandinfer(masterprob) );
    SCIP_CALL( SCIPincludeHeurFracdiving(masterprob) );
