@@ -59,8 +59,6 @@ struct GCG_ZeroHalfData
    SCIP_Real             maxrowdensity;      /**< maximal density of row to be used in aggregation */
    SCIP_Bool             infeasible;         /**< infeasibility was detected after adding a zerohalf cut */
    SCIP_Bool             dynamiccuts;        /**< should generated cuts be removed from the LP if they are no longer tight? */
-   int                   maxrounds;          /**< maximal number of zerohalf separation rounds per node (-1: unlimited) */
-   int                   maxroundsroot;      /**< maximal number of zerohalf separation rounds in the root node (-1: unlimited) */
    int                   densityoffset;      /**< additional number of variables allowed in row on top of density */
    int                   nreductions;        /**< number of reductions to the mod 2 system found so far */
    SCIP_CONS**           origmasterconss;    /**< array of orig master conss (is only allocated if not equal to data of relaxator) */

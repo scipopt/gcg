@@ -429,7 +429,7 @@ SCIP_RETCODE createBranchingCons(
    GCG_BRANCHRULE*       branchrule,         /**< branch rule structure */
    SCIP_NODE*            node,               /**< node to add constraint */
    GCG_BRANCHDATA*       branchdata          /**< branching data structure */
-)
+   )
 {
    SCIP_Longint uuid;
 

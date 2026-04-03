@@ -26,8 +26,7 @@
 /*                                                                           */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**@file   sepa_zerohalf.c
- * @ingroup DEFPLUGINS_SEPA
+/**@file   zerohalf_selector.c
  * @brief  {0,1/2}-cuts separator
  * @author Leona Gottwald
  * @author Manuel Kutschka
@@ -209,12 +208,10 @@ SCIP_RETCODE GCGfreeCutIndices(
 
    if( (*cutindices)->nindices > 0 )
    {
-      SCIPfreeBufferArrayNull(scip, &((*cutindices)->indices));
-      (*cutindices)->nindices = 0;
+      SCIPfreeBufferArray(scip, &((*cutindices)->indices));
    }
 
    assert((*cutindices)->indices == NULL);
-   assert((*cutindices)->nindices == 0);
 
    SCIPfreeBuffer(scip, cutindices);
    *cutindices = NULL;
@@ -1812,17 +1809,8 @@ SCIP_RETCODE GCGselectConstraintsZeroHalf(
 
    assert(zhdata != NULL);
 
-   {
-
-      /* only call the zerohalf cut separator a given number of times at each node */
-      if( (depth == 0 && zhdata->maxroundsroot >= 0 && ncalls >= zhdata->maxroundsroot)
-          || (depth > 0 && zhdata->maxrounds >= 0 && ncalls >= zhdata->maxrounds) )
-         return SCIP_OKAY;
-
-      maxslack = depth == 0 ? zhdata->maxslackroot : zhdata->maxslack;
-      maxslack += 2 * SCIPfeastol(scip);
-   }
-
+   maxslack = depth == 0 ? zhdata->maxslackroot : zhdata->maxslack;
+   maxslack += 2 * SCIPfeastol(scip);
 
    *ncutindices = 0;
    zhdata->infeasible = FALSE;

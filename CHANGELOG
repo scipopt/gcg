@@ -2,10 +2,25 @@
 @section RN410 GCG 4.1.0
 *************************
 
+New features:
+-------------
+
+- sepa_subsetrow (still experimental): add strategy that enumerates all SR cuts (new default)
+
+Bug fixes
+---------
+
+- sepa_subsetrow: fix memory bug
+
 Miscellaneous
 -------------
 
 - modified ObjPricerGcg::setPricingObjs() to use buffer arrays instead of calling SCIPaddVarObj() multiple times
+
+New/changed parameters:
+-----------------------
+
+- sepa_subsetrow: renamed parameters ('maxsepacuts' to 'maxcutcands', 'maxsepacutsroot' to 'maxcutcandsroot', 'maxcutcands' to 'maxcuts')
 
 
 @page RN40 Release notes for GCG 4.0
