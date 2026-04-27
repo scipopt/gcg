@@ -239,6 +239,7 @@ SCIP_RETCODE solveProblem(
          /* @todo: it should be enough to adjust the following settings if there are continuous variables that appear in a linking constraint */
 
          /* solve the problem with a smaller feasibility tolerance due to numerical instability (workaround) */
+         SCIP_CALL( SCIPsetRealParam(pricingprob, "numerics/sumepsilon", 1e-9) );
          SCIP_CALL( SCIPsetRealParam(pricingprob, "numerics/feastol", 1e-9) );
          /* disable trivial heuristic because of numerical instability (workaround) */
          SCIP_CALL( SCIPsetIntParam(pricingprob, "heuristics/trivial/freq", -1) );
