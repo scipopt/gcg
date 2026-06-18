@@ -2764,11 +2764,11 @@ SCIP_RETCODE ObjPricerGcg::getStabilizedDualObjectiveValue(
    }
 
    /* master separator cuts */
-   for( j = 0; j < nactivecuts; j++ )
+   for( i = 0; i < nactivecuts; i++ )
    {
       SCIP_ROW* mastercutrow;
 
-      mastercutrow = GCGextendedmasterconsGetRow(activecuts[j]);
+      mastercutrow = GCGextendedmasterconsGetRow(activecuts[i]);
       assert(mastercutrow != NULL);
 
       // get columns and vals of the cut
