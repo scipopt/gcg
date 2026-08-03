@@ -339,6 +339,7 @@ GCG_COLPOOL* GCGgetColpool(
    );
 
 /** get a weak reference to the current and latest varhistory pointer */
+GCG_EXPORT
 GCG_VARHISTORY* GCGgetCurrentVarhistoryReference(
    GCG*                  gcg                 /**< GCG data structure */
    );
