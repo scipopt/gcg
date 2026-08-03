@@ -415,8 +415,8 @@ SCIP_RETCODE selectConstraintsRandom(
    int i;
    SCIP* masterscip;
 
-   nconss = sepadata->n > nmasterconss ? nmasterconss : sepadata->n;
    nmasterconss = sepadata->nmasterconss;
+   nconss = sepadata->n > nmasterconss ? nmasterconss : sepadata->n;
    randnumgen = sepadata->randnumgen;
 
    assert(gcg != NULL);
