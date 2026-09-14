@@ -12,6 +12,8 @@ Bug fixes
 ---------
 
 - sepa_subsetrow: fix memory bug and index handling of master conss
+- fix segmentation fault
+- fix (some) problems with Benders mode
 
 Miscellaneous
 -------------
@@ -27,16 +29,6 @@ New/changed parameters:
 
 
 @page RN40 Release notes for GCG 4.0
-@section RN403 GCG 4.0.3
-*************************
-
-Bug fixes
----------
-
-- fix segfault
-- fix (some) problems with Benders mode
-
-
 @section RN402 GCG 4.0.2
 *************************
 
